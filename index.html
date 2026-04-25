@@ -169,7 +169,18 @@ if(SCRIPT_URL === 'YOUR_GOOGLE_APPS_SCRIPT_URL_HERE') {
   document.getElementById('config-notice').style.display = 'block';
 }
 
+const DASHBOARD_PASSWORD = 'NQ2026dash';
+let dashUnlocked = false;
+
 function showTab(tab) {
+  if(tab==='dashboard' && !dashUnlocked) {
+    const entered = prompt('Enter dashboard password:');
+    if(entered !== DASHBOARD_PASSWORD) {
+      alert('Incorrect password.');
+      return;
+    }
+    dashUnlocked = true;
+  }
   document.getElementById('tab-submit').style.display = tab==='submit'?'block':'none';
   document.getElementById('tab-dashboard').style.display = tab==='dashboard'?'block':'none';
   document.querySelectorAll('.tab').forEach((t,i)=>{
