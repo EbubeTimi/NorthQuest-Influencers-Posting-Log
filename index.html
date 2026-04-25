@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Northquest Daily Posting Log</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f5f5f3;min-height:100vh;padding:1.5rem}
+  .container{max-width:600px;margin:0 auto}
+  .header{text-align:center;margin-bottom:2rem}
+  .header h1{font-size:20px;font-weight:600;color:#1a1a1a;margin-bottom:4px}
+  .header p{font-size:13px;color:#777}
+  .tabs{display:flex;gap:0;margin-bottom:1.5rem;border:1px solid #e0e0e0;border-radius:10px;overflow:hidden;background:#fff}
+  .tab{flex:1;padding:10px;text-align:center;cursor:pointer;font-size:14px;color:#666;border:none;background:none;font-family:inherit;transition:background 0.15s}
+  .tab.active{background:#1a1a1a;color:#fff;font-weight:500}
+  .card{background:#fff;border-radius:12px;padding:1.25rem;margin-bottom:1rem;border:1px solid #e8e8e8}
+  .section-title{font-size:15px;font-weight:600;color:#1a1a1a;margin-bottom:1rem}
+  .field{margin-bottom:1rem}
+  label{display:block;font-size:13px;color:#555;margin-bottom:5px;font-weight:500}
+  input,select,textarea{width:100%;padding:10px 12px;border:1px solid #ddd;border-radius:8px;font-size:14px;font-family:inherit;color:#1a1a1a;background:#fff;transition:border 0.15s}
+  input:focus,select:focus,textarea:focus{outline:none;border-color:#1a1a1a}
+  textarea{height:72px;resize:none}
+  .btn{width:100%;padding:12px;border:none;border-radius:8px;font-size:14px;font-weight:600;font-family:inherit;cursor:pointer;transition:opacity 0.15s}
+  .btn-primary{background:#1a1a1a;color:#fff}
+  .btn-primary:hover{opacity:0.85}
+  .btn-primary:disabled{opacity:0.4;cursor:not-allowed}
+  .alert{padding:12px 14px;border-radius:8px;font-size:13px;margin-bottom:1rem}
+  .alert-success{background:#eaf3de;color:#27500a;border:1px solid #97c459}
+  .alert-error{background:#fcebeb;color:#791f1f;border:1px solid #f09595}
+  .stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:1rem}
+  .stat{background:#f5f5f3;border-radius:10px;padding:14px;text-align:center}
+  .stat-n{font-size:26px;font-weight:700;color:#1a1a1a}
+  .stat-l{font-size:12px;color:#777;margin-top:3px}
+  .filter-row{display:flex;gap:8px;margin-bottom:1rem}
+  .filter-row select,.filter-row input{flex:1}
+  .entry{border-top:1px solid #f0f0f0;padding:12px 0}
+  .entry:first-child{border-top:none}
+  .entry-name{font-size:14px;font-weight:600;color:#1a1a1a}
+  .entry-meta{font-size:12px;color:#888;margin-top:3px}
+  .badge{display:inline-block;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:600;margin-left:6px}
+  .badge-1{background:#e6f1fb;color:#185fa5}
+  .badge-2{background:#eaf3de;color:#3b6d11}
+  .entry-links{margin-top:6px}
+  .entry-links a{display:block;font-size:12px;color:#185fa5;text-decoration:none;word-break:break-all;margin-top:2px}
+  .entry-links a:hover{text-decoration:underline}
+  .entry-issues{font-size:12px;color:#888;font-style:italic;margin-top:4px}
+  .empty{text-align:center;padding:2.5rem;color:#aaa;font-size:14px}
+  .spinner{display:inline-block;width:16px;height:16px;border:2px solid #ffffff40;border-top-color:#fff;border-radius:50%;animation:spin 0.7s linear infinite;vertical-align:middle;margin-right:6px}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .setup-notice{background:#faeeda;border:1px solid #fac775;border-radius:10px;padding:1rem;font-size:13px;color:#633806;margin-bottom:1rem;line-height:1.6}
+  .setup-notice strong{font-weight:600}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>Northquest Finance</h1>
+    <p>Daily Posting Log</p>
+  </div>
+
+  <div id="config-notice" class="setup-notice" style="display:none">
+    <strong>Setup required:</strong> Please open this file and set the <code>SCRIPT_URL</code> variable at the top of the script to your Google Apps Script web app URL.
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="showTab('submit')">Submit a post</button>
+    <button class="tab" onclick="showTab('dashboard')">Dashboard</button>
+  </div>
+
+  <div id="tab-submit">
+    <div class="card">
+      <p class="section-title">Daily posting log</p>
+      <div id="alert-box"></div>
+      <div class="field">
+        <label>Your name</label>
+        <select id="creator-name">
+          <option value="">Select your name...</option>
+          <option>Kunkala Biodoumoye</option>
+          <option>Iwale Destiny</option>
+          <option>Calista Enemali</option>
+          <option>Ayibatari Akpeki</option>
+          <option>Joan Edenbo</option>
+          <option>Izibeglim Marshal</option>
+          <option>Dorothy Adesua</option>
+          <option>Emmanuella Ayebanoa</option>
+          <option>Akemi Faith</option>
+          <option>Lawrence Emmanuella</option>
+          <option>Olaito Adenike</option>
+          <option>Florence Ofiyo</option>
+          <option>Alexandra Lawrence</option>
+          <option>Uyiosariema George-Omoruyi</option>
+          <option>Lawrence Taiwo Omotola</option>
+          <option>Oladele Olamide Emmanuella</option>
+          <option>Adegbesan Francisca</option>
+          <option>Uduak Egerton</option>
+          <option>Serina Morris</option>
+          <option>Hindite Digitemie</option>
+          <option>Emi Ebiegberi</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Date</label>
+        <input type="date" id="post-date" />
+      </div>
+      <div class="field">
+        <label>Which post is this?</label>
+        <select id="post-number">
+          <option value="1">Post 1 (first post of the day)</option>
+          <option value="2">Post 2 (second post of the day)</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>TikTok video link</label>
+        <input type="url" id="tiktok-link" placeholder="https://www.tiktok.com/@..." />
+      </div>
+      <div class="field">
+        <label>Instagram reel link</label>
+        <input type="url" id="ig-link" placeholder="https://www.instagram.com/reel/..." />
+      </div>
+      <div class="field">
+        <label>Any issues today? (optional)</label>
+        <textarea id="issues" placeholder="e.g. Instagram was down, video took longer to upload..."></textarea>
+      </div>
+      <button class="btn btn-primary" id="submit-btn" onclick="submitLog()">Submit log</button>
+    </div>
+  </div>
+
+  <div id="tab-dashboard" style="display:none">
+    <div class="stats-grid" id="stats-row">
+      <div class="stat"><div class="stat-n">-</div><div class="stat-l">Total posts logged</div></div>
+      <div class="stat"><div class="stat-n">-</div><div class="stat-l">Logged today</div></div>
+      <div class="stat"><div class="stat-n">-</div><div class="stat-l">Active creators</div></div>
+      <div class="stat"><div class="stat-n">-</div><div class="stat-l">Today's participation</div></div>
+    </div>
+    <div class="card">
+      <p class="section-title">Filter entries</p>
+      <div class="filter-row">
+        <select id="filter-name" onchange="renderEntries()">
+          <option value="">All creators</option>
+          <option>Kunkala Biodoumoye</option><option>Iwale Destiny</option><option>Calista Enemali</option>
+          <option>Ayibatari Akpeki</option><option>Joan Edenbo</option><option>Izibeglim Marshal</option>
+          <option>Dorothy Adesua</option><option>Emmanuella Ayebanoa</option><option>Akemi Faith</option>
+          <option>Lawrence Emmanuella</option><option>Olaito Adenike</option><option>Florence Ofiyo</option>
+          <option>Alexandra Lawrence</option><option>Uyiosariema George-Omoruyi</option>
+          <option>Lawrence Taiwo Omotola</option><option>Oladele Olamide Emmanuella</option>
+          <option>Adegbesan Francisca</option><option>Uduak Egerton</option>
+          <option>Serina Morris</option><option>Hindite Digitemie</option><option>Emi Ebiegberi</option>
+        </select>
+        <input type="date" id="filter-date" onchange="renderEntries()" />
+      </div>
+      <button onclick="clearFilters()" style="font-size:13px;color:#666;background:none;border:none;cursor:pointer;padding:0;margin-bottom:1rem;font-family:inherit">Clear filters</button>
+    </div>
+    <div class="card">
+      <p class="section-title">Submissions</p>
+      <div id="entries-list"><div class="empty">Loading...</div></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwLrQ6h0XAOKIxYw_r2uMbb_FtBq_ZBBFdBAQpeLHo9Z9ZKkzISuje9CvuTF-RcWgFgmQ/exec';
+
+let allEntries = [];
+
+document.getElementById('post-date').value = new Date().toISOString().split('T')[0];
+
+if(SCRIPT_URL === 'YOUR_GOOGLE_APPS_SCRIPT_URL_HERE') {
+  document.getElementById('config-notice').style.display = 'block';
+}
+
+function showTab(tab) {
+  document.getElementById('tab-submit').style.display = tab==='submit'?'block':'none';
+  document.getElementById('tab-dashboard').style.display = tab==='dashboard'?'block':'none';
+  document.querySelectorAll('.tab').forEach((t,i)=>{
+    t.classList.toggle('active',(i===0&&tab==='submit')||(i===1&&tab==='dashboard'));
+  });
+  if(tab==='dashboard') loadDashboard();
+}
+
+function showAlert(msg, type) {
+  const box = document.getElementById('alert-box');
+  box.innerHTML = `<div class="alert alert-${type}">${msg}</div>`;
+  if(type==='success') setTimeout(()=>box.innerHTML='', 5000);
+}
+
+async function submitLog() {
+  const name = document.getElementById('creator-name').value;
+  const date = document.getElementById('post-date').value;
+  const postNum = document.getElementById('post-number').value;
+  const tiktok = document.getElementById('tiktok-link').value.trim();
+  const ig = document.getElementById('ig-link').value.trim();
+  const issues = document.getElementById('issues').value.trim();
+
+  if(!name){showAlert('Please select your name.','error');return;}
+  if(!date){showAlert('Please select a date.','error');return;}
+  if(!tiktok&&!ig){showAlert('Please provide at least one video link.','error');return;}
+
+  const btn = document.getElementById('submit-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>Submitting...';
+
+  try {
+    const params = new URLSearchParams({action:'submit',name,date,postNum,tiktok,ig,issues});
+    const res = await fetch(SCRIPT_URL+'?'+params.toString());
+    const data = await res.json();
+    if(data.status==='duplicate'){
+      showAlert(`You already logged Post ${postNum} for ${date}. Contact Smith if this is an error.`,'error');
+    } else if(data.status==='ok'){
+      showAlert('Post logged successfully! Well done.','success');
+      document.getElementById('tiktok-link').value='';
+      document.getElementById('ig-link').value='';
+      document.getElementById('issues').value='';
+    } else {
+      showAlert('Something went wrong. Please try again.','error');
+    }
+  } catch(e) {
+    showAlert('Could not connect. Please check your internet and try again.','error');
+  }
+
+  btn.disabled = false;
+  btn.innerHTML = 'Submit log';
+}
+
+async function loadDashboard() {
+  document.getElementById('entries-list').innerHTML = '<div class="empty">Loading...</div>';
+  try {
+    const res = await fetch(SCRIPT_URL+'?action=get');
+    allEntries = await res.json();
+    updateStats();
+    renderEntries();
+  } catch(e) {
+    document.getElementById('entries-list').innerHTML = '<div class="empty">Could not load entries. Check connection.</div>';
+  }
+}
+
+function updateStats() {
+  const today = new Date().toISOString().split('T')[0];
+  const total = allEntries.length;
+  const todayCount = allEntries.filter(e=>e.date===today).length;
+  const creators = new Set(allEntries.map(e=>e.name)).size;
+  const participation = Math.round((new Set(allEntries.filter(e=>e.date===today).map(e=>e.name)).size / 21) * 100);
+  document.getElementById('stats-row').innerHTML = `
+    <div class="stat"><div class="stat-n">${total}</div><div class="stat-l">Total posts logged</div></div>
+    <div class="stat"><div class="stat-n">${todayCount}</div><div class="stat-l">Logged today</div></div>
+    <div class="stat"><div class="stat-n">${creators}</div><div class="stat-l">Active creators</div></div>
+    <div class="stat"><div class="stat-n">${participation}%</div><div class="stat-l">Today's participation</div></div>
+  `;
+}
+
+function renderEntries() {
+  const nameF = document.getElementById('filter-name').value;
+  const dateF = document.getElementById('filter-date').value;
+  let filtered = [...allEntries];
+  if(nameF) filtered = filtered.filter(e=>e.name===nameF);
+  if(dateF) filtered = filtered.filter(e=>e.date===dateF);
+  filtered.sort((a,b)=>new Date(b.submittedAt)-new Date(a.submittedAt));
+
+  const list = document.getElementById('entries-list');
+  if(!filtered.length){list.innerHTML='<div class="empty">No entries found.</div>';return;}
+  list.innerHTML = filtered.map(e=>`
+    <div class="entry">
+      <div class="entry-name">${e.name}<span class="badge ${e.postNum==='1'?'badge-1':'badge-2'}">Post ${e.postNum}</span></div>
+      <div class="entry-meta">${e.date}</div>
+      <div class="entry-links">
+        ${e.tiktok?`<a href="${e.tiktok}" target="_blank">TikTok: ${e.tiktok.slice(0,55)}${e.tiktok.length>55?'...':''}</a>`:''}
+        ${e.ig?`<a href="${e.ig}" target="_blank">Instagram: ${e.ig.slice(0,55)}${e.ig.length>55?'...':''}</a>`:''}
+      </div>
+      ${e.issues?`<div class="entry-issues">"${e.issues}"</div>`:''}
+    </div>
+  `).join('');
+}
+
+function clearFilters() {
+  document.getElementById('filter-name').value='';
+  document.getElementById('filter-date').value='';
+  renderEntries();
+}
+</script>
+</body>
+</html>
