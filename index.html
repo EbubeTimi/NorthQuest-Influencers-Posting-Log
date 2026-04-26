@@ -195,7 +195,7 @@ function jsonpFetch(url) {
     script.onerror = () => { document.head.removeChild(script); reject(new Error('Network error')); };
     const timer = setTimeout(() => {
       if(window[cbName]) { document.head.removeChild(script); delete window[cbName]; reject(new Error('Timeout')); }
-    }, 12000);
+    }, 30000);
     window[cbName] = (data) => {
       clearTimeout(timer);
       if(document.head.contains(script)) document.head.removeChild(script);
