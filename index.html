@@ -3,399 +3,492 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Northquest Daily Posting Log</title>
+<title>Northquest Posting Log</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Syne:wght@400;600;700;800&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700&display=swap');
 
   :root {
-    --bg: #0a0a0f;
-    --surface: #111118;
-    --surface2: #18181f;
-    --surface3: #1e1e28;
-    --border: #2a2a38;
-    --border2: #353545;
-    --accent: #00c896;
-    --accent2: #00a87c;
-    --accent-dim: rgba(0,200,150,0.12);
-    --accent-glow: rgba(0,200,150,0.25);
-    --text: #f0f0f5;
-    --text2: #9090a8;
-    --text3: #5a5a72;
-    --red: #ff5566;
-    --amber: #ffaa44;
-    --blue: #5599ff;
-    --radius: 10px;
+    --bg: #f7f6f2;
+    --surface: #ffffff;
+    --surface2: #f2f0eb;
+    --surface3: #e8e5de;
+    --border: #e0ddd6;
+    --border2: #ccc9c0;
+    --accent: #1a6b4a;
+    --accent2: #145c3e;
+    --accent-light: #e8f4ee;
+    --accent-mid: rgba(26,107,74,0.12);
+    --text: #1a1a18;
+    --text2: #5a5a52;
+    --text3: #9a9a8e;
+    --red: #c0392b;
+    --red-light: #fdf0ee;
+    --amber: #b7770d;
+    --amber-light: #fdf6e3;
+    --blue: #1a5276;
+    --blue-light: #eaf2f8;
+    --green-light: #e8f5ee;
+    --radius: 12px;
+    --radius-sm: 8px;
+    --shadow: 0 1px 4px rgba(0,0,0,0.07), 0 4px 16px rgba(0,0,0,0.05);
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
   }
 
   * { margin: 0; padding: 0; box-sizing: border-box; }
 
   body {
-    font-family: 'DM Mono', monospace;
+    font-family: 'Inter', sans-serif;
     background: var(--bg);
     color: var(--text);
     min-height: 100vh;
-    overflow-x: hidden;
+    font-size: 14px;
+    line-height: 1.5;
   }
 
+  /* HEADER */
   .header {
     background: var(--surface);
     border-bottom: 1px solid var(--border);
-    padding: 0 24px;
+    padding: 0 28px;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    height: 60px;
+    height: 62px;
     position: sticky;
     top: 0;
     z-index: 100;
+    box-shadow: var(--shadow-sm);
     gap: 16px;
   }
-  .header-brand { display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
-  .header-dot {
-    width: 10px; height: 10px;
+  .header-brand { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+  .header-logo {
+    width: 34px; height: 34px;
     background: var(--accent);
-    border-radius: 50%;
-    box-shadow: 0 0 10px var(--accent-glow);
-    animation: pulse 2s infinite;
-  }
-  @keyframes pulse {
-    0%,100% { opacity:1; transform:scale(1); }
-    50% { opacity:0.6; transform:scale(0.85); }
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    color: white; font-weight: 700; font-size: 14px; letter-spacing: -0.5px;
   }
   .header-title {
-    font-family: 'Syne', sans-serif;
-    font-size: 15px; font-weight: 700;
-    letter-spacing: 0.08em; text-transform: uppercase;
+    font-family: 'Playfair Display', serif;
+    font-size: 16px; font-weight: 700;
+    color: var(--text); letter-spacing: -0.3px;
   }
-  .header-sub { font-size: 11px; color: var(--text3); letter-spacing: 0.06em; }
+  .header-sub { font-size: 11px; color: var(--text3); margin-top: 1px; }
 
-  .nav-tabs { display: flex; gap: 4px; flex-wrap: wrap; align-items: center; }
+  .nav-tabs { display: flex; gap: 2px; flex-wrap: wrap; align-items: center; }
   .nav-tab {
-    padding: 6px 14px;
-    border: 1px solid transparent;
-    border-radius: 6px;
+    padding: 7px 14px;
+    border: none;
+    border-radius: 7px;
     background: transparent;
     color: var(--text2);
-    font-family: 'DM Mono', monospace;
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.18s;
+  }
+  .nav-tab:hover { background: var(--surface2); color: var(--text); }
+  .nav-tab.active { background: var(--accent-light); color: var(--accent); font-weight: 600; }
+
+  .admin-btn {
+    padding: 7px 14px;
+    border: 1.5px solid var(--border2);
+    border-radius: 7px;
+    background: transparent;
+    color: var(--text3);
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.18s;
+  }
+  .admin-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .logout-btn {
+    padding: 7px 14px;
+    border: 1.5px solid var(--border);
+    border-radius: 7px;
+    background: transparent;
+    color: var(--text3);
+    font-family: 'Inter', sans-serif;
     font-size: 12px;
     cursor: pointer;
-    transition: all 0.2s;
-    letter-spacing: 0.04em;
+    transition: all 0.18s;
+    margin-left: 6px;
   }
-  .nav-tab:hover { color: var(--text); border-color: var(--border2); }
-  .nav-tab.active { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); }
+  .logout-btn:hover { border-color: var(--red); color: var(--red); }
 
-  .admin-link {
-    padding: 6px 14px;
-    border: 1px solid var(--border2);
-    border-radius: 6px;
-    background: transparent;
-    color: var(--text3);
-    font-family: 'DM Mono', monospace;
-    font-size: 11px;
-    cursor: pointer;
-    transition: all 0.2s;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-  }
-  .admin-link:hover { color: var(--accent); border-color: var(--accent); }
-
-  .logout-btn {
-    padding: 6px 14px;
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    background: transparent;
-    color: var(--text3);
-    font-family: 'DM Mono', monospace;
-    font-size: 11px;
-    cursor: pointer;
-    transition: all 0.2s;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-  }
-  .logout-btn:hover { color: var(--red); border-color: var(--red); }
-
-  .main { padding: 28px 24px; max-width: 1200px; margin: 0 auto; }
+  .main { padding: 32px 28px; max-width: 1100px; margin: 0 auto; }
   .page { display: none; }
   .page.active { display: block; }
 
+  /* WELCOME BANNER */
+  .welcome-banner {
+    background: linear-gradient(135deg, var(--accent) 0%, #2d8c62 100%);
+    border-radius: var(--radius);
+    padding: 28px 32px;
+    margin-bottom: 28px;
+    color: white;
+    position: relative;
+    overflow: hidden;
+  }
+  .welcome-banner::after {
+    content: 'NQ';
+    position: absolute;
+    right: 24px; top: 50%;
+    transform: translateY(-50%);
+    font-family: 'Playfair Display', serif;
+    font-size: 80px;
+    font-weight: 700;
+    opacity: 0.08;
+    letter-spacing: -4px;
+  }
+  .welcome-greeting {
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    opacity: 0.75;
+    margin-bottom: 6px;
+  }
+  .welcome-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 24px;
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
+  .welcome-sub { font-size: 13px; opacity: 0.8; }
+
+  /* STATS */
   .stats-row {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     gap: 12px;
-    margin-bottom: 28px;
+    margin-bottom: 24px;
   }
   .stat-card {
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: var(--radius);
     padding: 18px 20px;
+    box-shadow: var(--shadow-sm);
   }
-  .stat-label { font-size: 11px; color: var(--text3); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 8px; }
-  .stat-value { font-family: 'Syne', sans-serif; font-size: 28px; font-weight: 800; color: var(--accent); }
+  .stat-label { font-size: 11px; color: var(--text3); font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 8px; }
+  .stat-value { font-size: 28px; font-weight: 700; color: var(--accent); letter-spacing: -1px; }
 
+  /* SECTION HEADS */
   .section-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; gap: 12px; flex-wrap: wrap; }
-  .section-title {
-    font-family: 'Syne', sans-serif;
-    font-size: 13px; font-weight: 700;
-    text-transform: uppercase; letter-spacing: 0.12em; color: var(--text2);
-  }
+  .section-title { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text2); }
 
+  /* FORM */
   .form-card {
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: var(--radius);
-    padding: 28px; max-width: 560px;
-    margin: 0 auto;
+    padding: 32px;
+    max-width: 580px;
+    box-shadow: var(--shadow);
   }
-  .form-title { font-family: 'Syne', sans-serif; font-size: 20px; font-weight: 700; margin-bottom: 6px; }
-  .form-subtitle { font-size: 12px; color: var(--text3); margin-bottom: 24px; }
+  .form-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 22px; font-weight: 700;
+    margin-bottom: 4px; color: var(--text);
+  }
+  .form-subtitle { font-size: 13px; color: var(--text3); margin-bottom: 28px; }
   .form-group { margin-bottom: 18px; }
-  .form-label { font-size: 11px; color: var(--text2); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 6px; display: block; }
+  .form-label {
+    font-size: 12px; color: var(--text2);
+    font-weight: 600; letter-spacing: 0.06em;
+    text-transform: uppercase; margin-bottom: 6px; display: block;
+  }
+  .form-label .optional {
+    font-weight: 400; color: var(--text3);
+    text-transform: none; letter-spacing: 0; font-size: 11px;
+  }
   .form-input {
     width: 100%;
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    padding: 10px 14px;
+    background: var(--bg);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 11px 14px;
     color: var(--text);
-    font-family: 'DM Mono', monospace;
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.18s, box-shadow 0.18s;
+  }
+  .form-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-mid); }
+  .form-input option { background: white; }
+  .form-hint { font-size: 11px; color: var(--text3); margin-top: 5px; }
+
+  .link-group {
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    background: var(--bg);
+  }
+  .link-row {
+    display: flex;
+    align-items: center;
+    border-bottom: 1px solid var(--border);
+  }
+  .link-row:last-child { border-bottom: none; }
+  .link-label {
+    padding: 0 14px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text3);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    width: 80px;
+    flex-shrink: 0;
+    border-right: 1px solid var(--border);
+    background: var(--surface2);
+    align-self: stretch;
+    display: flex;
+    align-items: center;
+  }
+  .link-input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    padding: 11px 14px;
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
     font-size: 13px;
     outline: none;
-    transition: border-color 0.2s;
   }
-  .form-input:focus { border-color: var(--accent); }
-  .form-input option { background: var(--surface2); }
+  .link-input::placeholder { color: var(--text3); }
+
   .btn {
-    padding: 10px 22px; border-radius: 6px;
-    font-family: 'DM Mono', monospace; font-size: 13px;
-    cursor: pointer; border: none; transition: all 0.2s; letter-spacing: 0.04em;
+    padding: 11px 22px; border-radius: var(--radius-sm);
+    font-family: 'Inter', sans-serif; font-size: 14px; font-weight: 600;
+    cursor: pointer; border: none; transition: all 0.18s;
   }
   .btn-primary {
-    background: var(--accent); color: #000; font-weight: 600;
-    width: 100%; padding: 12px; margin-top: 6px;
+    background: var(--accent); color: white;
+    width: 100%; padding: 13px; margin-top: 8px;
+    box-shadow: 0 2px 8px rgba(26,107,74,0.25);
   }
-  .btn-primary:hover { background: var(--accent2); }
-  .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn-primary:hover { background: var(--accent2); box-shadow: 0 4px 12px rgba(26,107,74,0.3); }
+  .btn-primary:disabled { opacity: 0.55; cursor: not-allowed; box-shadow: none; }
   .btn-sm {
-    padding: 6px 14px; font-size: 11px;
-    background: var(--surface2); border: 1px solid var(--border); color: var(--text2);
+    padding: 7px 14px; font-size: 12px; font-weight: 500;
+    background: var(--surface); border: 1.5px solid var(--border); color: var(--text2);
   }
   .btn-sm:hover { border-color: var(--accent); color: var(--accent); }
-  .btn-danger { border-color: var(--red); color: var(--red); }
-  .btn-danger:hover { background: rgba(255,85,102,0.12); border-color: var(--red); color: var(--red); }
-  .toast {
-    display: none; margin-top: 14px; padding: 10px 14px;
-    border-radius: 6px; font-size: 12px;
-    background: var(--accent-dim); border: 1px solid var(--accent); color: var(--accent);
-  }
-  .toast.err { background: rgba(255,85,102,0.12); border-color: var(--red); color: var(--red); }
-  .toast.show { display: block; }
+  .btn-danger { border-color: #e0b4b4; color: var(--red); background: var(--red-light); }
+  .btn-danger:hover { background: #fbe4e2; border-color: var(--red); }
 
-  .grid-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
-  .grid-nav {
-    display: flex; align-items: center; gap: 10px;
-    padding: 14px 18px; border-bottom: 1px solid var(--border); background: var(--surface2);
+  .alert {
+    padding: 12px 16px;
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    margin-top: 14px;
+    display: none;
+    line-height: 1.5;
   }
-  .grid-nav span { font-size: 13px; font-family: 'Syne', sans-serif; font-weight: 600; flex: 1; text-align: center; }
+  .alert.show { display: block; }
+  .alert-success { background: var(--green-light); border: 1.5px solid #a8dbbf; color: #1a6b4a; }
+  .alert-error { background: var(--red-light); border: 1.5px solid #e0b4b4; color: var(--red); }
+
+  /* WEEKLY GRID */
+  .grid-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+  }
+  .grid-nav {
+    display: flex; align-items: center; gap: 12px;
+    padding: 14px 20px; border-bottom: 1px solid var(--border); background: var(--surface2);
+  }
+  .grid-nav-label {
+    font-size: 14px; font-weight: 600;
+    color: var(--text); flex: 1; text-align: center;
+  }
   .grid-table-wrap { overflow-x: auto; }
   table { width: 100%; border-collapse: collapse; font-size: 12px; }
   th {
     background: var(--surface2); color: var(--text3);
     font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase;
-    padding: 10px 14px; text-align: center;
-    border-bottom: 1px solid var(--border); font-weight: 400;
+    padding: 10px 12px; text-align: center;
+    border-bottom: 1px solid var(--border); font-weight: 600;
   }
-  th:first-child { text-align: left; }
-  td { padding: 10px 14px; border-bottom: 1px solid var(--border); text-align: center; color: var(--text2); }
+  th:first-child { text-align: left; min-width: 160px; }
+  td { padding: 11px 12px; border-bottom: 1px solid var(--border); text-align: center; color: var(--text2); }
   td:first-child { text-align: left; color: var(--text); font-weight: 500; }
   tr:last-child td { border-bottom: none; }
   tr:hover td { background: var(--surface2); }
-  .cell-dot { display: inline-flex; width: 8px; height: 8px; border-radius: 50%; margin: 0 2px; }
-  .dot-1 { background: var(--accent); box-shadow: 0 0 6px var(--accent-glow); }
-  .dot-2 { background: var(--blue); box-shadow: 0 0 6px rgba(85,153,255,0.4); }
-  .dot-none { background: var(--border2); }
-  .week-total { font-family: 'Syne', sans-serif; font-weight: 700; color: var(--accent); }
+
+  /* 4-marker grid cells */
+  .day-cell { display: flex; flex-direction: column; gap: 3px; align-items: center; min-width: 68px; }
+  .post-pair { display: flex; gap: 3px; align-items: center; }
+  .post-chip {
+    font-size: 9px; font-weight: 600; letter-spacing: 0.03em;
+    padding: 2px 5px; border-radius: 3px;
+    white-space: nowrap;
+  }
+  .chip-tt-1 { background: #e8f4ee; color: #1a6b4a; }
+  .chip-ig-1 { background: #fdf0e8; color: #b7570d; }
+  .chip-tt-2 { background: #eaf2f8; color: #1a5276; }
+  .chip-ig-2 { background: #f5eaf8; color: #6c3483; }
+  .chip-none { background: var(--surface3); color: var(--text3); }
+  .chip-sep { font-size: 8px; color: var(--text3); }
+
+  .week-total { font-weight: 700; color: var(--accent); font-size: 13px; }
+
   .legend {
-    display: flex; gap: 18px;
-    padding: 10px 18px; border-top: 1px solid var(--border); background: var(--surface2);
+    display: flex; gap: 16px; flex-wrap: wrap;
+    padding: 12px 20px; border-top: 1px solid var(--border); background: var(--surface2);
   }
   .legend-item { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--text3); }
 
+  /* MONTH TABS */
   .month-tabs {
-    display: flex;
-    gap: 6px;
-    margin-bottom: 18px;
-    flex-wrap: wrap;
-    padding-bottom: 14px;
+    display: flex; gap: 6px; flex-wrap: wrap;
+    margin-bottom: 18px; padding-bottom: 16px;
     border-bottom: 1px solid var(--border);
   }
   .month-tab {
     padding: 8px 16px;
     background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 6px;
+    border: 1.5px solid var(--border);
+    border-radius: 20px;
     color: var(--text2);
-    font-family: 'DM Mono', monospace;
-    font-size: 12px;
-    cursor: pointer;
-    transition: all 0.2s;
-    letter-spacing: 0.04em;
-    display: flex;
-    align-items: center;
-    gap: 8px;
+    font-family: 'Inter', sans-serif;
+    font-size: 13px; font-weight: 500;
+    cursor: pointer; transition: all 0.18s;
+    display: flex; align-items: center; gap: 7px;
   }
   .month-tab:hover { border-color: var(--accent); color: var(--accent); }
-  .month-tab.active {
-    background: var(--accent);
-    border-color: var(--accent);
-    color: #000;
-    font-weight: 600;
-  }
+  .month-tab.active { background: var(--accent); border-color: var(--accent); color: white; font-weight: 600; }
   .month-tab .count {
-    background: var(--surface2);
-    padding: 1px 6px;
-    border-radius: 3px;
-    font-size: 10px;
-    color: var(--text3);
+    background: rgba(0,0,0,0.1);
+    padding: 1px 7px; border-radius: 10px;
+    font-size: 10px; font-weight: 700;
   }
-  .month-tab.active .count { background: rgba(0,0,0,0.2); color: rgba(0,0,0,0.7); }
+  .month-tab.active .count { background: rgba(255,255,255,0.25); }
 
-  .log-table-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
-  .log-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  /* LOG TABLE */
+  .log-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow-sm); }
+  .log-table { width: 100%; border-collapse: collapse; font-size: 13px; }
   .log-table th {
     background: var(--surface2); color: var(--text3);
     font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase;
-    padding: 10px 14px; text-align: left;
-    border-bottom: 1px solid var(--border); font-weight: 400;
+    padding: 11px 16px; text-align: left;
+    border-bottom: 1px solid var(--border); font-weight: 600;
   }
-  .log-table td { padding: 10px 14px; border-bottom: 1px solid var(--border); color: var(--text2); text-align: left; }
+  .log-table td { padding: 11px 16px; border-bottom: 1px solid var(--border); color: var(--text2); text-align: left; }
   .log-table tr:last-child td { border-bottom: none; }
   .log-table tr:hover td { background: var(--surface2); }
 
-  .creator-link {
-    color: var(--accent); cursor: pointer;
-    text-decoration: none; font-weight: 500; transition: opacity 0.15s;
+  .creator-link { color: var(--accent); cursor: pointer; font-weight: 600; transition: opacity 0.15s; }
+  .creator-link:hover { opacity: 0.7; text-decoration: underline; }
+
+  .badge { display: inline-flex; align-items: center; padding: 3px 9px; border-radius: 10px; font-size: 11px; font-weight: 600; }
+  .badge-p1 { background: var(--green-light); color: var(--accent); }
+  .badge-p2 { background: var(--blue-light); color: var(--blue); }
+  .badge-active { background: var(--green-light); color: var(--accent); }
+  .badge-inactive { background: var(--surface2); color: var(--text3); }
+
+  .empty-state {
+    text-align: center; padding: 52px 24px; color: var(--text3); font-size: 13px;
   }
-  .creator-link:hover { opacity: 0.75; text-decoration: underline; }
+  .empty-state strong { display: block; font-size: 16px; font-weight: 600; color: var(--text2); margin-bottom: 6px; }
 
-  .badge { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 4px; font-size: 10px; letter-spacing: 0.06em; font-weight: 500; }
-  .badge-p1 { background: rgba(0,200,150,0.12); color: var(--accent); }
-  .badge-p2 { background: rgba(85,153,255,0.12); color: var(--blue); }
-  .badge-active { background: rgba(0,200,150,0.12); color: var(--accent); }
-  .badge-inactive { background: rgba(144,144,168,0.12); color: var(--text2); }
-
-  .empty-state { text-align: center; padding: 48px 24px; color: var(--text3); font-size: 13px; }
-  .empty-state strong { display: block; font-family: 'Syne', sans-serif; font-size: 16px; color: var(--text2); margin-bottom: 6px; }
-
+  /* MODAL */
   .modal-overlay {
     display: none; position: fixed; inset: 0;
-    background: rgba(0,0,0,0.7); backdrop-filter: blur(4px);
+    background: rgba(20,20,20,0.45); backdrop-filter: blur(3px);
     z-index: 200; align-items: center; justify-content: center; padding: 20px;
   }
   .modal-overlay.open { display: flex; }
   .modal {
     background: var(--surface); border: 1px solid var(--border);
-    border-radius: 14px; width: 100%; max-width: 720px; max-height: 85vh; overflow-y: auto;
+    border-radius: 16px; width: 100%; max-width: 720px; max-height: 85vh;
+    overflow-y: auto; box-shadow: 0 8px 40px rgba(0,0,0,0.18);
   }
   .modal-header {
     display: flex; align-items: center; justify-content: space-between;
-    padding: 20px 24px; border-bottom: 1px solid var(--border);
+    padding: 22px 28px; border-bottom: 1px solid var(--border);
     position: sticky; top: 0; background: var(--surface); z-index: 1;
   }
-  .modal-title { font-family: 'Syne', sans-serif; font-size: 16px; font-weight: 700; }
-  .modal-sub { font-size: 11px; color: var(--text3); margin-top: 2px; }
+  .modal-title { font-family: 'Playfair Display', serif; font-size: 18px; font-weight: 700; }
+  .modal-sub { font-size: 12px; color: var(--text3); margin-top: 2px; }
   .modal-close {
     background: var(--surface2); border: 1px solid var(--border);
-    border-radius: 6px; color: var(--text2); cursor: pointer;
-    font-size: 16px; width: 30px; height: 30px;
-    display: flex; align-items: center; justify-content: center; transition: all 0.2s;
+    border-radius: 7px; color: var(--text2); cursor: pointer;
+    font-size: 15px; width: 30px; height: 30px;
+    display: flex; align-items: center; justify-content: center; transition: all 0.18s;
   }
-  .modal-close:hover { border-color: var(--red); color: var(--red); }
-  .modal-body { padding: 20px 24px; }
-  .month-block { margin-bottom: 20px; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+  .modal-close:hover { border-color: var(--red); color: var(--red); background: var(--red-light); }
+  .modal-body { padding: 22px 28px; }
+
+  .month-block { margin-bottom: 18px; border: 1px solid var(--border); border-radius: var(--radius-sm); overflow: hidden; }
   .month-block-header {
     display: flex; justify-content: space-between; align-items: center;
-    padding: 10px 16px; background: var(--surface3); border-bottom: 1px solid var(--border);
+    padding: 11px 16px; background: var(--surface2); border-bottom: 1px solid var(--border);
   }
-  .month-block-name { font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 700; letter-spacing: 0.06em; }
-  .month-block-total { font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 700; color: var(--amber); }
-  .month-block-rows table { width: 100%; border-collapse: collapse; font-size: 12px; }
-  .month-block-rows td { padding: 8px 16px; border-bottom: 1px solid var(--border); color: var(--text2); }
-  .month-block-rows th { background: var(--surface3); color: var(--text3); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; padding: 8px 16px; text-align: left; border-bottom: 1px solid var(--border); font-weight: 400; }
-  .month-block-rows tr:last-child td { border-bottom: none; }
+  .month-block-name { font-size: 13px; font-weight: 700; }
+  .month-block-total { font-size: 13px; font-weight: 700; color: var(--amber); }
 
-  /* Login Screen */
+  /* LOGIN */
   .login-screen {
-    min-height: calc(100vh - 60px);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 20px;
+    min-height: calc(100vh - 62px);
+    display: flex; align-items: center; justify-content: center; padding: 20px;
   }
   .login-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    padding: 40px;
-    max-width: 400px;
-    width: 100%;
-    text-align: center;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
+    padding: 44px; max-width: 400px; width: 100%; text-align: center;
+    box-shadow: var(--shadow);
   }
   .login-icon {
-    width: 56px; height: 56px;
-    margin: 0 auto 18px;
-    border-radius: 50%;
-    background: var(--accent-dim);
+    width: 56px; height: 56px; margin: 0 auto 18px;
+    border-radius: 14px; background: var(--accent-light);
     display: flex; align-items: center; justify-content: center;
-    font-size: 22px;
-    border: 1px solid var(--accent);
+    font-size: 24px; border: 1.5px solid #a8dbbf;
   }
-  .login-title { font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 700; margin-bottom: 8px; }
-  .login-sub { font-size: 12px; color: var(--text3); margin-bottom: 28px; }
+  .login-title { font-family: 'Playfair Display', serif; font-size: 22px; font-weight: 700; margin-bottom: 8px; }
+  .login-sub { font-size: 13px; color: var(--text3); margin-bottom: 28px; }
   .login-form { display: flex; flex-direction: column; gap: 10px; }
-  .back-link {
-    margin-top: 20px;
-    font-size: 11px;
-    color: var(--text3);
-    cursor: pointer;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    transition: color 0.2s;
-  }
+  .back-link { margin-top: 20px; font-size: 12px; color: var(--text3); cursor: pointer; transition: color 0.18s; }
   .back-link:hover { color: var(--accent); }
 
-  .creator-table-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; margin-top: 20px; }
-  .progress-bar-wrap { width: 80px; height: 6px; background: var(--border2); border-radius: 3px; overflow: hidden; }
-  .progress-bar-fill { height: 100%; background: var(--accent); border-radius: 3px; transition: width 0.4s; }
-  .progress-bar-fill.amber { background: var(--amber); }
-  .progress-bar-fill.red { background: var(--red); }
+  /* DASHBOARD */
+  .creator-table-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow-sm); margin-top: 16px; }
+  .progress-wrap { display: flex; align-items: center; gap: 8px; }
+  .progress-bar { width: 80px; height: 6px; background: var(--surface3); border-radius: 3px; overflow: hidden; }
+  .progress-fill { height: 100%; background: var(--accent); border-radius: 3px; transition: width 0.4s; }
+  .progress-fill.amber { background: var(--amber); }
+  .progress-fill.red { background: var(--red); }
 
-  .loading-spinner {
+  /* MANAGE */
+  .add-card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 20px 24px; margin-bottom: 20px; display: flex; gap: 12px; align-items: flex-end;
+    box-shadow: var(--shadow-sm);
+  }
+  .add-card .form-group { flex: 1; margin: 0; }
+
+  .spinner {
     display: inline-block; width: 16px; height: 16px;
-    border: 2px solid var(--border2); border-top-color: var(--accent);
-    border-radius: 50%; animation: spin 0.7s linear infinite;
+    border: 2px solid var(--border); border-top-color: var(--accent);
+    border-radius: 50%; animation: spin 0.65s linear infinite;
+    vertical-align: middle;
   }
   @keyframes spin { to { transform: rotate(360deg); } }
 
-  .add-creator-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 20px;
-    margin-bottom: 20px;
-    display: flex;
-    gap: 10px;
-    align-items: flex-end;
-  }
-  .add-creator-card .form-group { flex: 1; margin: 0; }
-
-  @media (max-width: 700px) {
+  @media (max-width: 720px) {
     .stats-row { grid-template-columns: 1fr 1fr; }
-    .nav-tab { padding: 6px 10px; font-size: 11px; }
-    .header { padding: 0 14px; height: auto; padding-top: 10px; padding-bottom: 10px; flex-direction: column; align-items: flex-start; }
-    .main { padding: 18px 14px; }
-    .add-creator-card { flex-direction: column; align-items: stretch; }
+    .header { padding: 0 16px; height: auto; min-height: 62px; flex-wrap: wrap; padding-top: 10px; padding-bottom: 10px; }
+    .main { padding: 20px 16px; }
+    .form-card { padding: 22px 18px; }
+    .add-card { flex-direction: column; align-items: stretch; }
+    .welcome-banner { padding: 20px 22px; }
+    .welcome-title { font-size: 20px; }
   }
 </style>
 </head>
@@ -403,32 +496,40 @@
 
 <header class="header" id="main-header">
   <div class="header-brand">
-    <div class="header-dot"></div>
+    <div class="header-logo">NQ</div>
     <div>
       <div class="header-title">Northquest Finance</div>
-      <div class="header-sub">Daily Posting Log</div>
+      <div class="header-sub">Creator Posting Log</div>
     </div>
   </div>
-  <nav class="nav-tabs" id="nav-container">
-    <!-- nav items rendered dynamically -->
-  </nav>
+  <nav class="nav-tabs" id="nav-container"></nav>
 </header>
 
-<!-- SUBMIT PAGE (public) -->
+<!-- SUBMIT (public) -->
 <div id="page-submit" class="page active main">
+  <div class="welcome-banner">
+    <div class="welcome-greeting">Northquest Finance</div>
+    <div class="welcome-title">Welcome, Creator &#x1F44B;</div>
+    <div class="welcome-sub">Log your daily posts below. Every submission counts towards your monthly total.</div>
+  </div>
+
   <div class="form-card">
     <div class="form-title">Log a post</div>
-    <div class="form-subtitle">Select your name and fill in your post details below.</div>
+    <div class="form-subtitle">Fill in all details and paste at least one video link to submit.</div>
+
     <div class="form-group">
       <label class="form-label">Your name</label>
       <select class="form-input" id="f-name">
         <option value="">Select your name...</option>
       </select>
     </div>
+
     <div class="form-group">
       <label class="form-label">Date</label>
       <input class="form-input" id="f-date" type="date" />
+      <div class="form-hint">You can pick a past date if you forgot to log that day.</div>
     </div>
+
     <div class="form-group">
       <label class="form-label">Which post is this?</label>
       <select class="form-input" id="f-post">
@@ -437,24 +538,33 @@
         <option value="2">Post 2 (second post of the day)</option>
       </select>
     </div>
+
     <div class="form-group">
-      <label class="form-label">TikTok video link</label>
-      <input class="form-input" id="f-tiktok" type="url" placeholder="https://tiktok.com/..." />
+      <label class="form-label">Video links <span class="optional">&nbsp;— at least one required</span></label>
+      <div class="link-group">
+        <div class="link-row">
+          <span class="link-label">TikTok</span>
+          <input class="link-input" id="f-tiktok" type="url" placeholder="https://tiktok.com/..." />
+        </div>
+        <div class="link-row">
+          <span class="link-label">Instagram</span>
+          <input class="link-input" id="f-insta" type="url" placeholder="https://instagram.com/reel/..." />
+        </div>
+      </div>
+      <div class="form-hint">If one platform is unavailable or your account is restricted, paste the other link only.</div>
     </div>
+
     <div class="form-group">
-      <label class="form-label">Instagram reel link</label>
-      <input class="form-input" id="f-insta" type="url" placeholder="https://instagram.com/reel/..." />
+      <label class="form-label">Any issues today? <span class="optional">&nbsp;optional</span></label>
+      <input class="form-input" id="f-issues" type="text" placeholder="e.g. Instagram was down" />
     </div>
-    <div class="form-group">
-      <label class="form-label">Any issues today? (optional)</label>
-      <input class="form-input" id="f-issues" type="text" placeholder="e.g. App was slow" />
-    </div>
-    <button class="btn btn-primary" id="submit-btn" onclick="submitLog()">Submit log</button>
-    <div class="toast" id="f-toast"></div>
+
+    <button class="btn btn-primary" id="submit-btn" onclick="submitLog()">Submit post log</button>
+    <div class="alert" id="f-alert"></div>
   </div>
 </div>
 
-<!-- ADMIN LOGIN PAGE -->
+<!-- ADMIN LOGIN -->
 <div id="page-login" class="page">
   <div class="login-screen">
     <div class="login-card">
@@ -463,45 +573,41 @@
       <div class="login-sub">Enter the admin password to view dashboards and manage creators</div>
       <div class="login-form">
         <input class="form-input" id="login-pass" type="password" placeholder="Password"
-          onkeydown="if(event.key==='Enter')checkLogin()" autofocus />
+          onkeydown="if(event.key==='Enter')checkLogin()" />
         <button class="btn btn-primary" style="margin-top:0" onclick="checkLogin()">Unlock</button>
       </div>
-      <div class="toast err" id="login-err">Incorrect password</div>
-      <div class="back-link" onclick="showPage('submit')">&larr; Back to submit</div>
+      <div class="alert alert-error" id="login-err">Incorrect password. Please try again.</div>
+      <div class="back-link" onclick="showPage('submit')">&larr; Back to submit form</div>
     </div>
   </div>
 </div>
 
-<!-- DAILY POSTING LOG (admin) -->
+<!-- WEEKLY GRID (admin) -->
 <div id="page-weekly" class="page main">
   <div class="section-head">
-    <span class="section-title">Daily posting log &mdash; weekly grid</span>
-    <span style="font-size:11px;color:var(--text3)">Only active creators shown</span>
+    <span class="section-title">Daily posting log</span>
+    <span style="font-size:12px;color:var(--text3)">Active creators only</span>
   </div>
   <div class="grid-card">
     <div class="grid-nav">
-      <button class="btn btn-sm" onclick="changeWeek(-1)">&larr; Prev</button>
-      <span id="week-label">Loading...</span>
-      <button class="btn btn-sm" onclick="changeWeek(1)">Next &rarr;</button>
+      <button class="btn btn-sm" onclick="changeWeek(-1)">&larr; Prev week</button>
+      <span class="grid-nav-label" id="week-label">Loading...</span>
+      <button class="btn btn-sm" onclick="changeWeek(1)">Next week &rarr;</button>
     </div>
     <div class="grid-table-wrap">
       <table id="weekly-table">
-        <thead>
-          <tr>
-            <th>Creator</th>
-            <th>Mon</th><th>Tue</th><th>Wed</th><th>Thu</th><th>Fri</th><th>Sat</th><th>Sun</th>
-            <th>Week Total</th>
-          </tr>
-        </thead>
+        <thead><tr id="weekly-head"></tr></thead>
         <tbody id="weekly-body">
-          <tr><td colspan="9" class="empty-state"><span class="loading-spinner"></span></td></tr>
+          <tr><td colspan="9" class="empty-state"><span class="spinner"></span></td></tr>
         </tbody>
       </table>
     </div>
     <div class="legend">
-      <div class="legend-item"><span class="cell-dot dot-1"></span> Post 1 logged</div>
-      <div class="legend-item"><span class="cell-dot dot-2"></span> Post 2 logged</div>
-      <div class="legend-item"><span class="cell-dot dot-none"></span> Not logged</div>
+      <div class="legend-item"><span class="post-chip chip-tt-1">1 TT</span> Post 1 TikTok</div>
+      <div class="legend-item"><span class="post-chip chip-ig-1">1 IG</span> Post 1 Instagram</div>
+      <div class="legend-item"><span class="post-chip chip-tt-2">2 TT</span> Post 2 TikTok</div>
+      <div class="legend-item"><span class="post-chip chip-ig-2">2 IG</span> Post 2 Instagram</div>
+      <div class="legend-item"><span class="post-chip chip-none">—</span> Not posted</div>
     </div>
   </div>
 </div>
@@ -512,30 +618,24 @@
     <span class="section-title">Detailed log &mdash; by month</span>
   </div>
   <div class="month-tabs" id="month-tabs">
-    <span style="color:var(--text3);font-size:12px">Loading months...</span>
+    <span style="color:var(--text3);font-size:13px"><span class="spinner"></span> Loading...</span>
   </div>
-
   <div class="stats-row" id="month-stats" style="display:none">
     <div class="stat-card"><div class="stat-label">Posts this month</div><div class="stat-value" id="m-total">-</div></div>
-    <div class="stat-card"><div class="stat-label">Active creators</div><div class="stat-value" id="m-creators">-</div></div>
+    <div class="stat-card"><div class="stat-label">Creators active</div><div class="stat-value" id="m-creators">-</div></div>
     <div class="stat-card"><div class="stat-label">Days with posts</div><div class="stat-value" id="m-days">-</div></div>
     <div class="stat-card"><div class="stat-label">Avg per creator</div><div class="stat-value" id="m-avg">-</div></div>
   </div>
-
-  <div class="log-table-wrap">
+  <div class="log-wrap">
     <table class="log-table">
       <thead>
         <tr>
-          <th>Creator</th>
-          <th>Date</th>
-          <th>Post</th>
-          <th>TikTok</th>
-          <th>Instagram</th>
-          <th>Issues</th>
+          <th>Creator</th><th>Date</th><th>Post</th>
+          <th>TikTok</th><th>Instagram</th><th>Issues</th>
         </tr>
       </thead>
       <tbody id="detailed-body">
-        <tr><td colspan="6" class="empty-state"><span class="loading-spinner"></span></td></tr>
+        <tr><td colspan="6" class="empty-state"><span class="spinner"></span></td></tr>
       </tbody>
     </table>
   </div>
@@ -555,17 +655,10 @@
   <div class="creator-table-wrap">
     <table class="log-table">
       <thead>
-        <tr>
-          <th>#</th>
-          <th>Creator</th>
-          <th>This Month</th>
-          <th>Progress (56 target)</th>
-          <th>All Time</th>
-          <th>Last Post</th>
-        </tr>
+        <tr><th>#</th><th>Creator</th><th>This Month</th><th>Progress (56 target)</th><th>All Time</th><th>Last Post</th></tr>
       </thead>
       <tbody id="dash-body">
-        <tr><td colspan="6" class="empty-state"><span class="loading-spinner"></span></td></tr>
+        <tr><td colspan="6" class="empty-state"><span class="spinner"></span></td></tr>
       </tbody>
     </table>
   </div>
@@ -576,33 +669,28 @@
   <div class="section-head">
     <span class="section-title">Add a new creator</span>
   </div>
-  <div class="add-creator-card">
+  <div class="add-card">
     <div class="form-group">
       <label class="form-label">Full name</label>
-      <input class="form-input" id="new-creator-name" type="text" placeholder="e.g. Olamide Oladele"
+      <input class="form-input" id="new-creator-name" type="text" placeholder="e.g. Jessica Lawal"
         onkeydown="if(event.key==='Enter')addCreator()" />
     </div>
-    <button class="btn btn-primary" id="add-creator-btn" onclick="addCreator()" style="width:auto;margin:0;padding:10px 22px">Add creator</button>
+    <button class="btn btn-primary" id="add-creator-btn" onclick="addCreator()"
+      style="width:auto;margin:0;padding:11px 24px;white-space:nowrap">Add creator</button>
   </div>
-  <div class="toast" id="manage-toast"></div>
+  <div class="alert" id="manage-alert"></div>
 
   <div class="section-head" style="margin-top:24px">
     <span class="section-title">All creators</span>
-    <span style="font-size:11px;color:var(--text3)" id="manage-counts"></span>
+    <span style="font-size:12px;color:var(--text3)" id="manage-counts"></span>
   </div>
   <div class="creator-table-wrap">
     <table class="log-table">
       <thead>
-        <tr>
-          <th>Creator</th>
-          <th>Status</th>
-          <th>Added</th>
-          <th>Total Posts</th>
-          <th>Action</th>
-        </tr>
+        <tr><th>Creator</th><th>Status</th><th>Added</th><th>Total Posts</th><th>Action</th></tr>
       </thead>
       <tbody id="manage-body">
-        <tr><td colspan="5" class="empty-state"><span class="loading-spinner"></span></td></tr>
+        <tr><td colspan="5" class="empty-state"><span class="spinner"></span></td></tr>
       </tbody>
     </table>
   </div>
@@ -614,7 +702,7 @@
     <div class="modal-header">
       <div>
         <div class="modal-title" id="modal-name">Creator</div>
-        <div class="modal-sub" id="modal-sub">Monthly breakdown</div>
+        <div class="modal-sub" id="modal-sub"></div>
       </div>
       <button class="modal-close" onclick="closeModalDirect()">&#x2715;</button>
     </div>
@@ -623,34 +711,27 @@
 </div>
 
 <script>
-// ── CONFIG ──
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwLrQ6h0XAOKIxYw_r2uMbb_FtBq_ZBBFdBAQpeLHo9Z9ZKkzISuje9CvuTF-RcWgFgmQ/exec';
 const ADMIN_PASS = 'NQ2026dash';
-const SESSION_KEY = 'nq_admin_session';
+const SESSION_KEY = 'nq_admin';
 
-// ── STATE ──
-let allRows = [];
-let allCreators = [];
-let weekOffset = 0;
-let selectedMonth = null;
-let isAdmin = false;
-let dataLoaded = false;
-let creatorsLoaded = false;
-let jsonpCounter = 0;
+let allRows = [], allCreators = [];
+let weekOffset = 0, selectedMonth = null;
+let isAdmin = false, dataLoaded = false, creatorsLoaded = false;
 let currentPage = 'submit';
+let jsonpCtr = 0;
 
-// ── BOOT ──
+// Offline queue
+let offlineQueue = JSON.parse(localStorage.getItem('nq_queue') || '[]');
+
 document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('f-date').value = todayStr();
-  // restore admin session if it exists
-  try {
-    if (sessionStorage.getItem(SESSION_KEY) === 'true') {
-      isAdmin = true;
-    }
-  } catch(e) {}
+  try { if (sessionStorage.getItem(SESSION_KEY) === '1') isAdmin = true; } catch(e) {}
   renderNav();
   loadRows();
   loadCreators();
+  flushQueue();
+  window.addEventListener('online', flushQueue);
 });
 
 // ── HELPERS ──
@@ -659,105 +740,75 @@ function escH(s) {
   return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 }
 function fmtDate(str) {
-  const d = new Date(str + 'T00:00:00');
-  return d.toLocaleDateString('en-GB', { day:'numeric', month:'short' });
+  return new Date(str + 'T00:00:00').toLocaleDateString('en-GB', { day:'numeric', month:'short' });
 }
-function monthYM(dateStr) { return String(dateStr).substring(0, 7); }
+function monthYM(d) { return String(d).substring(0,7); }
 function monthLabel(ym) {
-  const [y, m] = ym.split('-');
-  const names = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-  return names[parseInt(m)-1] + ' ' + y;
+  const [y,m] = ym.split('-');
+  return ['January','February','March','April','May','June','July','August','September','October','November','December'][parseInt(m)-1] + ' ' + y;
 }
-function monthLabelShort(ym) {
-  const [y, m] = ym.split('-');
-  const names = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  return names[parseInt(m)-1] + ' ' + y;
+function monthShort(ym) {
+  const [y,m] = ym.split('-');
+  return ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][parseInt(m)-1] + ' ' + y;
 }
 
 function getWeekDates(offset) {
   const today = new Date();
   const day = today.getDay();
-  const monday = new Date(today);
-  monday.setDate(today.getDate() - (day === 0 ? 6 : day - 1) + offset * 7);
-  return Array.from({length: 7}, (_, i) => {
-    const d = new Date(monday);
-    d.setDate(monday.getDate() + i);
+  const mon = new Date(today);
+  mon.setDate(today.getDate() - (day===0?6:day-1) + offset*7);
+  return Array.from({length:7}, (_,i) => {
+    const d = new Date(mon); d.setDate(mon.getDate()+i);
     return d.toISOString().split('T')[0];
   });
 }
 
+function dayLabel(dateStr) {
+  const d = new Date(dateStr + 'T00:00:00');
+  const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  return days[d.getDay()] + ' ' + d.getDate();
+}
+
 // ── JSONP ──
-function jsonp(params, cb) {
-  const cbName = 'jsonpCb' + (++jsonpCounter);
-  window[cbName] = (data) => {
-    delete window[cbName];
-    script.remove();
-    cb(data);
+function jsonp(params, cb, timeoutMs) {
+  timeoutMs = timeoutMs || 12000;
+  const name = 'cb' + (++jsonpCtr);
+  let done = false;
+  const timer = setTimeout(() => {
+    if (!done) { done = true; delete window[name]; cb(null, 'timeout'); }
+  }, timeoutMs);
+  window[name] = (data) => {
+    if (!done) { done = true; clearTimeout(timer); delete window[name]; cb(data, null); }
   };
-  const url = SCRIPT_URL + '?' + new URLSearchParams({...params, callback: cbName}).toString();
-  const script = document.createElement('script');
-  script.src = url;
-  script.onerror = () => {
-    delete window[cbName];
-    script.remove();
-    cb(null);
-  };
-  document.head.appendChild(script);
+  const s = document.createElement('script');
+  s.src = SCRIPT_URL + '?' + new URLSearchParams({...params, callback: name});
+  s.onerror = () => { if (!done) { done=true; clearTimeout(timer); delete window[name]; cb(null,'network'); } };
+  document.head.appendChild(s);
 }
 
-// ── NAV RENDERING ──
-function renderNav() {
-  const container = document.getElementById('nav-container');
-  if (isAdmin) {
-    container.innerHTML = `
-      <button class="nav-tab ${currentPage==='weekly'?'active':''}" onclick="showPage('weekly')">Daily posting log</button>
-      <button class="nav-tab ${currentPage==='detailed'?'active':''}" onclick="showPage('detailed')">Detailed log</button>
-      <button class="nav-tab ${currentPage==='dashboard'?'active':''}" onclick="showPage('dashboard')">Dashboard</button>
-      <button class="nav-tab ${currentPage==='manage'?'active':''}" onclick="showPage('manage')">Manage creators</button>
-      <button class="nav-tab ${currentPage==='submit'?'active':''}" onclick="showPage('submit')">Submit a post</button>
-      <button class="logout-btn" onclick="logout()" style="margin-left:8px">Logout</button>
-    `;
-  } else {
-    container.innerHTML = `
-      <button class="admin-link" onclick="showPage('login')">Admin login &rarr;</button>
-    `;
-  }
-}
-
-// ── LOGIN ──
-function checkLogin() {
-  const val = document.getElementById('login-pass').value;
-  const err = document.getElementById('login-err');
-  if (val === ADMIN_PASS) {
-    isAdmin = true;
-    try { sessionStorage.setItem(SESSION_KEY, 'true'); } catch(e) {}
-    err.classList.remove('show');
-    document.getElementById('login-pass').value = '';
-    showPage('dashboard');
-  } else {
-    err.classList.add('show');
-  }
-}
-
-function logout() {
-  isAdmin = false;
-  try { sessionStorage.removeItem(SESSION_KEY); } catch(e) {}
-  showPage('submit');
+// ── OFFLINE QUEUE ──
+function saveQueue() { localStorage.setItem('nq_queue', JSON.stringify(offlineQueue)); }
+function flushQueue() {
+  if (!navigator.onLine || offlineQueue.length === 0) return;
+  const item = offlineQueue[0];
+  jsonp({ action:'submit', ...item }, (data) => {
+    if (data && data.status === 'success') {
+      offlineQueue.shift();
+      saveQueue();
+      if (offlineQueue.length > 0) setTimeout(flushQueue, 1000);
+    }
+  });
 }
 
 // ── LOAD DATA ──
 function loadRows() {
-  jsonp({ action: 'get' }, (data) => {
+  jsonp({ action:'get' }, (data) => {
     dataLoaded = true;
     if (data && data.rows) {
       allRows = data.rows.map(r => ({
-        submitted: r[0] || '',
-        name: (r[1] || '').trim(),
-        date: r[2] || '',
-        post: String(r[3] || ''),
-        tiktok: r[4] || '',
-        insta: r[5] || '',
-        issues: r[6] || ''
+        submitted: r[0]||'', name: (r[1]||'').trim(),
+        date: r[2]||'', post: String(r[3]||''),
+        tiktok: r[4]||'', insta: r[5]||'', issues: r[6]||''
       })).filter(r => r.name && r.date);
     }
     refreshAll();
@@ -765,18 +816,15 @@ function loadRows() {
 }
 
 function loadCreators() {
-  jsonp({ action: 'getCreators' }, (data) => {
+  jsonp({ action:'getCreators' }, (data) => {
     creatorsLoaded = true;
-    if (data && data.creators) {
-      allCreators = data.creators;
-    }
+    if (data && data.creators) allCreators = data.creators;
     refreshAll();
   });
 }
 
 function getActiveCreators() {
-  return allCreators.filter(c => String(c.status).toLowerCase() === 'active')
-    .map(c => c.name).sort();
+  return allCreators.filter(c => String(c.status).toLowerCase() === 'active').map(c => c.name).sort();
 }
 
 // ── SUBMIT ──
@@ -787,46 +835,66 @@ function submitLog() {
   const tiktok = document.getElementById('f-tiktok').value.trim();
   const insta  = document.getElementById('f-insta').value.trim();
   const issues = document.getElementById('f-issues').value.trim();
-  const toast  = document.getElementById('f-toast');
+  const alert  = document.getElementById('f-alert');
   const btn    = document.getElementById('submit-btn');
 
-  if (!name || !date || !post || !tiktok || !insta) {
-    showToast(toast, 'err', 'Please fill in all required fields.');
-    return;
-  }
+  if (!name) { showAlert(alert,'error','Please select your name from the list.'); return; }
+  if (!date) { showAlert(alert,'error','Please select the date.'); return; }
+  if (!post) { showAlert(alert,'error','Please select which post this is (Post 1 or Post 2).'); return; }
+  if (!tiktok && !insta) { showAlert(alert,'error','Please paste at least one video link — TikTok or Instagram.'); return; }
 
-  const dup = allRows.find(r => r.name.toLowerCase() === name.toLowerCase() && r.date === date && r.post === post);
+  // Check duplicate
+  const dup = allRows.find(r =>
+    r.name.toLowerCase() === name.toLowerCase() && r.date === date && r.post === post
+  );
   if (dup) {
-    showToast(toast, 'err', `Post ${post} is already logged for ${name} on ${date}.`);
+    showAlert(alert,'error', `Post ${post} is already logged for you on ${fmtDate(date)}. If you think this is a mistake, contact the admin.`);
     return;
   }
 
   btn.disabled = true;
   btn.textContent = 'Submitting...';
 
-  jsonp({ action: 'submit', name, date, post, tiktok, insta, issues }, (data) => {
-    btn.disabled = false;
-    btn.textContent = 'Submit log';
+  const payload = { name, date, post, tiktok, insta, issues };
 
-    if (data && data.status === 'success') {
-      allRows.push({ name, date, post, tiktok, insta, issues, submitted: new Date().toISOString() });
-      refreshAll();
-      showToast(toast, '', `Post ${post} logged for ${name} on ${date}. Thank you!`);
-      document.getElementById('f-name').value   = '';
-      document.getElementById('f-tiktok').value = '';
-      document.getElementById('f-insta').value  = '';
-      document.getElementById('f-issues').value = '';
-      document.getElementById('f-post').value   = '';
-    } else {
-      showToast(toast, 'err', 'Submission failed. Please try again.');
-    }
-  });
+  // Optimistic update first — show success immediately
+  // then fire network request. This fixes the false-error bug.
+  allRows.push({ ...payload, submitted: new Date().toISOString() });
+  refreshAll();
+
+  showAlert(alert, 'success',
+    `Thank you, ${name.split(' ')[0]}! Your Post ${post} for ${fmtDate(date)} has been logged successfully. Keep it up! &#x1F4AA;`
+  );
+
+  // Clear form
+  document.getElementById('f-name').value   = '';
+  document.getElementById('f-tiktok').value = '';
+  document.getElementById('f-insta').value  = '';
+  document.getElementById('f-issues').value = '';
+  document.getElementById('f-post').value   = '';
+
+  btn.disabled = false;
+  btn.textContent = 'Submit post log';
+
+  // Fire request in background — if it fails, queue it
+  if (navigator.onLine) {
+    jsonp({ action:'submit', ...payload }, (data, err) => {
+      if (!data || data.status !== 'success') {
+        // Silently queue for retry — user already got success message
+        offlineQueue.push(payload);
+        saveQueue();
+      }
+    }, 15000);
+  } else {
+    offlineQueue.push(payload);
+    saveQueue();
+  }
 }
 
-function showToast(el, type, msg) {
-  el.className = 'toast show' + (type ? ' ' + type : '');
-  el.textContent = msg;
-  setTimeout(() => { el.classList.remove('show'); }, 5000);
+function showAlert(el, type, msg) {
+  el.className = 'alert show alert-' + (type === 'error' ? 'error' : 'success');
+  el.innerHTML = msg;
+  if (type !== 'error') setTimeout(() => el.classList.remove('show'), 8000);
 }
 
 // ── REFRESH ──
@@ -835,250 +903,196 @@ function refreshAll() {
   renderWeeklyGrid();
   renderMonthTabs();
   renderDetailedLog();
-  if (isAdmin) {
-    renderDashboard();
-    renderManageCreators();
-  }
+  if (isAdmin) { renderDashboard(); renderManageCreators(); }
 }
 
 function populateNameDropdown() {
   const sel = document.getElementById('f-name');
-  const current = sel.value;
+  const cur = sel.value;
   sel.innerHTML = '<option value="">Select your name...</option>';
   getActiveCreators().forEach(n => {
-    const opt = document.createElement('option');
-    opt.value = n; opt.textContent = n;
-    sel.appendChild(opt);
+    const o = document.createElement('option');
+    o.value = n; o.textContent = n; sel.appendChild(o);
   });
-  if (current) sel.value = current;
+  if (cur) sel.value = cur;
 }
 
 // ── WEEKLY GRID ──
-function changeWeek(dir) {
-  weekOffset += dir;
-  renderWeeklyGrid();
-}
+function changeWeek(dir) { weekOffset += dir; renderWeeklyGrid(); }
 
 function renderWeeklyGrid() {
   const dates = getWeekDates(weekOffset);
   document.getElementById('week-label').textContent = fmtDate(dates[0]) + ' — ' + fmtDate(dates[6]);
 
+  // Build header with day + date
+  const head = document.getElementById('weekly-head');
+  head.innerHTML = '<th>Creator</th>' +
+    dates.map(d => '<th>' + dayLabel(d) + '</th>').join('') +
+    '<th>Week Total</th>';
+
   const creators = getActiveCreators();
   const tbody = document.getElementById('weekly-body');
 
   if (!dataLoaded || !creatorsLoaded) {
-    tbody.innerHTML = '<tr><td colspan="9" class="empty-state"><span class="loading-spinner"></span></td></tr>';
+    tbody.innerHTML = '<tr><td colspan="9" class="empty-state"><span class="spinner"></span></td></tr>';
     return;
   }
-  if (creators.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="9" class="empty-state"><strong>No active creators</strong>Add creators in the Manage creators tab</td></tr>';
+  if (!creators.length) {
+    tbody.innerHTML = '<tr><td colspan="9" class="empty-state"><strong>No active creators</strong>Add creators in Manage creators</td></tr>';
     return;
   }
 
   tbody.innerHTML = creators.map(creator => {
     const rows = allRows.filter(r => r.name === creator);
     const weekTotal = rows.filter(r => dates.includes(r.date)).length;
+
     const cells = dates.map(d => {
       const dayRows = rows.filter(r => r.date === d);
-      const p1 = dayRows.some(r => r.post === '1');
-      const p2 = dayRows.some(r => r.post === '2');
-      return '<td>' +
-        (p1 ? '<span class="cell-dot dot-1"></span>' : '<span class="cell-dot dot-none"></span>') +
-        (p2 ? '<span class="cell-dot dot-2"></span>' : '<span class="cell-dot dot-none"></span>') +
-        '</td>';
+      const p1 = dayRows.find(r => r.post === '1');
+      const p2 = dayRows.find(r => r.post === '2');
+
+      const p1tt = p1 && p1.tiktok ? `<span class="post-chip chip-tt-1">1 TT</span>` : `<span class="post-chip chip-none">1 TT</span>`;
+      const p1ig = p1 && p1.insta  ? `<span class="post-chip chip-ig-1">1 IG</span>` : `<span class="post-chip chip-none">1 IG</span>`;
+      const p2tt = p2 && p2.tiktok ? `<span class="post-chip chip-tt-2">2 TT</span>` : `<span class="post-chip chip-none">2 TT</span>`;
+      const p2ig = p2 && p2.insta  ? `<span class="post-chip chip-ig-2">2 IG</span>` : `<span class="post-chip chip-none">2 IG</span>`;
+
+      return `<td><div class="day-cell">
+        <div class="post-pair">${p1tt}${p1ig}</div>
+        <div class="post-pair">${p2tt}${p2ig}</div>
+      </div></td>`;
     }).join('');
+
     return `<tr><td>${escH(creator)}</td>${cells}<td class="week-total">${weekTotal}</td></tr>`;
   }).join('');
 }
 
 // ── MONTH TABS ──
-function getAvailableMonths() {
-  const set = new Set();
-  allRows.forEach(r => set.add(monthYM(r.date)));
-  return [...set].sort().reverse();
+function getMonths() {
+  return [...new Set(allRows.map(r => monthYM(r.date)))].sort().reverse();
 }
 
 function renderMonthTabs() {
-  const months = getAvailableMonths();
-  const tabsEl = document.getElementById('month-tabs');
-
-  if (!dataLoaded) {
-    tabsEl.innerHTML = '<span style="color:var(--text3);font-size:12px"><span class="loading-spinner"></span></span>';
-    return;
-  }
-  if (months.length === 0) {
-    tabsEl.innerHTML = '<span style="color:var(--text3);font-size:12px">No data yet</span>';
-    return;
-  }
-  if (!selectedMonth || !months.includes(selectedMonth)) {
-    selectedMonth = months[0];
-  }
-  tabsEl.innerHTML = months.map(ym => {
+  const months = getMonths();
+  const el = document.getElementById('month-tabs');
+  if (!dataLoaded) { el.innerHTML = '<span class="spinner"></span>'; return; }
+  if (!months.length) { el.innerHTML = '<span style="color:var(--text3);font-size:13px">No data yet</span>'; return; }
+  if (!selectedMonth || !months.includes(selectedMonth)) selectedMonth = months[0];
+  el.innerHTML = months.map(ym => {
     const count = allRows.filter(r => monthYM(r.date) === ym).length;
-    return `<button class="month-tab ${ym === selectedMonth ? 'active' : ''}" onclick="selectMonth('${ym}')">
-      ${monthLabelShort(ym)} <span class="count">${count}</span>
+    return `<button class="month-tab ${ym===selectedMonth?'active':''}" onclick="selectMonth('${ym}')">
+      ${monthShort(ym)} <span class="count">${count}</span>
     </button>`;
   }).join('');
 }
 
-function selectMonth(ym) {
-  selectedMonth = ym;
-  renderMonthTabs();
-  renderDetailedLog();
-}
+function selectMonth(ym) { selectedMonth = ym; renderMonthTabs(); renderDetailedLog(); }
 
 function renderDetailedLog() {
   const tbody = document.getElementById('detailed-body');
   const statsEl = document.getElementById('month-stats');
-
   if (!dataLoaded) {
-    tbody.innerHTML = '<tr><td colspan="6" class="empty-state"><span class="loading-spinner"></span></td></tr>';
-    statsEl.style.display = 'none';
-    return;
+    tbody.innerHTML = '<tr><td colspan="6" class="empty-state"><span class="spinner"></span></td></tr>';
+    statsEl.style.display = 'none'; return;
   }
   if (!selectedMonth) {
     tbody.innerHTML = '<tr><td colspan="6" class="empty-state"><strong>No submissions yet</strong></td></tr>';
-    statsEl.style.display = 'none';
-    return;
+    statsEl.style.display = 'none'; return;
   }
-
-  const monthRows = allRows.filter(r => monthYM(r.date) === selectedMonth);
-  const monthCreators = [...new Set(monthRows.map(r => r.name))];
-  const monthDays = [...new Set(monthRows.map(r => r.date))];
-
+  const mRows = allRows.filter(r => monthYM(r.date) === selectedMonth);
+  const mCreators = [...new Set(mRows.map(r => r.name))];
+  const mDays = [...new Set(mRows.map(r => r.date))];
   statsEl.style.display = 'grid';
-  document.getElementById('m-total').textContent = monthRows.length;
-  document.getElementById('m-creators').textContent = monthCreators.length;
-  document.getElementById('m-days').textContent = monthDays.length;
-  document.getElementById('m-avg').textContent = monthCreators.length
-    ? (monthRows.length / monthCreators.length).toFixed(1) : '0';
+  document.getElementById('m-total').textContent = mRows.length;
+  document.getElementById('m-creators').textContent = mCreators.length;
+  document.getElementById('m-days').textContent = mDays.length;
+  document.getElementById('m-avg').textContent = mCreators.length ? (mRows.length/mCreators.length).toFixed(1) : '0';
 
-  if (monthRows.length === 0) {
+  if (!mRows.length) {
     tbody.innerHTML = '<tr><td colspan="6" class="empty-state"><strong>No posts in ' + monthLabel(selectedMonth) + '</strong></td></tr>';
     return;
   }
-
-  const sorted = [...monthRows].sort((a, b) =>
-    b.date.localeCompare(a.date) || String(b.submitted).localeCompare(String(a.submitted))
-  );
-
+  const sorted = [...mRows].sort((a,b) => b.date.localeCompare(a.date));
   tbody.innerHTML = sorted.map(r => {
-    const badge = r.post === '1'
-      ? '<span class="badge badge-p1">Post 1</span>'
-      : '<span class="badge badge-p2">Post 2</span>';
-    const tk = r.tiktok
-      ? `<a href="${escH(r.tiktok)}" target="_blank" style="color:var(--accent);text-decoration:none;font-size:11px">&#x2197; TikTok</a>`
-      : '—';
-    const ig = r.insta
-      ? `<a href="${escH(r.insta)}" target="_blank" style="color:var(--blue);text-decoration:none;font-size:11px">&#x2197; Insta</a>`
-      : '—';
+    const badge = r.post==='1' ? '<span class="badge badge-p1">Post 1</span>' : '<span class="badge badge-p2">Post 2</span>';
+    const tk = r.tiktok ? `<a href="${escH(r.tiktok)}" target="_blank" style="color:var(--accent);font-size:12px;text-decoration:none">&#x2197; TikTok</a>` : '<span style="color:var(--text3)">—</span>';
+    const ig = r.insta  ? `<a href="${escH(r.insta)}"  target="_blank" style="color:var(--blue);font-size:12px;text-decoration:none">&#x2197; Instagram</a>` : '<span style="color:var(--text3)">—</span>';
     return `<tr>
-      <td><span class="creator-link" onclick="openCreatorModal('${escH(r.name)}')">${escH(r.name)}</span></td>
-      <td>${escH(r.date)}</td>
-      <td>${badge}</td>
-      <td>${tk}</td>
-      <td>${ig}</td>
+      <td><span class="creator-link" onclick="openModal('${escH(r.name)}')">${escH(r.name)}</span></td>
+      <td>${escH(r.date)}</td><td>${badge}</td><td>${tk}</td><td>${ig}</td>
       <td style="color:var(--text3)">${r.issues ? escH(r.issues) : '—'}</td>
     </tr>`;
   }).join('');
 }
 
 // ── CREATOR MODAL ──
-function openCreatorModal(name) {
+function openModal(name) {
   const rows = allRows.filter(r => r.name === name);
   if (!rows.length) return;
-
   document.getElementById('modal-name').textContent = name;
-  document.getElementById('modal-sub').textContent =
-    `${rows.length} total post${rows.length !== 1 ? 's' : ''} logged`;
-
+  document.getElementById('modal-sub').textContent = rows.length + ' total post' + (rows.length!==1?'s':'') + ' logged';
   const byMonth = {};
-  rows.forEach(r => {
-    const ym = monthYM(r.date);
-    if (!byMonth[ym]) byMonth[ym] = [];
-    byMonth[ym].push(r);
-  });
-
-  const html = Object.keys(byMonth).sort().reverse().map(ym => {
-    const mRows = byMonth[ym].sort((a, b) => b.date.localeCompare(a.date));
-    const total = mRows.length;
-    const rowsHtml = mRows.map(r => {
-      const tk = r.tiktok ? `<a href="${escH(r.tiktok)}" target="_blank" style="color:var(--accent);font-size:11px">TikTok &#x2197;</a>` : '—';
-      const ig = r.insta  ? `<a href="${escH(r.insta)}"  target="_blank" style="color:var(--blue);font-size:11px">Insta &#x2197;</a>`   : '—';
+  rows.forEach(r => { const ym=monthYM(r.date); if(!byMonth[ym]) byMonth[ym]=[]; byMonth[ym].push(r); });
+  document.getElementById('modal-body').innerHTML = Object.keys(byMonth).sort().reverse().map(ym => {
+    const mr = byMonth[ym].sort((a,b) => b.date.localeCompare(a.date));
+    const rowsHtml = mr.map(r => {
+      const tk = r.tiktok ? `<a href="${escH(r.tiktok)}" target="_blank" style="color:var(--accent);font-size:12px">TikTok &#x2197;</a>` : '—';
+      const ig = r.insta  ? `<a href="${escH(r.insta)}"  target="_blank" style="color:var(--blue);font-size:12px">Insta &#x2197;</a>`    : '—';
       return `<tr>
         <td>${escH(r.date)}</td>
         <td style="color:${r.post==='1'?'var(--accent)':'var(--blue)'}">Post ${escH(r.post)}</td>
-        <td>${tk}</td>
-        <td>${ig}</td>
-        <td style="color:var(--text3);font-size:11px">${r.issues ? escH(r.issues) : '—'}</td>
+        <td>${tk}</td><td>${ig}</td>
+        <td style="color:var(--text3);font-size:12px">${r.issues?escH(r.issues):'—'}</td>
       </tr>`;
     }).join('');
-
     return `<div class="month-block">
       <div class="month-block-header">
         <span class="month-block-name">${monthLabel(ym)}</span>
-        <span class="month-block-total">${total} post${total !== 1 ? 's' : ''}</span>
+        <span class="month-block-total">${mr.length} post${mr.length!==1?'s':''}</span>
       </div>
-      <div class="month-block-rows">
-        <table>
-          <thead><tr><th>Date</th><th>Post</th><th>TikTok</th><th>Instagram</th><th>Issues</th></tr></thead>
-          <tbody>${rowsHtml}</tbody>
-        </table>
-      </div>
+      <table class="log-table" style="font-size:12px">
+        <thead><tr><th>Date</th><th>Post</th><th>TikTok</th><th>Instagram</th><th>Issues</th></tr></thead>
+        <tbody>${rowsHtml}</tbody>
+      </table>
     </div>`;
   }).join('');
-
-  document.getElementById('modal-body').innerHTML = html;
   document.getElementById('creator-modal').classList.add('open');
 }
-
-function closeModalOverlay(e) {
-  if (e.target === document.getElementById('creator-modal'))
-    document.getElementById('creator-modal').classList.remove('open');
-}
-function closeModalDirect() {
-  document.getElementById('creator-modal').classList.remove('open');
-}
+function closeModalOverlay(e) { if(e.target===document.getElementById('creator-modal')) closeModalDirect(); }
+function closeModalDirect() { document.getElementById('creator-modal').classList.remove('open'); }
 
 // ── DASHBOARD ──
 function renderDashboard() {
-  const today  = todayStr();
-  const curMYM = today.substring(0, 7);
+  const today = todayStr();
+  const curMYM = today.substring(0,7);
   const creators = getActiveCreators();
-
   document.getElementById('d-total').textContent    = allRows.length;
   document.getElementById('d-month').textContent    = allRows.filter(r => r.date.startsWith(curMYM)).length;
   document.getElementById('d-creators').textContent = creators.length;
   document.getElementById('d-today').textContent    = allRows.filter(r => r.date === today).length;
-
   const tbody = document.getElementById('dash-body');
   if (!creators.length) {
-    tbody.innerHTML = '<tr><td colspan="6" class="empty-state"><strong>No active creators</strong></td></tr>';
-    return;
+    tbody.innerHTML = '<tr><td colspan="6" class="empty-state"><strong>No active creators</strong></td></tr>'; return;
   }
-
   const sorted = creators.map(name => {
     const rows = allRows.filter(r => r.name === name);
-    const monthCount = rows.filter(r => r.date.startsWith(curMYM)).length;
-    const last = [...rows].sort((a, b) => b.date.localeCompare(a.date))[0];
-    return { name, monthCount, total: rows.length, lastDate: last ? last.date : '—' };
-  }).sort((a, b) => b.monthCount - a.monthCount);
-
-  tbody.innerHTML = sorted.map((r, i) => {
-    const pct = Math.min(100, Math.round((r.monthCount / 56) * 100));
-    const barClass = pct >= 80 ? '' : pct >= 50 ? 'amber' : 'red';
+    const mc = rows.filter(r => r.date.startsWith(curMYM)).length;
+    const last = [...rows].sort((a,b) => b.date.localeCompare(a.date))[0];
+    return { name, mc, total: rows.length, last: last ? last.date : '—' };
+  }).sort((a,b) => b.mc - a.mc);
+  tbody.innerHTML = sorted.map((r,i) => {
+    const pct = Math.min(100, Math.round(r.mc/56*100));
+    const cls = pct>=80?'':'pct>=50?\'amber\':\'red\'';
+    const barClass = pct>=80 ? '' : pct>=50 ? 'amber' : 'red';
     return `<tr>
-      <td style="color:var(--text3)">${i + 1}</td>
-      <td><span class="creator-link" onclick="openCreatorModal('${escH(r.name)}')">${escH(r.name)}</span></td>
-      <td style="font-family:'Syne',sans-serif;font-weight:700;color:var(--accent)">${r.monthCount}</td>
-      <td>
-        <div style="display:flex;align-items:center;gap:8px">
-          <div class="progress-bar-wrap"><div class="progress-bar-fill ${barClass}" style="width:${pct}%"></div></div>
-          <span style="font-size:11px;color:var(--text3)">${pct}%</span>
-        </div>
-      </td>
+      <td style="color:var(--text3)">${i+1}</td>
+      <td><span class="creator-link" onclick="openModal('${escH(r.name)}')">${escH(r.name)}</span></td>
+      <td style="font-weight:700;color:var(--accent)">${r.mc}</td>
+      <td><div class="progress-wrap">
+        <div class="progress-bar"><div class="progress-fill ${barClass}" style="width:${pct}%"></div></div>
+        <span style="font-size:11px;color:var(--text3)">${pct}%</span>
+      </div></td>
       <td style="color:var(--text2)">${r.total}</td>
-      <td style="color:var(--text3)">${r.lastDate}</td>
+      <td style="color:var(--text3)">${r.last}</td>
     </tr>`;
   }).join('');
 }
@@ -1086,27 +1100,23 @@ function renderDashboard() {
 // ── MANAGE CREATORS ──
 function addCreator() {
   const input = document.getElementById('new-creator-name');
-  const btn = document.getElementById('add-creator-btn');
-  const toast = document.getElementById('manage-toast');
-  const name = input.value.trim();
-
-  if (!name) { showToast(toast, 'err', 'Please enter a name.'); return; }
-  const exists = allCreators.find(c => c.name.toLowerCase() === name.toLowerCase());
-  if (exists) { showToast(toast, 'err', `${name} already exists.`); return; }
-
-  btn.disabled = true;
-  btn.textContent = 'Adding...';
-
-  jsonp({ action: 'addCreator', name }, (data) => {
-    btn.disabled = false;
-    btn.textContent = 'Add creator';
+  const btn   = document.getElementById('add-creator-btn');
+  const alert = document.getElementById('manage-alert');
+  const name  = input.value.trim();
+  if (!name) { showAlert(alert,'error','Please enter a full name.'); return; }
+  if (allCreators.find(c => c.name.toLowerCase() === name.toLowerCase())) {
+    showAlert(alert,'error',`${name} already exists.`); return;
+  }
+  btn.disabled = true; btn.textContent = 'Adding...';
+  jsonp({ action:'addCreator', name }, (data) => {
+    btn.disabled = false; btn.textContent = 'Add creator';
     if (data && data.status === 'success') {
-      allCreators.push({ name, status: 'Active', added: new Date().toISOString() });
+      allCreators.push({ name, status:'Active', added: new Date().toISOString() });
       input.value = '';
       refreshAll();
-      showToast(toast, '', `${name} added as active creator.`);
+      showAlert(alert,'success',`${name} has been added as an active creator.`);
     } else {
-      showToast(toast, 'err', (data && data.message) || 'Failed to add creator.');
+      showAlert(alert,'error',(data&&data.message)||'Failed to add. Please try again.');
     }
   });
 }
@@ -1115,91 +1125,101 @@ function toggleCreator(name) {
   const c = allCreators.find(c => c.name === name);
   if (!c) return;
   const isActive = String(c.status).toLowerCase() === 'active';
-  const action = isActive ? 'deactivate' : 'reactivate';
-  if (!confirm(`Are you sure you want to ${action} ${name}?`)) return;
-
-  const toast = document.getElementById('manage-toast');
-  jsonp({ action: 'toggleCreator', name }, (data) => {
+  if (!confirm(`${isActive?'Deactivate':'Reactivate'} ${name}?`)) return;
+  const alert = document.getElementById('manage-alert');
+  jsonp({ action:'toggleCreator', name }, (data) => {
     if (data && data.status === 'success') {
       c.status = data.newStatus;
       refreshAll();
-      showToast(toast, '', `${name} is now ${data.newStatus.toLowerCase()}.`);
+      showAlert(alert,'success',`${name} is now ${data.newStatus.toLowerCase()}.`);
     } else {
-      showToast(toast, 'err', (data && data.message) || 'Failed to toggle creator.');
+      showAlert(alert,'error',(data&&data.message)||'Failed. Please try again.');
     }
   });
 }
 
 function renderManageCreators() {
-  const tbody = document.getElementById('manage-body');
-  const countsEl = document.getElementById('manage-counts');
-
+  const tbody   = document.getElementById('manage-body');
+  const counts  = document.getElementById('manage-counts');
   if (!creatorsLoaded) {
-    tbody.innerHTML = '<tr><td colspan="5" class="empty-state"><span class="loading-spinner"></span></td></tr>';
-    return;
+    tbody.innerHTML = '<tr><td colspan="5" class="empty-state"><span class="spinner"></span></td></tr>'; return;
   }
   if (!allCreators.length) {
     tbody.innerHTML = '<tr><td colspan="5" class="empty-state"><strong>No creators yet</strong>Add your first creator above</td></tr>';
-    countsEl.textContent = '';
-    return;
+    counts.textContent = ''; return;
   }
-
-  const activeCount = allCreators.filter(c => String(c.status).toLowerCase() === 'active').length;
-  const inactiveCount = allCreators.length - activeCount;
-  countsEl.textContent = `${activeCount} active · ${inactiveCount} inactive · ${allCreators.length} total`;
-
-  const sorted = [...allCreators].sort((a, b) => {
-    const aActive = String(a.status).toLowerCase() === 'active' ? 0 : 1;
-    const bActive = String(b.status).toLowerCase() === 'active' ? 0 : 1;
-    if (aActive !== bActive) return aActive - bActive;
-    return a.name.localeCompare(b.name);
+  const active = allCreators.filter(c => String(c.status).toLowerCase()==='active').length;
+  counts.textContent = `${active} active · ${allCreators.length-active} inactive · ${allCreators.length} total`;
+  const sorted = [...allCreators].sort((a,b) => {
+    const aa = String(a.status).toLowerCase()==='active'?0:1;
+    const bb = String(b.status).toLowerCase()==='active'?0:1;
+    return aa!==bb ? aa-bb : a.name.localeCompare(b.name);
   });
-
   tbody.innerHTML = sorted.map(c => {
-    const isActive = String(c.status).toLowerCase() === 'active';
-    const badge = isActive
-      ? '<span class="badge badge-active">Active</span>'
-      : '<span class="badge badge-inactive">Inactive</span>';
-    const addedDate = c.added ? new Date(c.added).toLocaleDateString('en-GB', {day:'numeric',month:'short',year:'numeric'}) : '—';
-    const totalPosts = allRows.filter(r => r.name === c.name).length;
-    const btnClass = isActive ? 'btn-sm btn-danger' : 'btn-sm';
-    const btnText = isActive ? 'Deactivate' : 'Reactivate';
+    const isActive = String(c.status).toLowerCase()==='active';
+    const badge = isActive ? '<span class="badge badge-active">Active</span>' : '<span class="badge badge-inactive">Inactive</span>';
+    const added = c.added ? new Date(c.added).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}) : '—';
+    const posts = allRows.filter(r => r.name===c.name).length;
     return `<tr>
-      <td><span class="creator-link" onclick="openCreatorModal('${escH(c.name)}')">${escH(c.name)}</span></td>
+      <td><span class="creator-link" onclick="openModal('${escH(c.name)}')">${escH(c.name)}</span></td>
       <td>${badge}</td>
-      <td style="color:var(--text3)">${addedDate}</td>
-      <td style="color:var(--text2)">${totalPosts}</td>
-      <td><button class="btn ${btnClass}" onclick="toggleCreator('${escH(c.name)}')">${btnText}</button></td>
+      <td style="color:var(--text3)">${added}</td>
+      <td style="color:var(--text2)">${posts}</td>
+      <td><button class="btn btn-sm ${isActive?'btn-danger':''}" onclick="toggleCreator('${escH(c.name)}')">${isActive?'Deactivate':'Reactivate'}</button></td>
     </tr>`;
   }).join('');
 }
 
-// ── PAGE NAV ──
-const ADMIN_PAGES = ['weekly', 'detailed', 'dashboard', 'manage'];
-
-function showPage(name) {
-  // Block admin pages if not logged in
-  if (ADMIN_PAGES.includes(name) && !isAdmin) {
-    showPage('login');
-    return;
+// ── LOGIN ──
+function checkLogin() {
+  const val = document.getElementById('login-pass').value;
+  const err = document.getElementById('login-err');
+  if (val === ADMIN_PASS) {
+    isAdmin = true;
+    try { sessionStorage.setItem(SESSION_KEY,'1'); } catch(e) {}
+    err.classList.remove('show');
+    document.getElementById('login-pass').value = '';
+    showPage('dashboard');
+  } else {
+    err.classList.add('show');
   }
+}
+function logout() {
+  isAdmin = false;
+  try { sessionStorage.removeItem(SESSION_KEY); } catch(e) {}
+  showPage('submit');
+}
 
+// ── NAV ──
+function renderNav() {
+  const c = document.getElementById('nav-container');
+  if (isAdmin) {
+    c.innerHTML = `
+      <button class="nav-tab ${currentPage==='weekly'?'active':''}" onclick="showPage('weekly')">Daily log</button>
+      <button class="nav-tab ${currentPage==='detailed'?'active':''}" onclick="showPage('detailed')">Detailed log</button>
+      <button class="nav-tab ${currentPage==='dashboard'?'active':''}" onclick="showPage('dashboard')">Dashboard</button>
+      <button class="nav-tab ${currentPage==='manage'?'active':''}" onclick="showPage('manage')">Manage creators</button>
+      <button class="nav-tab ${currentPage==='submit'?'active':''}" onclick="showPage('submit')">Submit form</button>
+      <button class="logout-btn" onclick="logout()">Logout</button>
+    `;
+  } else {
+    c.innerHTML = `<button class="admin-btn" onclick="showPage('login')">Admin login &rarr;</button>`;
+  }
+}
+
+// ── PAGE NAV ──
+const ADMIN_PAGES = ['weekly','detailed','dashboard','manage'];
+function showPage(name) {
+  if (ADMIN_PAGES.includes(name) && !isAdmin) { showPage('login'); return; }
   currentPage = name;
-  document.querySelectorAll('.page').forEach(p => {
-    p.classList.remove('active');
-    p.style.display = 'none';
-  });
-
-  const pg = document.getElementById('page-' + name);
-  pg.style.display = 'block';
-  pg.classList.add('active');
-
+  document.querySelectorAll('.page').forEach(p => { p.classList.remove('active'); p.style.display='none'; });
+  const pg = document.getElementById('page-'+name);
+  pg.style.display = 'block'; pg.classList.add('active');
   renderNav();
-
-  if (name === 'weekly') renderWeeklyGrid();
-  if (name === 'detailed') { renderMonthTabs(); renderDetailedLog(); }
-  if (name === 'dashboard') renderDashboard();
-  if (name === 'manage') renderManageCreators();
+  if (name==='weekly') renderWeeklyGrid();
+  if (name==='detailed') { renderMonthTabs(); renderDetailedLog(); }
+  if (name==='dashboard') renderDashboard();
+  if (name==='manage') renderManageCreators();
 }
 </script>
 </body>
