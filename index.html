@@ -8,30 +8,34 @@
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700&display=swap');
 
   :root {
-    --bg: #f7f6f2;
+    --bg: #f8f6fc;
     --surface: #ffffff;
-    --surface2: #f2f0eb;
-    --surface3: #e8e5de;
-    --border: #e0ddd6;
-    --border2: #ccc9c0;
-    --accent: #1a6b4a;
-    --accent2: #145c3e;
-    --accent-light: #e8f4ee;
-    --accent-mid: rgba(26,107,74,0.12);
-    --text: #1a1a18;
-    --text2: #5a5a52;
-    --text3: #9a9a8e;
+    --surface2: #f3effa;
+    --surface3: #e8e1f4;
+    --border: #e2dceb;
+    --border2: #cdc3dc;
+    --accent: #6d4ce0;
+    --accent2: #5839c4;
+    --accent3: #4a2eab;
+    --accent-light: #f0eaff;
+    --accent-mid: rgba(109,76,224,0.14);
+    --accent-soft: #ede5ff;
+    --text: #1a1525;
+    --text2: #5c5470;
+    --text3: #9892a6;
     --red: #c0392b;
     --red-light: #fdf0ee;
     --amber: #b7770d;
     --amber-light: #fdf6e3;
-    --blue: #1a5276;
-    --blue-light: #eaf2f8;
-    --green-light: #e8f5ee;
+    --blue: #2d6cbf;
+    --blue-light: #eaf2fb;
+    --pink: #c44569;
+    --pink-light: #fae8ee;
     --radius: 12px;
     --radius-sm: 8px;
-    --shadow: 0 1px 4px rgba(0,0,0,0.07), 0 4px 16px rgba(0,0,0,0.05);
-    --shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
+    --shadow: 0 1px 4px rgba(74,46,171,0.06), 0 4px 16px rgba(74,46,171,0.05);
+    --shadow-sm: 0 1px 3px rgba(74,46,171,0.06);
+    --shadow-purple: 0 4px 14px rgba(109,76,224,0.25);
   }
 
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -53,24 +57,25 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    height: 62px;
+    height: 64px;
     position: sticky;
     top: 0;
     z-index: 100;
     box-shadow: var(--shadow-sm);
     gap: 16px;
   }
-  .header-brand { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+  .header-brand { display: flex; align-items: center; gap: 11px; flex-shrink: 0; }
   .header-logo {
-    width: 34px; height: 34px;
-    background: var(--accent);
-    border-radius: 8px;
+    width: 36px; height: 36px;
+    background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%);
+    border-radius: 9px;
     display: flex; align-items: center; justify-content: center;
     color: white; font-weight: 700; font-size: 14px; letter-spacing: -0.5px;
+    box-shadow: 0 2px 6px rgba(109,76,224,0.25);
   }
   .header-title {
     font-family: 'Playfair Display', serif;
-    font-size: 16px; font-weight: 700;
+    font-size: 17px; font-weight: 700;
     color: var(--text); letter-spacing: -0.3px;
   }
   .header-sub { font-size: 11px; color: var(--text3); margin-top: 1px; }
@@ -89,7 +94,7 @@
     transition: all 0.18s;
   }
   .nav-tab:hover { background: var(--surface2); color: var(--text); }
-  .nav-tab.active { background: var(--accent-light); color: var(--accent); font-weight: 600; }
+  .nav-tab.active { background: var(--accent-light); color: var(--accent3); font-weight: 600; }
 
   .admin-btn {
     padding: 7px 14px;
@@ -103,7 +108,7 @@
     cursor: pointer;
     transition: all 0.18s;
   }
-  .admin-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .admin-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-light); }
   .logout-btn {
     padding: 7px 14px;
     border: 1.5px solid var(--border);
@@ -124,40 +129,51 @@
 
   /* WELCOME BANNER */
   .welcome-banner {
-    background: linear-gradient(135deg, var(--accent) 0%, #2d8c62 100%);
+    background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 60%, var(--accent3) 100%);
     border-radius: var(--radius);
     padding: 28px 32px;
     margin-bottom: 28px;
     color: white;
     position: relative;
     overflow: hidden;
+    box-shadow: var(--shadow-purple);
+  }
+  .welcome-banner::before {
+    content: '';
+    position: absolute;
+    top: -40px; right: -40px;
+    width: 200px; height: 200px;
+    background: radial-gradient(circle, rgba(255,255,255,0.12) 0%, transparent 70%);
+    border-radius: 50%;
   }
   .welcome-banner::after {
     content: 'NQ';
     position: absolute;
-    right: 24px; top: 50%;
+    right: 30px; top: 50%;
     transform: translateY(-50%);
     font-family: 'Playfair Display', serif;
-    font-size: 80px;
+    font-size: 92px;
     font-weight: 700;
-    opacity: 0.08;
+    opacity: 0.1;
     letter-spacing: -4px;
   }
   .welcome-greeting {
     font-size: 11px;
-    font-weight: 500;
-    letter-spacing: 0.12em;
+    font-weight: 600;
+    letter-spacing: 0.14em;
     text-transform: uppercase;
-    opacity: 0.75;
-    margin-bottom: 6px;
+    opacity: 0.8;
+    margin-bottom: 8px;
+    position: relative;
   }
   .welcome-title {
     font-family: 'Playfair Display', serif;
-    font-size: 24px;
+    font-size: 26px;
     font-weight: 700;
     margin-bottom: 6px;
+    position: relative;
   }
-  .welcome-sub { font-size: 13px; opacity: 0.8; }
+  .welcome-sub { font-size: 13px; opacity: 0.85; position: relative; }
 
   /* STATS */
   .stats-row {
@@ -221,6 +237,25 @@
   .form-input option { background: white; }
   .form-hint { font-size: 11px; color: var(--text3); margin-top: 5px; }
 
+  /* PASSWORD INPUT WITH EYE TOGGLE */
+  .password-wrap { position: relative; }
+  .password-wrap input { padding-right: 44px; }
+  .password-toggle {
+    position: absolute;
+    right: 4px; top: 50%;
+    transform: translateY(-50%);
+    background: transparent;
+    border: none;
+    width: 36px; height: 36px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--text3);
+    border-radius: 6px;
+    transition: all 0.15s;
+  }
+  .password-toggle:hover { color: var(--accent); background: var(--accent-light); }
+  .password-toggle svg { width: 18px; height: 18px; }
+
   .link-group {
     border: 1.5px solid var(--border);
     border-radius: var(--radius-sm);
@@ -241,7 +276,7 @@
     letter-spacing: 0.06em;
     text-transform: uppercase;
     white-space: nowrap;
-    width: 80px;
+    width: 90px;
     flex-shrink: 0;
     border-right: 1px solid var(--border);
     background: var(--surface2);
@@ -258,6 +293,7 @@
     font-family: 'Inter', sans-serif;
     font-size: 13px;
     outline: none;
+    min-width: 0;
   }
   .link-input::placeholder { color: var(--text3); }
 
@@ -267,12 +303,13 @@
     cursor: pointer; border: none; transition: all 0.18s;
   }
   .btn-primary {
-    background: var(--accent); color: white;
+    background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%);
+    color: white;
     width: 100%; padding: 13px; margin-top: 8px;
-    box-shadow: 0 2px 8px rgba(26,107,74,0.25);
+    box-shadow: 0 2px 10px rgba(109,76,224,0.3);
   }
-  .btn-primary:hover { background: var(--accent2); box-shadow: 0 4px 12px rgba(26,107,74,0.3); }
-  .btn-primary:disabled { opacity: 0.55; cursor: not-allowed; box-shadow: none; }
+  .btn-primary:hover { box-shadow: 0 4px 14px rgba(109,76,224,0.4); transform: translateY(-1px); }
+  .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
   .btn-sm {
     padding: 7px 14px; font-size: 12px; font-weight: 500;
     background: var(--surface); border: 1.5px solid var(--border); color: var(--text2);
@@ -290,7 +327,7 @@
     line-height: 1.5;
   }
   .alert.show { display: block; }
-  .alert-success { background: var(--green-light); border: 1.5px solid #a8dbbf; color: #1a6b4a; }
+  .alert-success { background: var(--accent-light); border: 1.5px solid #c8b5f4; color: var(--accent3); }
   .alert-error { background: var(--red-light); border: 1.5px solid #e0b4b4; color: var(--red); }
 
   /* WEEKLY GRID */
@@ -324,21 +361,20 @@
   tr:hover td { background: var(--surface2); }
 
   /* 4-marker grid cells */
-  .day-cell { display: flex; flex-direction: column; gap: 3px; align-items: center; min-width: 68px; }
+  .day-cell { display: flex; flex-direction: column; gap: 3px; align-items: center; min-width: 72px; }
   .post-pair { display: flex; gap: 3px; align-items: center; }
   .post-chip {
     font-size: 9px; font-weight: 600; letter-spacing: 0.03em;
-    padding: 2px 5px; border-radius: 3px;
+    padding: 2px 6px; border-radius: 3px;
     white-space: nowrap;
   }
-  .chip-tt-1 { background: #e8f4ee; color: #1a6b4a; }
-  .chip-ig-1 { background: #fdf0e8; color: #b7570d; }
-  .chip-tt-2 { background: #eaf2f8; color: #1a5276; }
-  .chip-ig-2 { background: #f5eaf8; color: #6c3483; }
-  .chip-none { background: var(--surface3); color: var(--text3); }
-  .chip-sep { font-size: 8px; color: var(--text3); }
+  .chip-tt-1 { background: var(--accent-light); color: var(--accent3); }
+  .chip-ig-1 { background: var(--pink-light); color: var(--pink); }
+  .chip-tt-2 { background: var(--blue-light); color: var(--blue); }
+  .chip-ig-2 { background: var(--amber-light); color: var(--amber); }
+  .chip-none { background: var(--surface3); color: var(--text3); opacity: 0.6; }
 
-  .week-total { font-weight: 700; color: var(--accent); font-size: 13px; }
+  .week-total { font-weight: 700; color: var(--accent); font-size: 14px; }
 
   .legend {
     display: flex; gap: 16px; flex-wrap: wrap;
@@ -364,7 +400,12 @@
     display: flex; align-items: center; gap: 7px;
   }
   .month-tab:hover { border-color: var(--accent); color: var(--accent); }
-  .month-tab.active { background: var(--accent); border-color: var(--accent); color: white; font-weight: 600; }
+  .month-tab.active {
+    background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%);
+    border-color: var(--accent);
+    color: white; font-weight: 600;
+    box-shadow: 0 2px 6px rgba(109,76,224,0.25);
+  }
   .month-tab .count {
     background: rgba(0,0,0,0.1);
     padding: 1px 7px; border-radius: 10px;
@@ -389,9 +430,9 @@
   .creator-link:hover { opacity: 0.7; text-decoration: underline; }
 
   .badge { display: inline-flex; align-items: center; padding: 3px 9px; border-radius: 10px; font-size: 11px; font-weight: 600; }
-  .badge-p1 { background: var(--green-light); color: var(--accent); }
+  .badge-p1 { background: var(--accent-light); color: var(--accent3); }
   .badge-p2 { background: var(--blue-light); color: var(--blue); }
-  .badge-active { background: var(--green-light); color: var(--accent); }
+  .badge-active { background: var(--accent-light); color: var(--accent3); }
   .badge-inactive { background: var(--surface2); color: var(--text3); }
 
   .empty-state {
@@ -402,14 +443,14 @@
   /* MODAL */
   .modal-overlay {
     display: none; position: fixed; inset: 0;
-    background: rgba(20,20,20,0.45); backdrop-filter: blur(3px);
+    background: rgba(26,21,37,0.55); backdrop-filter: blur(4px);
     z-index: 200; align-items: center; justify-content: center; padding: 20px;
   }
   .modal-overlay.open { display: flex; }
   .modal {
     background: var(--surface); border: 1px solid var(--border);
     border-radius: 16px; width: 100%; max-width: 720px; max-height: 85vh;
-    overflow-y: auto; box-shadow: 0 8px 40px rgba(0,0,0,0.18);
+    overflow-y: auto; box-shadow: 0 12px 50px rgba(74,46,171,0.25);
   }
   .modal-header {
     display: flex; align-items: center; justify-content: space-between;
@@ -433,28 +474,76 @@
     padding: 11px 16px; background: var(--surface2); border-bottom: 1px solid var(--border);
   }
   .month-block-name { font-size: 13px; font-weight: 700; }
-  .month-block-total { font-size: 13px; font-weight: 700; color: var(--amber); }
+  .month-block-total { font-size: 13px; font-weight: 700; color: var(--accent); }
 
-  /* LOGIN */
+  /* ─── LOGIN — REDESIGNED ─── */
   .login-screen {
-    min-height: calc(100vh - 62px);
-    display: flex; align-items: center; justify-content: center; padding: 20px;
+    min-height: calc(100vh - 64px);
+    display: flex; align-items: center; justify-content: center; padding: 24px;
+    background:
+      radial-gradient(circle at 20% 10%, var(--accent-soft) 0%, transparent 50%),
+      radial-gradient(circle at 80% 80%, var(--accent-light) 0%, transparent 50%),
+      var(--bg);
   }
   .login-card {
-    background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
-    padding: 44px; max-width: 400px; width: 100%; text-align: center;
-    box-shadow: var(--shadow);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 40px 36px 32px;
+    max-width: 420px; width: 100%;
+    box-shadow: 0 8px 40px rgba(74,46,171,0.12);
   }
-  .login-icon {
-    width: 56px; height: 56px; margin: 0 auto 18px;
-    border-radius: 14px; background: var(--accent-light);
+  .login-brand {
+    display: flex; align-items: center; gap: 10px;
+    justify-content: center;
+    margin-bottom: 28px;
+  }
+  .login-brand-logo {
+    width: 32px; height: 32px;
+    background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%);
+    border-radius: 8px;
     display: flex; align-items: center; justify-content: center;
-    font-size: 24px; border: 1.5px solid #a8dbbf;
+    color: white; font-weight: 700; font-size: 12px;
+    box-shadow: 0 2px 6px rgba(109,76,224,0.25);
   }
-  .login-title { font-family: 'Playfair Display', serif; font-size: 22px; font-weight: 700; margin-bottom: 8px; }
-  .login-sub { font-size: 13px; color: var(--text3); margin-bottom: 28px; }
-  .login-form { display: flex; flex-direction: column; gap: 10px; }
-  .back-link { margin-top: 20px; font-size: 12px; color: var(--text3); cursor: pointer; transition: color 0.18s; }
+  .login-brand-name {
+    font-family: 'Playfair Display', serif;
+    font-size: 15px; font-weight: 700;
+    letter-spacing: -0.2px;
+  }
+  .login-divider {
+    width: 40px; height: 2px;
+    background: var(--accent);
+    border-radius: 2px;
+    margin: 0 auto 18px;
+    opacity: 0.4;
+  }
+  .login-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 24px; font-weight: 700;
+    text-align: center;
+    margin-bottom: 8px;
+    letter-spacing: -0.5px;
+  }
+  .login-sub {
+    font-size: 13px; color: var(--text2);
+    text-align: center; margin-bottom: 28px;
+    line-height: 1.55;
+    max-width: 280px;
+    margin-left: auto; margin-right: auto;
+  }
+  .login-form { display: flex; flex-direction: column; gap: 12px; }
+  .login-form .form-label {
+    margin-bottom: 6px;
+  }
+  .back-link {
+    display: block;
+    margin-top: 24px;
+    text-align: center;
+    font-size: 12px; color: var(--text3);
+    cursor: pointer; transition: color 0.18s;
+    font-weight: 500;
+  }
   .back-link:hover { color: var(--accent); }
 
   /* DASHBOARD */
@@ -487,8 +576,9 @@
     .main { padding: 20px 16px; }
     .form-card { padding: 22px 18px; }
     .add-card { flex-direction: column; align-items: stretch; }
-    .welcome-banner { padding: 20px 22px; }
-    .welcome-title { font-size: 20px; }
+    .welcome-banner { padding: 22px 24px; }
+    .welcome-title { font-size: 21px; }
+    .login-card { padding: 32px 24px 24px; }
   }
 </style>
 </head>
@@ -515,7 +605,7 @@
 
   <div class="form-card">
     <div class="form-title">Log a post</div>
-    <div class="form-subtitle">Fill in all details and paste at least one video link to submit.</div>
+    <div class="form-subtitle">Fill in your details and paste at least one video link to submit.</div>
 
     <div class="form-group">
       <label class="form-label">Your name</label>
@@ -568,13 +658,26 @@
 <div id="page-login" class="page">
   <div class="login-screen">
     <div class="login-card">
-      <div class="login-icon">&#x1F512;</div>
-      <div class="login-title">Admin access</div>
-      <div class="login-sub">Enter the admin password to view dashboards and manage creators</div>
+      <div class="login-brand">
+        <div class="login-brand-logo">NQ</div>
+        <div class="login-brand-name">Northquest Finance</div>
+      </div>
+      <div class="login-divider"></div>
+      <div class="login-title">Admin sign in</div>
+      <div class="login-sub">Enter the admin password to access dashboards and manage creators.</div>
       <div class="login-form">
-        <input class="form-input" id="login-pass" type="password" placeholder="Password"
-          onkeydown="if(event.key==='Enter')checkLogin()" />
-        <button class="btn btn-primary" style="margin-top:0" onclick="checkLogin()">Unlock</button>
+        <label class="form-label">Password</label>
+        <div class="password-wrap">
+          <input class="form-input" id="login-pass" type="password" placeholder="Enter password"
+            onkeydown="if(event.key==='Enter')checkLogin()" />
+          <button class="password-toggle" id="pass-toggle" onclick="togglePassword()" type="button" aria-label="Show password">
+            <svg id="eye-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+              <circle cx="12" cy="12" r="3"></circle>
+            </svg>
+          </button>
+        </div>
+        <button class="btn btn-primary" style="margin-top:4px" onclick="checkLogin()">Sign in</button>
       </div>
       <div class="alert alert-error" id="login-err">Incorrect password. Please try again.</div>
       <div class="back-link" onclick="showPage('submit')">&larr; Back to submit form</div>
@@ -720,8 +823,6 @@ let weekOffset = 0, selectedMonth = null;
 let isAdmin = false, dataLoaded = false, creatorsLoaded = false;
 let currentPage = 'submit';
 let jsonpCtr = 0;
-
-// Offline queue
 let offlineQueue = JSON.parse(localStorage.getItem('nq_queue') || '[]');
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -734,14 +835,9 @@ document.addEventListener('DOMContentLoaded', () => {
   window.addEventListener('online', flushQueue);
 });
 
-// ── HELPERS ──
 function todayStr() { return new Date().toISOString().split('T')[0]; }
-function escH(s) {
-  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
-}
-function fmtDate(str) {
-  return new Date(str + 'T00:00:00').toLocaleDateString('en-GB', { day:'numeric', month:'short' });
-}
+function escH(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+function fmtDate(str) { return new Date(str + 'T00:00:00').toLocaleDateString('en-GB', { day:'numeric', month:'short' }); }
 function monthYM(d) { return String(d).substring(0,7); }
 function monthLabel(ym) {
   const [y,m] = ym.split('-');
@@ -765,42 +861,33 @@ function getWeekDates(offset) {
 
 function dayLabel(dateStr) {
   const d = new Date(dateStr + 'T00:00:00');
-  const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-  return days[d.getDay()] + ' ' + d.getDate();
+  return ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][d.getDay()] + ' ' + d.getDate();
 }
 
-// ── JSONP ──
 function jsonp(params, cb, timeoutMs) {
   timeoutMs = timeoutMs || 12000;
   const name = 'cb' + (++jsonpCtr);
   let done = false;
-  const timer = setTimeout(() => {
-    if (!done) { done = true; delete window[name]; cb(null, 'timeout'); }
-  }, timeoutMs);
-  window[name] = (data) => {
-    if (!done) { done = true; clearTimeout(timer); delete window[name]; cb(data, null); }
-  };
+  const timer = setTimeout(() => { if (!done) { done=true; delete window[name]; cb(null,'timeout'); } }, timeoutMs);
+  window[name] = (data) => { if (!done) { done=true; clearTimeout(timer); delete window[name]; cb(data,null); } };
   const s = document.createElement('script');
   s.src = SCRIPT_URL + '?' + new URLSearchParams({...params, callback: name});
   s.onerror = () => { if (!done) { done=true; clearTimeout(timer); delete window[name]; cb(null,'network'); } };
   document.head.appendChild(s);
 }
 
-// ── OFFLINE QUEUE ──
 function saveQueue() { localStorage.setItem('nq_queue', JSON.stringify(offlineQueue)); }
 function flushQueue() {
   if (!navigator.onLine || offlineQueue.length === 0) return;
   const item = offlineQueue[0];
   jsonp({ action:'submit', ...item }, (data) => {
     if (data && data.status === 'success') {
-      offlineQueue.shift();
-      saveQueue();
+      offlineQueue.shift(); saveQueue();
       if (offlineQueue.length > 0) setTimeout(flushQueue, 1000);
     }
   });
 }
 
-// ── LOAD DATA ──
 function loadRows() {
   jsonp({ action:'get' }, (data) => {
     dataLoaded = true;
@@ -827,7 +914,6 @@ function getActiveCreators() {
   return allCreators.filter(c => String(c.status).toLowerCase() === 'active').map(c => c.name).sort();
 }
 
-// ── SUBMIT ──
 function submitLog() {
   const name   = document.getElementById('f-name').value.trim();
   const date   = document.getElementById('f-date').value;
@@ -843,12 +929,9 @@ function submitLog() {
   if (!post) { showAlert(alert,'error','Please select which post this is (Post 1 or Post 2).'); return; }
   if (!tiktok && !insta) { showAlert(alert,'error','Please paste at least one video link — TikTok or Instagram.'); return; }
 
-  // Check duplicate
-  const dup = allRows.find(r =>
-    r.name.toLowerCase() === name.toLowerCase() && r.date === date && r.post === post
-  );
+  const dup = allRows.find(r => r.name.toLowerCase() === name.toLowerCase() && r.date === date && r.post === post);
   if (dup) {
-    showAlert(alert,'error', `Post ${post} is already logged for you on ${fmtDate(date)}. If you think this is a mistake, contact the admin.`);
+    showAlert(alert,'error', `Post ${post} is already logged for you on ${fmtDate(date)}. If this is a mistake, please contact the admin.`);
     return;
   }
 
@@ -856,17 +939,13 @@ function submitLog() {
   btn.textContent = 'Submitting...';
 
   const payload = { name, date, post, tiktok, insta, issues };
-
-  // Optimistic update first — show success immediately
-  // then fire network request. This fixes the false-error bug.
   allRows.push({ ...payload, submitted: new Date().toISOString() });
   refreshAll();
 
   showAlert(alert, 'success',
-    `Thank you, ${name.split(' ')[0]}! Your Post ${post} for ${fmtDate(date)} has been logged successfully. Keep it up! &#x1F4AA;`
+    `Thank you, ${name.split(' ')[0]}! Your Post ${post} for ${fmtDate(date)} has been logged successfully. Keep it up &#x1F4AA;`
   );
 
-  // Clear form
   document.getElementById('f-name').value   = '';
   document.getElementById('f-tiktok').value = '';
   document.getElementById('f-insta').value  = '';
@@ -876,18 +955,12 @@ function submitLog() {
   btn.disabled = false;
   btn.textContent = 'Submit post log';
 
-  // Fire request in background — if it fails, queue it
   if (navigator.onLine) {
     jsonp({ action:'submit', ...payload }, (data, err) => {
-      if (!data || data.status !== 'success') {
-        // Silently queue for retry — user already got success message
-        offlineQueue.push(payload);
-        saveQueue();
-      }
+      if (!data || data.status !== 'success') { offlineQueue.push(payload); saveQueue(); }
     }, 15000);
   } else {
-    offlineQueue.push(payload);
-    saveQueue();
+    offlineQueue.push(payload); saveQueue();
   }
 }
 
@@ -897,7 +970,6 @@ function showAlert(el, type, msg) {
   if (type !== 'error') setTimeout(() => el.classList.remove('show'), 8000);
 }
 
-// ── REFRESH ──
 function refreshAll() {
   populateNameDropdown();
   renderWeeklyGrid();
@@ -917,59 +989,42 @@ function populateNameDropdown() {
   if (cur) sel.value = cur;
 }
 
-// ── WEEKLY GRID ──
 function changeWeek(dir) { weekOffset += dir; renderWeeklyGrid(); }
 
 function renderWeeklyGrid() {
   const dates = getWeekDates(weekOffset);
   document.getElementById('week-label').textContent = fmtDate(dates[0]) + ' — ' + fmtDate(dates[6]);
-
-  // Build header with day + date
   const head = document.getElementById('weekly-head');
-  head.innerHTML = '<th>Creator</th>' +
-    dates.map(d => '<th>' + dayLabel(d) + '</th>').join('') +
-    '<th>Week Total</th>';
-
+  head.innerHTML = '<th>Creator</th>' + dates.map(d => '<th>' + dayLabel(d) + '</th>').join('') + '<th>Week Total</th>';
   const creators = getActiveCreators();
   const tbody = document.getElementById('weekly-body');
-
   if (!dataLoaded || !creatorsLoaded) {
-    tbody.innerHTML = '<tr><td colspan="9" class="empty-state"><span class="spinner"></span></td></tr>';
-    return;
+    tbody.innerHTML = '<tr><td colspan="9" class="empty-state"><span class="spinner"></span></td></tr>'; return;
   }
   if (!creators.length) {
-    tbody.innerHTML = '<tr><td colspan="9" class="empty-state"><strong>No active creators</strong>Add creators in Manage creators</td></tr>';
-    return;
+    tbody.innerHTML = '<tr><td colspan="9" class="empty-state"><strong>No active creators</strong>Add creators in Manage creators</td></tr>'; return;
   }
-
   tbody.innerHTML = creators.map(creator => {
     const rows = allRows.filter(r => r.name === creator);
     const weekTotal = rows.filter(r => dates.includes(r.date)).length;
-
     const cells = dates.map(d => {
       const dayRows = rows.filter(r => r.date === d);
       const p1 = dayRows.find(r => r.post === '1');
       const p2 = dayRows.find(r => r.post === '2');
-
       const p1tt = p1 && p1.tiktok ? `<span class="post-chip chip-tt-1">1 TT</span>` : `<span class="post-chip chip-none">1 TT</span>`;
       const p1ig = p1 && p1.insta  ? `<span class="post-chip chip-ig-1">1 IG</span>` : `<span class="post-chip chip-none">1 IG</span>`;
       const p2tt = p2 && p2.tiktok ? `<span class="post-chip chip-tt-2">2 TT</span>` : `<span class="post-chip chip-none">2 TT</span>`;
       const p2ig = p2 && p2.insta  ? `<span class="post-chip chip-ig-2">2 IG</span>` : `<span class="post-chip chip-none">2 IG</span>`;
-
       return `<td><div class="day-cell">
         <div class="post-pair">${p1tt}${p1ig}</div>
         <div class="post-pair">${p2tt}${p2ig}</div>
       </div></td>`;
     }).join('');
-
     return `<tr><td>${escH(creator)}</td>${cells}<td class="week-total">${weekTotal}</td></tr>`;
   }).join('');
 }
 
-// ── MONTH TABS ──
-function getMonths() {
-  return [...new Set(allRows.map(r => monthYM(r.date)))].sort().reverse();
-}
+function getMonths() { return [...new Set(allRows.map(r => monthYM(r.date)))].sort().reverse(); }
 
 function renderMonthTabs() {
   const months = getMonths();
@@ -990,14 +1045,8 @@ function selectMonth(ym) { selectedMonth = ym; renderMonthTabs(); renderDetailed
 function renderDetailedLog() {
   const tbody = document.getElementById('detailed-body');
   const statsEl = document.getElementById('month-stats');
-  if (!dataLoaded) {
-    tbody.innerHTML = '<tr><td colspan="6" class="empty-state"><span class="spinner"></span></td></tr>';
-    statsEl.style.display = 'none'; return;
-  }
-  if (!selectedMonth) {
-    tbody.innerHTML = '<tr><td colspan="6" class="empty-state"><strong>No submissions yet</strong></td></tr>';
-    statsEl.style.display = 'none'; return;
-  }
+  if (!dataLoaded) { tbody.innerHTML = '<tr><td colspan="6" class="empty-state"><span class="spinner"></span></td></tr>'; statsEl.style.display='none'; return; }
+  if (!selectedMonth) { tbody.innerHTML = '<tr><td colspan="6" class="empty-state"><strong>No submissions yet</strong></td></tr>'; statsEl.style.display='none'; return; }
   const mRows = allRows.filter(r => monthYM(r.date) === selectedMonth);
   const mCreators = [...new Set(mRows.map(r => r.name))];
   const mDays = [...new Set(mRows.map(r => r.date))];
@@ -1006,16 +1055,12 @@ function renderDetailedLog() {
   document.getElementById('m-creators').textContent = mCreators.length;
   document.getElementById('m-days').textContent = mDays.length;
   document.getElementById('m-avg').textContent = mCreators.length ? (mRows.length/mCreators.length).toFixed(1) : '0';
-
-  if (!mRows.length) {
-    tbody.innerHTML = '<tr><td colspan="6" class="empty-state"><strong>No posts in ' + monthLabel(selectedMonth) + '</strong></td></tr>';
-    return;
-  }
+  if (!mRows.length) { tbody.innerHTML = '<tr><td colspan="6" class="empty-state"><strong>No posts in ' + monthLabel(selectedMonth) + '</strong></td></tr>'; return; }
   const sorted = [...mRows].sort((a,b) => b.date.localeCompare(a.date));
   tbody.innerHTML = sorted.map(r => {
     const badge = r.post==='1' ? '<span class="badge badge-p1">Post 1</span>' : '<span class="badge badge-p2">Post 2</span>';
     const tk = r.tiktok ? `<a href="${escH(r.tiktok)}" target="_blank" style="color:var(--accent);font-size:12px;text-decoration:none">&#x2197; TikTok</a>` : '<span style="color:var(--text3)">—</span>';
-    const ig = r.insta  ? `<a href="${escH(r.insta)}"  target="_blank" style="color:var(--blue);font-size:12px;text-decoration:none">&#x2197; Instagram</a>` : '<span style="color:var(--text3)">—</span>';
+    const ig = r.insta  ? `<a href="${escH(r.insta)}"  target="_blank" style="color:var(--pink);font-size:12px;text-decoration:none">&#x2197; Instagram</a>` : '<span style="color:var(--text3)">—</span>';
     return `<tr>
       <td><span class="creator-link" onclick="openModal('${escH(r.name)}')">${escH(r.name)}</span></td>
       <td>${escH(r.date)}</td><td>${badge}</td><td>${tk}</td><td>${ig}</td>
@@ -1024,7 +1069,6 @@ function renderDetailedLog() {
   }).join('');
 }
 
-// ── CREATOR MODAL ──
 function openModal(name) {
   const rows = allRows.filter(r => r.name === name);
   if (!rows.length) return;
@@ -1036,7 +1080,7 @@ function openModal(name) {
     const mr = byMonth[ym].sort((a,b) => b.date.localeCompare(a.date));
     const rowsHtml = mr.map(r => {
       const tk = r.tiktok ? `<a href="${escH(r.tiktok)}" target="_blank" style="color:var(--accent);font-size:12px">TikTok &#x2197;</a>` : '—';
-      const ig = r.insta  ? `<a href="${escH(r.insta)}"  target="_blank" style="color:var(--blue);font-size:12px">Insta &#x2197;</a>`    : '—';
+      const ig = r.insta  ? `<a href="${escH(r.insta)}"  target="_blank" style="color:var(--pink);font-size:12px">Insta &#x2197;</a>`    : '—';
       return `<tr>
         <td>${escH(r.date)}</td>
         <td style="color:${r.post==='1'?'var(--accent)':'var(--blue)'}">Post ${escH(r.post)}</td>
@@ -1060,7 +1104,6 @@ function openModal(name) {
 function closeModalOverlay(e) { if(e.target===document.getElementById('creator-modal')) closeModalDirect(); }
 function closeModalDirect() { document.getElementById('creator-modal').classList.remove('open'); }
 
-// ── DASHBOARD ──
 function renderDashboard() {
   const today = todayStr();
   const curMYM = today.substring(0,7);
@@ -1070,9 +1113,7 @@ function renderDashboard() {
   document.getElementById('d-creators').textContent = creators.length;
   document.getElementById('d-today').textContent    = allRows.filter(r => r.date === today).length;
   const tbody = document.getElementById('dash-body');
-  if (!creators.length) {
-    tbody.innerHTML = '<tr><td colspan="6" class="empty-state"><strong>No active creators</strong></td></tr>'; return;
-  }
+  if (!creators.length) { tbody.innerHTML = '<tr><td colspan="6" class="empty-state"><strong>No active creators</strong></td></tr>'; return; }
   const sorted = creators.map(name => {
     const rows = allRows.filter(r => r.name === name);
     const mc = rows.filter(r => r.date.startsWith(curMYM)).length;
@@ -1081,7 +1122,6 @@ function renderDashboard() {
   }).sort((a,b) => b.mc - a.mc);
   tbody.innerHTML = sorted.map((r,i) => {
     const pct = Math.min(100, Math.round(r.mc/56*100));
-    const cls = pct>=80?'':'pct>=50?\'amber\':\'red\'';
     const barClass = pct>=80 ? '' : pct>=50 ? 'amber' : 'red';
     return `<tr>
       <td style="color:var(--text3)">${i+1}</td>
@@ -1097,7 +1137,6 @@ function renderDashboard() {
   }).join('');
 }
 
-// ── MANAGE CREATORS ──
 function addCreator() {
   const input = document.getElementById('new-creator-name');
   const btn   = document.getElementById('add-creator-btn');
@@ -1112,8 +1151,7 @@ function addCreator() {
     btn.disabled = false; btn.textContent = 'Add creator';
     if (data && data.status === 'success') {
       allCreators.push({ name, status:'Active', added: new Date().toISOString() });
-      input.value = '';
-      refreshAll();
+      input.value = ''; refreshAll();
       showAlert(alert,'success',`${name} has been added as an active creator.`);
     } else {
       showAlert(alert,'error',(data&&data.message)||'Failed to add. Please try again.');
@@ -1129,8 +1167,7 @@ function toggleCreator(name) {
   const alert = document.getElementById('manage-alert');
   jsonp({ action:'toggleCreator', name }, (data) => {
     if (data && data.status === 'success') {
-      c.status = data.newStatus;
-      refreshAll();
+      c.status = data.newStatus; refreshAll();
       showAlert(alert,'success',`${name} is now ${data.newStatus.toLowerCase()}.`);
     } else {
       showAlert(alert,'error',(data&&data.message)||'Failed. Please try again.');
@@ -1139,11 +1176,9 @@ function toggleCreator(name) {
 }
 
 function renderManageCreators() {
-  const tbody   = document.getElementById('manage-body');
-  const counts  = document.getElementById('manage-counts');
-  if (!creatorsLoaded) {
-    tbody.innerHTML = '<tr><td colspan="5" class="empty-state"><span class="spinner"></span></td></tr>'; return;
-  }
+  const tbody = document.getElementById('manage-body');
+  const counts = document.getElementById('manage-counts');
+  if (!creatorsLoaded) { tbody.innerHTML = '<tr><td colspan="5" class="empty-state"><span class="spinner"></span></td></tr>'; return; }
   if (!allCreators.length) {
     tbody.innerHTML = '<tr><td colspan="5" class="empty-state"><strong>No creators yet</strong>Add your first creator above</td></tr>';
     counts.textContent = ''; return;
@@ -1170,7 +1205,19 @@ function renderManageCreators() {
   }).join('');
 }
 
-// ── LOGIN ──
+// ── PASSWORD EYE TOGGLE ──
+function togglePassword() {
+  const input = document.getElementById('login-pass');
+  const icon = document.getElementById('eye-icon');
+  if (input.type === 'password') {
+    input.type = 'text';
+    icon.innerHTML = '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line>';
+  } else {
+    input.type = 'password';
+    icon.innerHTML = '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle>';
+  }
+}
+
 function checkLogin() {
   const val = document.getElementById('login-pass').value;
   const err = document.getElementById('login-err');
@@ -1179,18 +1226,21 @@ function checkLogin() {
     try { sessionStorage.setItem(SESSION_KEY,'1'); } catch(e) {}
     err.classList.remove('show');
     document.getElementById('login-pass').value = '';
+    // Reset eye to hidden state
+    document.getElementById('login-pass').type = 'password';
+    document.getElementById('eye-icon').innerHTML = '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle>';
     showPage('dashboard');
   } else {
     err.classList.add('show');
   }
 }
+
 function logout() {
   isAdmin = false;
   try { sessionStorage.removeItem(SESSION_KEY); } catch(e) {}
   showPage('submit');
 }
 
-// ── NAV ──
 function renderNav() {
   const c = document.getElementById('nav-container');
   if (isAdmin) {
@@ -1207,7 +1257,6 @@ function renderNav() {
   }
 }
 
-// ── PAGE NAV ──
 const ADMIN_PAGES = ['weekly','detailed','dashboard','manage'];
 function showPage(name) {
   if (ADMIN_PAGES.includes(name) && !isAdmin) { showPage('login'); return; }
