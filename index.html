@@ -1,421 +1,1205 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Northquest Daily Posting Log</title>
 <style>
-*{box-sizing:border-box;margin:0;padding:0}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f5f5f3;min-height:100vh;padding:1.5rem}
-.container{max-width:700px;margin:0 auto}
-.header{text-align:center;margin-bottom:1.5rem}
-.header h1{font-size:20px;font-weight:700;color:#1a1a1a;margin-bottom:2px}
-.header p{font-size:13px;color:#888}
-.tabs{display:flex;gap:0;margin-bottom:1.5rem;border:1px solid #ddd;border-radius:10px;overflow:hidden;background:#fff}
-.tab{flex:1;padding:11px;text-align:center;cursor:pointer;font-size:14px;color:#666;border:none;background:none;font-family:inherit}
-.tab.active{background:#1a1a1a;color:#fff;font-weight:600}
-.card{background:#fff;border-radius:12px;padding:1.25rem;margin-bottom:1rem;border:1px solid #e8e8e8}
-.section-title{font-size:15px;font-weight:700;color:#1a1a1a;margin-bottom:1rem}
-.field{margin-bottom:1rem}
-label{display:block;font-size:13px;color:#555;margin-bottom:5px;font-weight:500}
-input,select,textarea{width:100%;padding:10px 12px;border:1px solid #ddd;border-radius:8px;font-size:14px;font-family:inherit;color:#1a1a1a;background:#fff}
-input:focus,select:focus,textarea:focus{outline:none;border-color:#1a1a1a}
-textarea{height:72px;resize:none}
-.btn{width:100%;padding:12px;border:none;border-radius:8px;font-size:14px;font-weight:700;font-family:inherit;cursor:pointer}
-.btn-primary{background:#1a1a1a;color:#fff}
-.btn-primary:disabled{opacity:0.4;cursor:not-allowed}
-.alert{padding:12px 14px;border-radius:8px;font-size:13px;margin-bottom:1rem}
-.alert-success{background:#eaf3de;color:#27500a;border:1px solid #97c459}
-.alert-error{background:#fcebeb;color:#791f1f;border:1px solid #f09595}
+  @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Syne:wght@400;600;700;800&display=swap');
 
-/* DASHBOARD STYLES */
-.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:1.25rem}
-.stat{background:#fff;border:1px solid #e8e8e8;border-radius:10px;padding:14px;text-align:center}
-.stat-n{font-size:24px;font-weight:700;color:#1a1a1a}
-.stat-l{font-size:11px;color:#888;margin-top:3px}
-.week-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem}
-.week-nav button{background:#fff;border:1px solid #ddd;border-radius:8px;padding:6px 14px;cursor:pointer;font-size:13px;font-family:inherit}
-.week-label{font-size:14px;font-weight:600;color:#1a1a1a}
-.week-table{width:100%;border-collapse:collapse;font-size:13px}
-.week-table th{background:#f5f5f3;padding:10px 8px;text-align:center;font-weight:600;color:#555;border:1px solid #e8e8e8;font-size:12px}
-.week-table th.name-col{text-align:left;min-width:140px}
-.week-table td{padding:10px 8px;text-align:center;border:1px solid #e8e8e8;color:#1a1a1a;vertical-align:middle}
-.week-table td.name-col{text-align:left;font-weight:500;font-size:13px}
-.week-table tr:nth-child(even) td{background:#fafafa}
-.post-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin:1px}
-.dot-p1{background:#185fa5}
-.dot-p2{background:#3b6d11}
-.dot-none{background:#e0e0e0}
-.cell-links{display:flex;flex-direction:column;gap:3px;margin-top:4px}
-.cell-link{font-size:11px;color:#185fa5;text-decoration:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:90px;display:block}
-.cell-link:hover{text-decoration:underline}
-.legend{display:flex;gap:16px;font-size:12px;color:#666;margin-bottom:1rem;align-items:center}
-.legend-dot{width:10px;height:10px;border-radius:50%;display:inline-block;margin-right:4px}
-.detail-card{background:#fff;border:1px solid #e8e8e8;border-radius:10px;margin-bottom:10px;overflow:hidden}
-.detail-header{background:#f5f5f3;padding:10px 14px;display:flex;justify-content:space-between;align-items:center;cursor:pointer}
-.detail-header-name{font-size:14px;font-weight:600;color:#1a1a1a}
-.detail-header-stats{font-size:12px;color:#888}
-.detail-body{padding:10px 14px;display:none}
-.detail-body.open{display:block}
-.detail-row{display:grid;grid-template-columns:80px 60px 1fr 1fr;gap:8px;padding:6px 0;border-top:1px solid #f0f0f0;font-size:12px;align-items:start}
-.detail-row:first-child{border-top:none}
-.detail-row .dr-date{color:#555;font-weight:500}
-.detail-row .dr-post{display:inline-block;padding:1px 7px;border-radius:5px;font-size:11px;font-weight:600}
-.dr-p1{background:#e6f1fb;color:#185fa5}
-.dr-p2{background:#eaf3de;color:#3b6d11}
-.dr-link{color:#185fa5;text-decoration:none;word-break:break-all;line-height:1.4}
-.dr-link:hover{text-decoration:underline}
-.issues-txt{color:#888;font-style:italic;font-size:11px;margin-top:2px}
-.tab-bar{display:flex;gap:8px;margin-bottom:1rem;border-bottom:2px solid #f0f0f0;padding-bottom:0}
-.dash-tab{padding:8px 16px;border:none;background:none;font-family:inherit;font-size:13px;color:#888;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px}
-.dash-tab.active{color:#1a1a1a;font-weight:600;border-bottom-color:#1a1a1a}
-.empty{text-align:center;padding:2rem;color:#aaa;font-size:14px}
-.spinner{display:inline-block;width:14px;height:14px;border:2px solid #ffffff40;border-top-color:#fff;border-radius:50%;animation:spin 0.7s linear infinite;vertical-align:middle;margin-right:6px}
-@keyframes spin{to{transform:rotate(360deg)}}
-.filter-row{display:flex;gap:8px;margin-bottom:1rem;align-items:center}
-.filter-row input,.filter-row select{flex:1;width:auto}
-.clear-btn{font-size:13px;color:#888;background:none;border:none;cursor:pointer;font-family:inherit;white-space:nowrap}
-.summary-bar{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap}
-.summary-chip{font-size:11px;padding:2px 8px;border-radius:5px;background:#f0f0f0;color:#555}
-.summary-chip.full{background:#eaf3de;color:#3b6d11}
-.summary-chip.partial{background:#fdf4e3;color:#855a0a}
-.summary-chip.none{background:#fcebeb;color:#791f1f}
-@media(max-width:500px){
-  .stats-grid{grid-template-columns:1fr 1fr}
-  .week-table{font-size:11px}
-  .week-table th,.week-table td{padding:6px 4px}
-}
+  :root {
+    --bg: #0a0a0f;
+    --surface: #111118;
+    --surface2: #18181f;
+    --surface3: #1e1e28;
+    --border: #2a2a38;
+    --border2: #353545;
+    --accent: #00c896;
+    --accent2: #00a87c;
+    --accent-dim: rgba(0,200,150,0.12);
+    --accent-glow: rgba(0,200,150,0.25);
+    --text: #f0f0f5;
+    --text2: #9090a8;
+    --text3: #5a5a72;
+    --red: #ff5566;
+    --amber: #ffaa44;
+    --blue: #5599ff;
+    --radius: 10px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'DM Mono', monospace;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  .header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 60px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    gap: 16px;
+  }
+  .header-brand { display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
+  .header-dot {
+    width: 10px; height: 10px;
+    background: var(--accent);
+    border-radius: 50%;
+    box-shadow: 0 0 10px var(--accent-glow);
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse {
+    0%,100% { opacity:1; transform:scale(1); }
+    50% { opacity:0.6; transform:scale(0.85); }
+  }
+  .header-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 15px; font-weight: 700;
+    letter-spacing: 0.08em; text-transform: uppercase;
+  }
+  .header-sub { font-size: 11px; color: var(--text3); letter-spacing: 0.06em; }
+
+  .nav-tabs { display: flex; gap: 4px; flex-wrap: wrap; align-items: center; }
+  .nav-tab {
+    padding: 6px 14px;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--text2);
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 0.04em;
+  }
+  .nav-tab:hover { color: var(--text); border-color: var(--border2); }
+  .nav-tab.active { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); }
+
+  .admin-link {
+    padding: 6px 14px;
+    border: 1px solid var(--border2);
+    border-radius: 6px;
+    background: transparent;
+    color: var(--text3);
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  .admin-link:hover { color: var(--accent); border-color: var(--accent); }
+
+  .logout-btn {
+    padding: 6px 14px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: transparent;
+    color: var(--text3);
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  .logout-btn:hover { color: var(--red); border-color: var(--red); }
+
+  .main { padding: 28px 24px; max-width: 1200px; margin: 0 auto; }
+  .page { display: none; }
+  .page.active { display: block; }
+
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 28px;
+  }
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px 20px;
+  }
+  .stat-label { font-size: 11px; color: var(--text3); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 8px; }
+  .stat-value { font-family: 'Syne', sans-serif; font-size: 28px; font-weight: 800; color: var(--accent); }
+
+  .section-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; gap: 12px; flex-wrap: wrap; }
+  .section-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 13px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.12em; color: var(--text2);
+  }
+
+  .form-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 28px; max-width: 560px;
+    margin: 0 auto;
+  }
+  .form-title { font-family: 'Syne', sans-serif; font-size: 20px; font-weight: 700; margin-bottom: 6px; }
+  .form-subtitle { font-size: 12px; color: var(--text3); margin-bottom: 24px; }
+  .form-group { margin-bottom: 18px; }
+  .form-label { font-size: 11px; color: var(--text2); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 6px; display: block; }
+  .form-input {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 10px 14px;
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .form-input:focus { border-color: var(--accent); }
+  .form-input option { background: var(--surface2); }
+  .btn {
+    padding: 10px 22px; border-radius: 6px;
+    font-family: 'DM Mono', monospace; font-size: 13px;
+    cursor: pointer; border: none; transition: all 0.2s; letter-spacing: 0.04em;
+  }
+  .btn-primary {
+    background: var(--accent); color: #000; font-weight: 600;
+    width: 100%; padding: 12px; margin-top: 6px;
+  }
+  .btn-primary:hover { background: var(--accent2); }
+  .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn-sm {
+    padding: 6px 14px; font-size: 11px;
+    background: var(--surface2); border: 1px solid var(--border); color: var(--text2);
+  }
+  .btn-sm:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-danger { border-color: var(--red); color: var(--red); }
+  .btn-danger:hover { background: rgba(255,85,102,0.12); border-color: var(--red); color: var(--red); }
+  .toast {
+    display: none; margin-top: 14px; padding: 10px 14px;
+    border-radius: 6px; font-size: 12px;
+    background: var(--accent-dim); border: 1px solid var(--accent); color: var(--accent);
+  }
+  .toast.err { background: rgba(255,85,102,0.12); border-color: var(--red); color: var(--red); }
+  .toast.show { display: block; }
+
+  .grid-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+  .grid-nav {
+    display: flex; align-items: center; gap: 10px;
+    padding: 14px 18px; border-bottom: 1px solid var(--border); background: var(--surface2);
+  }
+  .grid-nav span { font-size: 13px; font-family: 'Syne', sans-serif; font-weight: 600; flex: 1; text-align: center; }
+  .grid-table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  th {
+    background: var(--surface2); color: var(--text3);
+    font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase;
+    padding: 10px 14px; text-align: center;
+    border-bottom: 1px solid var(--border); font-weight: 400;
+  }
+  th:first-child { text-align: left; }
+  td { padding: 10px 14px; border-bottom: 1px solid var(--border); text-align: center; color: var(--text2); }
+  td:first-child { text-align: left; color: var(--text); font-weight: 500; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--surface2); }
+  .cell-dot { display: inline-flex; width: 8px; height: 8px; border-radius: 50%; margin: 0 2px; }
+  .dot-1 { background: var(--accent); box-shadow: 0 0 6px var(--accent-glow); }
+  .dot-2 { background: var(--blue); box-shadow: 0 0 6px rgba(85,153,255,0.4); }
+  .dot-none { background: var(--border2); }
+  .week-total { font-family: 'Syne', sans-serif; font-weight: 700; color: var(--accent); }
+  .legend {
+    display: flex; gap: 18px;
+    padding: 10px 18px; border-top: 1px solid var(--border); background: var(--surface2);
+  }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--text3); }
+
+  .month-tabs {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 18px;
+    flex-wrap: wrap;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--border);
+  }
+  .month-tab {
+    padding: 8px 16px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text2);
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 0.04em;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .month-tab:hover { border-color: var(--accent); color: var(--accent); }
+  .month-tab.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #000;
+    font-weight: 600;
+  }
+  .month-tab .count {
+    background: var(--surface2);
+    padding: 1px 6px;
+    border-radius: 3px;
+    font-size: 10px;
+    color: var(--text3);
+  }
+  .month-tab.active .count { background: rgba(0,0,0,0.2); color: rgba(0,0,0,0.7); }
+
+  .log-table-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+  .log-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .log-table th {
+    background: var(--surface2); color: var(--text3);
+    font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase;
+    padding: 10px 14px; text-align: left;
+    border-bottom: 1px solid var(--border); font-weight: 400;
+  }
+  .log-table td { padding: 10px 14px; border-bottom: 1px solid var(--border); color: var(--text2); text-align: left; }
+  .log-table tr:last-child td { border-bottom: none; }
+  .log-table tr:hover td { background: var(--surface2); }
+
+  .creator-link {
+    color: var(--accent); cursor: pointer;
+    text-decoration: none; font-weight: 500; transition: opacity 0.15s;
+  }
+  .creator-link:hover { opacity: 0.75; text-decoration: underline; }
+
+  .badge { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 4px; font-size: 10px; letter-spacing: 0.06em; font-weight: 500; }
+  .badge-p1 { background: rgba(0,200,150,0.12); color: var(--accent); }
+  .badge-p2 { background: rgba(85,153,255,0.12); color: var(--blue); }
+  .badge-active { background: rgba(0,200,150,0.12); color: var(--accent); }
+  .badge-inactive { background: rgba(144,144,168,0.12); color: var(--text2); }
+
+  .empty-state { text-align: center; padding: 48px 24px; color: var(--text3); font-size: 13px; }
+  .empty-state strong { display: block; font-family: 'Syne', sans-serif; font-size: 16px; color: var(--text2); margin-bottom: 6px; }
+
+  .modal-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.7); backdrop-filter: blur(4px);
+    z-index: 200; align-items: center; justify-content: center; padding: 20px;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 14px; width: 100%; max-width: 720px; max-height: 85vh; overflow-y: auto;
+  }
+  .modal-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 20px 24px; border-bottom: 1px solid var(--border);
+    position: sticky; top: 0; background: var(--surface); z-index: 1;
+  }
+  .modal-title { font-family: 'Syne', sans-serif; font-size: 16px; font-weight: 700; }
+  .modal-sub { font-size: 11px; color: var(--text3); margin-top: 2px; }
+  .modal-close {
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 6px; color: var(--text2); cursor: pointer;
+    font-size: 16px; width: 30px; height: 30px;
+    display: flex; align-items: center; justify-content: center; transition: all 0.2s;
+  }
+  .modal-close:hover { border-color: var(--red); color: var(--red); }
+  .modal-body { padding: 20px 24px; }
+  .month-block { margin-bottom: 20px; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+  .month-block-header {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 10px 16px; background: var(--surface3); border-bottom: 1px solid var(--border);
+  }
+  .month-block-name { font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 700; letter-spacing: 0.06em; }
+  .month-block-total { font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 700; color: var(--amber); }
+  .month-block-rows table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .month-block-rows td { padding: 8px 16px; border-bottom: 1px solid var(--border); color: var(--text2); }
+  .month-block-rows th { background: var(--surface3); color: var(--text3); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; padding: 8px 16px; text-align: left; border-bottom: 1px solid var(--border); font-weight: 400; }
+  .month-block-rows tr:last-child td { border-bottom: none; }
+
+  /* Login Screen */
+  .login-screen {
+    min-height: calc(100vh - 60px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .login-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 40px;
+    max-width: 400px;
+    width: 100%;
+    text-align: center;
+  }
+  .login-icon {
+    width: 56px; height: 56px;
+    margin: 0 auto 18px;
+    border-radius: 50%;
+    background: var(--accent-dim);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+    border: 1px solid var(--accent);
+  }
+  .login-title { font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 700; margin-bottom: 8px; }
+  .login-sub { font-size: 12px; color: var(--text3); margin-bottom: 28px; }
+  .login-form { display: flex; flex-direction: column; gap: 10px; }
+  .back-link {
+    margin-top: 20px;
+    font-size: 11px;
+    color: var(--text3);
+    cursor: pointer;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    transition: color 0.2s;
+  }
+  .back-link:hover { color: var(--accent); }
+
+  .creator-table-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; margin-top: 20px; }
+  .progress-bar-wrap { width: 80px; height: 6px; background: var(--border2); border-radius: 3px; overflow: hidden; }
+  .progress-bar-fill { height: 100%; background: var(--accent); border-radius: 3px; transition: width 0.4s; }
+  .progress-bar-fill.amber { background: var(--amber); }
+  .progress-bar-fill.red { background: var(--red); }
+
+  .loading-spinner {
+    display: inline-block; width: 16px; height: 16px;
+    border: 2px solid var(--border2); border-top-color: var(--accent);
+    border-radius: 50%; animation: spin 0.7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .add-creator-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin-bottom: 20px;
+    display: flex;
+    gap: 10px;
+    align-items: flex-end;
+  }
+  .add-creator-card .form-group { flex: 1; margin: 0; }
+
+  @media (max-width: 700px) {
+    .stats-row { grid-template-columns: 1fr 1fr; }
+    .nav-tab { padding: 6px 10px; font-size: 11px; }
+    .header { padding: 0 14px; height: auto; padding-top: 10px; padding-bottom: 10px; flex-direction: column; align-items: flex-start; }
+    .main { padding: 18px 14px; }
+    .add-creator-card { flex-direction: column; align-items: stretch; }
+  }
 </style>
 </head>
 <body>
-<div class="container">
-  <div class="header">
-    <h1>Northquest Finance</h1>
-    <p>Daily Posting Log</p>
-  </div>
 
-  <div class="tabs">
-    <button class="tab active" onclick="showTab('submit')">Submit a post</button>
-    <button class="tab" onclick="showTab('dashboard')">Dashboard</button>
-  </div>
-
-  <!-- SUBMIT TAB -->
-  <div id="tab-submit">
-    <div class="card">
-      <p class="section-title">Daily posting log</p>
-      <div id="alert-box"></div>
-      <div class="field">
-        <label>Your full name</label>
-        <input type="text" id="creator-name" placeholder="Type your full name exactly as registered..." />
-      </div>
-      <div class="field">
-        <label>Date</label>
-        <input type="date" id="post-date" />
-      </div>
-      <div class="field">
-        <label>Which post is this?</label>
-        <select id="post-number">
-          <option value="1">Post 1 (first post of the day)</option>
-          <option value="2">Post 2 (second post of the day)</option>
-        </select>
-      </div>
-      <div class="field">
-        <label>TikTok video link</label>
-        <input type="url" id="tiktok-link" placeholder="https://www.tiktok.com/@..." />
-      </div>
-      <div class="field">
-        <label>Instagram reel link</label>
-        <input type="url" id="ig-link" placeholder="https://www.instagram.com/reel/..." />
-      </div>
-      <div class="field">
-        <label>Any issues today? (optional)</label>
-        <textarea id="issues" placeholder="e.g. Instagram was slow, video took longer to upload..."></textarea>
-      </div>
-      <button class="btn btn-primary" id="submit-btn" onclick="submitLog()">Submit log</button>
+<header class="header" id="main-header">
+  <div class="header-brand">
+    <div class="header-dot"></div>
+    <div>
+      <div class="header-title">Northquest Finance</div>
+      <div class="header-sub">Daily Posting Log</div>
     </div>
   </div>
+  <nav class="nav-tabs" id="nav-container">
+    <!-- nav items rendered dynamically -->
+  </nav>
+</header>
 
-  <!-- DASHBOARD TAB -->
-  <div id="tab-dashboard" style="display:none">
-    <div class="stats-grid" id="stats-row">
-      <div class="stat"><div class="stat-n">-</div><div class="stat-l">Total posts logged</div></div>
-      <div class="stat"><div class="stat-n">-</div><div class="stat-l">Logged today</div></div>
-      <div class="stat"><div class="stat-n">-</div><div class="stat-l">Active creators</div></div>
-      <div class="stat"><div class="stat-n">-</div><div class="stat-l">This week's posts</div></div>
+<!-- SUBMIT PAGE (public) -->
+<div id="page-submit" class="page active main">
+  <div class="form-card">
+    <div class="form-title">Log a post</div>
+    <div class="form-subtitle">Select your name and fill in your post details below.</div>
+    <div class="form-group">
+      <label class="form-label">Your name</label>
+      <select class="form-input" id="f-name">
+        <option value="">Select your name...</option>
+      </select>
     </div>
-
-    <div class="tab-bar">
-      <button class="dash-tab active" onclick="switchDashTab('weekly')">Weekly grid</button>
-      <button class="dash-tab" onclick="switchDashTab('detail')">Detailed log</button>
+    <div class="form-group">
+      <label class="form-label">Date</label>
+      <input class="form-input" id="f-date" type="date" />
     </div>
+    <div class="form-group">
+      <label class="form-label">Which post is this?</label>
+      <select class="form-input" id="f-post">
+        <option value="">Select...</option>
+        <option value="1">Post 1 (first post of the day)</option>
+        <option value="2">Post 2 (second post of the day)</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">TikTok video link</label>
+      <input class="form-input" id="f-tiktok" type="url" placeholder="https://tiktok.com/..." />
+    </div>
+    <div class="form-group">
+      <label class="form-label">Instagram reel link</label>
+      <input class="form-input" id="f-insta" type="url" placeholder="https://instagram.com/reel/..." />
+    </div>
+    <div class="form-group">
+      <label class="form-label">Any issues today? (optional)</label>
+      <input class="form-input" id="f-issues" type="text" placeholder="e.g. App was slow" />
+    </div>
+    <button class="btn btn-primary" id="submit-btn" onclick="submitLog()">Submit log</button>
+    <div class="toast" id="f-toast"></div>
+  </div>
+</div>
 
-    <!-- WEEKLY GRID VIEW -->
-    <div id="dash-weekly">
-      <div class="card">
-        <div class="week-nav">
-          <button onclick="changeWeek(-1)">&#8592; Prev</button>
-          <span class="week-label" id="week-label">Loading...</span>
-          <button onclick="changeWeek(1)">Next &#8594;</button>
-        </div>
-        <div class="legend">
-          <span><span class="legend-dot" style="background:#185fa5;display:inline-block"></span>Post 1 logged</span>
-          <span><span class="legend-dot" style="background:#3b6d11;display:inline-block"></span>Post 2 logged</span>
-          <span><span class="legend-dot" style="background:#e0e0e0;display:inline-block"></span>Not logged</span>
-        </div>
-        <div style="overflow-x:auto">
-          <table class="week-table" id="week-table">
-            <thead id="week-thead"></thead>
-            <tbody id="week-tbody"></tbody>
-          </table>
-        </div>
+<!-- ADMIN LOGIN PAGE -->
+<div id="page-login" class="page">
+  <div class="login-screen">
+    <div class="login-card">
+      <div class="login-icon">&#x1F512;</div>
+      <div class="login-title">Admin access</div>
+      <div class="login-sub">Enter the admin password to view dashboards and manage creators</div>
+      <div class="login-form">
+        <input class="form-input" id="login-pass" type="password" placeholder="Password"
+          onkeydown="if(event.key==='Enter')checkLogin()" autofocus />
+        <button class="btn btn-primary" style="margin-top:0" onclick="checkLogin()">Unlock</button>
       </div>
-    </div>
-
-    <!-- DETAILED LOG VIEW -->
-    <div id="dash-detail" style="display:none">
-      <div class="card">
-        <p class="section-title">Filter submissions</p>
-        <div class="filter-row">
-          <input type="text" id="filter-name" placeholder="Search by name..." oninput="renderDetail()" />
-          <input type="date" id="filter-date" onchange="renderDetail()" />
-          <button class="clear-btn" onclick="clearFilters()">Clear</button>
-        </div>
-      </div>
-      <div id="detail-list"></div>
+      <div class="toast err" id="login-err">Incorrect password</div>
+      <div class="back-link" onclick="showPage('submit')">&larr; Back to submit</div>
     </div>
   </div>
 </div>
 
+<!-- DAILY POSTING LOG (admin) -->
+<div id="page-weekly" class="page main">
+  <div class="section-head">
+    <span class="section-title">Daily posting log &mdash; weekly grid</span>
+    <span style="font-size:11px;color:var(--text3)">Only active creators shown</span>
+  </div>
+  <div class="grid-card">
+    <div class="grid-nav">
+      <button class="btn btn-sm" onclick="changeWeek(-1)">&larr; Prev</button>
+      <span id="week-label">Loading...</span>
+      <button class="btn btn-sm" onclick="changeWeek(1)">Next &rarr;</button>
+    </div>
+    <div class="grid-table-wrap">
+      <table id="weekly-table">
+        <thead>
+          <tr>
+            <th>Creator</th>
+            <th>Mon</th><th>Tue</th><th>Wed</th><th>Thu</th><th>Fri</th><th>Sat</th><th>Sun</th>
+            <th>Week Total</th>
+          </tr>
+        </thead>
+        <tbody id="weekly-body">
+          <tr><td colspan="9" class="empty-state"><span class="loading-spinner"></span></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="legend">
+      <div class="legend-item"><span class="cell-dot dot-1"></span> Post 1 logged</div>
+      <div class="legend-item"><span class="cell-dot dot-2"></span> Post 2 logged</div>
+      <div class="legend-item"><span class="cell-dot dot-none"></span> Not logged</div>
+    </div>
+  </div>
+</div>
+
+<!-- DETAILED LOG (admin) -->
+<div id="page-detailed" class="page main">
+  <div class="section-head">
+    <span class="section-title">Detailed log &mdash; by month</span>
+  </div>
+  <div class="month-tabs" id="month-tabs">
+    <span style="color:var(--text3);font-size:12px">Loading months...</span>
+  </div>
+
+  <div class="stats-row" id="month-stats" style="display:none">
+    <div class="stat-card"><div class="stat-label">Posts this month</div><div class="stat-value" id="m-total">-</div></div>
+    <div class="stat-card"><div class="stat-label">Active creators</div><div class="stat-value" id="m-creators">-</div></div>
+    <div class="stat-card"><div class="stat-label">Days with posts</div><div class="stat-value" id="m-days">-</div></div>
+    <div class="stat-card"><div class="stat-label">Avg per creator</div><div class="stat-value" id="m-avg">-</div></div>
+  </div>
+
+  <div class="log-table-wrap">
+    <table class="log-table">
+      <thead>
+        <tr>
+          <th>Creator</th>
+          <th>Date</th>
+          <th>Post</th>
+          <th>TikTok</th>
+          <th>Instagram</th>
+          <th>Issues</th>
+        </tr>
+      </thead>
+      <tbody id="detailed-body">
+        <tr><td colspan="6" class="empty-state"><span class="loading-spinner"></span></td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- DASHBOARD (admin) -->
+<div id="page-dashboard" class="page main">
+  <div class="stats-row">
+    <div class="stat-card"><div class="stat-label">Total posts</div><div class="stat-value" id="d-total">-</div></div>
+    <div class="stat-card"><div class="stat-label">This month</div><div class="stat-value" id="d-month">-</div></div>
+    <div class="stat-card"><div class="stat-label">Active creators</div><div class="stat-value" id="d-creators">-</div></div>
+    <div class="stat-card"><div class="stat-label">Today</div><div class="stat-value" id="d-today">-</div></div>
+  </div>
+  <div class="section-head">
+    <span class="section-title">Creator performance &mdash; this month</span>
+  </div>
+  <div class="creator-table-wrap">
+    <table class="log-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Creator</th>
+          <th>This Month</th>
+          <th>Progress (56 target)</th>
+          <th>All Time</th>
+          <th>Last Post</th>
+        </tr>
+      </thead>
+      <tbody id="dash-body">
+        <tr><td colspan="6" class="empty-state"><span class="loading-spinner"></span></td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- MANAGE CREATORS (admin) -->
+<div id="page-manage" class="page main">
+  <div class="section-head">
+    <span class="section-title">Add a new creator</span>
+  </div>
+  <div class="add-creator-card">
+    <div class="form-group">
+      <label class="form-label">Full name</label>
+      <input class="form-input" id="new-creator-name" type="text" placeholder="e.g. Olamide Oladele"
+        onkeydown="if(event.key==='Enter')addCreator()" />
+    </div>
+    <button class="btn btn-primary" id="add-creator-btn" onclick="addCreator()" style="width:auto;margin:0;padding:10px 22px">Add creator</button>
+  </div>
+  <div class="toast" id="manage-toast"></div>
+
+  <div class="section-head" style="margin-top:24px">
+    <span class="section-title">All creators</span>
+    <span style="font-size:11px;color:var(--text3)" id="manage-counts"></span>
+  </div>
+  <div class="creator-table-wrap">
+    <table class="log-table">
+      <thead>
+        <tr>
+          <th>Creator</th>
+          <th>Status</th>
+          <th>Added</th>
+          <th>Total Posts</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody id="manage-body">
+        <tr><td colspan="5" class="empty-state"><span class="loading-spinner"></span></td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- CREATOR MODAL -->
+<div class="modal-overlay" id="creator-modal" onclick="closeModalOverlay(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title" id="modal-name">Creator</div>
+        <div class="modal-sub" id="modal-sub">Monthly breakdown</div>
+      </div>
+      <button class="modal-close" onclick="closeModalDirect()">&#x2715;</button>
+    </div>
+    <div class="modal-body" id="modal-body"></div>
+  </div>
+</div>
+
 <script>
-function jsonpFetch(url) {
-  return new Promise((resolve, reject) => {
-    const cbName = 'cb_' + Date.now();
-    const script = document.createElement('script');
-    script.src = url + '&callback=' + cbName;
-    script.onerror = () => { document.head.removeChild(script); reject(new Error('Network error')); };
-    const timer = setTimeout(() => {
-      if(window[cbName]) { document.head.removeChild(script); delete window[cbName]; reject(new Error('Timeout')); }
-    }, 30000);
-    window[cbName] = (data) => {
-      clearTimeout(timer);
-      if(document.head.contains(script)) document.head.removeChild(script);
-      delete window[cbName];
-      resolve(data);
-    };
-    document.head.appendChild(script);
-  });
-}
-
+// ── CONFIG ──
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwLrQ6h0XAOKIxYw_r2uMbb_FtBq_ZBBFdBAQpeLHo9Z9ZKkzISuje9CvuTF-RcWgFgmQ/exec';
-const DASHBOARD_PASSWORD = 'NQ2026dash';
-let dashUnlocked = false;
-let allEntries = [];
-let currentWeekOffset = 0;
+const ADMIN_PASS = 'NQ2026dash';
+const SESSION_KEY = 'nq_admin_session';
 
-document.getElementById('post-date').value = new Date().toISOString().split('T')[0];
+// ── STATE ──
+let allRows = [];
+let allCreators = [];
+let weekOffset = 0;
+let selectedMonth = null;
+let isAdmin = false;
+let dataLoaded = false;
+let creatorsLoaded = false;
+let jsonpCounter = 0;
+let currentPage = 'submit';
 
-function showTab(tab) {
-  if(tab === 'dashboard' && !dashUnlocked) {
-    const entered = prompt('Enter dashboard password:');
-    if(entered !== DASHBOARD_PASSWORD) { alert('Incorrect password.'); return; }
-    dashUnlocked = true;
-  }
-  document.getElementById('tab-submit').style.display = tab === 'submit' ? 'block' : 'none';
-  document.getElementById('tab-dashboard').style.display = tab === 'dashboard' ? 'block' : 'none';
-  document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', (i===0&&tab==='submit')||(i===1&&tab==='dashboard')));
-  if(tab === 'dashboard') loadDashboard();
-}
-
-function switchDashTab(tab) {
-  document.getElementById('dash-weekly').style.display = tab === 'weekly' ? 'block' : 'none';
-  document.getElementById('dash-detail').style.display = tab === 'detail' ? 'block' : 'none';
-  document.querySelectorAll('.dash-tab').forEach((t,i) => t.classList.toggle('active', (i===0&&tab==='weekly')||(i===1&&tab==='detail')));
-  if(tab === 'detail') renderDetail();
-}
-
-function showAlert(msg, type) {
-  const box = document.getElementById('alert-box');
-  box.innerHTML = `<div class="alert alert-${type}">${msg}</div>`;
-  if(type === 'success') setTimeout(() => box.innerHTML = '', 5000);
-}
-
-async function submitLog() {
-  const name = document.getElementById('creator-name').value.trim();
-  const date = document.getElementById('post-date').value;
-  const postNum = document.getElementById('post-number').value;
-  const tiktok = document.getElementById('tiktok-link').value.trim();
-  const ig = document.getElementById('ig-link').value.trim();
-  const issues = document.getElementById('issues').value.trim();
-
-  if(!name){ showAlert('Please enter your full name.', 'error'); return; }
-  if(!date){ showAlert('Please select a date.', 'error'); return; }
-  if(!tiktok && !ig){ showAlert('Please provide at least one video link.', 'error'); return; }
-
-  const btn = document.getElementById('submit-btn');
-  btn.disabled = true;
-  btn.innerHTML = '<span class="spinner"></span>Submitting...';
-
+// ── BOOT ──
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('f-date').value = todayStr();
+  // restore admin session if it exists
   try {
-    const params = new URLSearchParams({action:'submit', name, date, postNum, tiktok, ig, issues});
-    const data = await jsonpFetch(SCRIPT_URL + '?' + params.toString());
-    if(data.status === 'duplicate') {
-      showAlert(`You already logged Post ${postNum} for ${date}. Contact Smith if this is an error.`, 'error');
-    } else if(data.status === 'ok') {
-      showAlert('Post logged successfully! Well done.', 'success');
-      document.getElementById('tiktok-link').value = '';
-      document.getElementById('ig-link').value = '';
-      document.getElementById('issues').value = '';
-    } else {
-      showAlert('Something went wrong. Please try again.', 'error');
+    if (sessionStorage.getItem(SESSION_KEY) === 'true') {
+      isAdmin = true;
     }
-  } catch(e) {
-    showAlert('Could not connect. Please check your internet and try again.', 'error');
-  }
-  btn.disabled = false;
-  btn.innerHTML = 'Submit log';
-}
+  } catch(e) {}
+  renderNav();
+  loadRows();
+  loadCreators();
+});
 
-async function loadDashboard() {
-  try {
-    allEntries = await jsonpFetch(SCRIPT_URL + '?action=get');
-    updateStats();
-    renderWeeklyGrid();
-  } catch(e) {
-    document.getElementById('week-tbody').innerHTML = '<tr><td colspan="8" style="text-align:center;padding:2rem;color:#aaa">Could not load data. Check connection.</td></tr>';
-  }
+// ── HELPERS ──
+function todayStr() { return new Date().toISOString().split('T')[0]; }
+function escH(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 }
-
-function updateStats() {
-  const today = new Date().toISOString().split('T')[0];
-  const total = allEntries.length;
-  const todayCount = allEntries.filter(e => e.date === today).length;
-  const creators = new Set(allEntries.map(e => e.name)).size;
-  const weekDates = getWeekDates(0);
-  const weekCount = allEntries.filter(e => weekDates.includes(e.date)).length;
-  document.getElementById('stats-row').innerHTML = `
-    <div class="stat"><div class="stat-n">${total}</div><div class="stat-l">Total posts logged</div></div>
-    <div class="stat"><div class="stat-n">${todayCount}</div><div class="stat-l">Logged today</div></div>
-    <div class="stat"><div class="stat-n">${creators}</div><div class="stat-l">Active creators</div></div>
-    <div class="stat"><div class="stat-n">${weekCount}</div><div class="stat-l">This week's posts</div></div>
-  `;
+function fmtDate(str) {
+  const d = new Date(str + 'T00:00:00');
+  return d.toLocaleDateString('en-GB', { day:'numeric', month:'short' });
+}
+function monthYM(dateStr) { return String(dateStr).substring(0, 7); }
+function monthLabel(ym) {
+  const [y, m] = ym.split('-');
+  const names = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  return names[parseInt(m)-1] + ' ' + y;
+}
+function monthLabelShort(ym) {
+  const [y, m] = ym.split('-');
+  const names = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return names[parseInt(m)-1] + ' ' + y;
 }
 
 function getWeekDates(offset) {
-  const now = new Date();
-  const day = now.getDay();
-  const monday = new Date(now);
-  monday.setDate(now.getDate() - (day === 0 ? 6 : day - 1) + (offset * 7));
-  return Array.from({length:7}, (_,i) => {
+  const today = new Date();
+  const day = today.getDay();
+  const monday = new Date(today);
+  monday.setDate(today.getDate() - (day === 0 ? 6 : day - 1) + offset * 7);
+  return Array.from({length: 7}, (_, i) => {
     const d = new Date(monday);
     d.setDate(monday.getDate() + i);
     return d.toISOString().split('T')[0];
   });
 }
 
+// ── JSONP ──
+function jsonp(params, cb) {
+  const cbName = 'jsonpCb' + (++jsonpCounter);
+  window[cbName] = (data) => {
+    delete window[cbName];
+    script.remove();
+    cb(data);
+  };
+  const url = SCRIPT_URL + '?' + new URLSearchParams({...params, callback: cbName}).toString();
+  const script = document.createElement('script');
+  script.src = url;
+  script.onerror = () => {
+    delete window[cbName];
+    script.remove();
+    cb(null);
+  };
+  document.head.appendChild(script);
+}
+
+// ── NAV RENDERING ──
+function renderNav() {
+  const container = document.getElementById('nav-container');
+  if (isAdmin) {
+    container.innerHTML = `
+      <button class="nav-tab ${currentPage==='weekly'?'active':''}" onclick="showPage('weekly')">Daily posting log</button>
+      <button class="nav-tab ${currentPage==='detailed'?'active':''}" onclick="showPage('detailed')">Detailed log</button>
+      <button class="nav-tab ${currentPage==='dashboard'?'active':''}" onclick="showPage('dashboard')">Dashboard</button>
+      <button class="nav-tab ${currentPage==='manage'?'active':''}" onclick="showPage('manage')">Manage creators</button>
+      <button class="nav-tab ${currentPage==='submit'?'active':''}" onclick="showPage('submit')">Submit a post</button>
+      <button class="logout-btn" onclick="logout()" style="margin-left:8px">Logout</button>
+    `;
+  } else {
+    container.innerHTML = `
+      <button class="admin-link" onclick="showPage('login')">Admin login &rarr;</button>
+    `;
+  }
+}
+
+// ── LOGIN ──
+function checkLogin() {
+  const val = document.getElementById('login-pass').value;
+  const err = document.getElementById('login-err');
+  if (val === ADMIN_PASS) {
+    isAdmin = true;
+    try { sessionStorage.setItem(SESSION_KEY, 'true'); } catch(e) {}
+    err.classList.remove('show');
+    document.getElementById('login-pass').value = '';
+    showPage('dashboard');
+  } else {
+    err.classList.add('show');
+  }
+}
+
+function logout() {
+  isAdmin = false;
+  try { sessionStorage.removeItem(SESSION_KEY); } catch(e) {}
+  showPage('submit');
+}
+
+// ── LOAD DATA ──
+function loadRows() {
+  jsonp({ action: 'get' }, (data) => {
+    dataLoaded = true;
+    if (data && data.rows) {
+      allRows = data.rows.map(r => ({
+        submitted: r[0] || '',
+        name: (r[1] || '').trim(),
+        date: r[2] || '',
+        post: String(r[3] || ''),
+        tiktok: r[4] || '',
+        insta: r[5] || '',
+        issues: r[6] || ''
+      })).filter(r => r.name && r.date);
+    }
+    refreshAll();
+  });
+}
+
+function loadCreators() {
+  jsonp({ action: 'getCreators' }, (data) => {
+    creatorsLoaded = true;
+    if (data && data.creators) {
+      allCreators = data.creators;
+    }
+    refreshAll();
+  });
+}
+
+function getActiveCreators() {
+  return allCreators.filter(c => String(c.status).toLowerCase() === 'active')
+    .map(c => c.name).sort();
+}
+
+// ── SUBMIT ──
+function submitLog() {
+  const name   = document.getElementById('f-name').value.trim();
+  const date   = document.getElementById('f-date').value;
+  const post   = document.getElementById('f-post').value;
+  const tiktok = document.getElementById('f-tiktok').value.trim();
+  const insta  = document.getElementById('f-insta').value.trim();
+  const issues = document.getElementById('f-issues').value.trim();
+  const toast  = document.getElementById('f-toast');
+  const btn    = document.getElementById('submit-btn');
+
+  if (!name || !date || !post || !tiktok || !insta) {
+    showToast(toast, 'err', 'Please fill in all required fields.');
+    return;
+  }
+
+  const dup = allRows.find(r => r.name.toLowerCase() === name.toLowerCase() && r.date === date && r.post === post);
+  if (dup) {
+    showToast(toast, 'err', `Post ${post} is already logged for ${name} on ${date}.`);
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Submitting...';
+
+  jsonp({ action: 'submit', name, date, post, tiktok, insta, issues }, (data) => {
+    btn.disabled = false;
+    btn.textContent = 'Submit log';
+
+    if (data && data.status === 'success') {
+      allRows.push({ name, date, post, tiktok, insta, issues, submitted: new Date().toISOString() });
+      refreshAll();
+      showToast(toast, '', `Post ${post} logged for ${name} on ${date}. Thank you!`);
+      document.getElementById('f-name').value   = '';
+      document.getElementById('f-tiktok').value = '';
+      document.getElementById('f-insta').value  = '';
+      document.getElementById('f-issues').value = '';
+      document.getElementById('f-post').value   = '';
+    } else {
+      showToast(toast, 'err', 'Submission failed. Please try again.');
+    }
+  });
+}
+
+function showToast(el, type, msg) {
+  el.className = 'toast show' + (type ? ' ' + type : '');
+  el.textContent = msg;
+  setTimeout(() => { el.classList.remove('show'); }, 5000);
+}
+
+// ── REFRESH ──
+function refreshAll() {
+  populateNameDropdown();
+  renderWeeklyGrid();
+  renderMonthTabs();
+  renderDetailedLog();
+  if (isAdmin) {
+    renderDashboard();
+    renderManageCreators();
+  }
+}
+
+function populateNameDropdown() {
+  const sel = document.getElementById('f-name');
+  const current = sel.value;
+  sel.innerHTML = '<option value="">Select your name...</option>';
+  getActiveCreators().forEach(n => {
+    const opt = document.createElement('option');
+    opt.value = n; opt.textContent = n;
+    sel.appendChild(opt);
+  });
+  if (current) sel.value = current;
+}
+
+// ── WEEKLY GRID ──
 function changeWeek(dir) {
-  currentWeekOffset += dir;
+  weekOffset += dir;
   renderWeeklyGrid();
 }
 
 function renderWeeklyGrid() {
-  const dates = getWeekDates(currentWeekOffset);
-  const days = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
-  const fmt = d => { const [y,m,day] = d.split('-'); return `${day}/${m}`; };
+  const dates = getWeekDates(weekOffset);
+  document.getElementById('week-label').textContent = fmtDate(dates[0]) + ' — ' + fmtDate(dates[6]);
 
-  document.getElementById('week-label').textContent = `${fmt(dates[0])} - ${fmt(dates[6])}`;
+  const creators = getActiveCreators();
+  const tbody = document.getElementById('weekly-body');
 
-  document.getElementById('week-thead').innerHTML = `
-    <tr>
-      <th class="name-col">Creator</th>
-      ${dates.map((d,i) => `<th>${days[i]}<br><span style="font-weight:400;color:#aaa;font-size:10px">${fmt(d)}</span></th>`).join('')}
-      <th>Week<br><span style="font-weight:400;color:#aaa;font-size:10px">total</span></th>
-    </tr>
-  `;
-
-  const creators = [...new Set(allEntries.map(e => e.name))].sort();
-  if(!creators.length) {
-    document.getElementById('week-tbody').innerHTML = '<tr><td colspan="9" style="text-align:center;padding:2rem;color:#aaa">No submissions yet.</td></tr>';
+  if (!dataLoaded || !creatorsLoaded) {
+    tbody.innerHTML = '<tr><td colspan="9" class="empty-state"><span class="loading-spinner"></span></td></tr>';
+    return;
+  }
+  if (creators.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="9" class="empty-state"><strong>No active creators</strong>Add creators in the Manage creators tab</td></tr>';
     return;
   }
 
-  document.getElementById('week-tbody').innerHTML = creators.map(name => {
-    let weekTotal = 0;
-    const cells = dates.map(date => {
-      const p1 = allEntries.find(e => e.name === name && e.date === date && e.postNum === '1');
-      const p2 = allEntries.find(e => e.name === name && e.date === date && e.postNum === '2');
-      if(p1) weekTotal++;
-      if(p2) weekTotal++;
-      const links = [
-        p1 && p1.tiktok ? `<a class="cell-link" href="${p1.tiktok}" target="_blank">P1 TT</a>` : '',
-        p1 && p1.ig ? `<a class="cell-link" href="${p1.ig}" target="_blank">P1 IG</a>` : '',
-        p2 && p2.tiktok ? `<a class="cell-link" href="${p2.tiktok}" target="_blank">P2 TT</a>` : '',
-        p2 && p2.ig ? `<a class="cell-link" href="${p2.ig}" target="_blank">P2 IG</a>` : '',
-      ].filter(Boolean).join('');
-      const dots = `
-        <span class="post-dot ${p1 ? 'dot-p1' : 'dot-none'}" title="Post 1"></span>
-        <span class="post-dot ${p2 ? 'dot-p2' : 'dot-none'}" title="Post 2"></span>
-      `;
-      return `<td>${dots}${links ? `<div class="cell-links">${links}</div>` : ''}</td>`;
+  tbody.innerHTML = creators.map(creator => {
+    const rows = allRows.filter(r => r.name === creator);
+    const weekTotal = rows.filter(r => dates.includes(r.date)).length;
+    const cells = dates.map(d => {
+      const dayRows = rows.filter(r => r.date === d);
+      const p1 = dayRows.some(r => r.post === '1');
+      const p2 = dayRows.some(r => r.post === '2');
+      return '<td>' +
+        (p1 ? '<span class="cell-dot dot-1"></span>' : '<span class="cell-dot dot-none"></span>') +
+        (p2 ? '<span class="cell-dot dot-2"></span>' : '<span class="cell-dot dot-none"></span>') +
+        '</td>';
     }).join('');
+    return `<tr><td>${escH(creator)}</td>${cells}<td class="week-total">${weekTotal}</td></tr>`;
+  }).join('');
+}
 
-    const pct = Math.round((weekTotal / 14) * 100);
-    const chipClass = pct >= 100 ? 'full' : pct >= 50 ? 'partial' : 'none';
+// ── MONTH TABS ──
+function getAvailableMonths() {
+  const set = new Set();
+  allRows.forEach(r => set.add(monthYM(r.date)));
+  return [...set].sort().reverse();
+}
+
+function renderMonthTabs() {
+  const months = getAvailableMonths();
+  const tabsEl = document.getElementById('month-tabs');
+
+  if (!dataLoaded) {
+    tabsEl.innerHTML = '<span style="color:var(--text3);font-size:12px"><span class="loading-spinner"></span></span>';
+    return;
+  }
+  if (months.length === 0) {
+    tabsEl.innerHTML = '<span style="color:var(--text3);font-size:12px">No data yet</span>';
+    return;
+  }
+  if (!selectedMonth || !months.includes(selectedMonth)) {
+    selectedMonth = months[0];
+  }
+  tabsEl.innerHTML = months.map(ym => {
+    const count = allRows.filter(r => monthYM(r.date) === ym).length;
+    return `<button class="month-tab ${ym === selectedMonth ? 'active' : ''}" onclick="selectMonth('${ym}')">
+      ${monthLabelShort(ym)} <span class="count">${count}</span>
+    </button>`;
+  }).join('');
+}
+
+function selectMonth(ym) {
+  selectedMonth = ym;
+  renderMonthTabs();
+  renderDetailedLog();
+}
+
+function renderDetailedLog() {
+  const tbody = document.getElementById('detailed-body');
+  const statsEl = document.getElementById('month-stats');
+
+  if (!dataLoaded) {
+    tbody.innerHTML = '<tr><td colspan="6" class="empty-state"><span class="loading-spinner"></span></td></tr>';
+    statsEl.style.display = 'none';
+    return;
+  }
+  if (!selectedMonth) {
+    tbody.innerHTML = '<tr><td colspan="6" class="empty-state"><strong>No submissions yet</strong></td></tr>';
+    statsEl.style.display = 'none';
+    return;
+  }
+
+  const monthRows = allRows.filter(r => monthYM(r.date) === selectedMonth);
+  const monthCreators = [...new Set(monthRows.map(r => r.name))];
+  const monthDays = [...new Set(monthRows.map(r => r.date))];
+
+  statsEl.style.display = 'grid';
+  document.getElementById('m-total').textContent = monthRows.length;
+  document.getElementById('m-creators').textContent = monthCreators.length;
+  document.getElementById('m-days').textContent = monthDays.length;
+  document.getElementById('m-avg').textContent = monthCreators.length
+    ? (monthRows.length / monthCreators.length).toFixed(1) : '0';
+
+  if (monthRows.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="6" class="empty-state"><strong>No posts in ' + monthLabel(selectedMonth) + '</strong></td></tr>';
+    return;
+  }
+
+  const sorted = [...monthRows].sort((a, b) =>
+    b.date.localeCompare(a.date) || String(b.submitted).localeCompare(String(a.submitted))
+  );
+
+  tbody.innerHTML = sorted.map(r => {
+    const badge = r.post === '1'
+      ? '<span class="badge badge-p1">Post 1</span>'
+      : '<span class="badge badge-p2">Post 2</span>';
+    const tk = r.tiktok
+      ? `<a href="${escH(r.tiktok)}" target="_blank" style="color:var(--accent);text-decoration:none;font-size:11px">&#x2197; TikTok</a>`
+      : '—';
+    const ig = r.insta
+      ? `<a href="${escH(r.insta)}" target="_blank" style="color:var(--blue);text-decoration:none;font-size:11px">&#x2197; Insta</a>`
+      : '—';
     return `<tr>
-      <td class="name-col">${name}<br><span class="summary-chip ${chipClass}" style="font-size:10px;padding:1px 6px">${weekTotal}/14</span></td>
-      ${cells}
-      <td style="font-weight:700;color:${pct>=100?'#27500a':pct>=50?'#855a0a':'#791f1f'}">${weekTotal}</td>
+      <td><span class="creator-link" onclick="openCreatorModal('${escH(r.name)}')">${escH(r.name)}</span></td>
+      <td>${escH(r.date)}</td>
+      <td>${badge}</td>
+      <td>${tk}</td>
+      <td>${ig}</td>
+      <td style="color:var(--text3)">${r.issues ? escH(r.issues) : '—'}</td>
     </tr>`;
   }).join('');
 }
 
-function renderDetail() {
-  const nameF = document.getElementById('filter-name').value.toLowerCase();
-  const dateF = document.getElementById('filter-date').value;
-  let filtered = [...allEntries];
-  if(nameF) filtered = filtered.filter(e => e.name.toLowerCase().includes(nameF));
-  if(dateF) filtered = filtered.filter(e => e.date === dateF);
-  filtered.sort((a,b) => new Date(b.submittedAt) - new Date(a.submittedAt));
+// ── CREATOR MODAL ──
+function openCreatorModal(name) {
+  const rows = allRows.filter(r => r.name === name);
+  if (!rows.length) return;
 
-  const list = document.getElementById('detail-list');
-  if(!filtered.length){ list.innerHTML = '<div class="empty">No entries found.</div>'; return; }
+  document.getElementById('modal-name').textContent = name;
+  document.getElementById('modal-sub').textContent =
+    `${rows.length} total post${rows.length !== 1 ? 's' : ''} logged`;
 
-  const byCreator = {};
-  filtered.forEach(e => { if(!byCreator[e.name]) byCreator[e.name] = []; byCreator[e.name].push(e); });
+  const byMonth = {};
+  rows.forEach(r => {
+    const ym = monthYM(r.date);
+    if (!byMonth[ym]) byMonth[ym] = [];
+    byMonth[ym].push(r);
+  });
 
-  list.innerHTML = Object.entries(byCreator).map(([name, entries]) => `
-    <div class="detail-card">
-      <div class="detail-header" onclick="toggleDetail(this)">
-        <span class="detail-header-name">${name}</span>
-        <span class="detail-header-stats">${entries.length} submission${entries.length!==1?'s':''}</span>
+  const html = Object.keys(byMonth).sort().reverse().map(ym => {
+    const mRows = byMonth[ym].sort((a, b) => b.date.localeCompare(a.date));
+    const total = mRows.length;
+    const rowsHtml = mRows.map(r => {
+      const tk = r.tiktok ? `<a href="${escH(r.tiktok)}" target="_blank" style="color:var(--accent);font-size:11px">TikTok &#x2197;</a>` : '—';
+      const ig = r.insta  ? `<a href="${escH(r.insta)}"  target="_blank" style="color:var(--blue);font-size:11px">Insta &#x2197;</a>`   : '—';
+      return `<tr>
+        <td>${escH(r.date)}</td>
+        <td style="color:${r.post==='1'?'var(--accent)':'var(--blue)'}">Post ${escH(r.post)}</td>
+        <td>${tk}</td>
+        <td>${ig}</td>
+        <td style="color:var(--text3);font-size:11px">${r.issues ? escH(r.issues) : '—'}</td>
+      </tr>`;
+    }).join('');
+
+    return `<div class="month-block">
+      <div class="month-block-header">
+        <span class="month-block-name">${monthLabel(ym)}</span>
+        <span class="month-block-total">${total} post${total !== 1 ? 's' : ''}</span>
       </div>
-      <div class="detail-body">
-        ${entries.map(e => `
-          <div class="detail-row">
-            <span class="dr-date">${e.date}</span>
-            <span class="dr-post ${e.postNum==='1'?'dr-p1':'dr-p2'}">Post ${e.postNum}</span>
-            <span>
-              ${e.tiktok ? `<a class="dr-link" href="${e.tiktok}" target="_blank">TikTok</a>` : '<span style="color:#ccc">No TikTok</span>'}
-              ${e.issues ? `<div class="issues-txt">"${e.issues}"</div>` : ''}
-            </span>
-            <span>
-              ${e.ig ? `<a class="dr-link" href="${e.ig}" target="_blank">Instagram</a>` : '<span style="color:#ccc">No Instagram</span>'}
-            </span>
-          </div>
-        `).join('')}
+      <div class="month-block-rows">
+        <table>
+          <thead><tr><th>Date</th><th>Post</th><th>TikTok</th><th>Instagram</th><th>Issues</th></tr></thead>
+          <tbody>${rowsHtml}</tbody>
+        </table>
       </div>
-    </div>
-  `).join('');
+    </div>`;
+  }).join('');
+
+  document.getElementById('modal-body').innerHTML = html;
+  document.getElementById('creator-modal').classList.add('open');
 }
 
-function toggleDetail(header) {
-  const body = header.nextElementSibling;
-  body.classList.toggle('open');
+function closeModalOverlay(e) {
+  if (e.target === document.getElementById('creator-modal'))
+    document.getElementById('creator-modal').classList.remove('open');
+}
+function closeModalDirect() {
+  document.getElementById('creator-modal').classList.remove('open');
 }
 
-function clearFilters() {
-  document.getElementById('filter-name').value = '';
-  document.getElementById('filter-date').value = '';
-  renderDetail();
+// ── DASHBOARD ──
+function renderDashboard() {
+  const today  = todayStr();
+  const curMYM = today.substring(0, 7);
+  const creators = getActiveCreators();
+
+  document.getElementById('d-total').textContent    = allRows.length;
+  document.getElementById('d-month').textContent    = allRows.filter(r => r.date.startsWith(curMYM)).length;
+  document.getElementById('d-creators').textContent = creators.length;
+  document.getElementById('d-today').textContent    = allRows.filter(r => r.date === today).length;
+
+  const tbody = document.getElementById('dash-body');
+  if (!creators.length) {
+    tbody.innerHTML = '<tr><td colspan="6" class="empty-state"><strong>No active creators</strong></td></tr>';
+    return;
+  }
+
+  const sorted = creators.map(name => {
+    const rows = allRows.filter(r => r.name === name);
+    const monthCount = rows.filter(r => r.date.startsWith(curMYM)).length;
+    const last = [...rows].sort((a, b) => b.date.localeCompare(a.date))[0];
+    return { name, monthCount, total: rows.length, lastDate: last ? last.date : '—' };
+  }).sort((a, b) => b.monthCount - a.monthCount);
+
+  tbody.innerHTML = sorted.map((r, i) => {
+    const pct = Math.min(100, Math.round((r.monthCount / 56) * 100));
+    const barClass = pct >= 80 ? '' : pct >= 50 ? 'amber' : 'red';
+    return `<tr>
+      <td style="color:var(--text3)">${i + 1}</td>
+      <td><span class="creator-link" onclick="openCreatorModal('${escH(r.name)}')">${escH(r.name)}</span></td>
+      <td style="font-family:'Syne',sans-serif;font-weight:700;color:var(--accent)">${r.monthCount}</td>
+      <td>
+        <div style="display:flex;align-items:center;gap:8px">
+          <div class="progress-bar-wrap"><div class="progress-bar-fill ${barClass}" style="width:${pct}%"></div></div>
+          <span style="font-size:11px;color:var(--text3)">${pct}%</span>
+        </div>
+      </td>
+      <td style="color:var(--text2)">${r.total}</td>
+      <td style="color:var(--text3)">${r.lastDate}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ── MANAGE CREATORS ──
+function addCreator() {
+  const input = document.getElementById('new-creator-name');
+  const btn = document.getElementById('add-creator-btn');
+  const toast = document.getElementById('manage-toast');
+  const name = input.value.trim();
+
+  if (!name) { showToast(toast, 'err', 'Please enter a name.'); return; }
+  const exists = allCreators.find(c => c.name.toLowerCase() === name.toLowerCase());
+  if (exists) { showToast(toast, 'err', `${name} already exists.`); return; }
+
+  btn.disabled = true;
+  btn.textContent = 'Adding...';
+
+  jsonp({ action: 'addCreator', name }, (data) => {
+    btn.disabled = false;
+    btn.textContent = 'Add creator';
+    if (data && data.status === 'success') {
+      allCreators.push({ name, status: 'Active', added: new Date().toISOString() });
+      input.value = '';
+      refreshAll();
+      showToast(toast, '', `${name} added as active creator.`);
+    } else {
+      showToast(toast, 'err', (data && data.message) || 'Failed to add creator.');
+    }
+  });
+}
+
+function toggleCreator(name) {
+  const c = allCreators.find(c => c.name === name);
+  if (!c) return;
+  const isActive = String(c.status).toLowerCase() === 'active';
+  const action = isActive ? 'deactivate' : 'reactivate';
+  if (!confirm(`Are you sure you want to ${action} ${name}?`)) return;
+
+  const toast = document.getElementById('manage-toast');
+  jsonp({ action: 'toggleCreator', name }, (data) => {
+    if (data && data.status === 'success') {
+      c.status = data.newStatus;
+      refreshAll();
+      showToast(toast, '', `${name} is now ${data.newStatus.toLowerCase()}.`);
+    } else {
+      showToast(toast, 'err', (data && data.message) || 'Failed to toggle creator.');
+    }
+  });
+}
+
+function renderManageCreators() {
+  const tbody = document.getElementById('manage-body');
+  const countsEl = document.getElementById('manage-counts');
+
+  if (!creatorsLoaded) {
+    tbody.innerHTML = '<tr><td colspan="5" class="empty-state"><span class="loading-spinner"></span></td></tr>';
+    return;
+  }
+  if (!allCreators.length) {
+    tbody.innerHTML = '<tr><td colspan="5" class="empty-state"><strong>No creators yet</strong>Add your first creator above</td></tr>';
+    countsEl.textContent = '';
+    return;
+  }
+
+  const activeCount = allCreators.filter(c => String(c.status).toLowerCase() === 'active').length;
+  const inactiveCount = allCreators.length - activeCount;
+  countsEl.textContent = `${activeCount} active · ${inactiveCount} inactive · ${allCreators.length} total`;
+
+  const sorted = [...allCreators].sort((a, b) => {
+    const aActive = String(a.status).toLowerCase() === 'active' ? 0 : 1;
+    const bActive = String(b.status).toLowerCase() === 'active' ? 0 : 1;
+    if (aActive !== bActive) return aActive - bActive;
+    return a.name.localeCompare(b.name);
+  });
+
+  tbody.innerHTML = sorted.map(c => {
+    const isActive = String(c.status).toLowerCase() === 'active';
+    const badge = isActive
+      ? '<span class="badge badge-active">Active</span>'
+      : '<span class="badge badge-inactive">Inactive</span>';
+    const addedDate = c.added ? new Date(c.added).toLocaleDateString('en-GB', {day:'numeric',month:'short',year:'numeric'}) : '—';
+    const totalPosts = allRows.filter(r => r.name === c.name).length;
+    const btnClass = isActive ? 'btn-sm btn-danger' : 'btn-sm';
+    const btnText = isActive ? 'Deactivate' : 'Reactivate';
+    return `<tr>
+      <td><span class="creator-link" onclick="openCreatorModal('${escH(c.name)}')">${escH(c.name)}</span></td>
+      <td>${badge}</td>
+      <td style="color:var(--text3)">${addedDate}</td>
+      <td style="color:var(--text2)">${totalPosts}</td>
+      <td><button class="btn ${btnClass}" onclick="toggleCreator('${escH(c.name)}')">${btnText}</button></td>
+    </tr>`;
+  }).join('');
+}
+
+// ── PAGE NAV ──
+const ADMIN_PAGES = ['weekly', 'detailed', 'dashboard', 'manage'];
+
+function showPage(name) {
+  // Block admin pages if not logged in
+  if (ADMIN_PAGES.includes(name) && !isAdmin) {
+    showPage('login');
+    return;
+  }
+
+  currentPage = name;
+  document.querySelectorAll('.page').forEach(p => {
+    p.classList.remove('active');
+    p.style.display = 'none';
+  });
+
+  const pg = document.getElementById('page-' + name);
+  pg.style.display = 'block';
+  pg.classList.add('active');
+
+  renderNav();
+
+  if (name === 'weekly') renderWeeklyGrid();
+  if (name === 'detailed') { renderMonthTabs(); renderDetailedLog(); }
+  if (name === 'dashboard') renderDashboard();
+  if (name === 'manage') renderManageCreators();
 }
 </script>
 </body>
