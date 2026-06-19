@@ -893,7 +893,10 @@
 <div id="page-payments" class="page main">
   <div class="section-head">
     <span class="section-title">Payment register</span>
-    <button class="btn btn-sm" onclick="exportPaymentsCSV()">&#x2913; Download CSV</button>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn btn-sm" onclick="refreshPaymentsData()">&#x21BB; Refresh</button>
+      <button class="btn btn-sm" onclick="exportPaymentsCSV()">&#x2913; Download CSV</button>
+    </div>
   </div>
   <div class="month-tabs" id="pay-tabs"><span class="spinner"></span></div>
   <div class="pay-title">NORTHQUEST FINANCE&nbsp;&nbsp;&#183;&nbsp;&nbsp;CREATOR PAYMENT REGISTER</div>
@@ -1386,6 +1389,13 @@ function loadPayments() {
 
 function selectPayMonth(ym) { selectedPayMonth = ym; renderPayments(); }
 
+// Pull the latest posts, creators, and payment data so the register is current
+function refreshPaymentsData() {
+  loadRows();
+  loadCreators();
+  loadPayments();
+}
+
 function onPayEdit(idx, field, value, rerender) {
   const name = payRowNames[idx];
   if (!name) return;
@@ -1686,7 +1696,8 @@ function showPage(name) {
   if (name==='detailed') { renderMonthTabs(); renderDetailedLog(); }
   if (name==='dashboard') renderDashboard();
   if (name==='manage') renderManageCreators();
-  if (name==='payments') renderPayments();
+  if (name==='payments') { renderPayments(); refreshPaymentsData(); }
+  if (name==='intake') document.title = 'NorthQuest Creator Onboarding';
   window.scrollTo({ top: 0, behavior: 'instant' });
 }
 </script>
