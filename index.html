@@ -592,6 +592,22 @@
     .login-card { padding: 32px 24px 24px; }
     .toast { margin-top: 8px; padding: 14px 16px; }
   }
+
+  /* PAYMENTS REGISTER */
+  .pay-title { font-family:'Playfair Display',serif; font-size:18px; font-weight:700; color:var(--text); }
+  .pay-period { font-size:13px; color:var(--text3); margin:2px 0 14px; }
+  .pay-wrap { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); overflow-x:auto; -webkit-overflow-scrolling:touch; box-shadow:var(--shadow-sm); }
+  .pay-table { width:100%; border-collapse:collapse; font-size:12px; min-width:1100px; }
+  .pay-table th { background:#1a6b4a; color:#fff; padding:9px 8px; text-align:left; font-size:10px; letter-spacing:0.04em; text-transform:uppercase; font-weight:600; white-space:nowrap; }
+  .pay-table td { padding:8px; border-bottom:1px solid var(--border); color:var(--text); vertical-align:middle; white-space:nowrap; }
+  .pay-table tr:hover td { background:var(--surface2); }
+  .pay-num { color:#2d6cbf; font-weight:600; text-align:right; font-variant-numeric:tabular-nums; }
+  .pay-total td { background:#1a6b4a; color:#fff !important; font-weight:700; border:none; }
+  .pay-input { width:100%; min-width:90px; border:1px solid var(--border); border-radius:6px; padding:6px 8px; font-family:inherit; font-size:13px; background:var(--surface); color:var(--text); }
+  .pay-input:focus { outline:none; border-color:var(--accent); box-shadow:0 0 0 2px var(--accent-mid); }
+  .pay-legend { margin-top:18px; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:18px 22px; font-size:12px; color:var(--text2); line-height:1.7; }
+  .pay-legend h4 { font-size:11px; text-transform:uppercase; letter-spacing:0.08em; color:var(--text2); margin:12px 0 4px; }
+  .pay-legend h4:first-child { margin-top:0; }
 </style>
 </head>
 <body>
@@ -808,6 +824,29 @@
   </div>
 </div>
 
+<!-- PAYMENTS -->
+<div id="page-payments" class="page main">
+  <div class="section-head">
+    <span class="section-title">Payment register</span>
+    <button class="btn btn-sm" onclick="exportPaymentsCSV()">&#x2913; Download CSV</button>
+  </div>
+  <div class="month-tabs" id="pay-tabs"><span class="spinner"></span></div>
+  <div class="pay-title">NORTHQUEST FINANCE&nbsp;&nbsp;&#183;&nbsp;&nbsp;CREATOR PAYMENT REGISTER</div>
+  <div class="pay-period" id="pay-period"></div>
+  <div class="pay-wrap">
+    <table class="pay-table">
+      <thead><tr>
+        <th>S/N</th><th>Creator Name</th><th>No. of Posts</th><th>Rate / Post (&#8358;)</th>
+        <th>Base Amount (&#8358;)</th><th>Bonus Views</th><th>Perf. Bonus (&#8358;)</th><th>Total Payable (&#8358;)</th>
+        <th>Bank Name</th><th>Account Number</th><th>Account Name</th>
+        <th>Payment Status</th><th>Payment Date</th><th>Remarks</th>
+      </tr></thead>
+      <tbody id="pay-body"><tr><td colspan="14" class="empty-state"><span class="spinner"></span></td></tr></tbody>
+    </table>
+  </div>
+  <div class="pay-legend" id="pay-legend"></div>
+</div>
+
 <!-- CREATOR MODAL -->
 <div class="modal-overlay" id="creator-modal" onclick="closeModalOverlay(event)">
   <div class="modal">
@@ -846,9 +885,10 @@ const safeStorage = {
   }
 };
 
-let allRows = [], allCreators = [];
-let weekOffset = 0, selectedMonth = null;
-let isAdmin = false, dataLoaded = false, creatorsLoaded = false;
+let allRows = [], allCreators = [], allPayments = [];
+let weekOffset = 0, selectedMonth = null, selectedPayMonth = null;
+let isAdmin = false, dataLoaded = false, creatorsLoaded = false, paysLoaded = false;
+let payRowNames = [];
 let currentPage = 'submit';
 let jsonpCtr = 0;
 let offlineQueue = [];
@@ -866,6 +906,7 @@ document.addEventListener('DOMContentLoaded', () => {
   renderNav();
   loadRows();
   loadCreators();
+  loadPayments();
   flushQueue();
   window.addEventListener('online', flushQueue);
 });
@@ -1049,7 +1090,7 @@ function refreshAll() {
   renderWeeklyGrid();
   renderMonthTabs();
   renderDetailedLog();
-  if (isAdmin) { renderDashboard(); renderManageCreators(); }
+  if (isAdmin) { renderDashboard(); renderManageCreators(); renderPayments(); }
 }
 
 function populateNameDropdown() {
@@ -1247,6 +1288,201 @@ function renderManageCreators() {
   }).join('');
 }
 
+// ── PAYMENTS REGISTER ──
+function ord(n) {
+  const s = ['th','st','nd','rd'], v = n % 100;
+  return n + (s[(v - 20) % 10] || s[v] || s[0]);
+}
+function fmtMoney2(n) {
+  return Number(n || 0).toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+function calcBonus(viewsList) {
+  if (!viewsList) return 0;
+  const TIERS = [[2000000,900000],[1000000,500000],[500000,200000],[100000,100000],[50000,50000]];
+  let total = 0;
+  String(viewsList).split(',').forEach(v => {
+    const n = parseInt(v.trim().replace(/[^\d]/g, '')) || 0;
+    for (let i = 0; i < TIERS.length; i++) { if (n >= TIERS[i][0]) { total += TIERS[i][1]; break; } }
+  });
+  return total;
+}
+
+function loadPayments() {
+  jsonp({ action:'getPayments' }, (data) => {
+    paysLoaded = true;
+    if (data && data.payments) allPayments = data.payments;
+    if (isAdmin && currentPage === 'payments') renderPayments();
+  });
+}
+
+function selectPayMonth(ym) { selectedPayMonth = ym; renderPayments(); }
+
+function onPayEdit(idx, field, value, rerender) {
+  const name = payRowNames[idx];
+  if (!name) return;
+  savePaymentField(selectedPayMonth, name, field, value, rerender);
+}
+
+function savePaymentField(month, name, field, value, rerender) {
+  let rec = allPayments.find(p => p.month === month && String(p.name).toLowerCase() === name.toLowerCase());
+  if (!rec) { rec = { month, name, bonusViews:'', paymentStatus:'Pending', paymentDate:'', remarks:'' }; allPayments.push(rec); }
+  rec[field] = value;
+  jsonp({ action:'savePayment', month, name, bonusViews:rec.bonusViews, paymentStatus:rec.paymentStatus, paymentDate:rec.paymentDate, remarks:rec.remarks }, (d) => {
+    if (!d || d.status !== 'success') showToast('error', 'Not saved', 'Could not save that change. Check your connection and try again.');
+  });
+  if (rerender) renderPayments();
+}
+
+const PAY_LEGEND_HTML =
+  '<h4>Assumptions &amp; Legend</h4>' +
+  'Rate per Post: &#8358;1,785.71 per video (some creators are on a higher rate, set per creator on the Manage screen).<br>' +
+  'Monthly Quota: 56 videos per creator.' +
+  '<h4>Performance Bonus Tiers</h4>' +
+  '50,000 views = &#8358;50,000<br>100,000 views = &#8358;100,000<br>500,000 views = &#8358;200,000<br>1,000,000 views = &#8358;500,000<br>2,000,000 views = &#8358;900,000' +
+  '<h4>How to enter multiple bonuses</h4>' +
+  'If a creator hits more than one milestone, type the view counts in the Bonus Views box separated by commas, WITHOUT thousands separators. ' +
+  'Example: <strong>100000,50000</strong> &nbsp;&nbsp; Not like this: 100,000, 50,000. The Perf. Bonus and Total update on their own.';
+
+function renderPayments() {
+  const tabsEl = document.getElementById('pay-tabs');
+  const body = document.getElementById('pay-body');
+  if (!tabsEl || !body) return;
+  if (!dataLoaded || !creatorsLoaded) { body.innerHTML = '<tr><td colspan="14" class="empty-state"><span class="spinner"></span></td></tr>'; return; }
+  const months = getMonths();
+  if (!months.length) {
+    tabsEl.innerHTML = '<span style="color:var(--text3);font-size:13px">No data yet</span>';
+    body.innerHTML = '<tr><td colspan="14" class="empty-state"><strong>No posts logged yet</strong></td></tr>';
+    document.getElementById('pay-period').textContent = '';
+    document.getElementById('pay-legend').innerHTML = '';
+    return;
+  }
+  if (!selectedPayMonth || !months.includes(selectedPayMonth)) selectedPayMonth = months[0];
+  tabsEl.innerHTML = months.map(ym =>
+    '<button class="month-tab ' + (ym===selectedPayMonth?'active':'') + '" onclick="selectPayMonth(\'' + ym + '\')">' + monthShort(ym) + '</button>'
+  ).join('');
+
+  const y = selectedPayMonth.split('-')[0];
+  const mm = parseInt(selectedPayMonth.split('-')[1]);
+  const last = new Date(Number(y), mm, 0).getDate();
+  const mName = monthLabel(selectedPayMonth).split(' ')[0];
+  document.getElementById('pay-period').textContent =
+    'Payment Period:  ' + ord(1) + ' ' + mName + ' ' + y + ' – ' + ord(last) + ' ' + mName + ' ' + y;
+
+  const monthRows = allRows.filter(r => monthYM(r.date) === selectedPayMonth);
+  const counts = {};
+  monthRows.forEach(r => { counts[r.name] = (counts[r.name] || 0) + 1; });
+  const names = Object.keys(counts).sort();
+  payRowNames = names;
+
+  if (!names.length) {
+    body.innerHTML = '<tr><td colspan="14" class="empty-state"><strong>No posts in ' + monthLabel(selectedPayMonth) + '</strong></td></tr>';
+    document.getElementById('pay-legend').innerHTML = PAY_LEGEND_HTML;
+    return;
+  }
+
+  const cmap = {};
+  allCreators.forEach(c => {
+    cmap[String(c.name).toLowerCase()] = {
+      rate: parseFloat(c.rate) || 1785.71,
+      bankName: c.bankName || '', acctNum: c.acctNum || '', acctName: c.acctName || ''
+    };
+  });
+
+  let tPosts = 0, tBase = 0, tPerf = 0, tTotal = 0;
+  const rowsHtml = names.map((name, i) => {
+    const posts = counts[name];
+    const ci = cmap[name.toLowerCase()] || { rate:1785.71, bankName:'', acctNum:'', acctName:'' };
+    const rate = ci.rate;
+    const base = Math.round(posts * rate);
+    const man = allPayments.find(p => p.month === selectedPayMonth && String(p.name).toLowerCase() === name.toLowerCase()) || {};
+    const bonusViews = man.bonusViews || '';
+    const perf = calcBonus(bonusViews);
+    const total = base + perf;
+    const status = man.paymentStatus || 'Pending';
+    const payDate = man.paymentDate || '';
+    const remarks = man.remarks || '';
+    tPosts += posts; tBase += base; tPerf += perf; tTotal += total;
+    const stColor = status === 'Paid' ? 'background:#e6f4ec;color:#1a6b4a' : 'background:#fdf6e3;color:#b7770d';
+    return '<tr>' +
+      '<td class="pay-num">' + (i+1) + '</td>' +
+      '<td>' + escH(name) + '</td>' +
+      '<td class="pay-num">' + posts + '</td>' +
+      '<td class="pay-num">' + fmtMoney2(rate) + '</td>' +
+      '<td class="pay-num">' + fmtMoney2(base) + '</td>' +
+      '<td><input class="pay-input" value="' + escH(bonusViews) + '" placeholder="e.g. 100000,50000" onchange="onPayEdit(' + i + ',\'bonusViews\',this.value,true)"></td>' +
+      '<td class="pay-num">' + fmtMoney2(perf) + '</td>' +
+      '<td class="pay-num">' + fmtMoney2(total) + '</td>' +
+      '<td>' + escH(ci.bankName) + '</td>' +
+      '<td>' + escH(ci.acctNum) + '</td>' +
+      '<td>' + escH(ci.acctName) + '</td>' +
+      '<td><select class="pay-input" style="' + stColor + '" onchange="onPayEdit(' + i + ',\'paymentStatus\',this.value,true)"><option ' + (status==='Pending'?'selected':'') + '>Pending</option><option ' + (status==='Paid'?'selected':'') + '>Paid</option></select></td>' +
+      '<td><input type="date" class="pay-input" value="' + escH(payDate) + '" onchange="onPayEdit(' + i + ',\'paymentDate\',this.value,false)"></td>' +
+      '<td><input class="pay-input" value="' + escH(remarks) + '" onchange="onPayEdit(' + i + ',\'remarks\',this.value,false)"></td>' +
+      '</tr>';
+  }).join('');
+
+  const totalHtml = '<tr class="pay-total">' +
+    '<td></td><td>TOTAL</td>' +
+    '<td class="pay-num">' + tPosts + '</td>' +
+    '<td></td>' +
+    '<td class="pay-num">' + fmtMoney2(tBase) + '</td>' +
+    '<td></td>' +
+    '<td class="pay-num">' + fmtMoney2(tPerf) + '</td>' +
+    '<td class="pay-num">' + fmtMoney2(tTotal) + '</td>' +
+    '<td></td><td></td><td></td><td></td><td></td><td></td>' +
+    '</tr>';
+
+  body.innerHTML = rowsHtml + totalHtml;
+  document.getElementById('pay-legend').innerHTML = PAY_LEGEND_HTML;
+}
+
+function exportPaymentsCSV() {
+  if (!selectedPayMonth) return;
+  const y = selectedPayMonth.split('-')[0];
+  const mm = parseInt(selectedPayMonth.split('-')[1]);
+  const last = new Date(Number(y), mm, 0).getDate();
+  const mName = monthLabel(selectedPayMonth).split(' ')[0];
+  const monthRows = allRows.filter(r => monthYM(r.date) === selectedPayMonth);
+  const counts = {}; monthRows.forEach(r => { counts[r.name] = (counts[r.name]||0)+1; });
+  const names = Object.keys(counts).sort();
+  const cmap = {};
+  allCreators.forEach(c => { cmap[String(c.name).toLowerCase()] = { rate: parseFloat(c.rate)||1785.71, bankName:c.bankName||'', acctNum:c.acctNum||'', acctName:c.acctName||'' }; });
+  const q = v => { v = String(v == null ? '' : v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g,'""') + '"' : v; };
+  const L = [];
+  L.push('NORTHQUEST FINANCE  ·  CREATOR PAYMENT REGISTER');
+  L.push('Payment Period:  ' + ord(1) + ' ' + mName + ' ' + y + ' – ' + ord(last) + ' ' + mName + ' ' + y);
+  L.push('');
+  L.push(['S/N','Creator Name','No. of Posts','Rate per Post (₦)','Base Amount (₦)','Bonus Views','Perf. Bonus (₦)','Total Payable (₦)','Bank Name','Account Number','Account Name','Payment Status','Payment Date','Remarks'].map(q).join(','));
+  let tPosts=0,tBase=0,tPerf=0,tTotal=0;
+  names.forEach((name,i) => {
+    const posts = counts[name];
+    const ci = cmap[name.toLowerCase()] || { rate:1785.71, bankName:'', acctNum:'', acctName:'' };
+    const base = Math.round(posts * ci.rate);
+    const man = allPayments.find(p => p.month === selectedPayMonth && String(p.name).toLowerCase() === name.toLowerCase()) || {};
+    const perf = calcBonus(man.bonusViews || '');
+    const total = base + perf;
+    tPosts+=posts; tBase+=base; tPerf+=perf; tTotal+=total;
+    L.push([i+1,name,posts,fmtMoney2(ci.rate),fmtMoney2(base),man.bonusViews||'',fmtMoney2(perf),fmtMoney2(total),ci.bankName,ci.acctNum,ci.acctName,man.paymentStatus||'Pending',man.paymentDate||'',man.remarks||''].map(q).join(','));
+  });
+  L.push(['','TOTAL',tPosts,'',fmtMoney2(tBase),'',fmtMoney2(tPerf),fmtMoney2(tTotal),'','','','','',''].map(q).join(','));
+  L.push(''); L.push('ASSUMPTIONS & LEGEND'); L.push('');
+  L.push(q('Rate per Post: ₦1,785.71 per video'));
+  L.push('Monthly Quota: 56 videos per creator');
+  L.push(''); L.push('PERFORMANCE BONUS TIERS:');
+  L.push(q('• 50,000 views = ₦50,000'));
+  L.push(q('• 100,000 views = ₦100,000'));
+  L.push(q('• 500,000 views = ₦200,000'));
+  L.push(q('• 1,000,000 views = ₦500,000'));
+  L.push(q('• 2,000,000 views = ₦900,000'));
+  const csv = '﻿' + L.join('\n');
+  const blob = new Blob([csv], { type:'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'NQ Payment Register - ' + monthLabel(selectedPayMonth) + '.csv';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
 function togglePassword() {
   const input = document.getElementById('login-pass');
   const icon = document.getElementById('eye-icon');
@@ -1289,6 +1525,7 @@ function renderNav() {
       '<button class="nav-tab ' + (currentPage==='detailed'?'active':'') + '" onclick="showPage(\'detailed\')">Detailed log</button>' +
       '<button class="nav-tab ' + (currentPage==='dashboard'?'active':'') + '" onclick="showPage(\'dashboard\')">Dashboard</button>' +
       '<button class="nav-tab ' + (currentPage==='manage'?'active':'') + '" onclick="showPage(\'manage\')">Manage creators</button>' +
+      '<button class="nav-tab ' + (currentPage==='payments'?'active':'') + '" onclick="showPage(\'payments\')">Payments</button>' +
       '<button class="nav-tab ' + (currentPage==='submit'?'active':'') + '" onclick="showPage(\'submit\')">Submit form</button>' +
       '<button class="logout-btn" onclick="logout()">Logout</button>';
   } else {
@@ -1296,7 +1533,7 @@ function renderNav() {
   }
 }
 
-const ADMIN_PAGES = ['weekly','detailed','dashboard','manage'];
+const ADMIN_PAGES = ['weekly','detailed','dashboard','manage','payments'];
 function showPage(name) {
   if (ADMIN_PAGES.includes(name) && !isAdmin) { showPage('login'); return; }
   currentPage = name;
@@ -1310,6 +1547,7 @@ function showPage(name) {
   if (name==='detailed') { renderMonthTabs(); renderDetailedLog(); }
   if (name==='dashboard') renderDashboard();
   if (name==='manage') renderManageCreators();
+  if (name==='payments') renderPayments();
   window.scrollTo({ top: 0, behavior: 'instant' });
 }
 </script>
