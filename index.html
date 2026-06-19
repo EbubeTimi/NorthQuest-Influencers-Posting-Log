@@ -700,6 +700,71 @@
   </div>
 </div>
 
+<!-- CREATOR INTAKE / ONBOARDING (public, reached via #intake) -->
+<div id="page-intake" class="page main">
+  <div class="welcome-banner">
+    <div class="welcome-greeting">Northquest Finance</div>
+    <div class="welcome-title">Creator Onboarding &#x1F3AC;</div>
+    <div class="welcome-sub">Welcome aboard. Fill this in once and you are fully set up. It takes about five minutes.</div>
+  </div>
+
+  <div class="form-card" style="max-width:640px">
+    <div class="inline-confirm" id="intake-confirm">
+      <strong>All done!</strong>
+      <span id="intake-confirm-msg"></span>
+    </div>
+
+    <div class="form-title">Your details</div>
+    <div class="form-subtitle">Everything here is private and is used only to set you up and pay you.</div>
+
+    <div class="form-group"><label class="form-label">Full name</label>
+      <input class="form-input" id="i-name" type="text" placeholder="As it should appear on records" /></div>
+    <div class="form-group"><label class="form-label">Phone number</label>
+      <input class="form-input" id="i-phone" type="tel" placeholder="080..." /></div>
+    <div class="form-group"><label class="form-label">Personal email</label>
+      <input class="form-input" id="i-email" type="email" placeholder="you@email.com" /></div>
+
+    <div class="form-title" style="font-size:16px;margin-top:26px">NorthQuest accounts you created</div>
+    <div class="form-subtitle">The email and social accounts you opened for NorthQuest content. These belong to the program under your contract.</div>
+
+    <div class="form-group"><label class="form-label">NorthQuest email address</label>
+      <input class="form-input" id="i-nqemail" type="email" placeholder="thenqemail@gmail.com" /></div>
+    <div class="form-group"><label class="form-label">NorthQuest email password</label>
+      <input class="form-input" id="i-nqemailpass" type="text" placeholder="Password for that email" /></div>
+    <div class="form-group"><label class="form-label">Instagram username</label>
+      <input class="form-input" id="i-iguser" type="text" placeholder="@username" /></div>
+    <div class="form-group"><label class="form-label">Instagram password</label>
+      <input class="form-input" id="i-igpass" type="text" placeholder="Password" /></div>
+    <div class="form-group"><label class="form-label">TikTok username</label>
+      <input class="form-input" id="i-ttuser" type="text" placeholder="@username" /></div>
+    <div class="form-group"><label class="form-label">TikTok password</label>
+      <input class="form-input" id="i-ttpass" type="text" placeholder="Password" /></div>
+
+    <div class="form-title" style="font-size:16px;margin-top:26px">Bank details for payment</div>
+    <div class="form-group"><label class="form-label">Bank name</label>
+      <input class="form-input" id="i-bank" type="text" placeholder="e.g. OPay, GTBank" /></div>
+    <div class="form-group"><label class="form-label">Account number</label>
+      <input class="form-input" id="i-acctnum" type="text" inputmode="numeric" placeholder="10-digit number" /></div>
+    <div class="form-group"><label class="form-label">Account name</label>
+      <input class="form-input" id="i-acctname" type="text" placeholder="Name on the account" /></div>
+
+    <div class="form-title" style="font-size:16px;margin-top:26px">Contract</div>
+    <div class="form-subtitle" id="i-contract-note">Please read the agreement, then confirm below. A team member will also reach out to you personally.</div>
+    <div class="form-group"><a id="i-contract-link" class="btn btn-sm" style="display:inline-block;text-decoration:none" target="_blank">&#x2913; Download the contract</a></div>
+    <div class="form-group" style="display:flex;align-items:flex-start;gap:10px">
+      <input type="checkbox" id="i-agree" style="width:18px;height:18px;margin-top:2px;flex-shrink:0" />
+      <label for="i-agree" style="font-size:13px;color:var(--text2);line-height:1.5">I have read and agree to the UGC Content Creator Agreement, including the account ownership and content preservation terms.</label>
+    </div>
+    <div class="form-group"><label class="form-label">Type your full name as your signature</label>
+      <input class="form-input" id="i-sign" type="text" placeholder="Your full name" /></div>
+    <div class="form-group"><label class="form-label">Date</label>
+      <input class="form-input" id="i-signdate" type="date" /></div>
+
+    <button class="btn btn-primary" id="intake-btn" onclick="submitIntake()">Complete onboarding</button>
+    <div class="alert alert-error" id="intake-alert"></div>
+  </div>
+</div>
+
 <!-- ADMIN LOGIN -->
 <div id="page-login" class="page">
   <div class="login-screen">
@@ -864,6 +929,9 @@
 <script>
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwLrQ6h0XAOKIxYw_r2uMbb_FtBq_ZBBFdBAQpeLHo9Z9ZKkzISuje9CvuTF-RcWgFgmQ/exec';
 const ADMIN_PASS = 'NQ2026dash';
+// Paste a link to the contract here (a Google Drive share link, or a file in this repo).
+// Leave it empty and the onboarding page will simply ask the creator to confirm agreement.
+const CONTRACT_URL = '';
 const SESSION_KEY = 'nq_admin';
 
 // SAFE STORAGE — wraps localStorage/sessionStorage so iOS Private Mode doesn't crash
@@ -904,6 +972,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('f-date').value = todayStr();
   if (safeStorage.getSession(SESSION_KEY) === '1') isAdmin = true;
   renderNav();
+  setupIntake();
   loadRows();
   loadCreators();
   loadPayments();
@@ -1333,6 +1402,18 @@ function savePaymentField(month, name, field, value, rerender) {
   if (rerender) renderPayments();
 }
 
+function onRateEdit(idx, value) {
+  const name = payRowNames[idx];
+  if (!name) return;
+  const rate = parseFloat(String(value).replace(/[^\d.]/g, '')) || 1785.71;
+  const c = allCreators.find(c => String(c.name).toLowerCase() === name.toLowerCase());
+  if (c) c.rate = rate;
+  jsonp({ action:'setRate', name, rate }, (d) => {
+    if (!d || d.status !== 'success') showToast('error', 'Not saved', 'Could not save the new rate. Check your connection and try again.');
+  });
+  renderPayments();
+}
+
 const PAY_LEGEND_HTML =
   '<h4>Assumptions &amp; Legend</h4>' +
   'Rate per Post: &#8358;1,785.71 per video (some creators are on a higher rate, set per creator on the Manage screen).<br>' +
@@ -1407,7 +1488,7 @@ function renderPayments() {
       '<td class="pay-num">' + (i+1) + '</td>' +
       '<td>' + escH(name) + '</td>' +
       '<td class="pay-num">' + posts + '</td>' +
-      '<td class="pay-num">' + fmtMoney2(rate) + '</td>' +
+      '<td><input class="pay-input" style="max-width:120px;text-align:right" value="' + fmtMoney2(rate) + '" onchange="onRateEdit(' + i + ',this.value)"></td>' +
       '<td class="pay-num">' + fmtMoney2(base) + '</td>' +
       '<td><input class="pay-input" value="' + escH(bonusViews) + '" placeholder="e.g. 100000,50000" onchange="onPayEdit(' + i + ',\'bonusViews\',this.value,true)"></td>' +
       '<td class="pay-num">' + fmtMoney2(perf) + '</td>' +
@@ -1481,6 +1562,64 @@ function exportPaymentsCSV() {
   a.href = url; a.download = 'NQ Payment Register - ' + monthLabel(selectedPayMonth) + '.csv';
   document.body.appendChild(a); a.click(); document.body.removeChild(a);
   URL.revokeObjectURL(url);
+}
+
+// ── CREATOR INTAKE / ONBOARDING ──
+function setupIntake() {
+  const dt = document.getElementById('i-signdate');
+  if (dt) dt.value = todayStr();
+  const link = document.getElementById('i-contract-link');
+  if (link) {
+    if (CONTRACT_URL) { link.href = CONTRACT_URL; }
+    else {
+      link.style.display = 'none';
+      const n = document.getElementById('i-contract-note');
+      if (n) n.textContent = 'A team member will share the full contract with you and follow up personally. Please confirm below that you agree to its terms.';
+    }
+  }
+  if ((location.hash || '').toLowerCase().indexOf('intake') >= 0) showPage('intake');
+}
+
+function submitIntake() {
+  const g = id => (document.getElementById(id).value || '').trim();
+  const name = g('i-name'), phone = g('i-phone'), email = g('i-email');
+  const bank = g('i-bank'), acctNum = g('i-acctnum'), acctName = g('i-acctname');
+  const agree = document.getElementById('i-agree').checked;
+  const sign = g('i-sign'), signDate = g('i-signdate');
+  const alertEl = document.getElementById('intake-alert');
+  alertEl.classList.remove('show');
+  const fail = m => { alertEl.className = 'alert alert-error show'; alertEl.textContent = m; alertEl.scrollIntoView({ behavior:'smooth', block:'center' }); };
+  if (!name)  { fail('Please enter your full name.'); return; }
+  if (!phone) { fail('Please enter your phone number.'); return; }
+  if (!email) { fail('Please enter your email.'); return; }
+  if (!bank || !acctNum || !acctName) { fail('Please complete your bank details so you can be paid.'); return; }
+  if (!agree) { fail('Please read and tick the box to agree to the contract.'); return; }
+  if (!sign)  { fail('Please type your full name as your signature.'); return; }
+
+  const btn = document.getElementById('intake-btn');
+  btn.disabled = true; btn.textContent = 'Submitting...';
+  const payload = {
+    action:'intake', name, phone, email,
+    nqEmail:g('i-nqemail'), nqEmailPass:g('i-nqemailpass'),
+    igUser:g('i-iguser'), igPass:g('i-igpass'),
+    ttUser:g('i-ttuser'), ttPass:g('i-ttpass'),
+    bankName:bank, acctNum, acctName,
+    signature:sign, signDate:signDate || todayStr()
+  };
+  jsonp(payload, (data) => {
+    btn.disabled = false; btn.textContent = 'Complete onboarding';
+    if (data && data.status === 'success') {
+      document.getElementById('intake-confirm-msg').innerHTML = 'You are now set up as an active creator. You can start logging your posts straight away. Welcome to NorthQuest!';
+      document.getElementById('intake-confirm').classList.add('show');
+      showToast('success', 'Welcome, ' + name.split(' ')[0] + '! 🎉', 'Your onboarding is complete.');
+      ['i-name','i-phone','i-email','i-nqemail','i-nqemailpass','i-iguser','i-igpass','i-ttuser','i-ttpass','i-bank','i-acctnum','i-acctname','i-sign'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+      document.getElementById('i-agree').checked = false;
+      loadCreators();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else {
+      fail((data && data.message) || 'Something went wrong. Please try again.');
+    }
+  }, 20000);
 }
 
 function togglePassword() {
