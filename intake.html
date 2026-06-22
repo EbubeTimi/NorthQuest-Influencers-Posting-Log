@@ -47,6 +47,12 @@
   .hero{width:100%;height:172px;border-radius:20px;margin-bottom:20px;background:linear-gradient(135deg,#7b5be8,#4a2eab 85%);display:flex;align-items:center;justify-content:center;color:#fff;font-family:'Playfair Display',serif;font-size:22px;font-weight:700;position:relative;overflow:hidden;}
   .hero::after{content:'NQ';position:absolute;right:-8px;bottom:-26px;font-size:120px;font-weight:900;opacity:.14;}
   .hero::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 30% 20%, rgba(255,255,255,.25), transparent 55%);}
+  .hero-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:1;}
+  .imgslot{position:relative;width:100%;min-height:150px;border-radius:18px;margin:0 0 18px;overflow:hidden;background:linear-gradient(135deg,#efe7ff,#e3d4ff);}
+  .imgslot img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;}
+  .steps-box{background:var(--surface);border:1.5px solid var(--border);border-radius:14px;padding:16px 18px;margin:18px 0 14px;}
+  .steps-title{font-size:13px;font-weight:700;color:var(--accent3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;}
+  .steps-box ol{padding-left:20px;font-size:13.5px;color:var(--text2);line-height:1.7;} .steps-box li{margin-bottom:8px;}
   .note{background:var(--lav);border-radius:12px;padding:14px 16px;font-size:14px;color:var(--accent3);margin-top:16px;}
   .quote{border-left:3px solid var(--gold);background:var(--gold-soft);padding:14px 16px;border-radius:0 12px 12px 0;font-style:italic;color:#6b4e10;margin-top:16px;font-size:14.5px;}
   .bignum{font-family:'Playfair Display',serif;font-size:54px;font-weight:900;color:var(--gold-deep);line-height:1;letter-spacing:-1px;}
@@ -102,7 +108,7 @@
   <div class="stage" id="stage">
 
     <section class="step active" data-key="welcome">
-      <div class="hero rv">A home for creators</div>
+      <div class="hero rv">A home for creators<img class="hero-img" src="hero.jpg" alt="" onerror="this.remove()"></div>
       <div class="eyebrow rv">Made by Smith and Ella</div>
       <h1 class="tw" id="tw-welcome"></h1>
       <p class="lead rv">This is your onboarding. Stay with it to the very end, because you will learn how everything works, set up your details, and sign your contract right here. About five minutes.</p>
@@ -121,6 +127,7 @@
       <div class="badge-circle rv" style="background:var(--gold-soft)">&#127942;</div>
       <h1 class="tw center" id="tw-congrats"></h1>
       <p class="lead rv">Reaching <strong style="color:var(--gold-deep)"><span id="cu-5k">0</span> views</strong> is no small thing. That milestone is exactly why you are here. Let me show you what being a NorthQuest creator looks like.</p>
+      <div class="imgslot rv" style="margin-top:18px"><img src="congrats.jpg" alt="" onerror="this.remove()"></div>
       <div class="nav rv"><button class="back" onclick="prev()">Back</button><button class="btn" onclick="next()">Let's go &rarr;</button></div>
     </section>
 
@@ -134,6 +141,7 @@
         <div class="sv" style="display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--border)"><span>Q-Flex · withdraw anytime</span><strong style="color:var(--accent3)">up to 15%</strong></div>
         <div class="sv" style="display:flex;justify-content:space-between;padding:9px 0"><span>Auto-Save · save to a target</span><strong style="color:var(--accent3)">20%</strong></div>
       </div>
+      <div class="imgslot rv" style="margin-top:18px"><img src="about.jpg" alt="" onerror="this.remove()"></div>
       <div class="quote rv">Sound like a real person talking to a friend, not a brand talking to a customer. Would you say this to your best friend at lunch?</div>
       <div class="nav rv"><button class="back" onclick="prev()">Back</button><button class="btn" onclick="next()">Continue &rarr;</button></div>
     </section>
@@ -143,6 +151,7 @@
       <div class="eyebrow rv">Your daily rhythm</div>
       <h1 class="rv">Two a day, both platforms</h1>
       <p class="lead rv">Shoot two videos every day, and post the <strong>same two</strong> on both TikTok and Instagram. Not two per platform. The same two, cross-posted. The second one before 9 PM.</p>
+      <div class="imgslot rv" style="margin-top:16px"><img src="rhythm.jpg" alt="" onerror="this.remove()"></div>
       <div class="note rv"><span class="gname">there</span>, that is 14 a week, 56 a month. The more you post, the better your chances. Don't wait for a perfect video. Post, learn, post again.</div>
       <div class="nav rv"><button class="back" onclick="prev()">Back</button><button class="btn" onclick="next()">Continue &rarr;</button></div>
     </section>
@@ -152,7 +161,7 @@
       <div class="eyebrow rv">How you log your posts</div>
       <h1 class="rv">Logging takes seconds</h1>
       <p class="lead rv">Every day, after you post, you drop your TikTok and Instagram links into our tracker. That is how your work is counted. <strong>A video not logged the same day may not count</strong>, so make it a habit.</p>
-      <div class="note rv">We will share the tracker link with you. It opens on your phone, you paste your two links, and you are done.</div>
+      <div class="note rv">You will find the tracker link in the group description. It opens on your phone, you paste your two links, and you are done.</div>
       <div class="nav rv"><button class="back" onclick="prev()">Back</button><button class="btn" onclick="next()">Continue &rarr;</button></div>
     </section>
 
@@ -223,16 +232,11 @@
       <div class="icon-badge ib-purple rv">&#128221;</div>
       <div class="eyebrow rv">Last step</div>
       <h1 class="rv">How to sign your contract</h1>
-      <p class="lead rv">Follow these three taps, sign, then upload your signed copy below. We are one tap away if you have questions.</p>
-      <div class="rv" style="margin-top:18px;">
-        <a class="action act-wa" id="wa-link" target="_blank" rel="noopener"><span class="ic">&#128241;</span><span>Questions? Tap here to message Smith on WhatsApp</span><span class="chev">&rsaquo;</span></a>
-        <a class="action act-dl" href="https://drive.google.com/drive/folders/1PNOl5wFtJSM-F_RZJCVackzXmagsdrZe?usp=drive_link" target="_blank" rel="noopener"><span class="ic">&#11015;</span><span>Tap here to open and download your contract</span><span class="chev">&rsaquo;</span></a>
-        <a class="action act-vid" href="https://drive.google.com/file/d/11K32e1GR8xULU6rnZe12v-mlEGNmtLOV/view?usp=drive_link" target="_blank" rel="noopener"><span class="ic">&#9654;</span><span>Tap here to watch a short video on how to sign</span><span class="chev">&rsaquo;</span></a>
-      </div>
-      <details class="rv">
-        <summary>Prefer written steps? Tap to read them</summary>
+      <p class="lead rv">Read the steps, watch the quick video, then sign and upload your contract. We are one tap away if you have questions.</p>
+      <div class="steps-box rv">
+        <div class="steps-title">Understand the steps</div>
         <ol>
-          <li>Tap "open and download your contract" above. It opens a Google Drive folder.</li>
+          <li>Tap <strong>"open and download your contract"</strong> below. It opens a Google Drive folder.</li>
           <li>Find the document with your name (it may be named "insert your name") and open it.</li>
           <li><strong>Fill the TOP of the contract</strong>: your name and your address.</li>
           <li>Tap the three dots at the top right, choose <strong>Share &amp; export</strong>, then <strong>Send a copy</strong>, then <strong>PDF</strong>.</li>
@@ -242,7 +246,10 @@
           <li>Tap the upload/share arrow, tap <strong>Send a copy</strong>, and save it as your name.</li>
           <li>Come back here and upload your signed copy below.</li>
         </ol>
-      </details>
+      </div>
+      <a class="action act-vid rv" href="https://drive.google.com/file/d/11K32e1GR8xULU6rnZe12v-mlEGNmtLOV/view?usp=drive_link" target="_blank" rel="noopener"><span class="ic">&#9654;</span><span>Tap here to watch a short video on how to sign</span><span class="chev">&rsaquo;</span></a>
+      <a class="action act-wa rv" id="wa-link" target="_blank" rel="noopener"><span class="ic">&#128241;</span><span>Questions? Tap here to message Smith on WhatsApp</span><span class="chev">&rsaquo;</span></a>
+      <a class="action act-dl rv" href="https://drive.google.com/drive/folders/1PNOl5wFtJSM-F_RZJCVackzXmagsdrZe?usp=drive_link" target="_blank" rel="noopener"><span class="ic">&#11015;</span><span>Tap here to open and download your contract</span><span class="chev">&rsaquo;</span></a>
       <div class="tip rv">Remember: you fill two places. The <strong>top</strong> (your name and address) and the <strong>bottom</strong> (your signature and the date).</div>
       <div class="field rv"><label>Upload your signed copy (PDF)</label>
         <input type="file" id="f-contract" accept=".pdf,.doc,.docx" style="font-size:14px;" />
@@ -266,7 +273,7 @@
 </div>
 <script>
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwLrQ6h0XAOKIxYw_r2uMbb_FtBq_ZBBFdBAQpeLHo9Z9ZKkzISuje9CvuTF-RcWgFgmQ/exec';
-const PREVIEW = (location.hash||'').toLowerCase().indexOf('preview') >= 0;
+const PREVIEW = ((location.hash||'') + (location.search||'')).toLowerCase().indexOf('preview') >= 0;
 const steps = Array.prototype.slice.call(document.querySelectorAll('.step'));
 let cur = 0, nick = 'there', jsonpCtr = 0, typeTimer = null;
 function key(){ return steps[cur].dataset.key; }
@@ -295,7 +302,7 @@ function animateRv(el){
   el.querySelectorAll('.rv, .sv').forEach((n,i)=>{ n.style.animation='none'; void n.offsetHeight; n.style.animation=''; n.style.animationDelay=(i*0.08)+'s'; });
 }
 function playFor(k){
-  if (k==='welcome') typeOut(document.getElementById('tw-welcome'), 'Welcome to NorthQuest Creators', 42);
+  if (k==='welcome') typeOut(document.getElementById('tw-welcome'), 'Welcome to NorthQuest', 48);
   else if (k==='name') typeOut(document.getElementById('tw-name'), 'What should I call you?', 45);
   else if (k==='congrats'){ burst(); typeOut(document.getElementById('tw-congrats'), 'Hey ' + nick + ', congratulations!', 45); countUp(document.getElementById('cu-5k'), 5000, 1100, ''); }
   else if (k==='pay'){ countUp(document.getElementById('cu-pay'), 150000, 1300, '₦'); }

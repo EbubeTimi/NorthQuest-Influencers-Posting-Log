@@ -1426,9 +1426,9 @@ function onPayEdit(idx, field, value, rerender) {
 
 function savePaymentField(month, name, field, value, rerender) {
   let rec = allPayments.find(p => p.month === month && String(p.name).toLowerCase() === name.toLowerCase());
-  if (!rec) { rec = { month, name, bonusViews:'', specialBonus:'', paymentStatus:'Pending', paymentDate:'', remarks:'' }; allPayments.push(rec); }
+  if (!rec) { rec = { month, name, bonusViews:'', specialBonus:'', paymentStatus:'Pending', paymentDate:'', remarks:'', postsOverride:'', totalOverride:'' }; allPayments.push(rec); }
   rec[field] = value;
-  jsonp({ action:'savePayment', month, name, bonusViews:rec.bonusViews||'', specialBonus:rec.specialBonus||'', paymentStatus:rec.paymentStatus||'Pending', paymentDate:rec.paymentDate||'', remarks:rec.remarks||'' }, (d) => {
+  jsonp({ action:'savePayment', month, name, bonusViews:rec.bonusViews||'', specialBonus:rec.specialBonus||'', paymentStatus:rec.paymentStatus||'Pending', paymentDate:rec.paymentDate||'', remarks:rec.remarks||'', postsOverride:rec.postsOverride||'', totalOverride:rec.totalOverride||'' }, (d) => {
     if (!d || d.status !== 'success') showToast('error', 'Not saved', 'Could not save that change. Check your connection and try again.');
   });
   if (rerender) renderPayments();
@@ -1444,6 +1444,16 @@ function onRateEdit(idx, value) {
     if (!d || d.status !== 'success') showToast('error', 'Not saved', 'Could not save the new rate. Check your connection and try again.');
   });
   renderPayments();
+}
+
+function onBankEdit(idx, field, value) {
+  const name = payRowNames[idx];
+  if (!name) return;
+  const c = allCreators.find(c => String(c.name).toLowerCase() === name.toLowerCase());
+  if (c) { if (field==='bankName') c.bankName = value; else if (field==='acctNum') c.acctNum = value; else if (field==='acctName') c.acctName = value; }
+  const params = { action:'setCreatorBank', name };
+  params[field] = value;
+  jsonp(params, (d) => { if (!d || d.status !== 'success') showToast('error', 'Not saved', 'Could not save the bank detail. Check your connection and try again.'); });
 }
 
 const PAY_LEGEND_HTML =
@@ -1506,30 +1516,34 @@ function renderPayments() {
     const posts = counts[name];
     const ci = cmap[name.toLowerCase()] || { rate:1785.71, bankName:'', acctNum:'', acctName:'' };
     const rate = ci.rate;
-    const base = Math.round(posts * rate);
     const man = allPayments.find(p => p.month === selectedPayMonth && String(p.name).toLowerCase() === name.toLowerCase()) || {};
+    const postsOv = String(man.postsOverride || '');
+    const effPosts = (postsOv !== '' && !isNaN(parseFloat(postsOv))) ? parseFloat(postsOv) : posts;
+    const base = Math.round(effPosts * rate);
     const bonusViews = man.bonusViews || '';
     const perf = calcBonus(bonusViews);
     const special = parseFloat(String(man.specialBonus || '').replace(/[^\d.]/g,'')) || 0;
-    const total = base + perf + special;
+    const computedTotal = base + perf + special;
+    const totalOv = String(man.totalOverride || '').replace(/[^\d.]/g,'');
+    const effTotal = (totalOv !== '' && !isNaN(parseFloat(totalOv))) ? parseFloat(totalOv) : computedTotal;
     const status = man.paymentStatus || 'Pending';
     const payDate = man.paymentDate || '';
     const remarks = man.remarks || '';
-    tPosts += posts; tBase += base; tPerf += perf; tSpecial += special; tTotal += total;
+    tPosts += effPosts; tBase += base; tPerf += perf; tSpecial += special; tTotal += effTotal;
     const stColor = status === 'Paid' ? 'background:#e6f4ec;color:#1a6b4a' : 'background:#fdf6e3;color:#b7770d';
     return '<tr>' +
       '<td class="pay-num">' + (i+1) + '</td>' +
       '<td>' + escH(name) + '</td>' +
-      '<td class="pay-num">' + posts + '</td>' +
+      '<td><input class="pay-input" style="max-width:62px;text-align:right" value="' + effPosts + '" onchange="onPayEdit(' + i + ',\'postsOverride\',this.value,true)"></td>' +
       '<td><input class="pay-input" style="max-width:100px;text-align:right" value="' + fmtMoney2(rate) + '" onchange="onRateEdit(' + i + ',this.value)"></td>' +
       '<td class="pay-num">' + fmtMoney2(base) + '</td>' +
       '<td><input class="pay-input" value="' + escH(bonusViews) + '" placeholder="100000,50000" onchange="onPayEdit(' + i + ',\'bonusViews\',this.value,true)"></td>' +
       '<td class="pay-num">' + fmtMoney2(perf) + '</td>' +
       '<td><input class="pay-input" style="max-width:100px;text-align:right" value="' + (special ? special : '') + '" placeholder="0" onchange="onPayEdit(' + i + ',\'specialBonus\',this.value,true)"></td>' +
-      '<td class="pay-num">' + fmtMoney2(total) + '</td>' +
-      '<td>' + escH(ci.bankName) + '</td>' +
-      '<td>' + escH(ci.acctNum) + '</td>' +
-      '<td>' + escH(ci.acctName) + '</td>' +
+      '<td><input class="pay-input" style="max-width:110px;text-align:right" value="' + fmtMoney2(effTotal) + '" onchange="onPayEdit(' + i + ',\'totalOverride\',this.value,true)"></td>' +
+      '<td><input class="pay-input" value="' + escH(ci.bankName) + '" onchange="onBankEdit(' + i + ',\'bankName\',this.value)"></td>' +
+      '<td><input class="pay-input" value="' + escH(ci.acctNum) + '" onchange="onBankEdit(' + i + ',\'acctNum\',this.value)"></td>' +
+      '<td><input class="pay-input" value="' + escH(ci.acctName) + '" onchange="onBankEdit(' + i + ',\'acctName\',this.value)"></td>' +
       '<td><select class="pay-input" style="' + stColor + '" onchange="onPayEdit(' + i + ',\'paymentStatus\',this.value,true)"><option ' + (status==='Pending'?'selected':'') + '>Pending</option><option ' + (status==='Paid'?'selected':'') + '>Paid</option></select></td>' +
       '<td><input type="date" class="pay-input" value="' + escH(payDate) + '" onchange="onPayEdit(' + i + ',\'paymentDate\',this.value,false)"></td>' +
       '<td><input class="pay-input" value="' + escH(remarks) + '" onchange="onPayEdit(' + i + ',\'remarks\',this.value,false)"></td>' +
