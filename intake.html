@@ -6,274 +6,313 @@
 <meta name="theme-color" content="#6d4ce0" />
 <title>NorthQuest Creators · Onboarding</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700;800&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700;800;900&display=swap');
   :root{
     --accent:#6d4ce0; --accent2:#5839c4; --accent3:#4a2eab;
-    --bg:#f8f6fc; --surface:#ffffff; --border:#e7e0f3;
+    --bg:#f7f4fd; --surface:#ffffff; --border:#e7e0f3;
     --gold:#f5b841; --gold-deep:#b9831a; --gold-soft:#fdf3dd;
+    --wa:#1fa855; --wa-soft:#e7f8ee;
     --text:#1a1525; --text2:#5c5470; --text3:#9389a6; --lav:#f0eaff;
   }
   *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
-  body{font-family:'Inter',-apple-system,sans-serif;background:
-    radial-gradient(circle at 15% 0%, #efe7ff 0%, transparent 45%),
-    radial-gradient(circle at 90% 100%, #f3ecff 0%, transparent 45%), var(--bg);
-    color:var(--text);min-height:100vh;min-height:100dvh;font-size:15px;line-height:1.6;
+  body{font-family:'Inter',-apple-system,sans-serif;color:var(--text);min-height:100dvh;font-size:15px;line-height:1.6;
     -webkit-font-smoothing:antialiased;display:flex;justify-content:center;
+    background:radial-gradient(circle at 12% -5%, #e9dcff 0%, transparent 45%),
+      radial-gradient(circle at 95% 105%, #efe4ff 0%, transparent 45%), var(--bg);
     padding:env(safe-area-inset-top) 16px calc(16px + env(safe-area-inset-bottom));}
   .wrap{width:100%;max-width:480px;display:flex;flex-direction:column;min-height:100dvh;}
-  .topbar{position:sticky;top:0;padding:16px 2px 12px;background:transparent;z-index:5;}
+  .topbar{position:sticky;top:0;padding:16px 2px 12px;z-index:5;background:linear-gradient(var(--bg),var(--bg) 70%,transparent);}
   .brand{display:flex;align-items:center;gap:9px;margin-bottom:12px;}
-  .logo{width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,var(--accent),var(--accent2));
-    display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:12px;}
+  .logo{width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:12px;}
   .brand-name{font-weight:700;font-size:14px;letter-spacing:-.2px;}
+  .pv-badge{margin-left:auto;font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--gold-deep);background:var(--gold-soft);padding:4px 9px;border-radius:20px;display:none;}
   .progress{height:5px;background:var(--lav);border-radius:3px;overflow:hidden;}
-  .progress-fill{height:100%;width:0;background:linear-gradient(90deg,var(--accent),var(--gold));
-    border-radius:3px;transition:width .4s cubic-bezier(.4,1.2,.5,1);}
-  .stage{flex:1;display:flex;flex-direction:column;justify-content:center;padding:8px 2px 24px;}
-  .step{display:none;animation:rise .45s ease both;}
-  .step.active{display:block;}
-  @keyframes rise{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:none;}}
-  .eyebrow{font-size:11px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);margin-bottom:10px;}
-  h1{font-family:'Playfair Display',serif;font-size:30px;line-height:1.15;font-weight:800;letter-spacing:-.5px;margin-bottom:12px;}
-  h2{font-family:'Playfair Display',serif;font-size:23px;font-weight:700;margin-bottom:10px;}
-  p.lead{font-size:16px;color:var(--text2);line-height:1.65;}
-  .hero{width:100%;height:200px;border-radius:18px;object-fit:cover;margin-bottom:20px;background:var(--lav);
-    display:flex;align-items:center;justify-content:center;color:var(--accent3);font-weight:600;}
+  .progress-fill{height:100%;width:0;background:linear-gradient(90deg,var(--accent),var(--gold));border-radius:3px;transition:width .5s cubic-bezier(.4,1.3,.5,1);}
+  .stage{flex:1;display:flex;flex-direction:column;justify-content:center;padding:8px 2px 26px;}
+  .step{display:none;} .step.active{display:block;}
+  @keyframes riseIn{from{opacity:0;transform:translateY(18px);}to{opacity:1;transform:none;}}
+  @keyframes slideIn{from{opacity:0;transform:translateX(-22px);}to{opacity:1;transform:none;}}
+  @keyframes pop{0%{transform:scale(.5);opacity:0;}65%{transform:scale(1.12);}100%{transform:scale(1);opacity:1;}}
+  @keyframes blink{0%,100%{opacity:1;}50%{opacity:0;}}
+  @keyframes glow{0%,100%{box-shadow:0 2px 10px rgba(245,184,65,.15);}50%{box-shadow:0 4px 24px rgba(245,184,65,.55);}}
+  .step.active .rv{opacity:0;animation:riseIn .55s cubic-bezier(.2,.7,.3,1) forwards;}
+  .step.active .sv{opacity:0;animation:slideIn .55s cubic-bezier(.2,.7,.3,1) forwards;}
+  .eyebrow{font-size:11px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--accent);margin-bottom:10px;}
+  h1{font-family:'Playfair Display',serif;font-size:30px;line-height:1.12;font-weight:800;letter-spacing:-.6px;margin-bottom:12px;}
+  .tw{min-height:68px;} .tw.center{min-height:auto;}
+  .cur{display:inline-block;width:.5ch;color:var(--accent);animation:blink .8s step-end infinite;font-weight:400;}
+  p.lead{font-size:16px;color:var(--text2);line-height:1.66;}
+  .icon-badge{width:54px;height:54px;border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:27px;margin-bottom:16px;animation:pop .55s ease both;}
+  .ib-purple{background:var(--lav);} .ib-gold{background:var(--gold-soft);}
+  .hero{width:100%;height:172px;border-radius:20px;margin-bottom:20px;background:linear-gradient(135deg,#7b5be8,#4a2eab 85%);display:flex;align-items:center;justify-content:center;color:#fff;font-family:'Playfair Display',serif;font-size:22px;font-weight:700;position:relative;overflow:hidden;}
+  .hero::after{content:'NQ';position:absolute;right:-8px;bottom:-26px;font-size:120px;font-weight:900;opacity:.14;}
+  .hero::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 30% 20%, rgba(255,255,255,.25), transparent 55%);}
   .note{background:var(--lav);border-radius:12px;padding:14px 16px;font-size:14px;color:var(--accent3);margin-top:16px;}
-  .quote{border-left:3px solid var(--gold);background:var(--gold-soft);padding:14px 16px;border-radius:0 12px 12px 0;
-    font-style:italic;color:#6b4e10;margin-top:16px;font-size:14.5px;}
-  .field{margin-bottom:16px;}
+  .quote{border-left:3px solid var(--gold);background:var(--gold-soft);padding:14px 16px;border-radius:0 12px 12px 0;font-style:italic;color:#6b4e10;margin-top:16px;font-size:14.5px;}
+  .bignum{font-family:'Playfair Display',serif;font-size:54px;font-weight:900;color:var(--gold-deep);line-height:1;letter-spacing:-1px;}
+  .field{margin-bottom:16px;} .field:last-of-type{margin-bottom:0;}
   .field label{display:block;font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--text2);margin-bottom:6px;}
-  input[type=text],input[type=email],input[type=tel],input[type=date],input[type=password]{
-    width:100%;background:var(--surface);border:1.5px solid var(--border);border-radius:12px;padding:13px 15px;
-    font-family:inherit;font-size:16px;color:var(--text);outline:none;transition:border-color .15s,box-shadow .15s;}
+  input[type=text],input[type=email],input[type=tel],input[type=date]{width:100%;background:var(--surface);border:1.5px solid var(--border);border-radius:12px;padding:13px 15px;font-family:inherit;font-size:16px;color:var(--text);outline:none;transition:border-color .15s,box-shadow .15s;}
   input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(109,76,224,.13);}
   .group{background:var(--surface);border:1.5px solid var(--border);border-radius:14px;padding:16px;margin-bottom:16px;}
-  .group-title{font-size:13px;font-weight:700;color:var(--accent3);margin-bottom:12px;display:flex;align-items:center;gap:7px;}
-  .btn{width:100%;padding:15px;border:none;border-radius:13px;font-family:inherit;font-size:16px;font-weight:600;
-    cursor:pointer;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;
-    box-shadow:0 6px 18px rgba(109,76,224,.28);transition:transform .12s,box-shadow .12s;}
-  .btn:active{transform:scale(.985);}
-  .btn:disabled{opacity:.55;box-shadow:none;}
-  .btn-ghost{background:var(--surface);color:var(--text2);border:1.5px solid var(--border);box-shadow:none;}
-  .nav{display:flex;gap:10px;align-items:center;margin-top:22px;}
-  .nav .btn{flex:1;}
+  .group-title{font-size:13px;font-weight:700;color:var(--accent3);margin-bottom:12px;}
+  .btn{width:100%;padding:15px;border:none;border-radius:13px;font-family:inherit;font-size:16px;font-weight:600;cursor:pointer;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;box-shadow:0 6px 18px rgba(109,76,224,.28);transition:transform .12s,box-shadow .12s;}
+  .btn:active{transform:scale(.985);} .btn:disabled{opacity:.55;box-shadow:none;}
+  .nav{display:flex;gap:10px;align-items:center;margin-top:22px;} .nav .btn{flex:1;}
   .back{background:none;border:none;color:var(--text3);font-family:inherit;font-size:14px;font-weight:500;cursor:pointer;padding:8px 4px;white-space:nowrap;}
-  .badge-circle{width:60px;height:60px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:28px;margin-bottom:16px;}
+  .badge-circle{width:64px;height:64px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:30px;margin:0 auto 16px;animation:pop .6s ease both;}
   .ladder{display:flex;flex-direction:column;gap:8px;margin-top:6px;}
-  .rung{display:flex;justify-content:space-between;align-items:center;padding:13px 15px;border-radius:12px;background:var(--surface);border:1.5px solid var(--border);font-size:14px;}
-  .rung.top{background:var(--gold-soft);border-color:var(--gold);}
-  .rung .views{color:var(--text2);font-weight:500;}
-  .rung .cash{font-weight:700;color:var(--accent3);}
-  .rung.top .cash{color:var(--gold-deep);}
-  .actions{display:flex;flex-direction:column;gap:10px;margin:6px 0 18px;}
-  .action{display:flex;align-items:center;gap:13px;padding:14px 15px;border-radius:13px;border:1.5px solid var(--border);
-    background:var(--surface);text-decoration:none;color:var(--text);font-size:14.5px;font-weight:500;}
-  .action .ic{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;}
-  .ic-wa{background:#e7f8ee;color:#1a8a4f;} .ic-dl{background:var(--lav);color:var(--accent);}
-  .ic-vid{background:var(--gold-soft);color:var(--gold-deep);} .ic-up{background:#eaf2fb;color:#2d6cbf;}
-  details{margin:4px 0 16px;border:1.5px solid var(--border);border-radius:12px;background:var(--surface);}
-  summary{padding:13px 15px;font-weight:600;font-size:14px;cursor:pointer;color:var(--accent3);}
-  details ol{padding:4px 20px 16px 34px;font-size:13.5px;color:var(--text2);line-height:1.7;}
-  details li{margin-bottom:7px;}
-  .check{display:flex;align-items:flex-start;gap:11px;background:var(--surface);border:1.5px solid var(--border);border-radius:12px;padding:14px 15px;margin-bottom:14px;}
+  .rung{display:flex;justify-content:space-between;align-items:center;padding:12px 15px;border-radius:12px;background:var(--surface);border:1.5px solid var(--border);font-size:14px;}
+  .rung.top{background:var(--gold-soft);border-color:var(--gold);animation:glow 2.6s ease-in-out infinite;}
+  .rung .views{color:var(--text2);font-weight:500;} .rung .cash{font-weight:700;color:var(--accent3);} .rung.top .cash{color:var(--gold-deep);}
+  .action{display:flex;align-items:center;gap:13px;width:100%;text-align:left;padding:15px 16px;border-radius:14px;text-decoration:none;font-size:15px;font-weight:600;margin-bottom:11px;cursor:pointer;border:2px solid transparent;transition:transform .12s;}
+  .action:active{transform:scale(.98);}
+  .action .ic{width:38px;height:38px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:19px;flex-shrink:0;background:rgba(255,255,255,.6);}
+  .action .chev{margin-left:auto;font-size:22px;opacity:.65;}
+  .act-wa{background:var(--wa-soft);color:#0f5c30;border-color:#bce8cf;}
+  .act-dl{background:var(--lav);color:var(--accent3);border-color:#d6c8f6;}
+  .act-vid{background:var(--gold-soft);color:var(--gold-deep);border-color:#f0d79a;}
+  details{margin:6px 0 16px;border:1.5px solid var(--border);border-radius:12px;background:var(--surface);}
+  summary{padding:14px 15px;font-weight:600;font-size:14px;cursor:pointer;color:var(--accent3);}
+  details ol{padding:4px 18px 16px 32px;font-size:13.5px;color:var(--text2);line-height:1.7;} details li{margin-bottom:8px;}
+  .tip{background:var(--lav);border-radius:10px;padding:10px 13px;font-size:13px;color:var(--accent3);margin:10px 0;}
+  .check{display:flex;align-items:flex-start;gap:11px;background:var(--surface);border:1.5px solid var(--border);border-radius:12px;padding:14px 15px;margin:14px 0;}
   .check input{width:20px;height:20px;margin-top:1px;flex-shrink:0;accent-color:var(--accent);}
   .check label{font-size:13.5px;color:var(--text2);line-height:1.5;}
   .filechip{font-size:13px;color:var(--text2);margin-top:8px;}
-  .alert{background:#fdecea;border:1.5px solid #f3b6ae;color:#b3261e;border-radius:12px;padding:12px 15px;font-size:14px;margin-top:14px;display:none;}
-  .alert.show{display:block;}
+  .rev-row{display:flex;justify-content:space-between;gap:14px;padding:10px 0;border-bottom:1px solid var(--border);font-size:14px;}
+  .rev-row:last-child{border-bottom:none;}
+  .rev-k{color:var(--text3);} .rev-v{color:var(--text);font-weight:500;text-align:right;word-break:break-word;}
+  .alert{background:#fdecea;border:1.5px solid #f3b6ae;color:#b3261e;border-radius:12px;padding:12px 15px;font-size:14px;margin-top:14px;display:none;} .alert.show{display:block;}
   .spinner{display:inline-block;width:16px;height:16px;border:2px solid rgba(255,255,255,.5);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite;vertical-align:-3px;margin-right:6px;}
   @keyframes spin{to{transform:rotate(360deg);}}
-  .confetti{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:50;overflow:hidden;}
-  .confetti span{position:absolute;width:9px;height:14px;opacity:0;animation:fall 2.2s ease-in forwards;}
+  .confetti{position:fixed;inset:0;pointer-events:none;z-index:50;overflow:hidden;}
+  .confetti span{position:absolute;width:9px;height:14px;opacity:0;animation:fall 2.3s ease-in forwards;}
   @keyframes fall{0%{opacity:1;transform:translateY(-20px) rotate(0);}100%{opacity:0;transform:translateY(105vh) rotate(560deg);}}
-  .small{font-size:13px;color:var(--text3);}
-  .center{text-align:center;}
+  .small{font-size:13px;color:var(--text3);} .center{text-align:center;}
 </style>
 </head>
 <body>
 <div class="confetti" id="confetti"></div>
 <div class="wrap">
   <div class="topbar">
-    <div class="brand"><div class="logo">NQ</div><div class="brand-name">NorthQuest Creators</div></div>
+    <div class="brand"><div class="logo">NQ</div><div class="brand-name">NorthQuest Creators</div><span class="pv-badge" id="pv-badge">Preview</span></div>
     <div class="progress"><div class="progress-fill" id="pfill"></div></div>
   </div>
   <div class="stage" id="stage">
 
-    <section class="step active" data-step>
-      <div class="hero">A space for creators</div>
-      <div class="eyebrow">Made by Smith and Ella</div>
-      <h1>Welcome to NorthQuest Creators</h1>
-      <p class="lead">This is your onboarding. Stick with it to the end, because you will set up everything and sign your contract right here. It takes about five minutes.</p>
-      <div class="nav"><button class="btn" onclick="next()">Begin &rarr;</button></div>
+    <section class="step active" data-key="welcome">
+      <div class="hero rv">A home for creators</div>
+      <div class="eyebrow rv">Made by Smith and Ella</div>
+      <h1 class="tw" id="tw-welcome"></h1>
+      <p class="lead rv">This is your onboarding. Stay with it to the very end, because you will learn how everything works, set up your details, and sign your contract right here. About five minutes.</p>
+      <div class="nav rv"><button class="btn" onclick="next()">Begin &rarr;</button></div>
     </section>
 
-    <section class="step" data-step>
-      <div class="eyebrow">First things first</div>
-      <h1>What should I call you?</h1>
-      <p class="lead">Not your full name yet. Just what you would like to be called.</p>
-      <div class="field" style="margin-top:18px;"><input type="text" id="nick" placeholder="e.g. Tammy" autocomplete="off" /></div>
-      <div class="nav"><button class="back" onclick="prev()">Back</button><button class="btn" onclick="next()">Continue &rarr;</button></div>
+    <section class="step" data-key="name">
+      <div class="eyebrow rv">First things first</div>
+      <h1 class="tw" id="tw-name"></h1>
+      <p class="lead rv">Not your full name yet. Just what you would like to be called.</p>
+      <div class="field rv" style="margin-top:18px;"><input type="text" id="nick" placeholder="e.g. Tammy" autocomplete="off" /></div>
+      <div class="nav rv"><button class="back" onclick="prev()">Back</button><button class="btn" onclick="next()">Continue &rarr;</button></div>
     </section>
 
-    <section class="step center" data-step>
-      <div class="badge-circle" style="background:var(--gold-soft);margin:0 auto 16px;">&#127942;</div>
-      <h1>Hey <span class="gname">there</span>, congratulations!</h1>
-      <p class="lead">Reaching <strong style="color:var(--gold-deep)">5,000 views</strong> is no small thing. That milestone is exactly why you are here. Let me show you what being a NorthQuest creator looks like.</p>
-      <div class="nav"><button class="back" onclick="prev()">Back</button><button class="btn" onclick="next()">Let's go &rarr;</button></div>
+    <section class="step center" data-key="congrats">
+      <div class="badge-circle rv" style="background:var(--gold-soft)">&#127942;</div>
+      <h1 class="tw center" id="tw-congrats"></h1>
+      <p class="lead rv">Reaching <strong style="color:var(--gold-deep)"><span id="cu-5k">0</span> views</strong> is no small thing. That milestone is exactly why you are here. Let me show you what being a NorthQuest creator looks like.</p>
+      <div class="nav rv"><button class="back" onclick="prev()">Back</button><button class="btn" onclick="next()">Let's go &rarr;</button></div>
     </section>
 
-    <section class="step" data-step>
-      <div class="eyebrow">00 — What is NorthQuest</div>
-      <h1>Know what you're talking about</h1>
-      <p class="lead">NorthQuest Finance is a CBN-regulated savings and investment platform that helps Nigerians earn real returns instead of letting money lose value in low-interest accounts.</p>
-      <div class="group" style="margin-top:18px;">
-        <div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);"><span>Q-Lock · fixed savings</span><strong style="color:var(--accent3)">up to 24%</strong></div>
-        <div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);"><span>Q-Flex · withdraw anytime</span><strong style="color:var(--accent3)">up to 15%</strong></div>
-        <div style="display:flex;justify-content:space-between;padding:7px 0;"><span>Auto-Save · save to a target</span><strong style="color:var(--accent3)">20%</strong></div>
+    <section class="step" data-key="about">
+      <div class="icon-badge ib-purple rv">&#127974;</div>
+      <div class="eyebrow rv">Know what you're talking about</div>
+      <h1 class="rv">What is NorthQuest?</h1>
+      <p class="lead rv">NorthQuest Finance is a CBN-regulated savings and investment platform that helps Nigerians earn real returns instead of letting money lose value in low-interest accounts.</p>
+      <div class="group" style="margin-top:18px;padding:8px 16px;">
+        <div class="sv" style="display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--border)"><span>Q-Lock · fixed savings</span><strong style="color:var(--accent3)">up to 24%</strong></div>
+        <div class="sv" style="display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--border)"><span>Q-Flex · withdraw anytime</span><strong style="color:var(--accent3)">up to 15%</strong></div>
+        <div class="sv" style="display:flex;justify-content:space-between;padding:9px 0"><span>Auto-Save · save to a target</span><strong style="color:var(--accent3)">20%</strong></div>
       </div>
-      <div class="quote">Sound like a real person talking to a friend, not a brand talking to a customer. Would you say this to your best friend at lunch?</div>
-      <div class="nav"><button class="back" onclick="prev()">Back</button><button class="btn" onclick="next()">Continue &rarr;</button></div>
+      <div class="quote rv">Sound like a real person talking to a friend, not a brand talking to a customer. Would you say this to your best friend at lunch?</div>
+      <div class="nav rv"><button class="back" onclick="prev()">Back</button><button class="btn" onclick="next()">Continue &rarr;</button></div>
     </section>
 
-    <section class="step" data-step>
-      <div class="eyebrow">Posting — your daily rhythm</div>
-      <h1>Two a day, both platforms</h1>
-      <p class="lead">Shoot two videos every day, and post the <strong>same two</strong> on both TikTok and Instagram. Not two per platform. The same two, cross-posted.</p>
-      <div class="note"><span class="gname">there</span>, the more you post, the better your chances. Do not wait for a perfect video. Post, learn, post again.</div>
-      <div class="nav"><button class="back" onclick="prev()">Back</button><button class="btn" onclick="next()">Continue &rarr;</button></div>
+    <section class="step" data-key="rhythm">
+      <div class="icon-badge ib-purple rv">&#128197;</div>
+      <div class="eyebrow rv">Your daily rhythm</div>
+      <h1 class="rv">Two a day, both platforms</h1>
+      <p class="lead rv">Shoot two videos every day, and post the <strong>same two</strong> on both TikTok and Instagram. Not two per platform. The same two, cross-posted. The second one before 9 PM.</p>
+      <div class="note rv"><span class="gname">there</span>, that is 14 a week, 56 a month. The more you post, the better your chances. Don't wait for a perfect video. Post, learn, post again.</div>
+      <div class="nav rv"><button class="back" onclick="prev()">Back</button><button class="btn" onclick="next()">Continue &rarr;</button></div>
     </section>
 
-    <section class="step" data-step>
-      <div class="eyebrow">Content rules</div>
-      <h1>How content works here</h1>
-      <p class="lead"><strong>Nothing goes up without Ella's approval.</strong> Ella is our Quality Control Officer, and every video goes to her before it is posted. No exceptions.</p>
-      <div class="note">Follow Ella on TikTok at <strong>@ellaikipo</strong> so you stay in the loop. You can pitch ideas, but we only shoot what is proven to work, and only after approval.</div>
-      <div class="nav"><button class="back" onclick="prev()">Back</button><button class="btn" onclick="next()">Continue &rarr;</button></div>
+    <section class="step" data-key="logging">
+      <div class="icon-badge ib-purple rv">&#9889;</div>
+      <div class="eyebrow rv">How you log your posts</div>
+      <h1 class="rv">Logging takes seconds</h1>
+      <p class="lead rv">Every day, after you post, you drop your TikTok and Instagram links into our tracker. That is how your work is counted. <strong>A video not logged the same day may not count</strong>, so make it a habit.</p>
+      <div class="note rv">We will share the tracker link with you. It opens on your phone, you paste your two links, and you are done.</div>
+      <div class="nav rv"><button class="back" onclick="prev()">Back</button><button class="btn" onclick="next()">Continue &rarr;</button></div>
     </section>
 
-    <section class="step" data-step>
-      <div class="eyebrow">Content guide</div>
-      <h1>Four formats that work</h1>
-      <p class="lead">Don't sell the app. Sell the feeling of having your money sorted. These four keep working:</p>
-      <div class="group" style="margin-top:16px;">
-        <p style="margin-bottom:10px;"><strong>The relatable joke.</strong> <span class="small">Laugh at a shared truth. NorthQuest is in the punchline, not the pitch.</span></p>
-        <p style="margin-bottom:10px;"><strong>The soft flex.</strong> <span class="small">Notice the difference between people who save and people who don't. Calmly.</span></p>
-        <p style="margin-bottom:10px;"><strong>The money drama.</strong> <span class="small">A story, a transfer, a twist that stops the scroll.</span></p>
-        <p><strong>The casual mention.</strong> <span class="small">NorthQuest is just on the list of things you use. No fanfare.</span></p>
-      </div>
-      <div class="nav"><button class="back" onclick="prev()">Back</button><button class="btn" onclick="next()">Continue &rarr;</button></div>
-    </section>
-
-    <section class="step" data-step>
-      <div class="eyebrow">Go viral, get rewarded</div>
-      <h1>The bonus ladder</h1>
-      <p class="lead">On top of your pay, hitting these view milestones earns real money:</p>
-      <div class="ladder">
+    <section class="step center" data-key="pay">
+      <div class="icon-badge ib-gold rv" style="margin-left:auto;margin-right:auto">&#128176;</div>
+      <div class="eyebrow rv">How you get paid</div>
+      <div class="bignum rv" style="margin-bottom:4px;"><span id="cu-pay">&#8358;0</span></div>
+      <p class="lead rv">a month when you hit your full 56 videos. That works out to <strong>&#8358;2,678.57 per video</strong>. You are paid once a month, on or before the last day.</p>
+      <p class="lead rv" style="margin-top:14px;">And when you go viral, real bonuses stack on top:</p>
+      <div class="ladder rv" style="margin-top:8px;text-align:left;">
         <div class="rung top"><span class="views">2,000,000 views</span><span class="cash">&#8358;900,000</span></div>
         <div class="rung"><span class="views">1,000,000 views</span><span class="cash">&#8358;500,000</span></div>
         <div class="rung"><span class="views">500,000 views</span><span class="cash">&#8358;200,000</span></div>
         <div class="rung"><span class="views">100,000 views</span><span class="cash">&#8358;100,000</span></div>
         <div class="rung"><span class="views">50,000 views</span><span class="cash">&#8358;50,000</span></div>
       </div>
-      <div class="nav"><button class="back" onclick="prev()">Back</button><button class="btn" onclick="next()">I'm ready &rarr;</button></div>
+      <div class="nav rv"><button class="back" onclick="prev()">Back</button><button class="btn" onclick="next()">Continue &rarr;</button></div>
     </section>
 
-    <section class="step" data-step>
-      <div class="eyebrow">Almost there</div>
-      <h1>Your details, <span class="gname">there</span></h1>
-      <p class="lead">All private, used only to set you up and pay you.</p>
-      <div class="group" style="margin-top:18px;">
+    <section class="step" data-key="rules">
+      <div class="icon-badge ib-purple rv">&#9989;</div>
+      <div class="eyebrow rv">How content works here</div>
+      <h1 class="rv">Ella approves everything</h1>
+      <p class="lead rv"><strong>Nothing goes up without Ella's approval.</strong> She is our Quality Control Officer. Every video goes to her before posting. Follow her on TikTok at <strong>@ellaikipo</strong> to stay in the loop.</p>
+      <p class="lead rv" style="margin-top:12px;">Four formats that keep working: the relatable joke, the soft flex, the money drama, and the casual mention. Don't sell the app. Sell the feeling of having your money sorted.</p>
+      <div class="nav rv"><button class="back" onclick="prev()">Back</button><button class="btn" onclick="next()">I'm ready &rarr;</button></div>
+    </section>
+
+    <section class="step" data-key="details">
+      <div class="eyebrow rv">Almost there</div>
+      <h1 class="rv">Your details, <span class="gname">there</span></h1>
+      <p class="lead rv">All private, used only to set you up and pay you.</p>
+      <div class="group rv" style="margin-top:18px;">
         <div class="group-title">About you</div>
         <div class="field"><label>Full name</label><input type="text" id="f-fullname" placeholder="Your full legal name" /></div>
         <div class="field"><label>Phone number</label><input type="tel" id="f-phone" placeholder="080..." /></div>
-        <div class="field" style="margin-bottom:0"><label>Personal email</label><input type="email" id="f-email" placeholder="you@email.com" /></div>
+        <div class="field"><label>Personal email</label><input type="email" id="f-email" placeholder="you@email.com" /></div>
       </div>
-      <div class="group">
+      <div class="group rv">
         <div class="group-title">Your NorthQuest accounts</div>
         <div class="field"><label>NorthQuest email</label><input type="text" id="f-nqemail" placeholder="thenqemail@gmail.com" /></div>
         <div class="field"><label>NorthQuest email password</label><input type="text" id="f-nqpass" placeholder="Password" /></div>
         <div class="field"><label>Instagram username</label><input type="text" id="f-iguser" placeholder="@username" /></div>
         <div class="field"><label>Instagram password</label><input type="text" id="f-igpass" placeholder="Password" /></div>
         <div class="field"><label>TikTok username</label><input type="text" id="f-ttuser" placeholder="@username" /></div>
-        <div class="field" style="margin-bottom:0"><label>TikTok password</label><input type="text" id="f-ttpass" placeholder="Password" /></div>
+        <div class="field"><label>TikTok password</label><input type="text" id="f-ttpass" placeholder="Password" /></div>
       </div>
-      <div class="group">
+      <div class="group rv">
         <div class="group-title">Get paid</div>
         <div class="field"><label>Bank name</label><input type="text" id="f-bank" placeholder="e.g. OPay, GTBank" /></div>
         <div class="field"><label>Account number</label><input type="text" id="f-acctnum" inputmode="numeric" placeholder="10-digit number" /></div>
-        <div class="field" style="margin-bottom:0"><label>Account name</label><input type="text" id="f-acctname" placeholder="Name on the account" /></div>
+        <div class="field"><label>Account name</label><input type="text" id="f-acctname" placeholder="Name on the account" /></div>
       </div>
-      <div class="nav"><button class="back" onclick="prev()">Back</button><button class="btn" onclick="next()">Continue &rarr;</button></div>
+      <div class="alert" id="details-alert"></div>
+      <div class="nav rv"><button class="back" onclick="prev()">Back</button><button class="btn" onclick="next()">Review my details &rarr;</button></div>
     </section>
 
-    <section class="step" data-step>
-      <div class="eyebrow">Last step</div>
-      <h1>Read your contract carefully</h1>
-      <p class="lead">Take a moment to review it. We are here if you have any questions.</p>
-      <div class="actions" style="margin-top:18px;">
-        <a class="action" id="wa-link" target="_blank" rel="noopener"><span class="ic ic-wa">&#9993;</span>Questions? Message Smith on WhatsApp</a>
-        <a class="action" href="https://drive.google.com/drive/folders/1PNOl5wFtJSM-F_RZJCVackzXmagsdrZe?usp=drive_link" target="_blank" rel="noopener"><span class="ic ic-dl">&#x2913;</span>Download your contract</a>
-        <a class="action" href="https://drive.google.com/file/d/11K32e1GR8xULU6rnZe12v-mlEGNmtLOV/view?usp=drive_link" target="_blank" rel="noopener"><span class="ic ic-vid">&#9654;</span>Watch: how to sign it</a>
+    <section class="step" data-key="review">
+      <div class="icon-badge ib-purple rv">&#128065;</div>
+      <div class="eyebrow rv">One quick check</div>
+      <h1 class="rv">Does this all look right?</h1>
+      <p class="lead rv">Please read through what you entered. If anything is wrong, tap Back to fix it.</p>
+      <div class="group rv" id="review-box" style="margin-top:18px;"></div>
+      <div class="nav rv"><button class="back" onclick="prev()">Back to edit</button><button class="btn" onclick="next()">Looks correct &rarr;</button></div>
+    </section>
+
+    <section class="step" data-key="contract">
+      <div class="icon-badge ib-purple rv">&#128221;</div>
+      <div class="eyebrow rv">Last step</div>
+      <h1 class="rv">How to sign your contract</h1>
+      <p class="lead rv">Follow these three taps, sign, then upload your signed copy below. We are one tap away if you have questions.</p>
+      <div class="rv" style="margin-top:18px;">
+        <a class="action act-wa" id="wa-link" target="_blank" rel="noopener"><span class="ic">&#128241;</span><span>Questions? Tap here to message Smith on WhatsApp</span><span class="chev">&rsaquo;</span></a>
+        <a class="action act-dl" href="https://drive.google.com/drive/folders/1PNOl5wFtJSM-F_RZJCVackzXmagsdrZe?usp=drive_link" target="_blank" rel="noopener"><span class="ic">&#11015;</span><span>Tap here to open and download your contract</span><span class="chev">&rsaquo;</span></a>
+        <a class="action act-vid" href="https://drive.google.com/file/d/11K32e1GR8xULU6rnZe12v-mlEGNmtLOV/view?usp=drive_link" target="_blank" rel="noopener"><span class="ic">&#9654;</span><span>Tap here to watch a short video on how to sign</span><span class="chev">&rsaquo;</span></a>
       </div>
-      <details>
-        <summary>Prefer written steps? Read how to sign</summary>
+      <details class="rv">
+        <summary>Prefer written steps? Tap to read them</summary>
         <ol>
-          <li>Tap the link to the contracts Drive folder above.</li>
-          <li>Find the document named "insert your name" and open it. If you have Google Docs on your phone it opens there.</li>
-          <li>Tap the three dots at the top right.</li>
-          <li>Choose Share and export.</li>
-          <li>Tap PDF, then OK.</li>
-          <li>Tap More, then choose Adobe Acrobat (install it if you do not have it).</li>
-          <li>In Acrobat, scroll to where your signature goes. At the bottom tap Fill and sign.</li>
-          <li>If you have no saved signature, tap Add initials.</li>
-          <li>Draw your signature, then tap Done at the top left.</li>
-          <li>Tap where the signature should go to place it.</li>
-          <li>Resize it to your liking.</li>
-          <li>Tap the upward arrow icon at the top right.</li>
-          <li>Tap Send a copy.</li>
-          <li>Save it as your name, then upload it below.</li>
+          <li>Tap "open and download your contract" above. It opens a Google Drive folder.</li>
+          <li>Find the document with your name (it may be named "insert your name") and open it.</li>
+          <li><strong>Fill the TOP of the contract</strong>: your name and your address.</li>
+          <li>Tap the three dots at the top right, choose <strong>Share &amp; export</strong>, then <strong>Send a copy</strong>, then <strong>PDF</strong>.</li>
+          <li>Choose <strong>More</strong>, then pick <strong>Adobe Acrobat</strong> (install it free if you do not have it).</li>
+          <li>In Acrobat, scroll to the <strong>BOTTOM</strong> where the signature goes. Tap <strong>Fill &amp; Sign</strong>, draw your signature, place it, and size it.</li>
+          <li>Also fill in the <strong>date</strong> at the bottom.</li>
+          <li>Tap the upload/share arrow, tap <strong>Send a copy</strong>, and save it as your name.</li>
+          <li>Come back here and upload your signed copy below.</li>
         </ol>
       </details>
-      <div class="field"><label>Upload your signed copy (PDF)</label>
+      <div class="tip rv">Remember: you fill two places. The <strong>top</strong> (your name and address) and the <strong>bottom</strong> (your signature and the date).</div>
+      <div class="field rv"><label>Upload your signed copy (PDF)</label>
         <input type="file" id="f-contract" accept=".pdf,.doc,.docx" style="font-size:14px;" />
         <div class="filechip" id="filechip"></div>
       </div>
-      <div class="check"><input type="checkbox" id="agree" /><label>I have read and agree to the UGC Content Creator Agreement, including the account ownership and content preservation terms.</label></div>
-      <div class="field"><label>Type your full name as your signature</label><input type="text" id="sign-name" placeholder="Your full name" /></div>
-      <div class="field"><label>Date</label><input type="date" id="sign-date" /></div>
-      <div class="nav"><button class="back" onclick="prev()">Back</button><button class="btn" id="finish-btn" onclick="finish()">Submit and finish</button></div>
+      <div class="check rv"><input type="checkbox" id="agree" /><label>I have read and agree to the UGC Content Creator Agreement, including the account ownership and content preservation terms.</label></div>
+      <div class="field rv"><label>Type your full name as your signature</label><input type="text" id="sign-name" placeholder="Your full name" /></div>
+      <div class="field rv"><label>Date</label><input type="date" id="sign-date" /></div>
+      <div class="nav rv"><button class="back" onclick="prev()">Back</button><button class="btn" id="finish-btn" onclick="finish()">Submit and finish</button></div>
       <div class="alert" id="err"></div>
     </section>
 
-    <section class="step center" data-step>
-      <div class="badge-circle" style="background:var(--gold-soft);margin:0 auto 16px;">&#127881;</div>
-      <h1>Welcome aboard, <span class="gname">there</span>!</h1>
-      <p class="lead">You are now an active NorthQuest creator. Your details are saved, your contract is in, and you can start logging your posts today. Let's make something big together.</p>
-      <div class="nav"><a class="btn" href="https://ebubetimi.github.io/NorthQuest-Influencers-Posting-Log/" style="text-decoration:none;display:block;text-align:center;">Start creating &rarr;</a></div>
+    <section class="step center" data-key="done">
+      <div class="badge-circle rv" style="background:var(--gold-soft)">&#127881;</div>
+      <h1 class="tw center" id="tw-done"></h1>
+      <p class="lead rv">You are now an active NorthQuest creator. Your details are saved and your contract is in. Tap below to open the tracker and start logging your posts today.</p>
+      <div class="nav rv"><a class="btn" href="https://ebubetimi.github.io/NorthQuest-Influencers-Posting-Log/" style="text-decoration:none;display:block;text-align:center;">Open the tracker &rarr;</a></div>
     </section>
 
   </div>
 </div>
 <script>
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwLrQ6h0XAOKIxYw_r2uMbb_FtBq_ZBBFdBAQpeLHo9Z9ZKkzISuje9CvuTF-RcWgFgmQ/exec';
-const steps = Array.prototype.slice.call(document.querySelectorAll('[data-step]'));
-let cur = 0, nick = 'there', jsonpCtr = 0;
-const DETAILS_STEP = 8, CONTRACT_STEP = 9, DONE_STEP = 10;
-
+const PREVIEW = (location.hash||'').toLowerCase().indexOf('preview') >= 0;
+const steps = Array.prototype.slice.call(document.querySelectorAll('.step'));
+let cur = 0, nick = 'there', jsonpCtr = 0, typeTimer = null;
+function key(){ return steps[cur].dataset.key; }
 function todayStr(){ return new Date().toISOString().split('T')[0]; }
 
+function typeOut(el, text, speed){
+  clearTimeout(typeTimer);
+  el.innerHTML = '<span class="cur">&#9613;</span>';
+  let i = 0;
+  (function tick(){
+    i++;
+    el.innerHTML = text.slice(0, i).replace(/&/g,'&amp;').replace(/</g,'&lt;') + (i < text.length ? '<span class="cur">&#9613;</span>' : '');
+    if (i < text.length) typeTimer = setTimeout(tick, speed);
+  })();
+}
+function countUp(el, to, dur, prefix){
+  const start = performance.now();
+  (function frame(now){
+    const p = Math.min(1, (now - start) / dur);
+    const v = Math.round(to * (1 - Math.pow(1 - p, 3)));
+    el.textContent = (prefix||'') + v.toLocaleString('en-NG');
+    if (p < 1) requestAnimationFrame(frame);
+  })(start);
+}
+function animateRv(el){
+  el.querySelectorAll('.rv, .sv').forEach((n,i)=>{ n.style.animation='none'; void n.offsetHeight; n.style.animation=''; n.style.animationDelay=(i*0.08)+'s'; });
+}
+function playFor(k){
+  if (k==='welcome') typeOut(document.getElementById('tw-welcome'), 'Welcome to NorthQuest Creators', 42);
+  else if (k==='name') typeOut(document.getElementById('tw-name'), 'What should I call you?', 45);
+  else if (k==='congrats'){ burst(); typeOut(document.getElementById('tw-congrats'), 'Hey ' + nick + ', congratulations!', 45); countUp(document.getElementById('cu-5k'), 5000, 1100, ''); }
+  else if (k==='pay'){ countUp(document.getElementById('cu-pay'), 150000, 1300, '₦'); }
+  else if (k==='done'){ burst(); typeOut(document.getElementById('tw-done'), 'Welcome aboard, ' + nick + '!', 45); }
+}
 function render(){
   steps.forEach((s,i)=>s.classList.toggle('active', i===cur));
   document.getElementById('pfill').style.width = Math.round(cur/(steps.length-1)*100) + '%';
+  animateRv(steps[cur]);
+  playFor(key());
   window.scrollTo({top:0,behavior:'smooth'});
-  if(cur===2 || cur===DONE_STEP) burst();
 }
 function prev(){ if(cur>0){ cur--; render(); } }
 function next(){
-  if(cur===1){ const v=(document.getElementById('nick').value||'').trim(); nick=v||'there';
-    document.querySelectorAll('.gname').forEach(e=>e.textContent=nick); buildWa(); }
-  if(cur<steps.length-1){ cur++; render(); }
+  if(key()==='name'){ const v=(document.getElementById('nick').value||'').trim(); nick=v||'there'; document.querySelectorAll('.gname').forEach(e=>e.textContent=nick); buildWa(); }
+  if(key()==='details'){ if(!validateDetails()) return; }
+  if(cur<steps.length-1){ cur++; if(key()==='review') fillReview(); render(); }
 }
 function buildWa(){
   const txt = "Hi, I'm " + nick + ", a new creator at NorthQuest. I have a question about my contract.";
@@ -282,12 +321,22 @@ function buildWa(){
 function burst(){
   const c=document.getElementById('confetti'); c.innerHTML='';
   const cols=['#6d4ce0','#f5b841','#5839c4','#b9831a','#a98bf0'];
-  for(let i=0;i<46;i++){ const s=document.createElement('span');
-    s.style.left=Math.random()*100+'%'; s.style.background=cols[i%cols.length];
-    s.style.animationDelay=(Math.random()*.5)+'s'; s.style.transform='translateY(-20px)';
-    c.appendChild(s); }
-  setTimeout(()=>{c.innerHTML='';},2800);
+  for(let i=0;i<48;i++){ const s=document.createElement('span'); s.style.left=Math.random()*100+'%'; s.style.background=cols[i%cols.length]; s.style.animationDelay=(Math.random()*.5)+'s'; c.appendChild(s); }
+  setTimeout(()=>{c.innerHTML='';},2900);
 }
+function val(id){ return (document.getElementById(id).value||'').trim(); }
+function validateDetails(){
+  if (PREVIEW) return true;
+  const a=document.getElementById('details-alert');
+  const need=[['f-fullname','your full name'],['f-phone','your phone number'],['f-email','your email'],['f-bank','your bank name'],['f-acctnum','your account number'],['f-acctname','your account name']];
+  for(const item of need){ if(!val(item[0])){ a.textContent='Please enter '+item[1]+' before continuing.'; a.classList.add('show'); document.getElementById(item[0]).focus(); return false; } }
+  a.classList.remove('show'); return true;
+}
+function fillReview(){
+  const rows=[['Full name',val('f-fullname')],['Phone',val('f-phone')],['Email',val('f-email')],['NorthQuest email',val('f-nqemail')],['Instagram',val('f-iguser')],['TikTok',val('f-ttuser')],['Bank',val('f-bank')],['Account number',val('f-acctnum')],['Account name',val('f-acctname')]];
+  document.getElementById('review-box').innerHTML = rows.map(r => '<div class="rev-row"><span class="rev-k">'+r[0]+'</span><span class="rev-v">'+(r[1]?esc(r[1]):'<span style="color:#c0392b">not set</span>')+'</span></div>').join('');
+}
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 function jsonp(params, cb){
   const name='cb'+(++jsonpCtr); let done=false;
   const t=setTimeout(()=>{ if(!done){done=true;try{delete window[name];}catch(e){} cb(null);} },20000);
@@ -302,45 +351,29 @@ function uploadContract(name, file){
     if(!file){ resolve(true); return; }
     const r=new FileReader();
     r.onload=()=>{ const b64=String(r.result).split(',')[1]||'';
-      fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({action:'uploadContract',name:name,fileName:file.name,mimeType:file.type||'application/pdf',data:b64})})
-        .then(()=>resolve(true)).catch(()=>resolve(false));
-    };
+      fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({action:'uploadContract',name:name,fileName:file.name,mimeType:file.type||'application/pdf',data:b64})}).then(()=>resolve(true)).catch(()=>resolve(false)); };
     r.onerror=()=>resolve(false);
     r.readAsDataURL(file);
   });
 }
-function val(id){ return (document.getElementById(id).value||'').trim(); }
-function showErr(m){ const e=document.getElementById('err'); e.textContent=m; e.classList.add('show'); e.scrollIntoView({behavior:'smooth',block:'center'}); }
-
 function finish(){
   document.getElementById('err').classList.remove('show');
-  const fullname=val('f-fullname'), phone=val('f-phone'), email=val('f-email');
-  const bank=val('f-bank'), acctNum=val('f-acctnum'), acctName=val('f-acctname');
-  const sign=val('sign-name'); const agree=document.getElementById('agree').checked;
+  if (PREVIEW){ cur = steps.length-1; render(); return; }
+  const fullname=val('f-fullname'); const sign=val('sign-name'); const agree=document.getElementById('agree').checked;
   const file=document.getElementById('f-contract').files[0];
-  if(!fullname){ showErr('Please enter your full name. Tap Back to reach the details step.'); return; }
-  if(!phone||!email){ showErr('Please add your phone and email on the details step.'); return; }
-  if(!bank||!acctNum||!acctName){ showErr('Please complete your bank details so you can be paid.'); return; }
-  if(!agree){ showErr('Please tick the box to agree to the contract.'); return; }
-  if(!sign){ showErr('Please type your full name as your signature.'); return; }
+  const fail=m=>{ const e=document.getElementById('err'); e.textContent=m; e.classList.add('show'); e.scrollIntoView({behavior:'smooth',block:'center'}); };
+  if(!agree){ fail('Please tick the box to agree to the contract.'); return; }
+  if(!sign){ fail('Please type your full name as your signature.'); return; }
   const btn=document.getElementById('finish-btn'); btn.disabled=true; btn.innerHTML='<span class="spinner"></span>Submitting...';
-  const payload={ action:'intake', name:fullname, phone:phone, email:email,
-    nqEmail:val('f-nqemail'), nqEmailPass:val('f-nqpass'), igUser:val('f-iguser'), igPass:val('f-igpass'),
-    ttUser:val('f-ttuser'), ttPass:val('f-ttpass'), bankName:bank, acctNum:acctNum, acctName:acctName,
-    signature:sign, signDate:val('sign-date')||todayStr() };
+  const payload={ action:'intake', name:fullname, phone:val('f-phone'), email:val('f-email'), nqEmail:val('f-nqemail'), nqEmailPass:val('f-nqpass'), igUser:val('f-iguser'), igPass:val('f-igpass'), ttUser:val('f-ttuser'), ttPass:val('f-ttpass'), bankName:val('f-bank'), acctNum:val('f-acctnum'), acctName:val('f-acctname'), signature:sign, signDate:val('sign-date')||todayStr() };
   jsonp(payload, data=>{
-    if(data && data.status==='success'){
-      uploadContract(fullname, file).then(()=>{ cur=DONE_STEP; render(); });
-    } else {
-      btn.disabled=false; btn.textContent='Submit and finish';
-      showErr((data&&data.message)||'Something went wrong. Please check your connection and try again.');
-    }
+    if(data && data.status==='success'){ uploadContract(fullname, file).then(()=>{ cur=steps.length-1; render(); }); }
+    else { btn.disabled=false; btn.textContent='Submit and finish'; fail((data&&data.message)||'Something went wrong. Please check your connection and try again.'); }
   });
 }
-document.getElementById('f-contract').addEventListener('change', function(){
-  const f=this.files[0]; document.getElementById('filechip').textContent = f ? ('Selected: '+f.name) : '';
-});
+document.getElementById('f-contract').addEventListener('change', function(){ const f=this.files[0]; document.getElementById('filechip').textContent = f ? ('Selected: '+f.name) : ''; });
 document.getElementById('sign-date').value = todayStr();
+if (PREVIEW) document.getElementById('pv-badge').style.display = 'inline-block';
 buildWa();
 render();
 </script>

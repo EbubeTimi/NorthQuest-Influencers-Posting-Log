@@ -594,20 +594,23 @@
   }
 
   /* PAYMENTS REGISTER */
+  #page-payments { max-width: 1600px; }
   .pay-title { font-family:'Playfair Display',serif; font-size:18px; font-weight:700; color:var(--text); }
   .pay-period { font-size:13px; color:var(--text3); margin:2px 0 14px; }
   .pay-wrap { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); overflow-x:auto; -webkit-overflow-scrolling:touch; box-shadow:var(--shadow-sm); }
-  .pay-table { width:100%; border-collapse:collapse; font-size:12px; min-width:1100px; }
-  .pay-table th { background:#1a6b4a; color:#fff; padding:9px 8px; text-align:left; font-size:10px; letter-spacing:0.04em; text-transform:uppercase; font-weight:600; white-space:nowrap; }
-  .pay-table td { padding:8px; border-bottom:1px solid var(--border); color:var(--text); vertical-align:middle; white-space:nowrap; }
+  .pay-table { width:100%; border-collapse:collapse; font-size:11px; }
+  .pay-table th { background:#1a6b4a; color:#fff; padding:7px 6px; text-align:left; font-size:9.5px; letter-spacing:0.02em; text-transform:uppercase; font-weight:600; white-space:nowrap; }
+  .pay-table td { padding:5px 6px; border-bottom:1px solid var(--border); color:var(--text); vertical-align:middle; white-space:nowrap; }
   .pay-table tr:hover td { background:var(--surface2); }
   .pay-num { color:#2d6cbf; font-weight:600; text-align:right; font-variant-numeric:tabular-nums; }
   .pay-total td { background:#1a6b4a; color:#fff !important; font-weight:700; border:none; }
-  .pay-input { width:100%; min-width:90px; border:1px solid var(--border); border-radius:6px; padding:6px 8px; font-family:inherit; font-size:13px; background:var(--surface); color:var(--text); }
+  .pay-input { width:100%; min-width:54px; border:1px solid var(--border); border-radius:6px; padding:5px 6px; font-family:inherit; font-size:12px; background:var(--surface); color:var(--text); }
   .pay-input:focus { outline:none; border-color:var(--accent); box-shadow:0 0 0 2px var(--accent-mid); }
   .pay-legend { margin-top:18px; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:18px 22px; font-size:12px; color:var(--text2); line-height:1.7; }
   .pay-legend h4 { font-size:11px; text-transform:uppercase; letter-spacing:0.08em; color:var(--text2); margin:12px 0 4px; }
   .pay-legend h4:first-child { margin-top:0; }
+  .btn-delete { border-color:#c0392b; color:#fff; background:#c0392b; }
+  .btn-delete:hover { background:#a93226; border-color:#a93226; }
 </style>
 </head>
 <body>
@@ -905,11 +908,11 @@
     <table class="pay-table">
       <thead><tr>
         <th>S/N</th><th>Creator Name</th><th>No. of Posts</th><th>Rate / Post (&#8358;)</th>
-        <th>Base Amount (&#8358;)</th><th>Bonus Views</th><th>Perf. Bonus (&#8358;)</th><th>Total Payable (&#8358;)</th>
+        <th>Base Amount (&#8358;)</th><th>Bonus Views</th><th>Perf. Bonus (&#8358;)</th><th>Special Bonus (&#8358;)</th><th>Total Payable (&#8358;)</th>
         <th>Bank Name</th><th>Account Number</th><th>Account Name</th>
         <th>Payment Status</th><th>Payment Date</th><th>Remarks</th>
       </tr></thead>
-      <tbody id="pay-body"><tr><td colspan="14" class="empty-state"><span class="spinner"></span></td></tr></tbody>
+      <tbody id="pay-body"><tr><td colspan="15" class="empty-state"><span class="spinner"></span></td></tr></tbody>
     </table>
   </div>
   <div class="pay-legend" id="pay-legend"></div>
@@ -1335,6 +1338,22 @@ function toggleCreator(name) {
   });
 }
 
+function deleteCreator(name) {
+  const posts = allRows.filter(r => r.name === name).length;
+  let msg = 'Delete ' + name + ' from the creator list?';
+  if (posts > 0) msg = name + ' has ' + posts + ' logged post' + (posts!==1?'s':'') + '. Deleting removes them from the roster only. Their posts and payment records stay intact. Delete anyway?';
+  if (!confirm(msg)) return;
+  jsonp({ action:'deleteCreator', name }, (data) => {
+    if (data && data.status === 'success') {
+      allCreators = allCreators.filter(c => c.name !== name);
+      refreshAll();
+      showToast('success', 'Creator deleted', name + ' has been removed from the roster.');
+    } else {
+      showToast('error', 'Failed', (data && data.message) || 'Could not delete.');
+    }
+  });
+}
+
 function renderManageCreators() {
   const tbody = document.getElementById('manage-body');
   const counts = document.getElementById('manage-counts');
@@ -1356,7 +1375,10 @@ function renderManageCreators() {
       '<td>' + badge + '</td>' +
       '<td style="color:var(--text3)">' + added + '</td>' +
       '<td style="color:var(--text2)">' + posts + '</td>' +
-      '<td><button class="btn btn-sm ' + (isActive?'btn-danger':'') + '" onclick="toggleCreator(\'' + escH(c.name) + '\')">' + (isActive?'Deactivate':'Reactivate') + '</button></td></tr>';
+      '<td><div style="display:flex;gap:6px;flex-wrap:wrap">' +
+      '<button class="btn btn-sm ' + (isActive?'btn-danger':'') + '" onclick="toggleCreator(\'' + escH(c.name) + '\')">' + (isActive?'Deactivate':'Reactivate') + '</button>' +
+      '<button class="btn btn-sm btn-delete" onclick="deleteCreator(\'' + escH(c.name) + '\')">Delete</button>' +
+      '</div></td></tr>';
   }).join('');
 }
 
@@ -1404,9 +1426,9 @@ function onPayEdit(idx, field, value, rerender) {
 
 function savePaymentField(month, name, field, value, rerender) {
   let rec = allPayments.find(p => p.month === month && String(p.name).toLowerCase() === name.toLowerCase());
-  if (!rec) { rec = { month, name, bonusViews:'', paymentStatus:'Pending', paymentDate:'', remarks:'' }; allPayments.push(rec); }
+  if (!rec) { rec = { month, name, bonusViews:'', specialBonus:'', paymentStatus:'Pending', paymentDate:'', remarks:'' }; allPayments.push(rec); }
   rec[field] = value;
-  jsonp({ action:'savePayment', month, name, bonusViews:rec.bonusViews, paymentStatus:rec.paymentStatus, paymentDate:rec.paymentDate, remarks:rec.remarks }, (d) => {
+  jsonp({ action:'savePayment', month, name, bonusViews:rec.bonusViews||'', specialBonus:rec.specialBonus||'', paymentStatus:rec.paymentStatus||'Pending', paymentDate:rec.paymentDate||'', remarks:rec.remarks||'' }, (d) => {
     if (!d || d.status !== 'success') showToast('error', 'Not saved', 'Could not save that change. Check your connection and try again.');
   });
   if (rerender) renderPayments();
@@ -1438,11 +1460,11 @@ function renderPayments() {
   const tabsEl = document.getElementById('pay-tabs');
   const body = document.getElementById('pay-body');
   if (!tabsEl || !body) return;
-  if (!dataLoaded || !creatorsLoaded) { body.innerHTML = '<tr><td colspan="14" class="empty-state"><span class="spinner"></span></td></tr>'; return; }
+  if (!dataLoaded || !creatorsLoaded) { body.innerHTML = '<tr><td colspan="15" class="empty-state"><span class="spinner"></span></td></tr>'; return; }
   const months = getMonths();
   if (!months.length) {
     tabsEl.innerHTML = '<span style="color:var(--text3);font-size:13px">No data yet</span>';
-    body.innerHTML = '<tr><td colspan="14" class="empty-state"><strong>No posts logged yet</strong></td></tr>';
+    body.innerHTML = '<tr><td colspan="15" class="empty-state"><strong>No posts logged yet</strong></td></tr>';
     document.getElementById('pay-period').textContent = '';
     document.getElementById('pay-legend').innerHTML = '';
     return;
@@ -1466,7 +1488,7 @@ function renderPayments() {
   payRowNames = names;
 
   if (!names.length) {
-    body.innerHTML = '<tr><td colspan="14" class="empty-state"><strong>No posts in ' + monthLabel(selectedPayMonth) + '</strong></td></tr>';
+    body.innerHTML = '<tr><td colspan="15" class="empty-state"><strong>No posts in ' + monthLabel(selectedPayMonth) + '</strong></td></tr>';
     document.getElementById('pay-legend').innerHTML = PAY_LEGEND_HTML;
     return;
   }
@@ -1479,7 +1501,7 @@ function renderPayments() {
     };
   });
 
-  let tPosts = 0, tBase = 0, tPerf = 0, tTotal = 0;
+  let tPosts = 0, tBase = 0, tPerf = 0, tSpecial = 0, tTotal = 0;
   const rowsHtml = names.map((name, i) => {
     const posts = counts[name];
     const ci = cmap[name.toLowerCase()] || { rate:1785.71, bankName:'', acctNum:'', acctName:'' };
@@ -1488,20 +1510,22 @@ function renderPayments() {
     const man = allPayments.find(p => p.month === selectedPayMonth && String(p.name).toLowerCase() === name.toLowerCase()) || {};
     const bonusViews = man.bonusViews || '';
     const perf = calcBonus(bonusViews);
-    const total = base + perf;
+    const special = parseFloat(String(man.specialBonus || '').replace(/[^\d.]/g,'')) || 0;
+    const total = base + perf + special;
     const status = man.paymentStatus || 'Pending';
     const payDate = man.paymentDate || '';
     const remarks = man.remarks || '';
-    tPosts += posts; tBase += base; tPerf += perf; tTotal += total;
+    tPosts += posts; tBase += base; tPerf += perf; tSpecial += special; tTotal += total;
     const stColor = status === 'Paid' ? 'background:#e6f4ec;color:#1a6b4a' : 'background:#fdf6e3;color:#b7770d';
     return '<tr>' +
       '<td class="pay-num">' + (i+1) + '</td>' +
       '<td>' + escH(name) + '</td>' +
       '<td class="pay-num">' + posts + '</td>' +
-      '<td><input class="pay-input" style="max-width:120px;text-align:right" value="' + fmtMoney2(rate) + '" onchange="onRateEdit(' + i + ',this.value)"></td>' +
+      '<td><input class="pay-input" style="max-width:100px;text-align:right" value="' + fmtMoney2(rate) + '" onchange="onRateEdit(' + i + ',this.value)"></td>' +
       '<td class="pay-num">' + fmtMoney2(base) + '</td>' +
-      '<td><input class="pay-input" value="' + escH(bonusViews) + '" placeholder="e.g. 100000,50000" onchange="onPayEdit(' + i + ',\'bonusViews\',this.value,true)"></td>' +
+      '<td><input class="pay-input" value="' + escH(bonusViews) + '" placeholder="100000,50000" onchange="onPayEdit(' + i + ',\'bonusViews\',this.value,true)"></td>' +
       '<td class="pay-num">' + fmtMoney2(perf) + '</td>' +
+      '<td><input class="pay-input" style="max-width:100px;text-align:right" value="' + (special ? special : '') + '" placeholder="0" onchange="onPayEdit(' + i + ',\'specialBonus\',this.value,true)"></td>' +
       '<td class="pay-num">' + fmtMoney2(total) + '</td>' +
       '<td>' + escH(ci.bankName) + '</td>' +
       '<td>' + escH(ci.acctNum) + '</td>' +
@@ -1519,6 +1543,7 @@ function renderPayments() {
     '<td class="pay-num">' + fmtMoney2(tBase) + '</td>' +
     '<td></td>' +
     '<td class="pay-num">' + fmtMoney2(tPerf) + '</td>' +
+    '<td class="pay-num">' + fmtMoney2(tSpecial) + '</td>' +
     '<td class="pay-num">' + fmtMoney2(tTotal) + '</td>' +
     '<td></td><td></td><td></td><td></td><td></td><td></td>' +
     '</tr>';
@@ -1543,19 +1568,20 @@ function exportPaymentsCSV() {
   L.push('NORTHQUEST FINANCE  ·  CREATOR PAYMENT REGISTER');
   L.push('Payment Period:  ' + ord(1) + ' ' + mName + ' ' + y + ' – ' + ord(last) + ' ' + mName + ' ' + y);
   L.push('');
-  L.push(['S/N','Creator Name','No. of Posts','Rate per Post (₦)','Base Amount (₦)','Bonus Views','Perf. Bonus (₦)','Total Payable (₦)','Bank Name','Account Number','Account Name','Payment Status','Payment Date','Remarks'].map(q).join(','));
-  let tPosts=0,tBase=0,tPerf=0,tTotal=0;
+  L.push(['S/N','Creator Name','No. of Posts','Rate per Post (₦)','Base Amount (₦)','Bonus Views','Perf. Bonus (₦)','Special Bonus (₦)','Total Payable (₦)','Bank Name','Account Number','Account Name','Payment Status','Payment Date','Remarks'].map(q).join(','));
+  let tPosts=0,tBase=0,tPerf=0,tSpecial=0,tTotal=0;
   names.forEach((name,i) => {
     const posts = counts[name];
     const ci = cmap[name.toLowerCase()] || { rate:1785.71, bankName:'', acctNum:'', acctName:'' };
     const base = Math.round(posts * ci.rate);
     const man = allPayments.find(p => p.month === selectedPayMonth && String(p.name).toLowerCase() === name.toLowerCase()) || {};
     const perf = calcBonus(man.bonusViews || '');
-    const total = base + perf;
-    tPosts+=posts; tBase+=base; tPerf+=perf; tTotal+=total;
-    L.push([i+1,name,posts,fmtMoney2(ci.rate),fmtMoney2(base),man.bonusViews||'',fmtMoney2(perf),fmtMoney2(total),ci.bankName,ci.acctNum,ci.acctName,man.paymentStatus||'Pending',man.paymentDate||'',man.remarks||''].map(q).join(','));
+    const special = parseFloat(String(man.specialBonus || '').replace(/[^\d.]/g,'')) || 0;
+    const total = base + perf + special;
+    tPosts+=posts; tBase+=base; tPerf+=perf; tSpecial+=special; tTotal+=total;
+    L.push([i+1,name,posts,fmtMoney2(ci.rate),fmtMoney2(base),man.bonusViews||'',fmtMoney2(perf),fmtMoney2(special),fmtMoney2(total),ci.bankName,ci.acctNum,ci.acctName,man.paymentStatus||'Pending',man.paymentDate||'',man.remarks||''].map(q).join(','));
   });
-  L.push(['','TOTAL',tPosts,'',fmtMoney2(tBase),'',fmtMoney2(tPerf),fmtMoney2(tTotal),'','','','','',''].map(q).join(','));
+  L.push(['','TOTAL',tPosts,'',fmtMoney2(tBase),'',fmtMoney2(tPerf),fmtMoney2(tSpecial),fmtMoney2(tTotal),'','','','','',''].map(q).join(','));
   L.push(''); L.push('ASSUMPTIONS & LEGEND'); L.push('');
   L.push(q('Rate per Post: ₦1,785.71 per video'));
   L.push('Monthly Quota: 56 videos per creator');
