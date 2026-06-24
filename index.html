@@ -599,13 +599,18 @@
   .pay-period { font-size:13px; color:var(--text3); margin:2px 0 14px; }
   .pay-wrap { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); overflow-x:auto; -webkit-overflow-scrolling:touch; box-shadow:var(--shadow-sm); }
   .pay-table { width:100%; border-collapse:collapse; font-size:11px; }
-  .pay-table th { background:#1a6b4a; color:#fff; padding:7px 6px; text-align:left; font-size:9.5px; letter-spacing:0.02em; text-transform:uppercase; font-weight:600; white-space:nowrap; }
-  .pay-table td { padding:5px 6px; border-bottom:1px solid var(--border); color:var(--text); vertical-align:middle; white-space:nowrap; }
+  .pay-table th { background:#1a6b4a; color:#fff; padding:9px 10px; text-align:left; font-size:10px; letter-spacing:0.02em; text-transform:uppercase; font-weight:600; white-space:nowrap; cursor:text; }
+  .pay-table th[contenteditable]:focus { outline:2px solid #f5b841; outline-offset:-2px; }
+  .pay-table td { padding:5px 9px; border-bottom:1px solid var(--border); color:var(--text); vertical-align:middle; white-space:nowrap; }
   .pay-table tr:hover td { background:var(--surface2); }
   .pay-num { color:#2d6cbf; font-weight:600; text-align:right; font-variant-numeric:tabular-nums; }
   .pay-total td { background:#1a6b4a; color:#fff !important; font-weight:700; border:none; }
-  .pay-input { width:100%; min-width:54px; border:1px solid var(--border); border-radius:6px; padding:5px 6px; font-family:inherit; font-size:12px; background:var(--surface); color:var(--text); }
+  .pay-input { width:100%; min-width:70px; border:1px solid var(--border); border-radius:6px; padding:5px 6px; font-family:inherit; font-size:12px; background:var(--surface); color:var(--text); }
   .pay-input:focus { outline:none; border-color:var(--accent); box-shadow:0 0 0 2px var(--accent-mid); }
+  .pay-staff td { background:#fef9e7; }
+  .pay-staff td:first-child { border-left:3px solid #f5b841; }
+  .pay-staff:hover td { background:#fef3cb; }
+  .pay-section-label td { background:#f0eaff; color:#4a2eab; font-size:9px; font-weight:800; letter-spacing:0.1em; text-transform:uppercase; border:none; padding:5px 10px; }
   .pay-legend { margin-top:18px; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:18px 22px; font-size:12px; color:var(--text2); line-height:1.7; }
   .pay-legend h4 { font-size:11px; text-transform:uppercase; letter-spacing:0.08em; color:var(--text2); margin:12px 0 4px; }
   .pay-legend h4:first-child { margin-top:0; }
@@ -907,10 +912,21 @@
   <div class="pay-wrap">
     <table class="pay-table">
       <thead><tr>
-        <th>S/N</th><th>Creator Name</th><th>No. of Posts</th><th>Rate / Post (&#8358;)</th>
-        <th>Base Amount (&#8358;)</th><th>Bonus Views</th><th>Perf. Bonus (&#8358;)</th><th>Special Bonus (&#8358;)</th><th>Total Payable (&#8358;)</th>
-        <th>Bank Name</th><th>Account Number</th><th>Account Name</th>
-        <th>Payment Status</th><th>Payment Date</th><th>Remarks</th>
+        <th>S/N</th>
+        <th id="ph-cn" contenteditable="true" spellcheck="false" onkeydown="return event.key!=='Enter'" onblur="savePayHeader('cn',this)">Creator Name</th>
+        <th id="ph-posts" contenteditable="true" spellcheck="false" onkeydown="return event.key!=='Enter'" onblur="savePayHeader('posts',this)">No. of Posts</th>
+        <th id="ph-rate" contenteditable="true" spellcheck="false" onkeydown="return event.key!=='Enter'" onblur="savePayHeader('rate',this)">Rate / Post (&#8358;)</th>
+        <th id="ph-base" contenteditable="true" spellcheck="false" onkeydown="return event.key!=='Enter'" onblur="savePayHeader('base',this)">Base Amount (&#8358;)</th>
+        <th id="ph-bv" contenteditable="true" spellcheck="false" onkeydown="return event.key!=='Enter'" onblur="savePayHeader('bv',this)">Bonus Views</th>
+        <th id="ph-perf" contenteditable="true" spellcheck="false" onkeydown="return event.key!=='Enter'" onblur="savePayHeader('perf',this)">Perf. Bonus (&#8358;)</th>
+        <th id="ph-special" contenteditable="true" spellcheck="false" onkeydown="return event.key!=='Enter'" onblur="savePayHeader('special',this)">Special Bonus / Ice Cream (&#8358;)</th>
+        <th id="ph-total" contenteditable="true" spellcheck="false" onkeydown="return event.key!=='Enter'" onblur="savePayHeader('total',this)">Total Payable (&#8358;)</th>
+        <th id="ph-bank" contenteditable="true" spellcheck="false" onkeydown="return event.key!=='Enter'" onblur="savePayHeader('bank',this)">Bank Name</th>
+        <th id="ph-acctnum" contenteditable="true" spellcheck="false" onkeydown="return event.key!=='Enter'" onblur="savePayHeader('acctnum',this)">Account Number</th>
+        <th id="ph-acctname" contenteditable="true" spellcheck="false" onkeydown="return event.key!=='Enter'" onblur="savePayHeader('acctname',this)">Account Name</th>
+        <th id="ph-status" contenteditable="true" spellcheck="false" onkeydown="return event.key!=='Enter'" onblur="savePayHeader('status',this)">Payment Status</th>
+        <th id="ph-date" contenteditable="true" spellcheck="false" onkeydown="return event.key!=='Enter'" onblur="savePayHeader('date',this)">Payment Date</th>
+        <th id="ph-remarks" contenteditable="true" spellcheck="false" onkeydown="return event.key!=='Enter'" onblur="savePayHeader('remarks',this)">Remarks</th>
       </tr></thead>
       <tbody id="pay-body"><tr><td colspan="15" class="empty-state"><span class="spinner"></span></td></tr></tbody>
     </table>
@@ -935,10 +951,14 @@
 <script>
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwLrQ6h0XAOKIxYw_r2uMbb_FtBq_ZBBFdBAQpeLHo9Z9ZKkzISuje9CvuTF-RcWgFgmQ/exec';
 const ADMIN_PASS = 'NQ2026dash';
-// Paste a link to the contract here (a Google Drive share link, or a file in this repo).
-// Leave it empty and the onboarding page will simply ask the creator to confirm agreement.
 const CONTRACT_URL = '';
 const SESSION_KEY = 'nq_admin';
+
+// Staff members (not creators — paid a set monthly salary, not rate × posts)
+const STAFF = [
+  { key: 'Smith Onyekwereh [Staff]', display: 'Smith Onyekwereh', role: 'Administrative Assistant' },
+  { key: 'Ella Ayebanua [Staff]',    display: 'Ella Ayebanua',     role: 'Community Manager' }
+];
 
 // SAFE STORAGE — wraps localStorage/sessionStorage so iOS Private Mode doesn't crash
 const safeStorage = {
@@ -965,6 +985,32 @@ let isAdmin = false, dataLoaded = false, creatorsLoaded = false, paysLoaded = fa
 let payRowNames = [];
 let currentPage = 'submit';
 let jsonpCtr = 0;
+
+// ── EDITABLE COLUMN HEADERS ──
+function savePayHeader(k, el) {
+  safeStorage.setItem('nq_ph_' + k, el.textContent.trim());
+}
+function loadPayHeaders() {
+  const map = { cn:'ph-cn', posts:'ph-posts', rate:'ph-rate', base:'ph-base', bv:'ph-bv', perf:'ph-perf', special:'ph-special', total:'ph-total', bank:'ph-bank', acctnum:'ph-acctnum', acctname:'ph-acctname', status:'ph-status', date:'ph-date', remarks:'ph-remarks' };
+  Object.entries(map).forEach(([k, id]) => {
+    const v = safeStorage.getItem('nq_ph_' + k);
+    if (v) { const el = document.getElementById(id); if (el) el.textContent = v; }
+  });
+}
+
+// ── STAFF ROW HELPERS ──
+function onStaffEdit(si, field, value, rerender) {
+  savePaymentField(selectedPayMonth, STAFF[si].key, field, value, rerender);
+}
+function onStaffSalaryEdit(si, value) {
+  savePaymentField(selectedPayMonth, STAFF[si].key, 'postsOverride', value, true);
+}
+function onStaffBankEdit(si, field, value) {
+  const bk = 'nq_sb_' + si;
+  const b = JSON.parse(safeStorage.getItem(bk) || '{}');
+  b[field] = value;
+  safeStorage.setItem(bk, JSON.stringify(b));
+}
 let offlineQueue = [];
 let toastTimer = null;
 
@@ -977,6 +1023,7 @@ try {
 document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('f-date').value = todayStr();
   if (safeStorage.getSession(SESSION_KEY) === '1') isAdmin = true;
+  loadPayHeaders();
   renderNav();
   setupIntake();
   loadRows();
@@ -1437,7 +1484,7 @@ function savePaymentField(month, name, field, value, rerender) {
 function onRateEdit(idx, value) {
   const name = payRowNames[idx];
   if (!name) return;
-  const rate = parseFloat(String(value).replace(/[^\d.]/g, '')) || 1785.71;
+  const rate = parseFloat(String(value).replace(/[^\d.]/g, '')) || (selectedPayMonth >= '2026-07' ? 2687.57 : 1785.71);
   const c = allCreators.find(c => String(c.name).toLowerCase() === name.toLowerCase());
   if (c) c.rate = rate;
   jsonp({ action:'setRate', name, rate }, (d) => {
@@ -1458,8 +1505,8 @@ function onBankEdit(idx, field, value) {
 
 const PAY_LEGEND_HTML =
   '<h4>Assumptions &amp; Legend</h4>' +
-  'Rate per Post: &#8358;1,785.71 per video (some creators are on a higher rate, set per creator on the Manage screen).<br>' +
-  'Monthly Quota: 56 videos per creator.' +
+  'Rate per Post (new creators from July 2026): &#8358;2,687.57 per video &nbsp;|&nbsp; Legacy creators: &#8358;1,785.71. Rate is set per creator on the Manage screen.<br>' +
+  'Monthly Quota: 56 videos per creator. &nbsp;Staff rows (Smith &amp; Ella) show a fixed monthly salary — not calculated from posts.' +
   '<h4>Performance Bonus Tiers</h4>' +
   '50,000 views = &#8358;50,000<br>100,000 views = &#8358;100,000<br>500,000 views = &#8358;200,000<br>1,000,000 views = &#8358;500,000<br>2,000,000 views = &#8358;900,000' +
   '<h4>How to enter multiple bonuses</h4>' +
@@ -1497,58 +1544,97 @@ function renderPayments() {
   const names = Object.keys(counts).sort();
   payRowNames = names;
 
-  if (!names.length) {
-    body.innerHTML = '<tr><td colspan="15" class="empty-state"><strong>No posts in ' + monthLabel(selectedPayMonth) + '</strong></td></tr>';
-    document.getElementById('pay-legend').innerHTML = PAY_LEGEND_HTML;
-    return;
-  }
+  const defaultRate = selectedPayMonth >= '2026-07' ? 2687.57 : 1785.71;
 
   const cmap = {};
   allCreators.forEach(c => {
     cmap[String(c.name).toLowerCase()] = {
-      rate: parseFloat(c.rate) || 1785.71,
+      rate: parseFloat(c.rate) || defaultRate,
       bankName: c.bankName || '', acctNum: c.acctNum || '', acctName: c.acctName || ''
     };
   });
 
   let tPosts = 0, tBase = 0, tPerf = 0, tSpecial = 0, tTotal = 0;
-  const rowsHtml = names.map((name, i) => {
-    const posts = counts[name];
-    const ci = cmap[name.toLowerCase()] || { rate:1785.71, bankName:'', acctNum:'', acctName:'' };
-    const rate = ci.rate;
-    const man = allPayments.find(p => p.month === selectedPayMonth && String(p.name).toLowerCase() === name.toLowerCase()) || {};
-    const postsOv = String(man.postsOverride || '');
-    const effPosts = (postsOv !== '' && !isNaN(parseFloat(postsOv))) ? parseFloat(postsOv) : posts;
-    const base = Math.round(effPosts * rate);
-    const bonusViews = man.bonusViews || '';
-    const perf = calcBonus(bonusViews);
+
+  // ── STAFF ROWS (always shown, above creators) ──
+  const staffRowsHtml = STAFF.map((s, si) => {
+    const man = allPayments.find(p => p.month === selectedPayMonth && String(p.name) === s.key) || {};
+    const salary = parseFloat(String(man.postsOverride || '').replace(/[^\d.]/g,'')) || 0;
     const special = parseFloat(String(man.specialBonus || '').replace(/[^\d.]/g,'')) || 0;
-    const computedTotal = base + perf + special;
+    const computedTotal = salary + special;
     const totalOv = String(man.totalOverride || '').replace(/[^\d.]/g,'');
     const effTotal = (totalOv !== '' && !isNaN(parseFloat(totalOv))) ? parseFloat(totalOv) : computedTotal;
     const status = man.paymentStatus || 'Pending';
     const payDate = man.paymentDate || '';
     const remarks = man.remarks || '';
-    tPosts += effPosts; tBase += base; tPerf += perf; tSpecial += special; tTotal += effTotal;
+    const bankData = JSON.parse(safeStorage.getItem('nq_sb_' + si) || '{}');
+    tSpecial += special; tTotal += effTotal;
     const stColor = status === 'Paid' ? 'background:#e6f4ec;color:#1a6b4a' : 'background:#fdf6e3;color:#b7770d';
-    return '<tr>' +
-      '<td class="pay-num">' + (i+1) + '</td>' +
-      '<td>' + escH(name) + '</td>' +
-      '<td><input class="pay-input" style="max-width:62px;text-align:right" value="' + effPosts + '" onchange="onPayEdit(' + i + ',\'postsOverride\',this.value,true)"></td>' +
-      '<td><input class="pay-input" style="max-width:100px;text-align:right" value="' + fmtMoney2(rate) + '" onchange="onRateEdit(' + i + ',this.value)"></td>' +
-      '<td class="pay-num">' + fmtMoney2(base) + '</td>' +
-      '<td><input class="pay-input" value="' + escH(bonusViews) + '" placeholder="100000,50000" onchange="onPayEdit(' + i + ',\'bonusViews\',this.value,true)"></td>' +
-      '<td class="pay-num">' + fmtMoney2(perf) + '</td>' +
-      '<td><input class="pay-input" style="max-width:100px;text-align:right" value="' + (special ? special : '') + '" placeholder="0" onchange="onPayEdit(' + i + ',\'specialBonus\',this.value,true)"></td>' +
-      '<td><input class="pay-input" style="max-width:110px;text-align:right" value="' + fmtMoney2(effTotal) + '" onchange="onPayEdit(' + i + ',\'totalOverride\',this.value,true)"></td>' +
-      '<td><input class="pay-input" value="' + escH(ci.bankName) + '" onchange="onBankEdit(' + i + ',\'bankName\',this.value)"></td>' +
-      '<td><input class="pay-input" value="' + escH(ci.acctNum) + '" onchange="onBankEdit(' + i + ',\'acctNum\',this.value)"></td>' +
-      '<td><input class="pay-input" value="' + escH(ci.acctName) + '" onchange="onBankEdit(' + i + ',\'acctName\',this.value)"></td>' +
-      '<td><select class="pay-input" style="' + stColor + '" onchange="onPayEdit(' + i + ',\'paymentStatus\',this.value,true)"><option ' + (status==='Pending'?'selected':'') + '>Pending</option><option ' + (status==='Paid'?'selected':'') + '>Paid</option></select></td>' +
-      '<td><input type="date" class="pay-input" value="' + escH(payDate) + '" onchange="onPayEdit(' + i + ',\'paymentDate\',this.value,false)"></td>' +
-      '<td><input class="pay-input" value="' + escH(remarks) + '" onchange="onPayEdit(' + i + ',\'remarks\',this.value,false)"></td>' +
+    return '<tr class="pay-staff">' +
+      '<td class="pay-num" style="color:#b7770d">S' + (si+1) + '</td>' +
+      '<td><strong>' + escH(s.display) + '</strong><br><span style="font-size:9px;color:var(--text3);font-weight:400">' + s.role + '</span></td>' +
+      '<td><input class="pay-input" style="max-width:120px;text-align:right" value="' + (salary||'') + '" placeholder="Salary &#8358;" onchange="onStaffSalaryEdit(' + si + ',this.value)"></td>' +
+      '<td style="color:var(--text3);text-align:center">—</td>' +
+      '<td style="color:var(--text3);text-align:center">—</td>' +
+      '<td style="color:var(--text3);text-align:center">—</td>' +
+      '<td style="color:var(--text3);text-align:center">—</td>' +
+      '<td><input class="pay-input" style="max-width:100px;text-align:right" value="' + (special||'') + '" placeholder="0" onchange="onStaffEdit(' + si + ',\'specialBonus\',this.value,true)"></td>' +
+      '<td><input class="pay-input" style="max-width:120px;text-align:right" value="' + fmtMoney2(effTotal) + '" onchange="onStaffEdit(' + si + ',\'totalOverride\',this.value,true)"></td>' +
+      '<td><input class="pay-input" value="' + escH(bankData.bankName||'') + '" onchange="onStaffBankEdit(' + si + ',\'bankName\',this.value)"></td>' +
+      '<td><input class="pay-input" value="' + escH(bankData.acctNum||'') + '" onchange="onStaffBankEdit(' + si + ',\'acctNum\',this.value)"></td>' +
+      '<td><input class="pay-input" value="' + escH(bankData.acctName||'') + '" onchange="onStaffBankEdit(' + si + ',\'acctName\',this.value)"></td>' +
+      '<td><select class="pay-input" style="' + stColor + '" onchange="onStaffEdit(' + si + ',\'paymentStatus\',this.value,true)"><option ' + (status==='Pending'?'selected':'') + '>Pending</option><option ' + (status==='Paid'?'selected':'') + '>Paid</option></select></td>' +
+      '<td><input type="date" class="pay-input" value="' + escH(payDate) + '" onchange="onStaffEdit(' + si + ',\'paymentDate\',this.value,false)"></td>' +
+      '<td><input class="pay-input" value="' + escH(remarks) + '" onchange="onStaffEdit(' + si + ',\'remarks\',this.value,false)"></td>' +
       '</tr>';
   }).join('');
+
+  const staffLabel = '<tr class="pay-section-label"><td colspan="15">&#11088;&nbsp; Staff / Management</td></tr>';
+  const creatorLabel = '<tr class="pay-section-label"><td colspan="15">&#127909;&nbsp; Creators</td></tr>';
+
+  // ── CREATOR ROWS ──
+  let creatorsHtml = '';
+  if (!names.length) {
+    creatorsHtml = '<tr><td colspan="15" class="empty-state" style="color:var(--text3);font-size:12px;padding:14px">No creator posts logged for ' + monthLabel(selectedPayMonth) + '</td></tr>';
+  } else {
+    creatorsHtml = names.map((name, i) => {
+      const posts = counts[name];
+      const ci = cmap[name.toLowerCase()] || { rate: defaultRate, bankName:'', acctNum:'', acctName:'' };
+      const rate = ci.rate;
+      const man = allPayments.find(p => p.month === selectedPayMonth && String(p.name).toLowerCase() === name.toLowerCase()) || {};
+      const postsOv = String(man.postsOverride || '');
+      const effPosts = (postsOv !== '' && !isNaN(parseFloat(postsOv))) ? parseFloat(postsOv) : posts;
+      const base = Math.round(effPosts * rate);
+      const bonusViews = man.bonusViews || '';
+      const perf = calcBonus(bonusViews);
+      const special = parseFloat(String(man.specialBonus || '').replace(/[^\d.]/g,'')) || 0;
+      const computedTotal = base + perf + special;
+      const totalOv = String(man.totalOverride || '').replace(/[^\d.]/g,'');
+      const effTotal = (totalOv !== '' && !isNaN(parseFloat(totalOv))) ? parseFloat(totalOv) : computedTotal;
+      const status = man.paymentStatus || 'Pending';
+      const payDate = man.paymentDate || '';
+      const remarks = man.remarks || '';
+      tPosts += effPosts; tBase += base; tPerf += perf; tSpecial += special; tTotal += effTotal;
+      const stColor = status === 'Paid' ? 'background:#e6f4ec;color:#1a6b4a' : 'background:#fdf6e3;color:#b7770d';
+      return '<tr>' +
+        '<td class="pay-num">' + (i+1) + '</td>' +
+        '<td>' + escH(name) + '</td>' +
+        '<td><input class="pay-input" style="max-width:62px;text-align:right" value="' + effPosts + '" onchange="onPayEdit(' + i + ',\'postsOverride\',this.value,true)"></td>' +
+        '<td><input class="pay-input" style="max-width:100px;text-align:right" value="' + fmtMoney2(rate) + '" onchange="onRateEdit(' + i + ',this.value)"></td>' +
+        '<td class="pay-num">' + fmtMoney2(base) + '</td>' +
+        '<td><input class="pay-input" value="' + escH(bonusViews) + '" placeholder="100000,50000" onchange="onPayEdit(' + i + ',\'bonusViews\',this.value,true)"></td>' +
+        '<td class="pay-num">' + fmtMoney2(perf) + '</td>' +
+        '<td><input class="pay-input" style="max-width:100px;text-align:right" value="' + (special ? special : '') + '" placeholder="0" onchange="onPayEdit(' + i + ',\'specialBonus\',this.value,true)"></td>' +
+        '<td><input class="pay-input" style="max-width:110px;text-align:right" value="' + fmtMoney2(effTotal) + '" onchange="onPayEdit(' + i + ',\'totalOverride\',this.value,true)"></td>' +
+        '<td><input class="pay-input" value="' + escH(ci.bankName) + '" onchange="onBankEdit(' + i + ',\'bankName\',this.value)"></td>' +
+        '<td><input class="pay-input" value="' + escH(ci.acctNum) + '" onchange="onBankEdit(' + i + ',\'acctNum\',this.value)"></td>' +
+        '<td><input class="pay-input" value="' + escH(ci.acctName) + '" onchange="onBankEdit(' + i + ',\'acctName\',this.value)"></td>' +
+        '<td><select class="pay-input" style="' + stColor + '" onchange="onPayEdit(' + i + ',\'paymentStatus\',this.value,true)"><option ' + (status==='Pending'?'selected':'') + '>Pending</option><option ' + (status==='Paid'?'selected':'') + '>Paid</option></select></td>' +
+        '<td><input type="date" class="pay-input" value="' + escH(payDate) + '" onchange="onPayEdit(' + i + ',\'paymentDate\',this.value,false)"></td>' +
+        '<td><input class="pay-input" value="' + escH(remarks) + '" onchange="onPayEdit(' + i + ',\'remarks\',this.value,false)"></td>' +
+        '</tr>';
+    }).join('');
+  }
 
   const totalHtml = '<tr class="pay-total">' +
     '<td></td><td>TOTAL</td>' +
@@ -1562,7 +1648,7 @@ function renderPayments() {
     '<td></td><td></td><td></td><td></td><td></td><td></td>' +
     '</tr>';
 
-  body.innerHTML = rowsHtml + totalHtml;
+  body.innerHTML = staffLabel + staffRowsHtml + creatorLabel + creatorsHtml + totalHtml;
   document.getElementById('pay-legend').innerHTML = PAY_LEGEND_HTML;
 }
 
@@ -1572,21 +1658,34 @@ function exportPaymentsCSV() {
   const mm = parseInt(selectedPayMonth.split('-')[1]);
   const last = new Date(Number(y), mm, 0).getDate();
   const mName = monthLabel(selectedPayMonth).split(' ')[0];
+  const defRate = selectedPayMonth >= '2026-07' ? 2687.57 : 1785.71;
   const monthRows = allRows.filter(r => monthYM(r.date) === selectedPayMonth);
   const counts = {}; monthRows.forEach(r => { counts[r.name] = (counts[r.name]||0)+1; });
   const names = Object.keys(counts).sort();
   const cmap = {};
-  allCreators.forEach(c => { cmap[String(c.name).toLowerCase()] = { rate: parseFloat(c.rate)||1785.71, bankName:c.bankName||'', acctNum:c.acctNum||'', acctName:c.acctName||'' }; });
+  allCreators.forEach(c => { cmap[String(c.name).toLowerCase()] = { rate: parseFloat(c.rate)||defRate, bankName:c.bankName||'', acctNum:c.acctNum||'', acctName:c.acctName||'' }; });
   const q = v => { v = String(v == null ? '' : v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g,'""') + '"' : v; };
   const L = [];
   L.push('NORTHQUEST FINANCE  ·  CREATOR PAYMENT REGISTER');
   L.push('Payment Period:  ' + ord(1) + ' ' + mName + ' ' + y + ' – ' + ord(last) + ' ' + mName + ' ' + y);
   L.push('');
-  L.push(['S/N','Creator Name','No. of Posts','Rate per Post (₦)','Base Amount (₦)','Bonus Views','Perf. Bonus (₦)','Special Bonus (₦)','Total Payable (₦)','Bank Name','Account Number','Account Name','Payment Status','Payment Date','Remarks'].map(q).join(','));
+  L.push(['S/N','Name','No. of Posts / Salary','Rate per Post (₦)','Base Amount (₦)','Bonus Views','Perf. Bonus (₦)','Special Bonus / Ice Cream (₦)','Total Payable (₦)','Bank Name','Account Number','Account Name','Payment Status','Payment Date','Remarks'].map(q).join(','));
   let tPosts=0,tBase=0,tPerf=0,tSpecial=0,tTotal=0;
+  // Staff rows first
+  STAFF.forEach((s, si) => {
+    const man = allPayments.find(p => p.month === selectedPayMonth && String(p.name) === s.key) || {};
+    const salary = parseFloat(String(man.postsOverride||'').replace(/[^\d.]/g,'')) || 0;
+    const special = parseFloat(String(man.specialBonus||'').replace(/[^\d.]/g,'')) || 0;
+    const totalOv = String(man.totalOverride||'').replace(/[^\d.]/g,'');
+    const total = (totalOv !== '' && !isNaN(parseFloat(totalOv))) ? parseFloat(totalOv) : salary + special;
+    const bankData = JSON.parse(safeStorage.getItem('nq_sb_' + si) || '{}');
+    tSpecial+=special; tTotal+=total;
+    L.push(['S'+(si+1), s.display + ' (' + s.role + ')', fmtMoney2(salary), '—', '—', '—', '—', fmtMoney2(special), fmtMoney2(total), bankData.bankName||'', bankData.acctNum||'', bankData.acctName||'', man.paymentStatus||'Pending', man.paymentDate||'', man.remarks||''].map(q).join(','));
+  });
+  // Creator rows
   names.forEach((name,i) => {
     const posts = counts[name];
-    const ci = cmap[name.toLowerCase()] || { rate:1785.71, bankName:'', acctNum:'', acctName:'' };
+    const ci = cmap[name.toLowerCase()] || { rate:defRate, bankName:'', acctNum:'', acctName:'' };
     const base = Math.round(posts * ci.rate);
     const man = allPayments.find(p => p.month === selectedPayMonth && String(p.name).toLowerCase() === name.toLowerCase()) || {};
     const perf = calcBonus(man.bonusViews || '');
@@ -1597,7 +1696,8 @@ function exportPaymentsCSV() {
   });
   L.push(['','TOTAL',tPosts,'',fmtMoney2(tBase),'',fmtMoney2(tPerf),fmtMoney2(tSpecial),fmtMoney2(tTotal),'','','','','',''].map(q).join(','));
   L.push(''); L.push('ASSUMPTIONS & LEGEND'); L.push('');
-  L.push(q('Rate per Post: ₦1,785.71 per video'));
+  L.push(q('Rate per Post (new creators from July 2026): ₦2,687.57 per video'));
+  L.push(q('Rate per Post (legacy creators): ₦1,785.71 per video'));
   L.push('Monthly Quota: 56 videos per creator');
   L.push(''); L.push('PERFORMANCE BONUS TIERS:');
   L.push(q('• 50,000 views = ₦50,000'));
