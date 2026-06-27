@@ -3,6 +3,9 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+<meta http-equiv="Pragma" content="no-cache" />
+<meta http-equiv="Expires" content="0" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="theme-color" content="#6d4ce0" />
 <title>Northquest Posting Log</title>
@@ -1145,6 +1148,11 @@ document.addEventListener('DOMContentLoaded', () => {
   loadPayments();
   flushQueue();
   window.addEventListener('online', flushQueue);
+  // Re-fetch fresh data whenever the tab becomes visible again
+  // (prevents stale cached counts after backgrounding the browser)
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') { loadRows(); }
+  });
 });
 
 function todayStr() { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); }
@@ -1195,7 +1203,7 @@ function jsonp(params, cb, timeoutMs) {
     if (!done) { done=true; clearTimeout(timer); cleanup(); cb(data,null); }
   };
 
-  s.src = SCRIPT_URL + '?' + new URLSearchParams(Object.assign({}, params, { callback: name }));
+  s.src = SCRIPT_URL + '?' + new URLSearchParams(Object.assign({}, params, { callback: name, _t: Date.now() }));
   s.onerror = function() {
     if (!done) { done=true; clearTimeout(timer); cleanup(); cb(null,'network'); }
   };
@@ -1334,6 +1342,10 @@ function onNameChange() {
     updatePostCards(null);
     return;
   }
+
+  // Always re-pull fresh data when a name is selected so the count is live
+  // (prevents stale cached "both videos done" when the data has actually been cleared)
+  loadRows();
 
   const today = todayStr();
   const count = allRows.filter(function(r) {
