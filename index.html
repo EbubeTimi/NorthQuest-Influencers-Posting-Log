@@ -1147,7 +1147,7 @@ document.addEventListener('DOMContentLoaded', () => {
   window.addEventListener('online', flushQueue);
 });
 
-function todayStr() { return new Date().toISOString().split('T')[0]; }
+function todayStr() { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); }
 function escH(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
 function fmtDate(str) { return new Date(str + 'T00:00:00').toLocaleDateString('en-GB', { day:'numeric', month:'short' }); }
 function monthYM(d) { return String(d).substring(0,7); }
@@ -1338,7 +1338,7 @@ function onNameChange() {
   const today = todayStr();
   const count = allRows.filter(function(r) {
     return r.name.toLowerCase() === name.toLowerCase() &&
-           r.submitted && r.submitted.startsWith(today);
+           r.date === today;
   }).length;
 
   statusEl.style.display = '';
@@ -1388,7 +1388,7 @@ function submitLog() {
   // Client-side guard: if allRows already shows 2 for today, block immediately
   const todayCount = allRows.filter(function(r) {
     return r.name.toLowerCase() === name.toLowerCase() &&
-           r.submitted && r.submitted.startsWith(date);
+           r.date === date;
   }).length;
   if (todayCount >= 2) {
     showError('Both videos are already logged for today. See you tomorrow!');
