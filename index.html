@@ -1878,7 +1878,7 @@ function renderPayments() {
         '<td class="pay-num">' + (i+1) + '</td>' +
         '<td>' + escH(name) + '</td>' +
         '<td><input class="pay-input" style="max-width:62px;text-align:right" value="' + effPosts + '" onchange="onPayEdit(' + i + ',\'postsOverride\',this.value,true)"></td>' +
-        '<td><input class="pay-input" style="max-width:100px;text-align:right" value="' + fmtMoney2(monthlySalary) + '" onchange="onRateEdit(' + i + ',this.value)" title="Monthly salary. Per-video for this month: ₦' + Math.round(monthlySalary/maxVideos).toLocaleString() + '"></td>' +
+        '<td><input class="pay-input" style="max-width:100px;text-align:right" value="' + fmtMoney2(monthlySalary / maxVideos) + '" onchange="onRateEdit(' + i + ',this.value)" title="Rate per video this month. To change tier: type 100000 (standard) or 150000 (higher tier) and press Enter" placeholder="100000"></td>' +
         '<td class="pay-num">' + fmtMoney2(base) + '</td>' +
         '<td><input class="pay-input" value="' + escH(bonusViews) + '" placeholder="100000,50000" onchange="onPayEdit(' + i + ',\'bonusViews\',this.value,true)"></td>' +
         '<td class="pay-num">' + fmtMoney2(perf) + '</td>' +
