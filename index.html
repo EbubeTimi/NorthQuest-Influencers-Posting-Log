@@ -296,6 +296,84 @@
   }
   .form-hint { font-size: 12px; color: var(--text3); margin-top: 5px; }
 
+  /* DATE LOCK DISPLAY */
+  .date-locked-display {
+    display: flex; align-items: center; gap: 8px;
+    background: var(--surface2); border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm); padding: 10px 14px;
+    font-size: 14px; font-weight: 600; color: var(--text);
+  }
+  .date-locked-display .lock-icon { font-size: 13px; opacity: 0.5; }
+  .date-locked-display .lock-note { font-size: 11px; color: var(--text3); font-weight: 400; margin-left: auto; }
+
+  /* POST AUTO-DISPLAY */
+  .post-auto-display {
+    display: flex; align-items: center; gap: 10px;
+    background: var(--accent-light); border: 1.5px solid var(--accent);
+    border-radius: var(--radius-sm); padding: 10px 14px;
+    font-size: 14px; font-weight: 600; color: var(--accent);
+  }
+  .post-auto-display.inactive {
+    background: var(--surface2); border-color: var(--border); color: var(--text3);
+  }
+
+  /* TODAY STATUS BANNER */
+  .today-status {
+    margin-top: 10px; border-radius: var(--radius-sm);
+    padding: 12px 14px; font-size: 13px; font-weight: 500;
+    display: flex; align-items: flex-start; gap: 10px;
+  }
+  .today-status.s-none { background: var(--surface2); color: var(--text2); }
+  .today-status.s-one  { background: var(--green-light); color: var(--green); }
+  .today-status.s-done { background: var(--amber-light); color: var(--amber); border: 1.5px solid #f0c050; }
+  .today-status .s-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+
+  /* FORM DONE STATE */
+  .form-done-banner {
+    text-align: center; padding: 28px 16px;
+    background: var(--green-light); border-radius: var(--radius);
+    margin: 8px 0 16px;
+  }
+  .form-done-banner .done-checkmarks { font-size: 28px; margin-bottom: 8px; }
+  .form-done-banner .done-title { font-weight: 700; font-size: 17px; color: var(--green); }
+  .form-done-banner .done-sub { color: var(--text2); margin-top: 6px; font-size: 14px; }
+
+  /* POST CARDS */
+  .post-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .post-card {
+    border-radius: var(--radius-sm); border: 2px solid var(--border);
+    padding: 14px 10px; text-align: center;
+    transition: border-color 0.2s, background 0.2s, opacity 0.25s;
+  }
+  .post-card .pc-num { font-size: 26px; font-weight: 700; line-height: 1; margin-bottom: 4px; }
+  .post-card .pc-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; }
+  .post-card .pc-note { font-size: 11px; line-height: 1.4; color: var(--text3); }
+
+  .post-card.pc-initial { background: var(--surface2); opacity: 0.55; }
+  .post-card.pc-initial .pc-num, .post-card.pc-initial .pc-title { color: var(--text3); }
+
+  .post-card.pc-active { background: var(--accent-light); border-color: var(--accent); }
+  .post-card.pc-active .pc-num { color: var(--accent); }
+  .post-card.pc-active .pc-title { color: var(--accent); }
+  .post-card.pc-active .pc-note { color: var(--text2); }
+
+  .post-card.pc-locked { background: var(--surface2); opacity: 0.4; }
+  .post-card.pc-locked .pc-num, .post-card.pc-locked .pc-title { color: var(--text3); }
+
+  .post-card.pc-done { background: var(--green-light); border-color: var(--green); opacity: 0.88; }
+  .post-card.pc-done .pc-num { color: var(--green); }
+  .post-card.pc-done .pc-title { color: var(--green); }
+  .post-card.pc-done .pc-note { color: var(--green); font-weight: 500; }
+
+  /* SUBMIT BUTTON SPINNER */
+  .btn-spinner {
+    display: inline-block; width: 14px; height: 14px;
+    border: 2px solid rgba(255,255,255,0.35); border-top-color: white;
+    border-radius: 50%; animation: btn-spin 0.7s linear infinite;
+    vertical-align: middle; margin-right: 8px;
+  }
+  @keyframes btn-spin { to { transform: rotate(360deg); } }
+
   /* PASSWORD EYE */
   .password-wrap { position: relative; }
   .password-wrap input { padding-right: 44px; }
@@ -659,51 +737,83 @@
     </div>
 
     <div class="form-title">Log a post</div>
-    <div class="form-subtitle">Fill in your details and paste at least one video link to submit.</div>
+    <div class="form-subtitle">Select your name — the app will tell you which video to log next.</div>
 
+    <!-- Name + today status -->
     <div class="form-group">
       <label class="form-label">Your name</label>
-      <select class="form-input" id="f-name">
+      <select class="form-input" id="f-name" onchange="onNameChange()">
         <option value="">Select your name...</option>
       </select>
+      <div class="today-status s-none" id="today-status" style="display:none">
+        <span class="s-icon" id="today-status-icon"></span>
+        <span id="today-status-msg"></span>
+      </div>
     </div>
 
+    <!-- Date: locked to today, not editable -->
     <div class="form-group">
       <label class="form-label">Date</label>
-      <input class="form-input" id="f-date" type="date" />
-      <div class="form-hint">You can pick a past date if you forgot to log that day.</div>
+      <div class="date-locked-display">
+        <span class="lock-icon">&#128274;</span>
+        <span id="today-date-display">—</span>
+        <span class="lock-note">Today only</span>
+      </div>
+      <input type="hidden" id="f-date" />
     </div>
 
+    <!-- Video cards — show state, not a dropdown -->
     <div class="form-group">
-      <label class="form-label">Which post is this?</label>
-      <select class="form-input" id="f-post">
-        <option value="">Select...</option>
-        <option value="1">Post 1 (first post of the day)</option>
-        <option value="2">Post 2 (second post of the day)</option>
-      </select>
-    </div>
-
-    <div class="form-group">
-      <label class="form-label">Video links <span class="optional">&nbsp;— at least one required</span></label>
-      <div class="link-group">
-        <div class="link-row">
-          <span class="link-label">TikTok</span>
-          <input class="link-input" id="f-tiktok" type="url" placeholder="https://tiktok.com/..." />
+      <label class="form-label">Which video is this?</label>
+      <div class="post-cards" id="post-cards">
+        <div class="post-card pc-initial" id="pc-1">
+          <div class="pc-num">1</div>
+          <div class="pc-title">First video</div>
+          <div class="pc-note" id="pc-1-note">Select your name first</div>
         </div>
-        <div class="link-row">
-          <span class="link-label">Instagram</span>
-          <input class="link-input" id="f-insta" type="url" placeholder="https://instagram.com/reel/..." />
+        <div class="post-card pc-initial" id="pc-2">
+          <div class="pc-num">2</div>
+          <div class="pc-title">Second video</div>
+          <div class="pc-note" id="pc-2-note">Select your name first</div>
         </div>
       </div>
-      <div class="form-hint">If one platform is unavailable or your account is restricted, paste the other link only.</div>
+      <input type="hidden" id="f-post" />
     </div>
 
-    <div class="form-group">
-      <label class="form-label">Any issues today? <span class="optional">&nbsp;optional</span></label>
-      <input class="form-input" id="f-issues" type="text" placeholder="e.g. Instagram was down" />
+    <!-- Fields shown only when creator still has posts remaining today -->
+    <div id="form-fields">
+      <div class="form-group">
+        <label class="form-label">Video links <span class="optional">&nbsp;— at least one required</span></label>
+        <div class="link-group">
+          <div class="link-row">
+            <span class="link-label">TikTok</span>
+            <input class="link-input" id="f-tiktok" type="text" inputmode="url" placeholder="https://tiktok.com/..." autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" />
+          </div>
+          <div class="link-row">
+            <span class="link-label">Instagram</span>
+            <input class="link-input" id="f-insta" type="text" inputmode="url" placeholder="https://instagram.com/reel/..." autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" />
+          </div>
+        </div>
+        <div class="form-hint">If one platform is unavailable or your account is restricted, paste the other link only.</div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Any issues today? <span class="optional">&nbsp;optional</span></label>
+        <input class="form-input" id="f-issues" type="text" placeholder="e.g. Instagram was down" />
+      </div>
+
+      <button class="btn btn-primary" id="submit-btn" onclick="submitLog()">Submit video</button>
     </div>
 
-    <button class="btn btn-primary" id="submit-btn" onclick="submitLog()">Submit post log</button>
+    <!-- Shown when both videos are already logged for today -->
+    <div id="form-done" style="display:none">
+      <div class="form-done-banner">
+        <div class="done-checkmarks">&#10003;&#10003;</div>
+        <div class="done-title">Both videos logged for today!</div>
+        <div class="done-sub">Great work. You can log again tomorrow.</div>
+      </div>
+    </div>
+
     <div class="alert alert-error" id="f-alert"></div>
   </div>
 </div>
@@ -1021,7 +1131,11 @@ try {
 } catch(e) { offlineQueue = []; }
 
 document.addEventListener('DOMContentLoaded', () => {
-  document.getElementById('f-date').value = todayStr();
+  // Lock the date display to today — no picker, no backdating
+  const today = todayStr();
+  document.getElementById('f-date').value = today;
+  const formatted = new Date(today + 'T00:00:00').toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+  document.getElementById('today-date-display').textContent = formatted;
   if (safeStorage.getSession(SESSION_KEY) === '1') isAdmin = true;
   loadPayHeaders();
   renderNav();
@@ -1066,11 +1180,25 @@ function jsonp(params, cb, timeoutMs) {
   timeoutMs = timeoutMs || 15000;
   const name = 'cb' + (++jsonpCtr);
   let done = false;
-  const timer = setTimeout(() => { if (!done) { done=true; try{delete window[name];}catch(e){} cb(null,'timeout'); } }, timeoutMs);
-  window[name] = (data) => { if (!done) { done=true; clearTimeout(timer); try{delete window[name];}catch(e){} cb(data,null); } };
   const s = document.createElement('script');
-  s.src = SCRIPT_URL + '?' + new URLSearchParams({...params, callback: name});
-  s.onerror = () => { if (!done) { done=true; clearTimeout(timer); try{delete window[name];}catch(e){} cb(null,'network'); } };
+
+  function cleanup() {
+    try { delete window[name]; } catch(e) {}
+    try { if (s.parentNode) s.parentNode.removeChild(s); } catch(e) {}
+  }
+
+  const timer = setTimeout(function() {
+    if (!done) { done=true; cleanup(); cb(null,'timeout'); }
+  }, timeoutMs);
+
+  window[name] = function(data) {
+    if (!done) { done=true; clearTimeout(timer); cleanup(); cb(data,null); }
+  };
+
+  s.src = SCRIPT_URL + '?' + new URLSearchParams(Object.assign({}, params, { callback: name }));
+  s.onerror = function() {
+    if (!done) { done=true; clearTimeout(timer); cleanup(); cb(null,'network'); }
+  };
   document.head.appendChild(s);
 }
 
@@ -1083,7 +1211,17 @@ function flushQueue() {
     if (data && data.status === 'success') {
       offlineQueue.shift(); saveQueue();
       if (offlineQueue.length > 0) setTimeout(flushQueue, 1000);
+    } else if (data && data.status === 'blocked') {
+      // This queued post hit the daily limit — discard it and remove from allRows
+      offlineQueue.shift(); saveQueue();
+      allRows = allRows.filter(r => !(
+        r.name === item.name && r.date === item.date &&
+        r.post === item.post && r.tiktok === item.tiktok && r.insta === item.insta
+      ));
+      refreshAll();
+      if (offlineQueue.length > 0) setTimeout(flushQueue, 1000);
     }
+    // On timeout or network error: leave in queue and retry later
   });
 }
 
@@ -1149,62 +1287,172 @@ function showError(msg) {
   setTimeout(() => el.classList.remove('show'), 8000);
 }
 
-// ── SUBMIT ──
+// ── POST CARDS — update the two video cards based on how many logged today ──
+function updatePostCards(count) {
+  const c1 = document.getElementById('pc-1');
+  const c2 = document.getElementById('pc-2');
+  const n1 = document.getElementById('pc-1-note');
+  const n2 = document.getElementById('pc-2-note');
+  const postInput  = document.getElementById('f-post');
+  const formFields = document.getElementById('form-fields');
+  const formDone   = document.getElementById('form-done');
+
+  if (count === null) {
+    c1.className = 'post-card pc-initial'; n1.textContent = 'Select your name first';
+    c2.className = 'post-card pc-initial'; n2.textContent = 'Select your name first';
+    postInput.value = ''; formFields.style.display = ''; formDone.style.display = 'none';
+    return;
+  }
+  if (count === 0) {
+    c1.className = 'post-card pc-active';
+    n1.textContent = 'This is the video you are submitting now';
+    c2.className = 'post-card pc-locked';
+    n2.textContent = 'Submit Video 1 first — then this unlocks';
+    postInput.value = '1'; formFields.style.display = ''; formDone.style.display = 'none';
+  } else if (count === 1) {
+    c1.className = 'post-card pc-done';
+    n1.textContent = '✓ Don\'t worry — your first video for today is already logged';
+    c2.className = 'post-card pc-active';
+    n2.textContent = 'This is the video you are submitting now';
+    postInput.value = '2'; formFields.style.display = ''; formDone.style.display = 'none';
+  } else {
+    c1.className = 'post-card pc-done'; n1.textContent = '✓ Logged';
+    c2.className = 'post-card pc-done'; n2.textContent = '✓ Both videos done. See you tomorrow!';
+    postInput.value = ''; formFields.style.display = 'none'; formDone.style.display = '';
+  }
+}
+
+// ── NAME CHANGE — update status banner + post cards ──
+function onNameChange() {
+  const name     = document.getElementById('f-name').value.trim();
+  const statusEl = document.getElementById('today-status');
+  const sIcon    = document.getElementById('today-status-icon');
+  const sMsg     = document.getElementById('today-status-msg');
+
+  if (!name) {
+    statusEl.style.display = 'none';
+    updatePostCards(null);
+    return;
+  }
+
+  const today = todayStr();
+  const count = allRows.filter(function(r) {
+    return r.name.toLowerCase() === name.toLowerCase() &&
+           r.submitted && r.submitted.startsWith(today);
+  }).length;
+
+  statusEl.style.display = '';
+  if (count === 0) {
+    statusEl.className = 'today-status s-none';
+    sIcon.textContent = '📋';
+    sMsg.textContent = 'No videos logged yet today. Submit your first video below.';
+  } else if (count === 1) {
+    statusEl.className = 'today-status s-one';
+    sIcon.textContent = '✓';
+    sMsg.textContent = 'Your first video is logged for today. Submit your second video below.';
+  } else {
+    statusEl.className = 'today-status s-done';
+    sIcon.textContent = '✓✓';
+    sMsg.textContent = 'Both videos logged for today. You\'re all done — see you tomorrow!';
+  }
+  updatePostCards(count);
+}
+
+// ── LOADING STATE — show/hide spinner on submit button ──
+function setSubmitting(on, msg) {
+  const btn = document.getElementById('submit-btn');
+  if (on) {
+    btn.disabled = true;
+    btn.innerHTML = '<span class="btn-spinner"></span>' + (msg || 'Sending…');
+  } else {
+    btn.disabled = false;
+    btn.textContent = 'Submit video';
+  }
+}
+
+// ── SUBMIT — server-first, no optimistic success ──
 function submitLog() {
   const name   = document.getElementById('f-name').value.trim();
-  const date   = document.getElementById('f-date').value;
+  const date   = todayStr();
   const post   = document.getElementById('f-post').value;
   const tiktok = document.getElementById('f-tiktok').value.trim();
   const insta  = document.getElementById('f-insta').value.trim();
   const issues = document.getElementById('f-issues').value.trim();
-  const btn    = document.getElementById('submit-btn');
 
   document.getElementById('f-alert').classList.remove('show');
 
-  if (!name) { showError('Please select your name from the list.'); return; }
-  if (!date) { showError('Please select the date.'); return; }
-  if (!post) { showError('Please select which post this is (Post 1 or Post 2).'); return; }
+  if (!name)           { showError('Please select your name from the list.'); return; }
+  if (!post)           { showError('Something went wrong. Please refresh the page and try again.'); return; }
   if (!tiktok && !insta) { showError('Please paste at least one video link — TikTok or Instagram.'); return; }
 
-  const dup = allRows.find(r => r.name.toLowerCase() === name.toLowerCase() && r.date === date && r.post === post);
-  if (dup) {
-    showError('Post ' + post + ' is already logged for you on ' + fmtDate(date) + '. If this is a mistake, please contact the admin.');
+  // Client-side guard: if allRows already shows 2 for today, block immediately
+  const todayCount = allRows.filter(function(r) {
+    return r.name.toLowerCase() === name.toLowerCase() &&
+           r.submitted && r.submitted.startsWith(date);
+  }).length;
+  if (todayCount >= 2) {
+    showError('Both videos are already logged for today. See you tomorrow!');
+    onNameChange();
     return;
   }
 
-  btn.disabled = true;
-  btn.textContent = 'Submitting...';
-
-  const payload = { name, date, post, tiktok, insta, issues };
-  allRows.push({ ...payload, submitted: new Date().toISOString() });
-  refreshAll();
-
   const firstName = name.split(' ')[0];
-  const successTitle = 'Thank you, ' + firstName + '! 🎉';
-  const successMsg = 'Your Post ' + post + ' for ' + fmtDate(date) + ' has been logged successfully. Keep it up!';
+  const isSecond  = post === '2';
 
-  showToast('success', successTitle, successMsg);
-  showInlineConfirm('Your Post <strong>' + post + '</strong> for <strong>' + fmtDate(date) + '</strong> has been recorded. You can submit another post or close this page.');
+  // Show loading — button becomes a spinner, stays disabled until server responds
+  setSubmitting(true, 'Sending Video ' + post + '… please wait');
+  const patienceTimer = setTimeout(function() {
+    setSubmitting(true, 'Still sending — please keep this page open…');
+  }, 6000);
 
-  document.getElementById('f-name').value   = '';
-  document.getElementById('f-tiktok').value = '';
-  document.getElementById('f-insta').value  = '';
-  document.getElementById('f-issues').value = '';
-  document.getElementById('f-post').value   = '';
+  // Call the server. We wait for confirmation before doing anything.
+  jsonp({ action:'submit', name:name, date:date, post:post, tiktok:tiktok, insta:insta, issues:issues }, function(data, err) {
+    clearTimeout(patienceTimer);
+    setSubmitting(false);
 
-  btn.disabled = false;
-  btn.textContent = 'Submit post log';
+    if (data && data.status === 'success') {
+      // Server confirmed — only NOW update the UI
+      var already = allRows.find(function(r) {
+        return r.name === name && r.date === date && r.post === post &&
+               r.tiktok === tiktok && r.insta === insta;
+      });
+      if (!already) allRows.push({ name:name, date:date, post:post, tiktok:tiktok, insta:insta, issues:issues, submitted: new Date().toISOString() });
+      refreshAll();
 
-  if (navigator.onLine) {
-    jsonp({ action:'submit', ...payload }, (data) => {
-      if (!data || data.status !== 'success') { offlineQueue.push(payload); saveQueue(); }
-    }, 20000);
-  } else {
-    offlineQueue.push(payload); saveQueue();
-  }
+      // Clear the link fields — submission was successful
+      document.getElementById('f-tiktok').value = '';
+      document.getElementById('f-insta').value  = '';
+      document.getElementById('f-issues').value = '';
 
-  // Scroll to top to see the confirmation
-  setTimeout(() => window.scrollTo({ top: 0, behavior: 'smooth' }), 200);
+      showToast('success',
+        isSecond ? 'All done, ' + firstName + '!' : 'Video 1 logged, ' + firstName + '!',
+        isSecond
+          ? 'Your second video has been submitted. Both posts are done for today — see you tomorrow!'
+          : 'Your first video for today has been logged. Come back and submit your second video!'
+      );
+      setTimeout(function() { window.scrollTo({ top:0, behavior:'smooth' }); }, 200);
+
+    } else if (data && data.status === 'blocked') {
+      // Server says they already hit the limit — reload fresh data and update cards
+      loadRows();
+      showToast('error',
+        'Already logged',
+        todayCount >= 1
+          ? 'Your first video for today is already logged — don\'t worry. Just submit your second video now.'
+          : 'Both videos for today are already logged. See you tomorrow!'
+      );
+
+    } else {
+      // Network error or timeout — DO NOT clear the form, let them retry
+      var isTimeout = (err === 'timeout');
+      showToast('error',
+        'Video did not go through',
+        isTimeout
+          ? 'The connection timed out. Your video was NOT saved. Your links are still in the form — please check your internet connection and try again.'
+          : 'Something went wrong and your video was NOT saved. Please try submitting again. If it keeps failing, refresh your browser or switch your internet off and on, then try once more.'
+      );
+    }
+  }, 30000);
 }
 
 function refreshAll() {
@@ -1213,6 +1461,8 @@ function refreshAll() {
   renderMonthTabs();
   renderDetailedLog();
   if (isAdmin) { renderDashboard(); renderManageCreators(); renderPayments(); }
+  // Re-run the name status in case allRows just loaded/changed
+  if (document.getElementById('f-name') && document.getElementById('f-name').value) onNameChange();
 }
 
 function populateNameDropdown() {
