@@ -975,7 +975,7 @@
   <div class="section-head"><span class="section-title">Creator performance &mdash; this month</span></div>
   <div class="creator-table-wrap">
     <table class="log-table">
-      <thead><tr><th>#</th><th>Creator</th><th>This Month</th><th>Progress (56)</th><th>All Time</th><th>Last Post</th></tr></thead>
+      <thead><tr><th>#</th><th>Creator</th><th>This Month</th><th id="dash-progress-header">Progress</th><th>All Time</th><th>Last Post</th></tr></thead>
       <tbody id="dash-body"><tr><td colspan="6" class="empty-state"><span class="spinner"></span></td></tr></tbody>
     </table>
   </div>
@@ -1572,6 +1572,11 @@ function closeModalDirect() { document.getElementById('creator-modal').classList
 function renderDashboard() {
   const today = todayStr();
   const curMYM = today.substring(0,7);
+  const dashYear = parseInt(curMYM.split('-')[0]);
+  const dashMonth = parseInt(curMYM.split('-')[1]);
+  const dashMaxVideos = new Date(dashYear, dashMonth, 0).getDate() * 2;
+  const dashHeader = document.getElementById('dash-progress-header');
+  if (dashHeader) dashHeader.textContent = 'Progress (' + dashMaxVideos + ')';
   const creators = getActiveCreators();
   document.getElementById('d-total').textContent    = allRows.length;
   document.getElementById('d-month').textContent    = allRows.filter(r => r.date.startsWith(curMYM)).length;
@@ -1586,7 +1591,7 @@ function renderDashboard() {
     return { name, mc, total: rows.length, last: last ? last.date : '—' };
   }).sort((a,b) => b.mc - a.mc);
   tbody.innerHTML = sorted.map((r,i) => {
-    const pct = Math.min(100, Math.round(r.mc/56*100));
+    const pct = Math.min(100, Math.round(r.mc/dashMaxVideos*100));
     const barClass = pct>=80 ? '' : pct>=50 ? 'amber' : 'red';
     return '<tr><td style="color:var(--text3)">' + (i+1) + '</td>' +
       '<td><span class="creator-link" onclick="openModal(\'' + escH(r.name) + '\')">' + escH(r.name) + '</span></td>' +
@@ -1734,7 +1739,7 @@ function savePaymentField(month, name, field, value, rerender) {
 function onRateEdit(idx, value) {
   const name = payRowNames[idx];
   if (!name) return;
-  const rate = parseFloat(String(value).replace(/[^\d.]/g, '')) || (selectedPayMonth >= '2026-07' ? 2687.57 : 1785.71);
+  const rate = parseFloat(String(value).replace(/[^\d.]/g, '')) || 100000;
   const c = allCreators.find(c => String(c.name).toLowerCase() === name.toLowerCase());
   if (c) c.rate = rate;
   jsonp({ action:'setRate', name, rate }, (d) => {
@@ -1755,8 +1760,8 @@ function onBankEdit(idx, field, value) {
 
 const PAY_LEGEND_HTML =
   '<h4>Assumptions &amp; Legend</h4>' +
-  'Rate per Post (new creators from July 2026): &#8358;2,687.57 per video &nbsp;|&nbsp; Legacy creators: &#8358;1,785.71. Rate is set per creator on the Manage screen.<br>' +
-  'Monthly Quota: 56 videos per creator. &nbsp;Staff rows (Smith &amp; Ella) show a fixed monthly salary — not calculated from posts.' +
+  'Standard salary: &#8358;100,000/month &nbsp;|&nbsp; Higher tier: &#8358;150,000/month. Monthly salary is set per creator on the Manage screen.<br>' +
+  'Monthly quota: days in month × 2 videos (60 for 30-day months, 62 for 31-day months). &nbsp;Staff rows show a fixed monthly salary — not calculated from posts.' +
   '<h4>Performance Bonus Tiers</h4>' +
   '50,000 views = &#8358;50,000<br>100,000 views = &#8358;100,000<br>500,000 views = &#8358;200,000<br>1,000,000 views = &#8358;500,000<br>2,000,000 views = &#8358;900,000' +
   '<h4>How to enter multiple bonuses</h4>' +
@@ -1794,12 +1799,15 @@ function renderPayments() {
   const names = Object.keys(counts).sort();
   payRowNames = names;
 
-  const defaultRate = selectedPayMonth >= '2026-07' ? 2687.57 : 1785.71;
+  // Per-video rate = monthly salary ÷ (days in month × 2).
+  // This automatically gives the right rate for 30-day and 31-day months.
+  const maxVideos = last * 2;
+  const defaultMonthlySalary = 100000;
 
   const cmap = {};
   allCreators.forEach(c => {
     cmap[String(c.name).toLowerCase()] = {
-      rate: parseFloat(c.rate) || defaultRate,
+      rate: parseFloat(c.rate) || defaultMonthlySalary,
       bankName: c.bankName || '', acctNum: c.acctNum || '', acctName: c.acctName || ''
     };
   });
@@ -1849,12 +1857,12 @@ function renderPayments() {
   } else {
     creatorsHtml = names.map((name, i) => {
       const posts = counts[name];
-      const ci = cmap[name.toLowerCase()] || { rate: defaultRate, bankName:'', acctNum:'', acctName:'' };
-      const rate = ci.rate;
+      const ci = cmap[name.toLowerCase()] || { rate: defaultMonthlySalary, bankName:'', acctNum:'', acctName:'' };
+      const monthlySalary = ci.rate;
       const man = allPayments.find(p => p.month === selectedPayMonth && String(p.name).toLowerCase() === name.toLowerCase()) || {};
       const postsOv = String(man.postsOverride || '');
       const effPosts = (postsOv !== '' && !isNaN(parseFloat(postsOv))) ? parseFloat(postsOv) : posts;
-      const base = Math.round(effPosts * rate);
+      const base = Math.round(effPosts * monthlySalary / maxVideos);
       const bonusViews = man.bonusViews || '';
       const perf = calcBonus(bonusViews);
       const special = parseFloat(String(man.specialBonus || '').replace(/[^\d.]/g,'')) || 0;
@@ -1870,7 +1878,7 @@ function renderPayments() {
         '<td class="pay-num">' + (i+1) + '</td>' +
         '<td>' + escH(name) + '</td>' +
         '<td><input class="pay-input" style="max-width:62px;text-align:right" value="' + effPosts + '" onchange="onPayEdit(' + i + ',\'postsOverride\',this.value,true)"></td>' +
-        '<td><input class="pay-input" style="max-width:100px;text-align:right" value="' + fmtMoney2(rate) + '" onchange="onRateEdit(' + i + ',this.value)"></td>' +
+        '<td><input class="pay-input" style="max-width:100px;text-align:right" value="' + fmtMoney2(monthlySalary) + '" onchange="onRateEdit(' + i + ',this.value)" title="Monthly salary. Per-video for this month: ₦' + Math.round(monthlySalary/maxVideos).toLocaleString() + '"></td>' +
         '<td class="pay-num">' + fmtMoney2(base) + '</td>' +
         '<td><input class="pay-input" value="' + escH(bonusViews) + '" placeholder="100000,50000" onchange="onPayEdit(' + i + ',\'bonusViews\',this.value,true)"></td>' +
         '<td class="pay-num">' + fmtMoney2(perf) + '</td>' +
@@ -1908,12 +1916,13 @@ function exportPaymentsCSV() {
   const mm = parseInt(selectedPayMonth.split('-')[1]);
   const last = new Date(Number(y), mm, 0).getDate();
   const mName = monthLabel(selectedPayMonth).split(' ')[0];
-  const defRate = selectedPayMonth >= '2026-07' ? 2687.57 : 1785.71;
+  const maxVideosCSV = last * 2;
+  const defMonthlySalary = 100000;
   const monthRows = allRows.filter(r => monthYM(r.date) === selectedPayMonth);
   const counts = {}; monthRows.forEach(r => { counts[r.name] = (counts[r.name]||0)+1; });
   const names = Object.keys(counts).sort();
   const cmap = {};
-  allCreators.forEach(c => { cmap[String(c.name).toLowerCase()] = { rate: parseFloat(c.rate)||defRate, bankName:c.bankName||'', acctNum:c.acctNum||'', acctName:c.acctName||'' }; });
+  allCreators.forEach(c => { cmap[String(c.name).toLowerCase()] = { rate: parseFloat(c.rate)||defMonthlySalary, bankName:c.bankName||'', acctNum:c.acctNum||'', acctName:c.acctName||'' }; });
   const q = v => { v = String(v == null ? '' : v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g,'""') + '"' : v; };
   const L = [];
   L.push('NORTHQUEST FINANCE  ·  CREATOR PAYMENT REGISTER');
@@ -1935,20 +1944,21 @@ function exportPaymentsCSV() {
   // Creator rows
   names.forEach((name,i) => {
     const posts = counts[name];
-    const ci = cmap[name.toLowerCase()] || { rate:defRate, bankName:'', acctNum:'', acctName:'' };
-    const base = Math.round(posts * ci.rate);
+    const ci = cmap[name.toLowerCase()] || { rate:defMonthlySalary, bankName:'', acctNum:'', acctName:'' };
+    const perVideo = ci.rate / maxVideosCSV;
+    const base = Math.round(posts * perVideo);
     const man = allPayments.find(p => p.month === selectedPayMonth && String(p.name).toLowerCase() === name.toLowerCase()) || {};
     const perf = calcBonus(man.bonusViews || '');
     const special = parseFloat(String(man.specialBonus || '').replace(/[^\d.]/g,'')) || 0;
     const total = base + perf + special;
     tPosts+=posts; tBase+=base; tPerf+=perf; tSpecial+=special; tTotal+=total;
-    L.push([i+1,name,posts,fmtMoney2(ci.rate),fmtMoney2(base),man.bonusViews||'',fmtMoney2(perf),fmtMoney2(special),fmtMoney2(total),ci.bankName,ci.acctNum,ci.acctName,man.paymentStatus||'Pending',man.paymentDate||'',man.remarks||''].map(q).join(','));
+    L.push([i+1,name,posts,fmtMoney2(perVideo),fmtMoney2(base),man.bonusViews||'',fmtMoney2(perf),fmtMoney2(special),fmtMoney2(total),ci.bankName,ci.acctNum,ci.acctName,man.paymentStatus||'Pending',man.paymentDate||'',man.remarks||''].map(q).join(','));
   });
   L.push(['','TOTAL',tPosts,'',fmtMoney2(tBase),'',fmtMoney2(tPerf),fmtMoney2(tSpecial),fmtMoney2(tTotal),'','','','','',''].map(q).join(','));
   L.push(''); L.push('ASSUMPTIONS & LEGEND'); L.push('');
-  L.push(q('Rate per Post (new creators from July 2026): ₦2,687.57 per video'));
-  L.push(q('Rate per Post (legacy creators): ₦1,785.71 per video'));
-  L.push('Monthly Quota: 56 videos per creator');
+  L.push(q('Standard salary: ₦100,000/month  |  Higher tier: ₦150,000/month'));
+  L.push(q('Rate per post = Monthly salary ÷ ' + maxVideosCSV + ' videos (' + last + ' days × 2 posts/day)'));
+  L.push(q('Monthly quota: ' + maxVideosCSV + ' videos per creator (' + mName + ' ' + y + ')'));
   L.push(''); L.push('PERFORMANCE BONUS TIERS:');
   L.push(q('• 50,000 views = ₦50,000'));
   L.push(q('• 100,000 views = ₦100,000'));
