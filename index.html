@@ -1097,6 +1097,8 @@ let weekOffset = 0, selectedMonth = null, selectedPayMonth = null;
 let isAdmin = false, dataLoaded = false, creatorsLoaded = false, paysLoaded = false;
 let payRowNames = [];
 let currentPage = 'submit';
+let renderPaymentsPending = false;
+let lastPayEditTime = 0;
 let jsonpCtr = 0;
 
 // ── EDITABLE COLUMN HEADERS ──
@@ -1152,6 +1154,13 @@ document.addEventListener('DOMContentLoaded', () => {
   // (prevents stale cached counts after backgrounding the browser)
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible') { loadRows(); }
+  });
+  // When focus leaves the payments table, fire any deferred render
+  document.addEventListener('focusout', function(e) {
+    const payBody = document.getElementById('pay-body');
+    if (payBody && payBody.contains(e.target) && renderPaymentsPending) {
+      setTimeout(function() { if (renderPaymentsPending) renderPayments(); }, 150);
+    }
   });
 });
 
@@ -1718,7 +1727,10 @@ function calcBonus(viewsList) {
 function loadPayments() {
   jsonp({ action:'getPayments' }, (data) => {
     paysLoaded = true;
-    if (data && data.payments) allPayments = data.payments;
+    // Don't overwrite local edits — if user edited within the last 8s, keep their data
+    if (data && data.payments && Date.now() - lastPayEditTime > 8000) {
+      allPayments = data.payments;
+    }
     if (isAdmin && currentPage === 'payments') renderPayments();
   });
 }
@@ -1739,6 +1751,7 @@ function onPayEdit(idx, field, value, rerender) {
 }
 
 function savePaymentField(month, name, field, value, rerender) {
+  lastPayEditTime = Date.now();
   let rec = allPayments.find(p => p.month === month && String(p.name).toLowerCase() === name.toLowerCase());
   if (!rec) { rec = { month, name, bonusViews:'', specialBonus:'', paymentStatus:'Pending', paymentDate:'', remarks:'', postsOverride:'', totalOverride:'' }; allPayments.push(rec); }
   rec[field] = value;
@@ -1781,6 +1794,14 @@ const PAY_LEGEND_HTML =
   'Example: <strong>100000,50000</strong> &nbsp;&nbsp; Not like this: 100,000, 50,000. The Perf. Bonus and Total update on their own.';
 
 function renderPayments() {
+  // Don't destroy the table while the user is actively typing in it
+  const payBody = document.getElementById('pay-body');
+  const active = document.activeElement;
+  if (payBody && active && payBody.contains(active) && (active.tagName === 'INPUT' || active.tagName === 'SELECT')) {
+    renderPaymentsPending = true;
+    return;
+  }
+  renderPaymentsPending = false;
   const tabsEl = document.getElementById('pay-tabs');
   const body = document.getElementById('pay-body');
   if (!tabsEl || !body) return;
