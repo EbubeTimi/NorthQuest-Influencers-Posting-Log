@@ -1015,7 +1015,7 @@
   <div class="section-head">
     <span class="section-title">Payment register</span>
     <div style="display:flex;gap:8px;flex-wrap:wrap">
-      <button class="btn btn-sm" onclick="refreshPaymentsData()">&#x21BB; Refresh</button>
+      <button id="pay-refresh-btn" class="btn btn-sm" onclick="refreshPaymentsData(this)">&#x21BB; Refresh</button>
       <button class="btn btn-sm" onclick="exportPaymentsCSV()">&#x2913; Download CSV</button>
     </div>
   </div>
@@ -1738,10 +1738,53 @@ function loadPayments() {
 function selectPayMonth(ym) { selectedPayMonth = ym; renderPayments(); }
 
 // Pull the latest posts, creators, and payment data so the register is current
-function refreshPaymentsData() {
-  loadRows();
-  loadCreators();
-  loadPayments();
+function refreshPaymentsData(btn) {
+  // Explicit user click = override the "don't overwrite during edit" guard
+  lastPayEditTime = 0;
+  // Drop focus from any field so the renderPayments bail-out doesn't trigger
+  if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
+  const refreshBtn = btn || document.getElementById('pay-refresh-btn');
+  const originalText = refreshBtn ? refreshBtn.innerHTML : '';
+  if (refreshBtn) {
+    refreshBtn.disabled = true;
+    refreshBtn.innerHTML = '↻ Refreshing...';
+  }
+  let done = 0;
+  const finish = () => {
+    done++;
+    if (done >= 3 && refreshBtn) {
+      refreshBtn.innerHTML = '✓ Refreshed';
+      setTimeout(() => {
+        refreshBtn.disabled = false;
+        refreshBtn.innerHTML = originalText || '↻ Refresh';
+      }, 1200);
+    }
+  };
+  // Wrap each load to count completion
+  jsonp({ action:'get', _bust: Date.now() }, (data) => {
+    dataLoaded = true;
+    if (data && data.rows) {
+      allRows = data.rows.map(r => ({
+        submitted: r[0]||'', name: (r[1]||'').trim(),
+        date: r[2]||'', post: String(r[3]||''),
+        tiktok: r[4]||'', insta: r[5]||'', issues: r[6]||''
+      })).filter(r => r.name && r.date);
+    }
+    refreshAll();
+    finish();
+  });
+  jsonp({ action:'getCreators', _bust: Date.now() }, (data) => {
+    creatorsLoaded = true;
+    if (data && data.creators) allCreators = data.creators;
+    refreshAll();
+    finish();
+  });
+  jsonp({ action:'getPayments', _bust: Date.now() }, (data) => {
+    paysLoaded = true;
+    if (data && data.payments) allPayments = data.payments;
+    if (isAdmin && currentPage === 'payments') renderPayments();
+    finish();
+  });
 }
 
 function onPayEdit(idx, field, value, rerender) {
@@ -1767,16 +1810,11 @@ function onRateEdit(idx, value) {
   const raw = parseFloat(String(value).replace(/[^\d.]/g, ''));
   if (isNaN(raw) || raw <= 0) { renderPayments(); return; }
   // The cell shows per-video rate but the backend stores monthly salary.
-  // If user types a small number (per-video), convert it back to monthly.
-  // Days-in-month × 2 = monthly video quota.
-  const ym = selectedPayMonth || (new Date().toISOString().substring(0,7));
-  const parts = ym.split('-');
-  const daysInMonth = new Date(Number(parts[0]), Number(parts[1]), 0).getDate();
-  const maxVideos = daysInMonth * 2;
+  // Flat divisor of 60 (regardless of month length).
   let rate;
   if (raw < 10000) {
     // Looks like a per-video rate — convert to monthly salary
-    rate = Math.round(raw * maxVideos);
+    rate = Math.round(raw * 60);
   } else {
     rate = raw;
   }
@@ -1801,8 +1839,9 @@ function onBankEdit(idx, field, value) {
 
 const PAY_LEGEND_HTML =
   '<h4>Assumptions &amp; Legend</h4>' +
-  'Standard salary: &#8358;100,000/month &nbsp;|&nbsp; Higher tier: &#8358;150,000/month. Monthly salary is set per creator on the Manage screen.<br>' +
-  'Monthly quota: days in month × 2 videos (60 for 30-day months, 62 for 31-day months). &nbsp;Staff rows show a fixed monthly salary — not calculated from posts.' +
+  'Default salary: &#8358;150,000/month &nbsp;|&nbsp; Legacy tier: &#8358;100,000/month (older creators only).<br>' +
+  'Per-video rate = Monthly salary &divide; 60 (flat — same divisor every month). &nbsp;150k tier = &#8358;2,500/video. &nbsp;100k tier = &#8358;1,666.67/video.<br>' +
+  'Pay = (videos posted that month) &times; per-video rate. &nbsp;In 31-day months a full-quota creator earns slightly more than their tier. &nbsp;Staff rows show a fixed monthly salary — not calculated from posts.' +
   '<h4>Performance Bonus Tiers</h4>' +
   '50,000 views = &#8358;50,000<br>100,000 views = &#8358;100,000<br>500,000 views = &#8358;200,000<br>1,000,000 views = &#8358;500,000<br>2,000,000 views = &#8358;900,000' +
   '<h4>How to enter multiple bonuses</h4>' +
@@ -1848,10 +1887,9 @@ function renderPayments() {
   const names = Object.keys(counts).sort();
   payRowNames = names;
 
-  // Per-video rate = monthly salary ÷ (days in month × 2).
-  // This automatically gives the right rate for 30-day and 31-day months.
-  const maxVideos = last * 2;
-  const defaultMonthlySalary = 100000;
+  // Per-video rate = monthly salary ÷ 60 (flat divisor, regardless of month length).
+  const maxVideos = 60;
+  const defaultMonthlySalary = 150000;
 
   const cmap = {};
   allCreators.forEach(c => {
@@ -1927,7 +1965,7 @@ function renderPayments() {
         '<td class="pay-num">' + (i+1) + '</td>' +
         '<td>' + escH(name) + '</td>' +
         '<td><input class="pay-input" style="max-width:62px;text-align:right" value="' + effPosts + '" onchange="onPayEdit(' + i + ',\'postsOverride\',this.value,true)"></td>' +
-        '<td><input class="pay-input" style="max-width:100px;text-align:right" value="' + fmtMoney2(monthlySalary / maxVideos) + '" onchange="onRateEdit(' + i + ',this.value)" title="Rate per video this month. To change tier: type 100000 (standard) or 150000 (higher tier) and press Enter" placeholder="100000"></td>' +
+        '<td><input class="pay-input" style="max-width:100px;text-align:right" value="' + fmtMoney2(monthlySalary / maxVideos) + '" onchange="onRateEdit(' + i + ',this.value)" title="Rate per video. To change tier: type 150000 (default) or 100000 (legacy) and press Enter. Or type the per-video amount directly (e.g. 2500)." placeholder="150000"></td>' +
         '<td class="pay-num">' + fmtMoney2(base) + '</td>' +
         '<td><input class="pay-input" value="' + escH(bonusViews) + '" placeholder="100000,50000" onchange="onPayEdit(' + i + ',\'bonusViews\',this.value,true)"></td>' +
         '<td class="pay-num">' + fmtMoney2(perf) + '</td>' +
@@ -1965,8 +2003,8 @@ function exportPaymentsCSV() {
   const mm = parseInt(selectedPayMonth.split('-')[1]);
   const last = new Date(Number(y), mm, 0).getDate();
   const mName = monthLabel(selectedPayMonth).split(' ')[0];
-  const maxVideosCSV = last * 2;
-  const defMonthlySalary = 100000;
+  const maxVideosCSV = 60;
+  const defMonthlySalary = 150000;
   const monthRows = allRows.filter(r => monthYM(r.date) === selectedPayMonth);
   const counts = {}; monthRows.forEach(r => { counts[r.name] = (counts[r.name]||0)+1; });
   const names = Object.keys(counts).sort();
@@ -2005,9 +2043,10 @@ function exportPaymentsCSV() {
   });
   L.push(['','TOTAL',tPosts,'',fmtMoney2(tBase),'',fmtMoney2(tPerf),fmtMoney2(tSpecial),fmtMoney2(tTotal),'','','','','',''].map(q).join(','));
   L.push(''); L.push('ASSUMPTIONS & LEGEND'); L.push('');
-  L.push(q('Standard salary: ₦100,000/month  |  Higher tier: ₦150,000/month'));
-  L.push(q('Rate per post = Monthly salary ÷ ' + maxVideosCSV + ' videos (' + last + ' days × 2 posts/day)'));
-  L.push(q('Monthly quota: ' + maxVideosCSV + ' videos per creator (' + mName + ' ' + y + ')'));
+  L.push(q('Default salary: ₦150,000/month  |  Legacy tier: ₦100,000/month (older creators only)'));
+  L.push(q('Rate per post = Monthly salary ÷ 60 (flat divisor, regardless of month length)'));
+  L.push(q('150k tier = ₦2,500/video  |  100k tier = ₦1,666.67/video'));
+  L.push(q('Pay = (videos posted that month) × per-video rate.  In ' + mName + ' ' + y + ' there are ' + (last * 2) + ' possible video slots (' + last + ' days × 2/day).'));
   L.push(''); L.push('PERFORMANCE BONUS TIERS:');
   L.push(q('• 50,000 views = ₦50,000'));
   L.push(q('• 100,000 views = ₦100,000'));
