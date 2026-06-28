@@ -1764,9 +1764,25 @@ function savePaymentField(month, name, field, value, rerender) {
 function onRateEdit(idx, value) {
   const name = payRowNames[idx];
   if (!name) return;
-  const rate = parseFloat(String(value).replace(/[^\d.]/g, '')) || 100000;
+  const raw = parseFloat(String(value).replace(/[^\d.]/g, ''));
+  if (isNaN(raw) || raw <= 0) { renderPayments(); return; }
+  // The cell shows per-video rate but the backend stores monthly salary.
+  // If user types a small number (per-video), convert it back to monthly.
+  // Days-in-month × 2 = monthly video quota.
+  const ym = selectedPayMonth || (new Date().toISOString().substring(0,7));
+  const parts = ym.split('-');
+  const daysInMonth = new Date(Number(parts[0]), Number(parts[1]), 0).getDate();
+  const maxVideos = daysInMonth * 2;
+  let rate;
+  if (raw < 10000) {
+    // Looks like a per-video rate — convert to monthly salary
+    rate = Math.round(raw * maxVideos);
+  } else {
+    rate = raw;
+  }
   const c = allCreators.find(c => String(c.name).toLowerCase() === name.toLowerCase());
   if (c) c.rate = rate;
+  else allCreators.push({ name, status: 'Active', rate, bankName:'', acctNum:'', acctName:'' });
   jsonp({ action:'setRate', name, rate }, (d) => {
     if (!d || d.status !== 'success') showToast('error', 'Not saved', 'Could not save the new rate. Check your connection and try again.');
   });
