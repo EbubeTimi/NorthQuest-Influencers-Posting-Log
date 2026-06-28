@@ -2030,16 +2030,21 @@ function exportPaymentsCSV() {
   });
   // Creator rows
   names.forEach((name,i) => {
-    const posts = counts[name];
+    const rawPosts = counts[name];
     const ci = cmap[name.toLowerCase()] || { rate:defMonthlySalary, bankName:'', acctNum:'', acctName:'' };
     const perVideo = ci.rate / maxVideosCSV;
-    const base = Math.round(posts * perVideo);
     const man = allPayments.find(p => p.month === selectedPayMonth && String(p.name).toLowerCase() === name.toLowerCase()) || {};
+    // Honour the same overrides the website Payment Register uses, so the CSV matches what's on screen.
+    const postsOv = String(man.postsOverride || '');
+    const effPosts = (postsOv !== '' && !isNaN(parseFloat(postsOv))) ? parseFloat(postsOv) : rawPosts;
+    const base = Math.round(effPosts * perVideo);
     const perf = calcBonus(man.bonusViews || '');
     const special = parseFloat(String(man.specialBonus || '').replace(/[^\d.]/g,'')) || 0;
-    const total = base + perf + special;
-    tPosts+=posts; tBase+=base; tPerf+=perf; tSpecial+=special; tTotal+=total;
-    L.push([i+1,name,posts,fmtMoney2(perVideo),fmtMoney2(base),man.bonusViews||'',fmtMoney2(perf),fmtMoney2(special),fmtMoney2(total),ci.bankName,ci.acctNum,ci.acctName,man.paymentStatus||'Pending',man.paymentDate||'',man.remarks||''].map(q).join(','));
+    const computedTotal = base + perf + special;
+    const totalOv = String(man.totalOverride || '').replace(/[^\d.]/g,'');
+    const effTotal = (totalOv !== '' && !isNaN(parseFloat(totalOv))) ? parseFloat(totalOv) : computedTotal;
+    tPosts+=effPosts; tBase+=base; tPerf+=perf; tSpecial+=special; tTotal+=effTotal;
+    L.push([i+1,name,effPosts,fmtMoney2(perVideo),fmtMoney2(base),man.bonusViews||'',fmtMoney2(perf),fmtMoney2(special),fmtMoney2(effTotal),ci.bankName,ci.acctNum,ci.acctName,man.paymentStatus||'Pending',man.paymentDate||'',man.remarks||''].map(q).join(','));
   });
   L.push(['','TOTAL',tPosts,'',fmtMoney2(tBase),'',fmtMoney2(tPerf),fmtMoney2(tSpecial),fmtMoney2(tTotal),'','','','','',''].map(q).join(','));
   L.push(''); L.push('ASSUMPTIONS & LEGEND'); L.push('');
