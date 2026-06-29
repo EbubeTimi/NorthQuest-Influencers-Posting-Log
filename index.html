@@ -691,6 +691,8 @@
   .pay-staff td { background:#fef9e7; }
   .pay-staff td:first-child { border-left:3px solid #f5b841; }
   .pay-staff:hover td { background:#fef3cb; }
+  .pay-row-del { display:inline-flex; align-items:center; justify-content:center; width:18px; height:18px; padding:0; margin-left:4px; border:none; background:transparent; color:#c0392b; font-size:14px; font-weight:bold; line-height:1; cursor:pointer; border-radius:4px; vertical-align:middle; opacity:0.55; transition:all 0.15s; }
+  .pay-row-del:hover { opacity:1; background:#c0392b; color:#fff; }
   .pay-section-label td { background:#f0eaff; color:#4a2eab; font-size:9px; font-weight:800; letter-spacing:0.1em; text-transform:uppercase; border:none; padding:5px 10px; }
   .pay-legend { margin-top:18px; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:18px 22px; font-size:12px; color:var(--text2); line-height:1.7; }
   .pay-legend h4 { font-size:11px; text-transform:uppercase; letter-spacing:0.08em; color:var(--text2); margin:12px 0 4px; }
@@ -1796,12 +1798,52 @@ function onPayEdit(idx, field, value, rerender) {
 function savePaymentField(month, name, field, value, rerender) {
   lastPayEditTime = Date.now();
   let rec = allPayments.find(p => p.month === month && String(p.name).toLowerCase() === name.toLowerCase());
-  if (!rec) { rec = { month, name, bonusViews:'', specialBonus:'', paymentStatus:'Pending', paymentDate:'', remarks:'', postsOverride:'', totalOverride:'' }; allPayments.push(rec); }
+  if (!rec) { rec = { month, name, bonusViews:'', specialBonus:'', paymentStatus:'Pending', paymentDate:'', remarks:'', postsOverride:'', postsCredit:'', totalOverride:'' }; allPayments.push(rec); }
   rec[field] = value;
-  jsonp({ action:'savePayment', month, name, bonusViews:rec.bonusViews||'', specialBonus:rec.specialBonus||'', paymentStatus:rec.paymentStatus||'Pending', paymentDate:rec.paymentDate||'', remarks:rec.remarks||'', postsOverride:rec.postsOverride||'', totalOverride:rec.totalOverride||'' }, (d) => {
+  jsonp({ action:'savePayment', month, name, bonusViews:rec.bonusViews||'', specialBonus:rec.specialBonus||'', paymentStatus:rec.paymentStatus||'Pending', paymentDate:rec.paymentDate||'', remarks:rec.remarks||'', postsOverride:rec.postsOverride||'', postsCredit:rec.postsCredit||'', totalOverride:rec.totalOverride||'' }, (d) => {
     if (!d || d.status !== 'success') showToast('error', 'Not saved', 'Could not save that change. Check your connection and try again.');
   });
   if (rerender) renderPayments();
+}
+
+// Posts field: typed value = total user wants to see.
+// We save the DIFFERENCE between typed and actual as postsCredit.
+// When new posts are logged later, actual auto-increments → display rises naturally.
+function onPostsEdit(idx, actualPosts, typedValue) {
+  const name = payRowNames[idx];
+  if (!name) return;
+  const typed = parseFloat(String(typedValue).replace(/[^\d.]/g, ''));
+  if (isNaN(typed) || typed < 0) { renderPayments(); return; }
+  const credit = Math.round(typed - actualPosts);
+  let rec = allPayments.find(p => p.month === selectedPayMonth && String(p.name).toLowerCase() === name.toLowerCase());
+  if (!rec) { rec = { month: selectedPayMonth, name, bonusViews:'', specialBonus:'', paymentStatus:'Pending', paymentDate:'', remarks:'', postsOverride:'', postsCredit:'', totalOverride:'' }; allPayments.push(rec); }
+  rec.postsOverride = '';      // wipe any legacy fixed override
+  rec.postsCredit = String(credit);
+  savePaymentField(selectedPayMonth, name, 'postsCredit', String(credit), true);
+}
+
+// Remove a creator from this month entirely: deletes their post rows + payment record.
+function deletePaymentRow(idx) {
+  const name = payRowNames[idx];
+  if (!name) return;
+  const monthName = monthLabel(selectedPayMonth);
+  const postsThisMonth = allRows.filter(r => String(r.name).toLowerCase() === name.toLowerCase() && monthYM(r.date) === selectedPayMonth).length;
+  const msg = 'Remove ' + name + ' from ' + monthName + '?\n\n' +
+    'This will permanently delete:\n' +
+    '• ' + postsThisMonth + ' logged post' + (postsThisMonth === 1 ? '' : 's') + ' from the Posting Log\n' +
+    '• Their payment record for this month\n\n' +
+    'Cannot be undone.';
+  if (!confirm(msg)) return;
+  jsonp({ action:'deletePaymentRow', month: selectedPayMonth, name }, (d) => {
+    if (d && d.status === 'success') {
+      allRows = allRows.filter(r => !(String(r.name).toLowerCase() === name.toLowerCase() && monthYM(r.date) === selectedPayMonth));
+      allPayments = allPayments.filter(p => !(p.month === selectedPayMonth && String(p.name).toLowerCase() === name.toLowerCase()));
+      renderPayments();
+      showToast('success', 'Removed', name + ' deleted from ' + monthName + ' (' + (d.deletedPosts || 0) + ' post' + ((d.deletedPosts||0)===1?'':'s') + ' removed).');
+    } else {
+      showToast('error', 'Could not delete', (d && d.message) || 'Try again or refresh.');
+    }
+  });
 }
 
 function onRateEdit(idx, value) {
@@ -1947,8 +1989,17 @@ function renderPayments() {
       const ci = cmap[name.toLowerCase()] || { rate: defaultMonthlySalary, bankName:'', acctNum:'', acctName:'' };
       const monthlySalary = ci.rate;
       const man = allPayments.find(p => p.month === selectedPayMonth && String(p.name).toLowerCase() === name.toLowerCase()) || {};
-      const postsOv = String(man.postsOverride || '');
-      const effPosts = (postsOv !== '' && !isNaN(parseFloat(postsOv))) ? parseFloat(postsOv) : posts;
+      // New behavior: postsCredit ADDS to actual posts (so new logs accumulate naturally).
+      // Old behavior fallback: postsOverride REPLACES (only if postsCredit is empty and override exists).
+      const creditRaw = String(man.postsCredit || '');
+      const overrideRaw = String(man.postsOverride || '');
+      const hasCredit = creditRaw !== '' && !isNaN(parseFloat(creditRaw));
+      const hasLegacyOverride = !hasCredit && overrideRaw !== '' && !isNaN(parseFloat(overrideRaw));
+      const credit = hasCredit ? parseFloat(creditRaw) : 0;
+      const effPosts = hasLegacyOverride ? parseFloat(overrideRaw) : (posts + credit);
+      const postsTitle = hasLegacyOverride
+        ? 'Fixed override (legacy). Edit to switch to credit-based: actual + credit.'
+        : (posts + ' actual logged + ' + credit + ' credited. Type a new total — system tracks the credit automatically, so new logs still add to it.');
       const base = Math.round(effPosts * monthlySalary / maxVideos);
       const bonusViews = man.bonusViews || '';
       const perf = calcBonus(bonusViews);
@@ -1962,9 +2013,9 @@ function renderPayments() {
       tPosts += effPosts; tBase += base; tPerf += perf; tSpecial += special; tTotal += effTotal;
       const stColor = status === 'Paid' ? 'background:#e6f4ec;color:#1a6b4a' : 'background:#fdf6e3;color:#b7770d';
       return '<tr>' +
-        '<td class="pay-num">' + (i+1) + '</td>' +
+        '<td class="pay-num" style="white-space:nowrap">' + (i+1) + ' <button class="pay-row-del" onclick="deletePaymentRow(' + i + ')" title="Remove ' + escH(name) + ' from ' + escH(monthLabel(selectedPayMonth)) + '">&times;</button></td>' +
         '<td>' + escH(name) + '</td>' +
-        '<td><input class="pay-input" style="max-width:62px;text-align:right" value="' + effPosts + '" onchange="onPayEdit(' + i + ',\'postsOverride\',this.value,true)"></td>' +
+        '<td><input class="pay-input" style="max-width:62px;text-align:right" value="' + effPosts + '" title="' + escH(postsTitle) + '" onchange="onPostsEdit(' + i + ',' + posts + ',this.value)"></td>' +
         '<td><input class="pay-input" style="max-width:100px;text-align:right" value="' + fmtMoney2(monthlySalary / maxVideos) + '" onchange="onRateEdit(' + i + ',this.value)" title="Rate per video. To change tier: type 150000 (default) or 100000 (legacy) and press Enter. Or type the per-video amount directly (e.g. 2500)." placeholder="150000"></td>' +
         '<td class="pay-num">' + fmtMoney2(base) + '</td>' +
         '<td><input class="pay-input" value="' + escH(bonusViews) + '" placeholder="100000,50000" onchange="onPayEdit(' + i + ',\'bonusViews\',this.value,true)"></td>' +
@@ -2034,9 +2085,13 @@ function exportPaymentsCSV() {
     const ci = cmap[name.toLowerCase()] || { rate:defMonthlySalary, bankName:'', acctNum:'', acctName:'' };
     const perVideo = ci.rate / maxVideosCSV;
     const man = allPayments.find(p => p.month === selectedPayMonth && String(p.name).toLowerCase() === name.toLowerCase()) || {};
-    // Honour the same overrides the website Payment Register uses, so the CSV matches what's on screen.
-    const postsOv = String(man.postsOverride || '');
-    const effPosts = (postsOv !== '' && !isNaN(parseFloat(postsOv))) ? parseFloat(postsOv) : rawPosts;
+    // Same credit-based logic as the on-screen register.
+    const creditRaw = String(man.postsCredit || '');
+    const overrideRaw = String(man.postsOverride || '');
+    const hasCredit = creditRaw !== '' && !isNaN(parseFloat(creditRaw));
+    const hasLegacyOverride = !hasCredit && overrideRaw !== '' && !isNaN(parseFloat(overrideRaw));
+    const credit = hasCredit ? parseFloat(creditRaw) : 0;
+    const effPosts = hasLegacyOverride ? parseFloat(overrideRaw) : (rawPosts + credit);
     const base = Math.round(effPosts * perVideo);
     const perf = calcBonus(man.bonusViews || '');
     const special = parseFloat(String(man.specialBonus || '').replace(/[^\d.]/g,'')) || 0;
