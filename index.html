@@ -1227,7 +1227,8 @@ function flushQueue() {
   if (!navigator.onLine || offlineQueue.length === 0) return;
   const item = offlineQueue[0];
   jsonp({ action:'submit', ...item }, (data) => {
-    if (data && data.status === 'success') {
+    if (data && (data.status === 'success' || data.status === 'duplicate')) {
+      // 'duplicate' means it already saved on a previous attempt — same as success.
       offlineQueue.shift(); saveQueue();
       if (offlineQueue.length > 0) setTimeout(flushQueue, 1000);
     } else if (data && data.status === 'blocked') {
@@ -1244,26 +1245,47 @@ function flushQueue() {
   });
 }
 
-function loadRows() {
-  jsonp({ action:'get' }, (data) => {
-    dataLoaded = true;
+// Both loaders now RETRY automatically on slow connections. Before, one
+// timeout meant the name dropdown stayed empty forever until a manual
+// refresh — creators saw a dead page. Now each load tries up to 5 times
+// with growing patience (15s, 25s, 35s, 45s, 45s ≈ up to ~3 minutes),
+// which rides out slow mobile data and Google's server wake-up delay.
+function loadRows(attempt) {
+  attempt = attempt || 0;
+  const timeoutMs = Math.min(15000 + attempt * 10000, 45000);
+  jsonp({ action:'get' }, (data, err) => {
     if (data && data.rows) {
+      dataLoaded = true;
       allRows = data.rows.map(r => ({
         submitted: r[0]||'', name: (r[1]||'').trim(),
         date: r[2]||'', post: String(r[3]||''),
         tiktok: r[4]||'', insta: r[5]||'', issues: r[6]||''
       })).filter(r => r.name && r.date);
+      refreshAll();
+    } else if (attempt < 4) {
+      setTimeout(() => loadRows(attempt + 1), 2000);
+    } else {
+      dataLoaded = true; // stop showing spinners forever; render what we have
+      refreshAll();
     }
-    refreshAll();
-  });
+  }, timeoutMs);
 }
 
-function loadCreators() {
-  jsonp({ action:'getCreators' }, (data) => {
-    creatorsLoaded = true;
-    if (data && data.creators) allCreators = data.creators;
-    refreshAll();
-  });
+function loadCreators(attempt) {
+  attempt = attempt || 0;
+  const timeoutMs = Math.min(15000 + attempt * 10000, 45000);
+  jsonp({ action:'getCreators' }, (data, err) => {
+    if (data && data.creators) {
+      creatorsLoaded = true;
+      allCreators = data.creators;
+      refreshAll();
+    } else if (attempt < 4) {
+      setTimeout(() => loadCreators(attempt + 1), 2000);
+    } else {
+      creatorsLoaded = true;
+      refreshAll();
+    }
+  }, timeoutMs);
 }
 
 function getActiveCreators() {
@@ -1419,6 +1441,19 @@ function submitLog() {
     return;
   }
 
+  // Client-side guard: the SAME link already logged today = the same video.
+  // Stops a creator from re-submitting Video 1 as "Video 2" after a false failure.
+  const dupRow = allRows.find(function(r) {
+    if (r.name.toLowerCase() !== name.toLowerCase() || r.date !== date) return false;
+    return (tiktok && r.tiktok && r.tiktok.trim() === tiktok) ||
+           (insta  && r.insta  && r.insta.trim()  === insta);
+  });
+  if (dupRow) {
+    showError('This exact video link is already logged for today (as Video ' + dupRow.post + '). It saved successfully — no need to submit it again. If you have a second video, paste that video\'s link instead.');
+    onNameChange();
+    return;
+  }
+
   const firstName = name.split(' ')[0];
   const isSecond  = post === '2';
 
@@ -1455,6 +1490,19 @@ function submitLog() {
       );
       setTimeout(function() { window.scrollTo({ top:0, behavior:'smooth' }); }, 200);
 
+    } else if (data && data.status === 'duplicate') {
+      // Server recognised this exact video link as already logged today.
+      // That means it DID save the first time — treat it as good news.
+      loadRows();
+      document.getElementById('f-tiktok').value = '';
+      document.getElementById('f-insta').value  = '';
+      document.getElementById('f-issues').value = '';
+      showToast('success',
+        'Already saved, ' + firstName + '!',
+        'This video was already logged (as Video ' + (data.post || post) + '). It went through the first time — no need to submit it twice. ' +
+        (isSecond ? '' : 'If you have a second video, paste that link instead.')
+      );
+
     } else if (data && data.status === 'blocked') {
       // Server says they already hit the limit — reload fresh data and update cards
       loadRows();
@@ -1466,16 +1514,63 @@ function submitLog() {
       );
 
     } else {
-      // Network error or timeout — DO NOT clear the form, let them retry
-      var isTimeout = (err === 'timeout');
+      // Connection dropped or timed out. The video may STILL have reached the
+      // server — so we VERIFY with the server before telling the creator anything.
+      // This is what stops false "your video was NOT saved" messages.
+      setSubmitting(true, 'Connection was slow — double-checking with the server…');
+      verifySubmission(name, date, post, tiktok, insta, firstName, isSecond, 0);
+    }
+  }, 45000);
+}
+
+// After a dropped/slow connection, ask the server directly: "did that video land?"
+// Retries up to 4 times (~30 seconds) before giving a final answer, so a brief
+// network blip never produces a wrong failure message.
+function verifySubmission(name, date, post, tiktok, insta, firstName, isSecond, attempt) {
+  jsonp({ action:'checkPost', name:name, tiktok:tiktok, insta:insta }, function(data, err) {
+    if (data && data.status === 'success' && data.found) {
+      // It saved! Show the normal success experience.
+      setSubmitting(false);
+      var already = allRows.find(function(r) {
+        return r.name === name && r.date === date &&
+               (r.tiktok === tiktok && r.insta === insta);
+      });
+      if (!already) allRows.push({ name:name, date:date, post:String(data.post || post), tiktok:tiktok, insta:insta, issues:'', submitted: new Date().toISOString() });
+      refreshAll();
+      document.getElementById('f-tiktok').value = '';
+      document.getElementById('f-insta').value  = '';
+      document.getElementById('f-issues').value = '';
+      showToast('success',
+        isSecond ? 'All done, ' + firstName + '!' : 'Video 1 logged, ' + firstName + '!',
+        'Your video went through — the connection was just slow. ' +
+        (isSecond ? 'Both posts are done for today!' : 'Come back and submit your second video!')
+      );
+      setTimeout(function() { window.scrollTo({ top:0, behavior:'smooth' }); }, 200);
+
+    } else if (data && data.status === 'success' && !data.found) {
+      // Server is reachable and confirms: the video is NOT there. Real failure.
+      setSubmitting(false);
       showToast('error',
         'Video did not go through',
-        isTimeout
-          ? 'The connection timed out. Your video was NOT saved. Your links are still in the form — please check your internet connection and try again.'
-          : 'Something went wrong and your video was NOT saved. Please try submitting again. If it keeps failing, refresh your browser or switch your internet off and on, then try once more.'
+        'The connection dropped and your video was NOT saved. Your links are still in the form — please tap Submit again.'
+      );
+
+    } else if (attempt < 4) {
+      // Server still unreachable — wait and check again.
+      setSubmitting(true, 'Still checking — please keep this page open…');
+      setTimeout(function() {
+        verifySubmission(name, date, post, tiktok, insta, firstName, isSecond, attempt + 1);
+      }, 8000);
+
+    } else {
+      // Network is truly down. Be honest and safe: tell them how to avoid a double-log.
+      setSubmitting(false);
+      showToast('error',
+        'Could not confirm',
+        'Your internet connection is unstable, so we could not confirm whether the video saved. Please refresh this page when your connection is back — if Video ' + post + ' already shows as logged, do NOT submit it again.'
       );
     }
-  }, 30000);
+  }, 15000);
 }
 
 function refreshAll() {
@@ -1491,12 +1586,31 @@ function refreshAll() {
 function populateNameDropdown() {
   const sel = document.getElementById('f-name');
   const cur = sel.value;
-  sel.innerHTML = '<option value="">Select your name...</option>';
-  getActiveCreators().forEach(n => {
+  const names = getActiveCreators();
+  // Never leave the dropdown silently empty — always say what's happening.
+  let placeholder = 'Select your name...';
+  if (!names.length) {
+    placeholder = creatorsLoaded
+      ? 'Names did not load — tap here to retry'
+      : 'Loading names… please wait';
+  }
+  sel.innerHTML = '<option value="">' + placeholder + '</option>';
+  names.forEach(n => {
     const o = document.createElement('option');
     o.value = n; o.textContent = n; sel.appendChild(o);
   });
   if (cur) sel.value = cur;
+  // If loading failed, tapping the dropdown kicks off a fresh attempt.
+  if (!names.length && creatorsLoaded) {
+    sel.onfocus = function() {
+      sel.onfocus = null;
+      creatorsLoaded = false;
+      populateNameDropdown();
+      loadCreators();
+    };
+  } else {
+    sel.onfocus = null;
+  }
 }
 
 function changeWeek(dir) { weekOffset += dir; renderWeeklyGrid(); }
