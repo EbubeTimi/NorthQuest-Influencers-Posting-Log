@@ -699,6 +699,30 @@
   .pay-legend h4:first-child { margin-top:0; }
   .btn-delete { border-color:#c0392b; color:#fff; background:#c0392b; }
   .btn-delete:hover { background:#a93226; border-color:#a93226; }
+
+  /* CONFIRM DIALOG (before logging a video) */
+  .confirm-box { max-width: 400px; padding: 26px 24px 22px; text-align: left; }
+  .confirm-title { font-family:'Playfair Display',serif; font-size:19px; font-weight:700; margin-bottom:10px; color:var(--text); }
+  .confirm-msg { font-size:14px; color:var(--text2); line-height:1.6; margin-bottom:20px; }
+  .confirm-actions { display:flex; gap:10px; justify-content:flex-end; }
+  .confirm-actions .btn { width:auto; margin:0; }
+
+  /* VIEW MY LOGS */
+  .view-logs-btn {
+    display:none; width:100%; margin-top:12px; padding:11px 16px;
+    border:1.5px solid var(--border2); border-radius:var(--radius-sm);
+    background:var(--surface2); color:var(--accent3); font-family:inherit;
+    font-size:13px; font-weight:600; cursor:pointer; transition:all 0.18s;
+  }
+  .view-logs-btn:hover { border-color:var(--accent); background:var(--accent-light); }
+  .mylog-summary { display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-bottom:18px; }
+  .mylog-stat { background:var(--surface2); border:1px solid var(--border); border-radius:var(--radius-sm); padding:12px; text-align:center; }
+  .mylog-stat .v { font-size:22px; font-weight:700; color:var(--accent3); }
+  .mylog-stat .l { font-size:10px; text-transform:uppercase; letter-spacing:0.05em; color:var(--text3); margin-top:2px; }
+  .mylog-day { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 12px; border-bottom:1px solid var(--border); font-size:13px; }
+  .mylog-day:last-child { border-bottom:none; }
+  .mylog-day.today-row { background:var(--accent-light); border-radius:var(--radius-sm); }
+  .mylog-chips { display:flex; gap:5px; flex-wrap:wrap; }
 </style>
 </head>
 <body>
@@ -717,7 +741,7 @@
 
 <header class="header" id="main-header">
   <div class="header-brand">
-    <div class="header-logo">NQ</div>
+    <div class="header-logo"><svg viewBox="0 0 24 24" style="width:19px;height:19px;fill:#fff"><path d="M12 1.5l2.6 7.9 7.9 2.6-7.9 2.6L12 22.5l-2.6-7.9-7.9-2.6 7.9-2.6z"/></svg></div>
     <div>
       <div class="header-title">Northquest Finance</div>
       <div class="header-sub">Creator Posting Log</div>
@@ -730,7 +754,7 @@
 <div id="page-submit" class="page active main">
   <div class="welcome-banner">
     <div class="welcome-greeting">Northquest Finance</div>
-    <div class="welcome-title">Welcome, Creator &#x1F44B;</div>
+    <div class="welcome-title">Welcome, Creator</div>
     <div class="welcome-sub">Log your daily posts below. Every submission counts towards your monthly total.</div>
   </div>
 
@@ -747,13 +771,14 @@
     <!-- Name + today status -->
     <div class="form-group">
       <label class="form-label">Your name</label>
-      <select class="form-input" id="f-name" onchange="onNameChange()">
+      <select class="form-input" id="f-name" onchange="onNameChange(true)">
         <option value="">Select your name...</option>
       </select>
       <div class="today-status s-none" id="today-status" style="display:none">
         <span class="s-icon" id="today-status-icon"></span>
         <span id="today-status-msg"></span>
       </div>
+      <button class="view-logs-btn" id="view-logs-btn" onclick="openMyLogs()" type="button">View my logs &mdash; this week &amp; this month &rarr;</button>
     </div>
 
     <!-- Date: locked to today, not editable -->
@@ -827,7 +852,7 @@
 <div id="page-intake" class="page main">
   <div class="welcome-banner">
     <div class="welcome-greeting">Northquest Finance</div>
-    <div class="welcome-title">Creator Onboarding &#x1F3AC;</div>
+    <div class="welcome-title">Creator Onboarding</div>
     <div class="welcome-sub">Welcome aboard. Fill this in once and you are fully set up. It takes about five minutes.</div>
   </div>
 
@@ -1006,9 +1031,15 @@
   </div>
   <div class="creator-table-wrap">
     <table class="log-table">
-      <thead><tr><th>Creator</th><th>Status</th><th>Added</th><th>Total Posts</th><th>Action</th></tr></thead>
-      <tbody id="manage-body"><tr><td colspan="5" class="empty-state"><span class="spinner"></span></td></tr></tbody>
+      <thead><tr><th>Creator</th><th>Status</th><th>Base Pay (&#8358;/month)</th><th>Joined</th><th>Left</th><th>Total Posts</th><th>Action</th></tr></thead>
+      <tbody id="manage-body"><tr><td colspan="7" class="empty-state"><span class="spinner"></span></td></tr></tbody>
     </table>
+  </div>
+  <div class="pay-legend" style="margin-top:16px">
+    <h4>How these columns work</h4>
+    <strong>Base Pay</strong> — each creator's monthly base pay. Changing it here updates the payment register, the per-video rate (base pay &divide; 62) and the legend instantly. Bonuses stay the same for everybody.<br>
+    <strong>Joined</strong> — the date the creator was added to the roster (from the sheet).<br>
+    <strong>Left</strong> — recorded automatically on the day you press Deactivate. Reactivating a creator clears it. For creators deactivated before this feature existed, the date of their last logged post is shown instead.
   </div>
 </div>
 
@@ -1063,6 +1094,18 @@
   </div>
 </div>
 
+<!-- CONFIRM DIALOG — shown before a video is logged -->
+<div class="modal-overlay" id="confirm-modal">
+  <div class="modal confirm-box">
+    <div class="confirm-title" id="confirm-title"></div>
+    <div class="confirm-msg" id="confirm-msg"></div>
+    <div class="confirm-actions">
+      <button class="btn btn-sm" id="confirm-cancel" type="button">Cancel</button>
+      <button class="btn btn-primary" id="confirm-ok" type="button">Yes, continue</button>
+    </div>
+  </div>
+</div>
+
 <script>
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwLrQ6h0XAOKIxYw_r2uMbb_FtBq_ZBBFdBAQpeLHo9Z9ZKkzISuje9CvuTF-RcWgFgmQ/exec';
 const ADMIN_PASS = 'NQ2026dash';
@@ -1082,6 +1125,9 @@ const safeStorage = {
   },
   setItem(key, val) {
     try { localStorage.setItem(key, val); } catch(e) { /* silently fail */ }
+  },
+  removeItem(key) {
+    try { localStorage.removeItem(key); } catch(e) { /* silently fail */ }
   },
   getSession(key) {
     try { return sessionStorage.getItem(key); } catch(e) { return null; }
@@ -1364,21 +1410,27 @@ function updatePostCards(count) {
 }
 
 // ── NAME CHANGE — update status banner + post cards ──
-function onNameChange() {
+// fetchFresh is true only for a real user change of the dropdown. Internal
+// re-renders (refreshAll) must NOT pass it, otherwise loadRows → refreshAll →
+// onNameChange → loadRows loops forever and the page re-renders endlessly.
+function onNameChange(fetchFresh) {
   const name     = document.getElementById('f-name').value.trim();
   const statusEl = document.getElementById('today-status');
   const sIcon    = document.getElementById('today-status-icon');
   const sMsg     = document.getElementById('today-status-msg');
 
+  const viewBtn = document.getElementById('view-logs-btn');
   if (!name) {
     statusEl.style.display = 'none';
+    if (viewBtn) viewBtn.style.display = 'none';
     updatePostCards(null);
     return;
   }
+  if (viewBtn) viewBtn.style.display = 'block';
 
-  // Always re-pull fresh data when a name is selected so the count is live
+  // Re-pull fresh data when the user selects a name so the count is live
   // (prevents stale cached "both videos done" when the data has actually been cleared)
-  loadRows();
+  if (fetchFresh) loadRows();
 
   const today = todayStr();
   const count = allRows.filter(function(r) {
@@ -1457,40 +1509,38 @@ function submitLog() {
   const firstName = name.split(' ')[0];
   const isSecond  = post === '2';
 
+  // Confirm which video they are about to log BEFORE anything is sent —
+  // stops creators accidentally logging Video 1 again as "Video 2".
+  showConfirm(
+    isSecond ? 'Your SECOND video of the day' : 'Your FIRST video of the day',
+    isSecond
+      ? 'You are about to log your <strong>second video for today</strong>. This should be a different video from your first one. Are you sure you want to continue?'
+      : 'You are about to log your <strong>first video for today</strong>. Continue?',
+    'Yes, log Video ' + post,
+    function() { doSubmitLog(name, date, post, tiktok, insta, issues, firstName, isSecond); }
+  );
+}
+
+function doSubmitLog(name, date, post, tiktok, insta, issues, firstName, isSecond) {
   // Show loading — button becomes a spinner, stays disabled until server responds
-  setSubmitting(true, 'Sending Video ' + post + '… please wait');
+  setSubmitting(true, 'Please wait — your video is being logged…');
   const patienceTimer = setTimeout(function() {
-    setSubmitting(true, 'Still sending — please keep this page open…');
+    setSubmitting(true, 'Still logging — please keep this page open…');
   }, 6000);
 
   // Call the server. We wait for confirmation before doing anything.
   jsonp({ action:'submit', name:name, date:date, post:post, tiktok:tiktok, insta:insta, issues:issues }, function(data, err) {
     clearTimeout(patienceTimer);
-    setSubmitting(false);
 
     if (data && data.status === 'success') {
-      // Server confirmed — only NOW update the UI
-      var already = allRows.find(function(r) {
-        return r.name === name && r.date === date && r.post === post &&
-               r.tiktok === tiktok && r.insta === insta;
-      });
-      if (!already) allRows.push({ name:name, date:date, post:post, tiktok:tiktok, insta:insta, issues:issues, submitted: new Date().toISOString() });
-      refreshAll();
-
-      // Clear the link fields — submission was successful
-      document.getElementById('f-tiktok').value = '';
-      document.getElementById('f-insta').value  = '';
-      document.getElementById('f-issues').value = '';
-
-      showToast('success',
-        isSecond ? 'All done, ' + firstName + '!' : 'Video 1 logged, ' + firstName + '!',
-        isSecond
-          ? 'Your second video has been submitted. Both posts are done for today — see you tomorrow!'
-          : 'Your first video for today has been logged. Come back and submit your second video!'
-      );
-      setTimeout(function() { window.scrollTo({ top:0, behavior:'smooth' }); }, 200);
+      // Server said success — but before greying anything out, double-check
+      // the backend that the row is really there. This is what stops a video
+      // from "looking logged" when it never actually saved.
+      setSubmitting(true, 'Confirming your video was logged…');
+      confirmSaved(name, date, post, tiktok, insta, issues, firstName, isSecond, 0);
 
     } else if (data && data.status === 'duplicate') {
+      setSubmitting(false);
       // Server recognised this exact video link as already logged today.
       // That means it DID save the first time — treat it as good news.
       loadRows();
@@ -1504,13 +1554,14 @@ function submitLog() {
       );
 
     } else if (data && data.status === 'blocked') {
+      setSubmitting(false);
       // Server says they already hit the limit — reload fresh data and update cards
       loadRows();
       showToast('error',
         'Already logged',
-        todayCount >= 1
-          ? 'Your first video for today is already logged — don\'t worry. Just submit your second video now.'
-          : 'Both videos for today are already logged. See you tomorrow!'
+        isSecond
+          ? 'Both videos for today are already logged. See you tomorrow!'
+          : 'Your first video for today is already logged — don\'t worry. Just submit your second video now.'
       );
 
     } else {
@@ -1521,6 +1572,70 @@ function submitLog() {
       verifySubmission(name, date, post, tiktok, insta, firstName, isSecond, 0);
     }
   }, 45000);
+}
+
+// ── CONFIRM DIALOG ──
+function showConfirm(title, msg, okLabel, onOk) {
+  const m = document.getElementById('confirm-modal');
+  document.getElementById('confirm-title').textContent = title;
+  document.getElementById('confirm-msg').innerHTML = msg;
+  const ok = document.getElementById('confirm-ok');
+  ok.textContent = okLabel || 'Yes, continue';
+  ok.onclick = function() { m.classList.remove('open'); onOk(); };
+  document.getElementById('confirm-cancel').onclick = function() { m.classList.remove('open'); };
+  m.classList.add('open');
+}
+
+// After the server says "success", read the log back to make sure the video
+// is genuinely in the sheet. Only a confirmed video greys out its card;
+// a video that did not land keeps the card open so it can be resubmitted.
+function confirmSaved(name, date, post, tiktok, insta, issues, firstName, isSecond, attempt) {
+  jsonp({ action:'checkPost', name:name, tiktok:tiktok, insta:insta }, function(data, err) {
+    if (data && data.status === 'success' && data.found) {
+      finalizeSuccess(name, date, String(data.post || post), tiktok, insta, issues, firstName, isSecond);
+    } else if (data && data.status === 'success' && !data.found) {
+      if (attempt < 2) {
+        // The sheet can take a moment to reflect a fresh row — check again.
+        setSubmitting(true, 'Still confirming — please keep this page open…');
+        setTimeout(function() { confirmSaved(name, date, post, tiktok, insta, issues, firstName, isSecond, attempt + 1); }, 3000);
+      } else {
+        // Server is reachable and the video is genuinely NOT there.
+        setSubmitting(false);
+        loadRows();
+        showToast('error',
+          'Video ' + post + ' was NOT logged',
+          'Your video was not successfully logged. Nothing has been greyed out — your links are still in the form. Please tap Submit again to log Video ' + post + '.'
+        );
+      }
+    } else {
+      // Could not reach the server to double-check, but the server already
+      // confirmed the save the first time — trust it rather than alarm the creator.
+      finalizeSuccess(name, date, post, tiktok, insta, issues, firstName, isSecond);
+    }
+  }, 12000);
+}
+
+function finalizeSuccess(name, date, post, tiktok, insta, issues, firstName, isSecond) {
+  setSubmitting(false);
+  var already = allRows.find(function(r) {
+    return r.name === name && r.date === date &&
+           r.tiktok === tiktok && r.insta === insta;
+  });
+  if (!already) allRows.push({ name:name, date:date, post:post, tiktok:tiktok, insta:insta, issues:issues, submitted: new Date().toISOString() });
+  refreshAll();
+
+  // Clear the link fields — submission was verified
+  document.getElementById('f-tiktok').value = '';
+  document.getElementById('f-insta').value  = '';
+  document.getElementById('f-issues').value = '';
+
+  showToast('success',
+    isSecond ? 'All done, ' + firstName + '!' : 'Video 1 successfully logged, ' + firstName + '!',
+    isSecond
+      ? 'Your second video has been successfully logged and confirmed. Both posts are done for today — see you tomorrow!'
+      : 'Your first video has been successfully logged and confirmed. You can check it under "View my logs". Come back and submit your second video!'
+  );
+  setTimeout(function() { window.scrollTo({ top:0, behavior:'smooth' }); }, 200);
 }
 
 // After a dropped/slow connection, ask the server directly: "did that video land?"
@@ -1706,6 +1821,74 @@ function openModal(name) {
 function closeModalOverlay(e) { if(e.target===document.getElementById('creator-modal')) closeModalDirect(); }
 function closeModalDirect() { document.getElementById('creator-modal').classList.remove('open'); }
 
+// ── VIEW MY LOGS — creators check their own week + current month, no password ──
+function openMyLogs() {
+  const name = document.getElementById('f-name').value.trim();
+  if (!name) return;
+  loadRows(); // refresh in the background so the view is as current as possible
+  renderMyLogs(name);
+}
+
+function renderMyLogs(name) {
+  const today = todayStr();
+  const ym = today.substring(0, 7);
+  const mine = allRows.filter(r => r.name.toLowerCase() === name.toLowerCase());
+  const monthRows = mine.filter(r => monthYM(r.date) === ym);
+  const weekDates = getWeekDates(0);
+  const weekTotal = mine.filter(r => weekDates.includes(r.date)).length;
+
+  const byDate = {};
+  monthRows.forEach(r => { if (!byDate[r.date]) byDate[r.date] = []; byDate[r.date].push(r); });
+  const dayOfMonth = parseInt(today.split('-')[2]);
+  let fullDays = 0, missedDays = 0;
+  for (let d = 1; d <= dayOfMonth; d++) {
+    const ds = ym + '-' + String(d).padStart(2, '0');
+    const n = (byDate[ds] || []).length;
+    if (n >= 2) fullDays++;
+    else if (n === 0 && ds !== today) missedDays++;
+  }
+
+  const chip = (r, n) => {
+    if (!r) return '<span class="post-chip chip-none">Video ' + n + ' — not logged</span>';
+    const cls = n === 1 ? 'chip-tt-1' : 'chip-tt-2';
+    const tk = r.tiktok ? ' <a href="' + escH(r.tiktok) + '" target="_blank" style="color:var(--accent);font-size:11px;text-decoration:none">TikTok&#x2197;</a>' : '';
+    const ig = r.insta  ? ' <a href="' + escH(r.insta)  + '" target="_blank" style="color:var(--pink);font-size:11px;text-decoration:none">Insta&#x2197;</a>' : '';
+    return '<span class="post-chip ' + cls + '">&#x2713; Video ' + n + ' logged</span>' + tk + ig;
+  };
+
+  const weekHtml = weekDates.map(ds => {
+    const isToday = ds === today;
+    const rows = mine.filter(r => r.date === ds);
+    const v1 = rows.find(r => r.post === '1'), v2 = rows.find(r => r.post === '2');
+    const chips = ds > today
+      ? '<span style="color:var(--text3);font-size:12px">—</span>'
+      : '<div class="mylog-chips">' + chip(v1, 1) + chip(v2, 2) + '</div>';
+    return '<div class="mylog-day' + (isToday ? ' today-row' : '') + '"><span style="font-weight:600;min-width:74px;flex-shrink:0">' + dayLabel(ds) + (isToday ? ' · Today' : '') + '</span>' + chips + '</div>';
+  }).join('');
+
+  const mDates = Object.keys(byDate).sort().reverse();
+  const monthHtml = mDates.length
+    ? mDates.map(ds => {
+        const rows = byDate[ds];
+        const v1 = rows.find(r => r.post === '1'), v2 = rows.find(r => r.post === '2');
+        return '<div class="mylog-day"><span style="font-weight:600;min-width:74px;flex-shrink:0">' + fmtDate(ds) + '</span><div class="mylog-chips">' + chip(v1, 1) + chip(v2, 2) + '</div></div>';
+      }).join('')
+    : '<div class="empty-state">No videos logged yet in ' + monthLabel(ym) + '.</div>';
+
+  document.getElementById('modal-name').textContent = name;
+  document.getElementById('modal-sub').textContent = 'Your posting record — this week and ' + monthLabel(ym);
+  document.getElementById('modal-body').innerHTML =
+    '<div class="mylog-summary">' +
+      '<div class="mylog-stat"><div class="v">' + monthRows.length + '</div><div class="l">Videos this month</div></div>' +
+      '<div class="mylog-stat"><div class="v">' + fullDays + '</div><div class="l">Days fully done</div></div>' +
+      '<div class="mylog-stat"><div class="v">' + missedDays + '</div><div class="l">Days missed</div></div>' +
+    '</div>' +
+    '<div style="font-size:12px;color:var(--text2);margin-bottom:16px;background:var(--accent-light);border-radius:8px;padding:10px 12px">A &#x2713; means that video was logged successfully. Just submitted a video? Open this view to confirm it went through.</div>' +
+    '<div class="month-block"><div class="month-block-header"><span class="month-block-name">This week</span><span class="month-block-total">' + weekTotal + ' video' + (weekTotal !== 1 ? 's' : '') + '</span></div>' + weekHtml + '</div>' +
+    '<div class="month-block"><div class="month-block-header"><span class="month-block-name">' + monthLabel(ym) + '</span><span class="month-block-total">' + monthRows.length + ' of 62 videos</span></div>' + monthHtml + '</div>';
+  document.getElementById('creator-modal').classList.add('open');
+}
+
 function renderDashboard() {
   const today = todayStr();
   const curMYM = today.substring(0,7);
@@ -1769,7 +1952,15 @@ function toggleCreator(name) {
   if (!confirm((isActive?'Deactivate':'Reactivate') + ' ' + name + '?')) return;
   jsonp({ action:'toggleCreator', name }, (data) => {
     if (data && data.status === 'success') {
-      c.status = data.newStatus; refreshAll();
+      c.status = data.newStatus;
+      // Record the leaving date the moment a creator is deactivated, and clear
+      // it if they are brought back. This is what fills the "Left" column.
+      if (String(data.newStatus).toLowerCase() === 'inactive') {
+        safeStorage.setItem('nq_left_' + name, todayStr());
+      } else {
+        safeStorage.removeItem('nq_left_' + name);
+      }
+      refreshAll();
       showToast('success', 'Status updated', name + ' is now ' + data.newStatus.toLowerCase() + '.');
     } else {
       showToast('error', 'Failed', (data&&data.message)||'Could not update status.');
@@ -1793,11 +1984,58 @@ function deleteCreator(name) {
   });
 }
 
+// Change a creator's monthly base pay. The payments register, the per-video
+// rate (base ÷ 62) and the legend all recalculate from this one number.
+function onBasePayEdit(name, value) {
+  if (value === 'custom') {
+    const v = prompt('Enter ' + name + '\'s monthly base pay in naira (numbers only, e.g. 250000):');
+    if (v === null) { renderManageCreators(); return; }
+    value = v;
+  }
+  const rate = parseFloat(String(value).replace(/[^\d.]/g, ''));
+  if (isNaN(rate) || rate <= 0) { renderManageCreators(); return; }
+  const c = allCreators.find(c => String(c.name).toLowerCase() === name.toLowerCase());
+  if (c) c.rate = rate;
+  jsonp({ action:'setRate', name, rate }, (d) => {
+    if (d && d.status === 'success') {
+      showToast('success', 'Base pay updated', name + ' is now on ₦' + rate.toLocaleString('en-NG') + '/month (₦' + fmtMoney2(rate/62) + ' per video).');
+    } else {
+      showToast('error', 'Not saved', 'Could not save the new base pay. Check your connection and try again.');
+    }
+  });
+  renderManageCreators();
+  renderPayments();
+}
+
+// A creator's "Left" date, in order of preference:
+// 1. a `left` date from the sheet (if the backend ever provides one),
+// 2. the date recorded on this device when they were deactivated,
+// 3. the date of their last logged post (fallback for older deactivations).
+function leftDateFor(c) {
+  if (String(c.status).toLowerCase() === 'active') return '';
+  if (c.left) return String(c.left).substring(0, 10);
+  const recorded = safeStorage.getItem('nq_left_' + c.name);
+  if (recorded) return recorded;
+  const rows = allRows.filter(r => r.name === c.name);
+  if (!rows.length) return '';
+  return [...rows].sort((a, b) => b.date.localeCompare(a.date))[0].date;
+}
+
+const BASE_PAY_TIERS = [100000, 150000, 200000, 250000, 300000];
+
+function basePaySelect(c) {
+  const rate = parseFloat(c.rate) || 150000;
+  const opts = BASE_PAY_TIERS.includes(rate) ? BASE_PAY_TIERS : [...BASE_PAY_TIERS, rate].sort((a, b) => a - b);
+  return '<select class="pay-input" style="max-width:130px" onchange="onBasePayEdit(\'' + escH(c.name) + '\',this.value)" title="Monthly base pay. Per-video rate = base pay ÷ 62. Changing this updates the payment register instantly.">' +
+    opts.map(t => '<option value="' + t + '"' + (t === rate ? ' selected' : '') + '>&#8358;' + t.toLocaleString('en-NG') + '</option>').join('') +
+    '<option value="custom">Custom…</option></select>';
+}
+
 function renderManageCreators() {
   const tbody = document.getElementById('manage-body');
   const counts = document.getElementById('manage-counts');
-  if (!creatorsLoaded) { tbody.innerHTML = '<tr><td colspan="5" class="empty-state"><span class="spinner"></span></td></tr>'; return; }
-  if (!allCreators.length) { tbody.innerHTML = '<tr><td colspan="5" class="empty-state"><strong>No creators yet</strong></td></tr>'; counts.textContent = ''; return; }
+  if (!creatorsLoaded) { tbody.innerHTML = '<tr><td colspan="7" class="empty-state"><span class="spinner"></span></td></tr>'; return; }
+  if (!allCreators.length) { tbody.innerHTML = '<tr><td colspan="7" class="empty-state"><strong>No creators yet</strong></td></tr>'; counts.textContent = ''; return; }
   const active = allCreators.filter(c => String(c.status).toLowerCase()==='active').length;
   counts.textContent = active + ' active · ' + (allCreators.length-active) + ' inactive · ' + allCreators.length + ' total';
   const sorted = [...allCreators].sort((a,b) => {
@@ -1809,10 +2047,16 @@ function renderManageCreators() {
     const isActive = String(c.status).toLowerCase()==='active';
     const badge = isActive ? '<span class="badge badge-active">Active</span>' : '<span class="badge badge-inactive">Inactive</span>';
     const added = c.added ? new Date(c.added).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}) : '—';
+    const leftRaw = leftDateFor(c);
+    const left = leftRaw
+      ? '<span title="Recorded when the creator was deactivated (or their last logged post for older records)">' + new Date(leftRaw + 'T00:00:00').toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}) + '</span>'
+      : '—';
     const posts = allRows.filter(r => r.name===c.name).length;
     return '<tr><td><span class="creator-link" onclick="openModal(\'' + escH(c.name) + '\')">' + escH(c.name) + '</span></td>' +
       '<td>' + badge + '</td>' +
+      '<td>' + basePaySelect(c) + '</td>' +
       '<td style="color:var(--text3)">' + added + '</td>' +
+      '<td style="color:var(--text3)">' + left + '</td>' +
       '<td style="color:var(--text2)">' + posts + '</td>' +
       '<td><div style="display:flex;gap:6px;flex-wrap:wrap">' +
       '<button class="btn btn-sm ' + (isActive?'btn-danger':'') + '" onclick="toggleCreator(\'' + escH(c.name) + '\')">' + (isActive?'Deactivate':'Reactivate') + '</button>' +
@@ -1965,12 +2209,12 @@ function onRateEdit(idx, value) {
   if (!name) return;
   const raw = parseFloat(String(value).replace(/[^\d.]/g, ''));
   if (isNaN(raw) || raw <= 0) { renderPayments(); return; }
-  // The cell shows per-video rate but the backend stores monthly salary.
-  // Flat divisor of 60 (regardless of month length).
+  // The cell shows per-video rate but the backend stores monthly base pay.
+  // Flat divisor of 62 (regardless of month length).
   let rate;
   if (raw < 10000) {
-    // Looks like a per-video rate — convert to monthly salary
-    rate = Math.round(raw * 60);
+    // Looks like a per-video rate — convert to monthly base pay
+    rate = Math.round(raw * 62);
   } else {
     rate = raw;
   }
@@ -1993,16 +2237,22 @@ function onBankEdit(idx, field, value) {
   jsonp(params, (d) => { if (!d || d.status !== 'success') showToast('error', 'Not saved', 'Could not save the bank detail. Check your connection and try again.'); });
 }
 
-const PAY_LEGEND_HTML =
-  '<h4>Assumptions &amp; Legend</h4>' +
-  'Default salary: &#8358;150,000/month &nbsp;|&nbsp; Legacy tier: &#8358;100,000/month (older creators only).<br>' +
-  'Per-video rate = Monthly salary &divide; 60 (flat — same divisor every month). &nbsp;150k tier = &#8358;2,500/video. &nbsp;100k tier = &#8358;1,666.67/video.<br>' +
-  'Pay = (videos posted that month) &times; per-video rate. &nbsp;In 31-day months a full-quota creator earns slightly more than their tier. &nbsp;Staff rows show a fixed monthly salary — not calculated from posts.' +
-  '<h4>Performance Bonus Tiers</h4>' +
-  '50,000 views = &#8358;50,000<br>100,000 views = &#8358;100,000<br>500,000 views = &#8358;200,000<br>1,000,000 views = &#8358;500,000<br>2,000,000 views = &#8358;900,000' +
-  '<h4>How to enter multiple bonuses</h4>' +
-  'If a creator hits more than one milestone, type the view counts in the Bonus Views box separated by commas, WITHOUT thousands separators. ' +
-  'Example: <strong>100000,50000</strong> &nbsp;&nbsp; Not like this: 100,000, 50,000. The Perf. Bonus and Total update on their own.';
+// The legend rebuilds itself from whatever base-pay tiers are actually in
+// use this month, so changing someone's base pay corrects it automatically.
+function payLegendHtml(tiers) {
+  const tierLines = [...tiers].sort((a, b) => b - a)
+    .map(t => '&#8358;' + Number(t).toLocaleString('en-NG') + '/month base pay = &#8358;' + fmtMoney2(t / 62) + ' per video')
+    .join('<br>');
+  return '<h4>Assumptions &amp; Legend</h4>' +
+    'Every creator has their own monthly base pay — set it under <strong>Manage creators</strong> (Base Pay column) or by editing the Rate column here. Default for new creators: &#8358;150,000/month.<br>' +
+    'Per-video rate = monthly base pay &divide; 62 (flat — same divisor every month). Base pay tiers in this month\'s register:<br>' + tierLines + '<br>' +
+    'Pay = (videos posted that month) &times; per-video rate. &nbsp;Bonuses are the same for everybody regardless of base pay. &nbsp;Staff rows show a fixed monthly salary — not calculated from posts.' +
+    '<h4>Performance Bonus Tiers (same for all creators)</h4>' +
+    '50,000 views = &#8358;50,000<br>100,000 views = &#8358;100,000<br>500,000 views = &#8358;200,000<br>1,000,000 views = &#8358;500,000<br>2,000,000 views = &#8358;900,000' +
+    '<h4>How to enter multiple bonuses</h4>' +
+    'If a creator hits more than one milestone, type the view counts in the Bonus Views box separated by commas, WITHOUT thousands separators. ' +
+    'Example: <strong>100000,50000</strong> &nbsp;&nbsp; Not like this: 100,000, 50,000. The Perf. Bonus and Total update on their own.';
+}
 
 function renderPayments() {
   // Don't destroy the table while the user is actively typing in it
@@ -2040,11 +2290,9 @@ function renderPayments() {
   const monthRows = allRows.filter(r => monthYM(r.date) === selectedPayMonth);
   const counts = {};
   monthRows.forEach(r => { counts[r.name] = (counts[r.name] || 0) + 1; });
-  const names = Object.keys(counts).sort();
-  payRowNames = names;
 
-  // Per-video rate = monthly salary ÷ 60 (flat divisor, regardless of month length).
-  const maxVideos = 60;
+  // Per-video rate = monthly base pay ÷ 62 (flat divisor, regardless of month length).
+  const maxVideos = 62;
   const defaultMonthlySalary = 150000;
 
   const cmap = {};
@@ -2054,6 +2302,11 @@ function renderPayments() {
       bankName: c.bankName || '', acctNum: c.acctNum || '', acctName: c.acctName || ''
     };
   });
+  const tierOf = n => (cmap[n.toLowerCase()] || { rate: defaultMonthlySalary }).rate;
+
+  // Segment creators by base-pay tier — highest earners first, A–Z inside each tier.
+  const names = Object.keys(counts).sort((a, b) => tierOf(b) - tierOf(a) || a.localeCompare(b));
+  payRowNames = names;
 
   let tPosts = 0, tBase = 0, tPerf = 0, tSpecial = 0, tTotal = 0;
 
@@ -2098,8 +2351,15 @@ function renderPayments() {
   if (!names.length) {
     creatorsHtml = '<tr><td colspan="15" class="empty-state" style="color:var(--text3);font-size:12px;padding:14px">No creator posts logged for ' + monthLabel(selectedPayMonth) + '</td></tr>';
   } else {
+    let lastTier = null;
     creatorsHtml = names.map((name, i) => {
       const posts = counts[name];
+      const rowTier = tierOf(name);
+      let tierLabel = '';
+      if (rowTier !== lastTier) {
+        lastTier = rowTier;
+        tierLabel = '<tr class="pay-section-label"><td colspan="15">&#8358;' + Number(rowTier).toLocaleString('en-NG') + ' base pay</td></tr>';
+      }
       const ci = cmap[name.toLowerCase()] || { rate: defaultMonthlySalary, bankName:'', acctNum:'', acctName:'' };
       const monthlySalary = ci.rate;
       const man = allPayments.find(p => p.month === selectedPayMonth && String(p.name).toLowerCase() === name.toLowerCase()) || {};
@@ -2126,11 +2386,11 @@ function renderPayments() {
       const remarks = man.remarks || '';
       tPosts += effPosts; tBase += base; tPerf += perf; tSpecial += special; tTotal += effTotal;
       const stColor = status === 'Paid' ? 'background:#e6f4ec;color:#1a6b4a' : 'background:#fdf6e3;color:#b7770d';
-      return '<tr>' +
+      return tierLabel + '<tr>' +
         '<td class="pay-num" style="white-space:nowrap">' + (i+1) + ' <button class="pay-row-del" onclick="deletePaymentRow(' + i + ')" title="Remove ' + escH(name) + ' from ' + escH(monthLabel(selectedPayMonth)) + '">&times;</button></td>' +
         '<td>' + escH(name) + '</td>' +
         '<td><input class="pay-input" style="max-width:62px;text-align:right" value="' + effPosts + '" title="' + escH(postsTitle) + '" onchange="onPostsEdit(' + i + ',' + posts + ',this.value)"></td>' +
-        '<td><input class="pay-input" style="max-width:100px;text-align:right" value="' + fmtMoney2(monthlySalary / maxVideos) + '" onchange="onRateEdit(' + i + ',this.value)" title="Rate per video. To change tier: type 150000 (default) or 100000 (legacy) and press Enter. Or type the per-video amount directly (e.g. 2500)." placeholder="150000"></td>' +
+        '<td><input class="pay-input" style="max-width:100px;text-align:right" value="' + fmtMoney2(monthlySalary / maxVideos) + '" onchange="onRateEdit(' + i + ',this.value)" title="Rate per video = monthly base pay ÷ 62. To change base pay: type the monthly amount (e.g. 200000) and press Enter — or use the Base Pay column under Manage creators. You can also type a per-video amount directly (e.g. 3226)." placeholder="150000"></td>' +
         '<td class="pay-num">' + fmtMoney2(base) + '</td>' +
         '<td><input class="pay-input" value="' + escH(bonusViews) + '" placeholder="100000,50000" onchange="onPayEdit(' + i + ',\'bonusViews\',this.value,true)"></td>' +
         '<td class="pay-num">' + fmtMoney2(perf) + '</td>' +
@@ -2159,7 +2419,8 @@ function renderPayments() {
     '</tr>';
 
   body.innerHTML = staffLabel + staffRowsHtml + creatorLabel + creatorsHtml + totalHtml;
-  document.getElementById('pay-legend').innerHTML = PAY_LEGEND_HTML;
+  const tiersInUse = [...new Set(names.map(tierOf))];
+  document.getElementById('pay-legend').innerHTML = payLegendHtml(tiersInUse.length ? tiersInUse : [defaultMonthlySalary]);
 }
 
 function exportPaymentsCSV() {
@@ -2168,13 +2429,16 @@ function exportPaymentsCSV() {
   const mm = parseInt(selectedPayMonth.split('-')[1]);
   const last = new Date(Number(y), mm, 0).getDate();
   const mName = monthLabel(selectedPayMonth).split(' ')[0];
-  const maxVideosCSV = 60;
+  const maxVideosCSV = 62;
   const defMonthlySalary = 150000;
   const monthRows = allRows.filter(r => monthYM(r.date) === selectedPayMonth);
   const counts = {}; monthRows.forEach(r => { counts[r.name] = (counts[r.name]||0)+1; });
-  const names = Object.keys(counts).sort();
   const cmap = {};
   allCreators.forEach(c => { cmap[String(c.name).toLowerCase()] = { rate: parseFloat(c.rate)||defMonthlySalary, bankName:c.bankName||'', acctNum:c.acctNum||'', acctName:c.acctName||'' }; });
+  const tierOf = n => (cmap[n.toLowerCase()] || { rate: defMonthlySalary }).rate;
+  // Segment by base-pay tier — highest first — so the exported sheet groups
+  // ₦300k creators, then ₦200k, then ₦150k, and so on, all in one sheet.
+  const names = Object.keys(counts).sort((a, b) => tierOf(b) - tierOf(a) || a.localeCompare(b));
   const q = v => { v = String(v == null ? '' : v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g,'""') + '"' : v; };
   const L = [];
   L.push('NORTHQUEST FINANCE  ·  CREATOR PAYMENT REGISTER');
@@ -2193,8 +2457,14 @@ function exportPaymentsCSV() {
     tSpecial+=special; tTotal+=total;
     L.push(['S'+(si+1), s.display + ' (' + s.role + ')', fmtMoney2(salary), '—', '—', '—', '—', fmtMoney2(special), fmtMoney2(total), bankData.bankName||'', bankData.acctNum||'', bankData.acctName||'', man.paymentStatus||'Pending', man.paymentDate||'', man.remarks||''].map(q).join(','));
   });
-  // Creator rows
+  // Creator rows, grouped under a header line per base-pay tier
+  let lastTierCSV = null;
   names.forEach((name,i) => {
+    const rowTier = tierOf(name);
+    if (rowTier !== lastTierCSV) {
+      lastTierCSV = rowTier;
+      L.push(q('CREATORS — ₦' + Number(rowTier).toLocaleString('en-NG') + ' BASE PAY'));
+    }
     const rawPosts = counts[name];
     const ci = cmap[name.toLowerCase()] || { rate:defMonthlySalary, bankName:'', acctNum:'', acctName:'' };
     const perVideo = ci.rate / maxVideosCSV;
@@ -2217,10 +2487,12 @@ function exportPaymentsCSV() {
   });
   L.push(['','TOTAL',tPosts,'',fmtMoney2(tBase),'',fmtMoney2(tPerf),fmtMoney2(tSpecial),fmtMoney2(tTotal),'','','','','',''].map(q).join(','));
   L.push(''); L.push('ASSUMPTIONS & LEGEND'); L.push('');
-  L.push(q('Default salary: ₦150,000/month  |  Legacy tier: ₦100,000/month (older creators only)'));
-  L.push(q('Rate per post = Monthly salary ÷ 60 (flat divisor, regardless of month length)'));
-  L.push(q('150k tier = ₦2,500/video  |  100k tier = ₦1,666.67/video'));
-  L.push(q('Pay = (videos posted that month) × per-video rate.  In ' + mName + ' ' + y + ' there are ' + (last * 2) + ' possible video slots (' + last + ' days × 2/day).'));
+  L.push(q('Every creator has their own monthly base pay (default for new creators: ₦150,000/month)'));
+  L.push(q('Rate per post = Monthly base pay ÷ 62 (flat divisor, regardless of month length)'));
+  [...new Set(names.map(tierOf))].sort((a,b)=>b-a).forEach(t => {
+    L.push(q('₦' + Number(t).toLocaleString('en-NG') + '/month base pay = ₦' + fmtMoney2(t/62) + ' per video'));
+  });
+  L.push(q('Pay = (videos posted that month) × per-video rate.  Bonuses are the same for everybody regardless of base pay.  In ' + mName + ' ' + y + ' there are ' + (last * 2) + ' possible video slots (' + last + ' days × 2/day).'));
   L.push(''); L.push('PERFORMANCE BONUS TIERS:');
   L.push(q('• 50,000 views = ₦50,000'));
   L.push(q('• 100,000 views = ₦100,000'));
