@@ -719,10 +719,24 @@
   .mylog-stat { background:var(--surface2); border:1px solid var(--border); border-radius:var(--radius-sm); padding:12px; text-align:center; }
   .mylog-stat .v { font-size:22px; font-weight:700; color:var(--accent3); }
   .mylog-stat .l { font-size:10px; text-transform:uppercase; letter-spacing:0.05em; color:var(--text3); margin-top:2px; }
-  .mylog-day { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 12px; border-bottom:1px solid var(--border); font-size:13px; }
+  .mylog-day { display:flex; align-items:flex-start; gap:12px; padding:9px 12px; border-bottom:1px solid var(--border); font-size:13px; }
   .mylog-day:last-child { border-bottom:none; }
   .mylog-day.today-row { background:var(--accent-light); border-radius:var(--radius-sm); }
-  .mylog-chips { display:flex; gap:5px; flex-wrap:wrap; }
+  .mylog-daylabel { font-weight:600; min-width:64px; flex-shrink:0; padding-top:3px; }
+  /* Fixed-width grid so Video 1 / Video 2 and their link slots line up
+     perfectly on every row — missing links show a dash, never collapse. */
+  .mylog-videos { display:flex; flex-wrap:wrap; gap:4px 20px; }
+  .mylog-vrow { display:grid; grid-template-columns:118px 52px 44px; align-items:center; gap:7px; }
+  .mylog-vrow .post-chip { text-align:center; }
+  .mylog-slot { font-size:11px; }
+  .mylog-slot .no-link { color:var(--border2); font-weight:600; }
+  @media (max-width: 480px) {
+    .mylog-day { padding:9px 8px; gap:8px; }
+    .mylog-daylabel { min-width:52px; }
+    .mylog-vrow { grid-template-columns:102px 46px 38px; gap:5px; }
+    .mylog-vrow .post-chip { font-size:9.5px; }
+    .modal-body { padding:18px 14px; }
+  }
 </style>
 </head>
 <body>
@@ -778,7 +792,7 @@
         <span class="s-icon" id="today-status-icon"></span>
         <span id="today-status-msg"></span>
       </div>
-      <button class="view-logs-btn" id="view-logs-btn" onclick="openMyLogs()" type="button">View my logs &mdash; this week &amp; this month &rarr;</button>
+      <button class="view-logs-btn" id="view-logs-btn" onclick="openMyLogs()" type="button">View my logs for this month &rarr;</button>
     </div>
 
     <!-- Date: locked to today, not editable -->
@@ -1108,9 +1122,16 @@
 
 <script>
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwLrQ6h0XAOKIxYw_r2uMbb_FtBq_ZBBFdBAQpeLHo9Z9ZKkzISuje9CvuTF-RcWgFgmQ/exec';
+// Legacy fallback password, used ONLY while the Apps Script security patch
+// (see SECURITY-UPGRADE.md) is not yet installed. Once the patch is live,
+// set LEGACY_LOGIN_FALLBACK to false — the real password then lives only in
+// your Apps Script's Script Properties, never in this page.
 const ADMIN_PASS = 'NQ2026dash';
+const LEGACY_LOGIN_FALLBACK = true;
 const CONTRACT_URL = '';
 const SESSION_KEY = 'nq_admin';
+const ADMIN_KEY_SESSION = 'nq_admin_key';
+let adminKey = '';
 
 // Staff members (not creators — paid a set monthly salary, not rate × posts)
 const STAFF = [
@@ -1189,13 +1210,17 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('f-date').value = today;
   const formatted = new Date(today + 'T00:00:00').toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
   document.getElementById('today-date-display').textContent = formatted;
-  if (safeStorage.getSession(SESSION_KEY) === '1') isAdmin = true;
+  if (safeStorage.getSession(SESSION_KEY) === '1') {
+    isAdmin = true;
+    adminKey = safeStorage.getSession(ADMIN_KEY_SESSION) || '';
+  }
   loadPayHeaders();
   renderNav();
   setupIntake();
   loadRows();
   loadCreators();
-  loadPayments();
+  // Payment data is admin-only — never requested for regular creators
+  if (isAdmin) loadPayments();
   flushQueue();
   window.addEventListener('online', flushQueue);
   // Re-fetch fresh data whenever the tab becomes visible again
@@ -1260,7 +1285,9 @@ function jsonp(params, cb, timeoutMs) {
     if (!done) { done=true; clearTimeout(timer); cleanup(); cb(data,null); }
   };
 
-  s.src = SCRIPT_URL + '?' + new URLSearchParams(Object.assign({}, params, { callback: name, _t: Date.now() }));
+  // adminKey (when signed in against a patched backend) rides along on every
+  // call so admin-only actions and full data fields are unlocked server-side.
+  s.src = SCRIPT_URL + '?' + new URLSearchParams(Object.assign({}, adminKey ? { adminKey: adminKey } : {}, params, { callback: name, _t: Date.now() }));
   s.onerror = function() {
     if (!done) { done=true; clearTimeout(timer); cleanup(); cb(null,'network'); }
   };
@@ -1791,8 +1818,8 @@ function renderDetailedLog() {
   const sorted = [...mRows].sort((a,b) => b.date.localeCompare(a.date));
   tbody.innerHTML = sorted.map(r => {
     const badge = r.post==='1' ? '<span class="badge badge-p1">Post 1</span>' : '<span class="badge badge-p2">Post 2</span>';
-    const tk = r.tiktok ? '<a href="' + escH(r.tiktok) + '" target="_blank" style="color:var(--accent);font-size:12px;text-decoration:none">&#x2197; TikTok</a>' : '<span style="color:var(--text3)">—</span>';
-    const ig = r.insta  ? '<a href="' + escH(r.insta)  + '" target="_blank" style="color:var(--pink);font-size:12px;text-decoration:none">&#x2197; Instagram</a>' : '<span style="color:var(--text3)">—</span>';
+    const tk = r.tiktok ? '<a href="' + escH(r.tiktok) + '" target="_blank" rel="noopener" style="color:var(--accent);font-size:12px;text-decoration:none">&#x2197; TikTok</a>' : '<span style="color:var(--text3)">—</span>';
+    const ig = r.insta  ? '<a href="' + escH(r.insta)  + '" target="_blank" rel="noopener" style="color:var(--pink);font-size:12px;text-decoration:none">&#x2197; Instagram</a>' : '<span style="color:var(--text3)">—</span>';
     return '<tr><td><span class="creator-link" onclick="openModal(\'' + escH(r.name) + '\')">' + escH(r.name) + '</span></td>' +
       '<td>' + escH(r.date) + '</td><td>' + badge + '</td><td>' + tk + '</td><td>' + ig + '</td>' +
       '<td style="color:var(--text3)">' + (r.issues ? escH(r.issues) : '—') + '</td></tr>';
@@ -1809,8 +1836,8 @@ function openModal(name) {
   document.getElementById('modal-body').innerHTML = Object.keys(byMonth).sort().reverse().map(ym => {
     const mr = byMonth[ym].sort((a,b) => b.date.localeCompare(a.date));
     const rowsHtml = mr.map(r => {
-      const tk = r.tiktok ? '<a href="' + escH(r.tiktok) + '" target="_blank" style="color:var(--accent);font-size:12px">TikTok &#x2197;</a>' : '—';
-      const ig = r.insta  ? '<a href="' + escH(r.insta)  + '" target="_blank" style="color:var(--pink);font-size:12px">Insta &#x2197;</a>'    : '—';
+      const tk = r.tiktok ? '<a href="' + escH(r.tiktok) + '" target="_blank" rel="noopener" style="color:var(--accent);font-size:12px">TikTok &#x2197;</a>' : '—';
+      const ig = r.insta  ? '<a href="' + escH(r.insta)  + '" target="_blank" rel="noopener" style="color:var(--pink);font-size:12px">Insta &#x2197;</a>'    : '—';
       return '<tr><td>' + escH(r.date) + '</td><td style="color:' + (r.post==='1'?'var(--accent)':'var(--blue)') + '">Post ' + escH(r.post) + '</td><td>' + tk + '</td><td>' + ig + '</td><td style="color:var(--text3);font-size:12px">' + (r.issues?escH(r.issues):'—') + '</td></tr>';
     }).join('');
     return '<div class="month-block"><div class="month-block-header"><span class="month-block-name">' + monthLabel(ym) + '</span><span class="month-block-total">' + mr.length + ' post' + (mr.length!==1?'s':'') + '</span></div>' +
@@ -1834,8 +1861,6 @@ function renderMyLogs(name) {
   const ym = today.substring(0, 7);
   const mine = allRows.filter(r => r.name.toLowerCase() === name.toLowerCase());
   const monthRows = mine.filter(r => monthYM(r.date) === ym);
-  const weekDates = getWeekDates(0);
-  const weekTotal = mine.filter(r => weekDates.includes(r.date)).length;
 
   const byDate = {};
   monthRows.forEach(r => { if (!byDate[r.date]) byDate[r.date] = []; byDate[r.date].push(r); });
@@ -1848,35 +1873,35 @@ function renderMyLogs(name) {
     else if (n === 0 && ds !== today) missedDays++;
   }
 
-  const chip = (r, n) => {
-    if (!r) return '<span class="post-chip chip-none">Video ' + n + ' — not logged</span>';
-    const cls = n === 1 ? 'chip-tt-1' : 'chip-tt-2';
-    const tk = r.tiktok ? ' <a href="' + escH(r.tiktok) + '" target="_blank" style="color:var(--accent);font-size:11px;text-decoration:none">TikTok&#x2197;</a>' : '';
-    const ig = r.insta  ? ' <a href="' + escH(r.insta)  + '" target="_blank" style="color:var(--pink);font-size:11px;text-decoration:none">Insta&#x2197;</a>' : '';
-    return '<span class="post-chip ' + cls + '">&#x2713; Video ' + n + ' logged</span>' + tk + ig;
+  // One video = one fixed-width row: [chip][TikTok slot][Instagram slot].
+  // A platform without a link shows a dash in its slot, so Video 1 and
+  // Video 2 stay perfectly aligned down the whole month.
+  const slot = (url, label, color) => url
+    ? '<a href="' + escH(url) + '" target="_blank" rel="noopener" style="color:' + color + ';text-decoration:none">' + label + '&#x2197;</a>'
+    : '<span class="no-link">&mdash;</span>';
+  const vrow = (r, n) => {
+    const chip = r
+      ? '<span class="post-chip ' + (n === 1 ? 'chip-tt-1' : 'chip-tt-2') + '">&#x2713; Video ' + n + ' logged</span>'
+      : '<span class="post-chip chip-none">Video ' + n + ' not logged</span>';
+    return '<div class="mylog-vrow">' + chip +
+      '<span class="mylog-slot">' + slot(r && r.tiktok, 'TikTok', 'var(--accent)') + '</span>' +
+      '<span class="mylog-slot">' + slot(r && r.insta, 'Insta', 'var(--pink)') + '</span></div>';
   };
 
-  const weekHtml = weekDates.map(ds => {
+  // Only the current month, day 1 down to today — August starts fresh at the top.
+  const dayRowsHtml = [];
+  for (let d = 1; d <= dayOfMonth; d++) {
+    const ds = ym + '-' + String(d).padStart(2, '0');
     const isToday = ds === today;
-    const rows = mine.filter(r => r.date === ds);
+    const rows = byDate[ds] || [];
     const v1 = rows.find(r => r.post === '1'), v2 = rows.find(r => r.post === '2');
-    const chips = ds > today
-      ? '<span style="color:var(--text3);font-size:12px">—</span>'
-      : '<div class="mylog-chips">' + chip(v1, 1) + chip(v2, 2) + '</div>';
-    return '<div class="mylog-day' + (isToday ? ' today-row' : '') + '"><span style="font-weight:600;min-width:74px;flex-shrink:0">' + dayLabel(ds) + (isToday ? ' · Today' : '') + '</span>' + chips + '</div>';
-  }).join('');
-
-  const mDates = Object.keys(byDate).sort().reverse();
-  const monthHtml = mDates.length
-    ? mDates.map(ds => {
-        const rows = byDate[ds];
-        const v1 = rows.find(r => r.post === '1'), v2 = rows.find(r => r.post === '2');
-        return '<div class="mylog-day"><span style="font-weight:600;min-width:74px;flex-shrink:0">' + fmtDate(ds) + '</span><div class="mylog-chips">' + chip(v1, 1) + chip(v2, 2) + '</div></div>';
-      }).join('')
-    : '<div class="empty-state">No videos logged yet in ' + monthLabel(ym) + '.</div>';
+    dayRowsHtml.push('<div class="mylog-day' + (isToday ? ' today-row' : '') + '">' +
+      '<span class="mylog-daylabel">' + dayLabel(ds) + (isToday ? '<br><span style="font-size:10px;color:var(--accent3)">Today</span>' : '') + '</span>' +
+      '<div class="mylog-videos">' + vrow(v1, 1) + vrow(v2, 2) + '</div></div>');
+  }
 
   document.getElementById('modal-name').textContent = name;
-  document.getElementById('modal-sub').textContent = 'Your posting record — this week and ' + monthLabel(ym);
+  document.getElementById('modal-sub').textContent = 'Your posting record — ' + monthLabel(ym);
   document.getElementById('modal-body').innerHTML =
     '<div class="mylog-summary">' +
       '<div class="mylog-stat"><div class="v">' + monthRows.length + '</div><div class="l">Videos this month</div></div>' +
@@ -1884,8 +1909,7 @@ function renderMyLogs(name) {
       '<div class="mylog-stat"><div class="v">' + missedDays + '</div><div class="l">Days missed</div></div>' +
     '</div>' +
     '<div style="font-size:12px;color:var(--text2);margin-bottom:16px;background:var(--accent-light);border-radius:8px;padding:10px 12px">A &#x2713; means that video was logged successfully. Just submitted a video? Open this view to confirm it went through.</div>' +
-    '<div class="month-block"><div class="month-block-header"><span class="month-block-name">This week</span><span class="month-block-total">' + weekTotal + ' video' + (weekTotal !== 1 ? 's' : '') + '</span></div>' + weekHtml + '</div>' +
-    '<div class="month-block"><div class="month-block-header"><span class="month-block-name">' + monthLabel(ym) + '</span><span class="month-block-total">' + monthRows.length + ' of 62 videos</span></div>' + monthHtml + '</div>';
+    '<div class="month-block"><div class="month-block-header"><span class="month-block-name">' + monthLabel(ym) + '</span><span class="month-block-total">' + monthRows.length + ' of 62 videos</span></div>' + dayRowsHtml.join('') + '</div>';
   document.getElementById('creator-modal').classList.add('open');
 }
 
@@ -2578,25 +2602,51 @@ function togglePassword() {
   }
 }
 
+function grantAdmin(key) {
+  isAdmin = true;
+  adminKey = key || '';
+  safeStorage.setSession(SESSION_KEY, '1');
+  safeStorage.setSession(ADMIN_KEY_SESSION, adminKey);
+  document.getElementById('login-err').classList.remove('show');
+  document.getElementById('login-pass').value = '';
+  document.getElementById('login-pass').type = 'password';
+  document.getElementById('eye-icon').innerHTML = '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle>';
+  // Re-pull creators and payments now that the admin key unlocks full fields
+  loadCreators();
+  loadPayments();
+  showPage('dashboard');
+}
+
+// Server-first login: the password is checked by the Apps Script (where it is
+// stored as a Script Property, invisible to visitors). Only if the backend
+// does not know 'adminLogin' yet — i.e. the security patch from
+// SECURITY-UPGRADE.md is not installed — do we fall back to the old local
+// check, so nothing breaks during the transition.
 function checkLogin() {
   const val = document.getElementById('login-pass').value;
   const err = document.getElementById('login-err');
-  if (val === ADMIN_PASS) {
-    isAdmin = true;
-    safeStorage.setSession(SESSION_KEY, '1');
-    err.classList.remove('show');
-    document.getElementById('login-pass').value = '';
-    document.getElementById('login-pass').type = 'password';
-    document.getElementById('eye-icon').innerHTML = '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle>';
-    showPage('dashboard');
-  } else {
-    err.classList.add('show');
-  }
+  const btn = document.querySelector('.login-form .btn-primary');
+  if (!val) { err.classList.add('show'); return; }
+  if (btn) { btn.disabled = true; btn.textContent = 'Checking…'; }
+  jsonp({ action: 'adminLogin', pass: val }, function(d) {
+    if (btn) { btn.disabled = false; btn.textContent = 'Sign in'; }
+    if (d && d.status === 'success' && d.adminKey) {
+      grantAdmin(d.adminKey);
+    } else if (d && d.status === 'denied') {
+      err.classList.add('show');
+    } else if (LEGACY_LOGIN_FALLBACK && val === ADMIN_PASS) {
+      grantAdmin('');
+    } else {
+      err.classList.add('show');
+    }
+  }, 15000);
 }
 
 function logout() {
   isAdmin = false;
+  adminKey = '';
   safeStorage.removeSession(SESSION_KEY);
+  safeStorage.removeSession(ADMIN_KEY_SESSION);
   showPage('submit');
 }
 
