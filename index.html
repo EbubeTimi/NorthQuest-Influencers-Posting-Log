@@ -1045,13 +1045,14 @@
   </div>
   <div class="creator-table-wrap">
     <table class="log-table">
-      <thead><tr><th>Creator</th><th>Status</th><th>Base Pay (&#8358;/month)</th><th>Joined</th><th>Left</th><th>Total Posts</th><th>Action</th></tr></thead>
-      <tbody id="manage-body"><tr><td colspan="7" class="empty-state"><span class="spinner"></span></td></tr></tbody>
+      <thead><tr><th>Creator</th><th>Status</th><th>Base Pay (&#8358;/month)</th><th>Bonus (This Month)</th><th>Joined</th><th>Left</th><th>Total Posts</th><th>Action</th></tr></thead>
+      <tbody id="manage-body"><tr><td colspan="8" class="empty-state"><span class="spinner"></span></td></tr></tbody>
     </table>
   </div>
   <div class="pay-legend" style="margin-top:16px">
     <h4>How these columns work</h4>
-    <strong>Base Pay</strong> — each creator's monthly base pay. Changing it here updates the payment register, the per-video rate (base pay &divide; 62) and the legend instantly. Bonuses stay the same for everybody.<br>
+    <strong>Base Pay</strong> — each creator's monthly base pay. Changing it here updates the payment register, the per-video rate (base pay &divide; 62) and the legend instantly. Only shown for active creators.<br>
+    <strong>Bonus (This Month)</strong> — pick the views milestone a creator hit and the bonus is entered into this month's payment register automatically (50,000 views = &#8358;50,000 &middot; 100,000 = &#8358;100,000 &middot; 500,000 = &#8358;200,000 &middot; 1,000,000 = &#8358;500,000 &middot; 2,000,000 = &#8358;900,000). Add as many as they earn; use "Remove last" or "Clear all" to fix mistakes. Same tiers for everybody.<br>
     <strong>Joined</strong> — the date the creator was added to the roster (from the sheet).<br>
     <strong>Left</strong> — recorded automatically on the day you press Deactivate. Reactivating a creator clears it. For creators deactivated before this feature existed, the date of their last logged post is shown instead.
   </div>
@@ -2045,10 +2046,60 @@ function leftDateFor(c) {
 
 const BASE_PAY_TIERS = [100000, 150000, 200000, 250000, 300000];
 
+// ── BONUS FROM MANAGE CREATORS ──
+// One tap enters a views-milestone bonus into THIS month's payment register
+// (same bonusViews field the register uses), so it calculates automatically
+// and never has to be typed by hand.
+const BONUS_TIERS = [
+  [50000, 50000], [100000, 100000], [500000, 200000], [1000000, 500000], [2000000, 900000]
+];
+
+function bonusControl(name) {
+  if (!paysLoaded) return '<span style="color:var(--text3);font-size:12px">Loading…</span>';
+  const ym = todayStr().substring(0, 7);
+  const rec = allPayments.find(p => p.month === ym && String(p.name).toLowerCase() === name.toLowerCase());
+  const views = rec && rec.bonusViews ? String(rec.bonusViews) : '';
+  const list = views.split(',').map(v => v.trim()).filter(Boolean);
+  const total = calcBonus(views);
+  const chips = list.map(v =>
+    '<span class="post-chip chip-tt-1">' + (Number(v) || 0).toLocaleString('en-NG') + ' views</span>'
+  ).join(' ');
+  return '<div style="min-width:170px">' +
+    '<div style="font-size:12px;font-weight:700;color:' + (total ? 'var(--green)' : 'var(--text3)') + '">' +
+      (total ? '&#8358;' + total.toLocaleString('en-NG') + ' bonus' : 'No bonus yet') + '</div>' +
+    (chips ? '<div style="display:flex;gap:4px;flex-wrap:wrap;margin:4px 0">' + chips + '</div>' : '') +
+    '<select class="pay-input bonus-select" style="max-width:170px;margin-top:3px" onchange="onBonusPick(\'' + escH(name) + '\', this)">' +
+      '<option value="">+ Add views bonus…</option>' +
+      BONUS_TIERS.map(t => '<option value="' + t[0] + '">' + t[0].toLocaleString('en-NG') + ' views &rarr; &#8358;' + t[1].toLocaleString('en-NG') + '</option>').join('') +
+      (list.length ? '<option value="undo">&#x232B; Remove last bonus</option><option value="clear">&#x2715; Clear all bonuses</option>' : '') +
+    '</select></div>';
+}
+
+function onBonusPick(name, sel) {
+  const val = sel.value;
+  sel.value = '';
+  if (!val) return;
+  const ym = todayStr().substring(0, 7);
+  const rec = allPayments.find(p => p.month === ym && String(p.name).toLowerCase() === name.toLowerCase());
+  let list = rec && rec.bonusViews ? String(rec.bonusViews).split(',').map(v => v.trim()).filter(Boolean) : [];
+  if (val === 'clear') list = [];
+  else if (val === 'undo') list.pop();
+  else list.push(val);
+  const newViews = list.join(',');
+  savePaymentField(ym, name, 'bonusViews', newViews, false);
+  const total = calcBonus(newViews);
+  showToast('success', 'Bonus updated',
+    total
+      ? name.split(' ')[0] + '\'s performance bonus for ' + monthLabel(ym) + ' is now &#8358;' + total.toLocaleString('en-NG') + '. The payment register updated automatically.'
+      : name.split(' ')[0] + ' now has no bonuses for ' + monthLabel(ym) + '.');
+  renderManageCreators();
+  renderPayments();
+}
+
 function basePaySelect(c) {
   const rate = parseFloat(c.rate) || 150000;
   const opts = BASE_PAY_TIERS.includes(rate) ? BASE_PAY_TIERS : [...BASE_PAY_TIERS, rate].sort((a, b) => a - b);
-  return '<select class="pay-input" style="max-width:130px" onchange="onBasePayEdit(\'' + escH(c.name) + '\',this.value)" title="Monthly base pay. Per-video rate = base pay ÷ 62. Changing this updates the payment register instantly.">' +
+  return '<select class="pay-input bp-select" style="max-width:130px" onchange="onBasePayEdit(\'' + escH(c.name) + '\',this.value)" title="Monthly base pay. Per-video rate = base pay ÷ 62. Changing this updates the payment register instantly.">' +
     opts.map(t => '<option value="' + t + '"' + (t === rate ? ' selected' : '') + '>&#8358;' + t.toLocaleString('en-NG') + '</option>').join('') +
     '<option value="custom">Custom…</option></select>';
 }
@@ -2056,8 +2107,8 @@ function basePaySelect(c) {
 function renderManageCreators() {
   const tbody = document.getElementById('manage-body');
   const counts = document.getElementById('manage-counts');
-  if (!creatorsLoaded) { tbody.innerHTML = '<tr><td colspan="7" class="empty-state"><span class="spinner"></span></td></tr>'; return; }
-  if (!allCreators.length) { tbody.innerHTML = '<tr><td colspan="7" class="empty-state"><strong>No creators yet</strong></td></tr>'; counts.textContent = ''; return; }
+  if (!creatorsLoaded) { tbody.innerHTML = '<tr><td colspan="8" class="empty-state"><span class="spinner"></span></td></tr>'; return; }
+  if (!allCreators.length) { tbody.innerHTML = '<tr><td colspan="8" class="empty-state"><strong>No creators yet</strong></td></tr>'; counts.textContent = ''; return; }
   const active = allCreators.filter(c => String(c.status).toLowerCase()==='active').length;
   counts.textContent = active + ' active · ' + (allCreators.length-active) + ' inactive · ' + allCreators.length + ' total';
   const sorted = [...allCreators].sort((a,b) => {
@@ -2076,7 +2127,8 @@ function renderManageCreators() {
     const posts = allRows.filter(r => r.name===c.name).length;
     return '<tr><td><span class="creator-link" onclick="openModal(\'' + escH(c.name) + '\')">' + escH(c.name) + '</span></td>' +
       '<td>' + badge + '</td>' +
-      '<td>' + basePaySelect(c) + '</td>' +
+      '<td>' + (isActive ? basePaySelect(c) : '<span style="color:var(--text3)">—</span>') + '</td>' +
+      '<td>' + (isActive ? bonusControl(c.name) : '<span style="color:var(--text3)">—</span>') + '</td>' +
       '<td style="color:var(--text3)">' + added + '</td>' +
       '<td style="color:var(--text3)">' + left + '</td>' +
       '<td style="color:var(--text2)">' + posts + '</td>' +
@@ -2114,6 +2166,7 @@ function loadPayments() {
       allPayments = data.payments;
     }
     if (isAdmin && currentPage === 'payments') renderPayments();
+    if (isAdmin && currentPage === 'manage') renderManageCreators();
   });
 }
 
