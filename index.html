@@ -1122,12 +1122,10 @@
 
 <script>
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwLrQ6h0XAOKIxYw_r2uMbb_FtBq_ZBBFdBAQpeLHo9Z9ZKkzISuje9CvuTF-RcWgFgmQ/exec';
-// Legacy fallback password, used ONLY while the Apps Script security patch
-// (see SECURITY-UPGRADE.md) is not yet installed. Once the patch is live,
-// set LEGACY_LOGIN_FALLBACK to false — the real password then lives only in
-// your Apps Script's Script Properties, never in this page.
-const ADMIN_PASS = 'NQ2026dash';
-const LEGACY_LOGIN_FALLBACK = true;
+// The admin password lives ONLY in the Apps Script's Script Properties and is
+// checked server-side (see SECURITY-UPGRADE.md). No password in this page.
+const ADMIN_PASS = '';
+const LEGACY_LOGIN_FALLBACK = false;
 const CONTRACT_URL = '';
 const SESSION_KEY = 'nq_admin';
 const ADMIN_KEY_SESSION = 'nq_admin_key';
