@@ -558,6 +558,8 @@
   .badge-inactive { background: var(--surface2); color: var(--text3); }
   .badge-pending { background: var(--amber-light); color: var(--amber); }
   .badge-filed { background: var(--green-light); color: var(--green); }
+  .drive-check-link { margin-left: 6px; text-decoration: none; font-size: 12px; opacity: 0.6; }
+  .drive-check-link:hover { opacity: 1; }
 
   .empty-state { text-align: center; padding: 52px 24px; color: var(--text3); font-size: 13px; }
   .empty-state strong { display: block; font-size: 16px; font-weight: 600; color: var(--text2); margin-bottom: 6px; }
@@ -704,27 +706,33 @@
   .btn-delete { border-color:#c0392b; color:#fff; background:#c0392b; }
   .btn-delete:hover { background:#a93226; border-color:#a93226; }
 
-  /* ADMIN SIDEBAR — creator search, present on all admin pages */
+  /* ADMIN SIDEBAR — creator search, collapsed by default on every admin
+     page. Opens as an overlay drawer via the toggle icon; never pushes
+     page content around or stays open on its own. */
   .admin-sidebar {
     display: none;
     position: fixed; top: 64px; left: 0; bottom: 0; width: 252px;
     background: var(--surface); border-right: 1px solid var(--border);
-    z-index: 90; overflow-y: auto; padding: 16px 14px;
+    z-index: 95; overflow-y: auto; padding: 16px 14px;
+    transform: translateX(-100%);
+    box-shadow: 0 4px 24px rgba(0,0,0,0.15);
     transition: transform 0.2s ease;
   }
   body.with-sidebar .admin-sidebar { display: block; }
-  body.with-sidebar .main { margin-left: 252px; max-width: 1300px; }
+  body.with-sidebar.sidebar-open .admin-sidebar { transform: translateX(0); }
+  .sidebar-backdrop {
+    display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.28); z-index: 94;
+  }
+  body.with-sidebar.sidebar-open .sidebar-backdrop { display: block; }
   @media (max-width: 900px) {
-    body.with-sidebar .main { margin-left: 0; max-width: 1100px; }
-    .admin-sidebar { transform: translateX(-100%); box-shadow: 0 4px 24px rgba(0,0,0,0.15); }
-    body.with-sidebar.sidebar-open .admin-sidebar { transform: translateX(0); }
-    .sidebar-toggle-btn { display: inline-flex !important; }
+    .admin-sidebar { width: 84vw; max-width: 300px; }
   }
   .sidebar-toggle-btn {
     display: none; align-items: center; justify-content: center;
     width: 34px; height: 34px; border-radius: 8px; border: 1.5px solid var(--border2);
     background: transparent; color: var(--text2); cursor: pointer; font-size: 16px; margin-right: 4px;
   }
+  body.with-sidebar .sidebar-toggle-btn { display: inline-flex; }
   .sidebar-toggle-btn:hover { border-color: var(--accent); color: var(--accent); }
   .sidebar-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: var(--text3); margin-bottom: 10px; }
   .sidebar-search {
@@ -815,7 +823,8 @@
   <nav class="nav-tabs" id="nav-container"></nav>
 </header>
 
-<!-- ADMIN SIDEBAR — quick creator search, shown on all admin pages -->
+<!-- ADMIN SIDEBAR — quick creator search, collapsed until the header icon is clicked -->
+<div class="sidebar-backdrop" onclick="toggleSidebar()"></div>
 <aside class="admin-sidebar" id="admin-sidebar">
   <div class="sidebar-title">Find a creator</div>
   <input class="sidebar-search" id="sidebar-search" type="text" placeholder="Search by name..." oninput="renderSidebarList()" onkeydown="if(event.key==='Enter')openSidebarTopMatch()" autocomplete="off">
@@ -1117,7 +1126,7 @@
   </div>
   <div class="pay-legend" style="margin-top:16px">
     <h4>How these columns work</h4>
-    <strong>Contract</strong> — "Filed" (green) means the signed PDF actually arrived in the Google Drive folder through the onboarding upload step — click it to open the file and check the signature yourself. "Signature only" (amber) and "Not started" are both click-to-WhatsApp: if the creator's phone number is on file, clicking sends them a pre-written follow-up message asking them to complete or upload their contract.<br>
+    <strong>Contract</strong> — "Filed" (green) means the signed PDF actually arrived in the Google Drive folder through the onboarding upload step — click it to open the file and check the signature yourself. "Signature only" (amber) and "Not started" are both click-to-WhatsApp: if the creator's phone number is on file, clicking sends them a pre-written follow-up message asking them to complete or upload their contract. The &#128269; next to either one searches your Google Drive by that creator's name, in case a signed copy exists but never got linked automatically.<br>
     <strong>Base Pay</strong> — each creator's monthly base pay. Changing it here updates the payment register, the per-video rate (base pay &divide; 62) and the legend instantly. Only shown for active creators.<br>
     <strong id="bonus-legend-label">Bonus (This Month)</strong> — <span id="bonus-legend-text">pick the views milestone a creator hit and the bonus is entered into this month's payment register automatically. Add as many as they earn; use "Remove last" or "Clear all" to fix mistakes. Same tiers for everybody.</span><br>
     <strong>Joined</strong> — the date the creator was added to the roster (from the sheet).<br>
@@ -2222,8 +2231,17 @@ function contractFollowUpLink(c) {
   return 'https://wa.me/' + wa + '?text=' + encodeURIComponent(msg);
 }
 
+// Manual escape hatch: search the admin's own Google Drive by the creator's
+// name. Signed contracts are saved as "<Name> - Signed Contract.pdf", so
+// this finds the file even if the automatic link-up never happened (upload
+// predates this feature, was placed in Drive by hand, name mismatch, etc).
+function contractDriveSearchLink(c) {
+  return 'https://drive.google.com/drive/search?q=' + encodeURIComponent(c.name);
+}
+
 function contractCell(c) {
   const st = contractStatus(c);
+  const driveLink = '<a href="' + contractDriveSearchLink(c) + '" target="_blank" rel="noopener" class="drive-check-link" title="Search Google Drive for a signed contract filed under this name">&#128269;</a>';
   if (st === 'filed') {
     const when = c.contractFiledAt ? new Date(c.contractFiledAt).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}) : '';
     return '<a href="' + escH(c.contractFileLink) + '" target="_blank" rel="noopener" class="badge badge-filed" style="text-decoration:none" title="' + (when ? 'Filed ' + when + ' — click to open and check the signature' : 'Filed — click to open and check the signature') + '">&#x2713; Filed</a>';
@@ -2234,11 +2252,11 @@ function contractCell(c) {
     // "so I don't have to keep checking" signal he asked for.
     const days = c.intakeDate ? Math.floor((Date.now() - new Date(c.intakeDate).getTime()) / 86400000) : null;
     const label = (days !== null && days >= 3) ? '&#x26A0; File pending ' + days + 'd &mdash; follow up' : '&#x26A0; Signature only';
-    if (waLink) return '<a href="' + waLink + '" target="_blank" rel="noopener" class="badge badge-pending" style="text-decoration:none" title="Signature entered at intake, but no PDF uploaded yet — click to WhatsApp them a follow-up">' + label + ' &#128241;</a>';
-    return '<span class="badge badge-pending" title="Signature entered at intake, but no PDF has been uploaded yet — no phone number on file to follow up">' + label + '</span>';
+    if (waLink) return '<a href="' + waLink + '" target="_blank" rel="noopener" class="badge badge-pending" style="text-decoration:none" title="Signature entered at intake, but no PDF uploaded yet — click to WhatsApp them a follow-up">' + label + ' &#128241;</a>' + driveLink;
+    return '<span class="badge badge-pending" title="Signature entered at intake, but no PDF has been uploaded yet — no phone number on file to follow up">' + label + '</span>' + driveLink;
   }
-  if (waLink) return '<a href="' + waLink + '" target="_blank" rel="noopener" style="text-decoration:none;color:var(--text3)" title="Click to WhatsApp them a follow-up">&mdash; Not started &#128241;</a>';
-  return '<span style="color:var(--text3)">&mdash; Not started</span>';
+  if (waLink) return '<a href="' + waLink + '" target="_blank" rel="noopener" style="text-decoration:none;color:var(--text3)" title="Click to WhatsApp them a follow-up">&mdash; Not started &#128241;</a>' + driveLink;
+  return '<span style="color:var(--text3)">&mdash; Not started</span>' + driveLink;
 }
 
 function updateBonusLegendText() {
