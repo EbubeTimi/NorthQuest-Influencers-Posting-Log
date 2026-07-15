@@ -189,6 +189,9 @@
   .logout-btn:hover { border-color: var(--red); color: var(--red); }
 
   .main { padding: 32px 28px; max-width: 1100px; margin: 0 auto; padding-bottom: calc(32px + env(safe-area-inset-bottom)); }
+  /* Admin pages get more breathing room now that the sidebar no longer
+     shares the layout — the creator table especially needed the width. */
+  body.is-admin-page .main { max-width: 1680px; }
   .page { display: none; }
   .page.active { display: block; }
 
@@ -556,10 +559,18 @@
   .badge-p2 { background: var(--blue-light); color: var(--blue); }
   .badge-active { background: var(--accent-light); color: var(--accent3); }
   .badge-inactive { background: var(--surface2); color: var(--text3); }
-  .badge-pending { background: var(--amber-light); color: var(--amber); }
-  .badge-filed { background: var(--green-light); color: var(--green); }
-  .drive-check-link { margin-left: 6px; text-decoration: none; font-size: 12px; opacity: 0.6; }
-  .drive-check-link:hover { opacity: 1; }
+  /* Contract / Contact columns — one neutral icon per column, status conveyed
+     by the text line underneath rather than icon color, so a resolved item
+     can stop "flagging" without needing a whole different badge color. */
+  .contract-cell { display: flex; flex-direction: column; gap: 3px; align-items: flex-start; }
+  .contract-icon-link, .contact-icon-link {
+    text-decoration: none; font-size: 17px; line-height: 1; color: var(--text2); opacity: 0.85;
+  }
+  .contract-icon-link:hover, .contact-icon-link:hover { opacity: 1; color: var(--accent3); }
+  .contact-icon-link.disabled { color: var(--border2); opacity: 0.7; cursor: default; }
+  .contract-note { font-size: 11px; color: var(--text3); white-space: nowrap; }
+  .resolve-toggle { color: var(--accent3); text-decoration: none; font-weight: 600; }
+  .resolve-toggle:hover { text-decoration: underline; }
 
   .empty-state { text-align: center; padding: 52px 24px; color: var(--text3); font-size: 13px; }
   .empty-state strong { display: block; font-size: 16px; font-weight: 600; color: var(--text2); margin-bottom: 6px; }
@@ -645,7 +656,7 @@
 
   /* DASHBOARD */
   .creator-table-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow-x: auto; overflow-y: hidden; box-shadow: var(--shadow-sm); margin-top: 16px; -webkit-overflow-scrolling: touch; }
-  .creator-table-wrap table { min-width: 1350px; }
+  .creator-table-wrap table { min-width: 1450px; }
   #page-dashboard .creator-table-wrap table { min-width: 0; }
   .progress-wrap { display: flex; align-items: center; gap: 8px; }
   .progress-bar { width: 80px; height: 6px; background: var(--surface3); border-radius: 3px; overflow: hidden; }
@@ -706,50 +717,19 @@
   .btn-delete { border-color:#c0392b; color:#fff; background:#c0392b; }
   .btn-delete:hover { background:#a93226; border-color:#a93226; }
 
-  /* ADMIN SIDEBAR — creator search, collapsed by default on every admin
-     page. Opens as an overlay drawer via the toggle icon; never pushes
-     page content around or stays open on its own. */
-  .admin-sidebar {
-    display: none;
-    position: fixed; top: 64px; left: 0; bottom: 0; width: 252px;
-    background: var(--surface); border-right: 1px solid var(--border);
-    z-index: 95; overflow-y: auto; padding: 16px 14px;
-    transform: translateX(-100%);
-    box-shadow: 0 4px 24px rgba(0,0,0,0.15);
-    transition: transform 0.2s ease;
+  /* PAGE-NATIVE SEARCH — each admin page filters its own table, no shared
+     drawer/overlay. Always visible, not icon-gated. */
+  .page-search-wrap { position: relative; }
+  .page-search-input {
+    width: 220px; max-width: 100%; padding: 8px 12px 8px 30px; border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm); font-family: inherit; font-size: 12.5px;
+    background: var(--surface2); color: var(--text);
   }
-  body.with-sidebar .admin-sidebar { display: block; }
-  body.with-sidebar.sidebar-open .admin-sidebar { transform: translateX(0); }
-  .sidebar-backdrop {
-    display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.28); z-index: 94;
+  .page-search-input:focus { outline: none; border-color: var(--accent); background: var(--surface); }
+  .page-search-wrap::before {
+    content: '\1F50D'; position: absolute; left: 10px; top: 50%; transform: translateY(-50%);
+    font-size: 11px; opacity: 0.55; pointer-events: none;
   }
-  body.with-sidebar.sidebar-open .sidebar-backdrop { display: block; }
-  @media (max-width: 900px) {
-    .admin-sidebar { width: 84vw; max-width: 300px; }
-  }
-  .sidebar-toggle-btn {
-    display: none; align-items: center; justify-content: center;
-    width: 34px; height: 34px; border-radius: 8px; border: 1.5px solid var(--border2);
-    background: transparent; color: var(--text2); cursor: pointer; font-size: 16px; margin-right: 4px;
-  }
-  body.with-sidebar .sidebar-toggle-btn { display: inline-flex; }
-  .sidebar-toggle-btn:hover { border-color: var(--accent); color: var(--accent); }
-  .sidebar-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: var(--text3); margin-bottom: 10px; }
-  .sidebar-search {
-    width: 100%; padding: 9px 12px; border: 1.5px solid var(--border); border-radius: var(--radius-sm);
-    font-family: inherit; font-size: 13px; background: var(--surface2); color: var(--text); margin-bottom: 12px;
-  }
-  .sidebar-search:focus { outline: none; border-color: var(--accent); background: var(--surface); }
-  .sidebar-list { display: flex; flex-direction: column; gap: 2px; }
-  .sidebar-row {
-    display: flex; align-items: center; gap: 8px; padding: 7px 9px; border-radius: 7px;
-    cursor: pointer; font-size: 13px; color: var(--text2); transition: background 0.12s;
-  }
-  .sidebar-row:hover { background: var(--surface2); color: var(--text); }
-  .sidebar-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; background: var(--border2); }
-  .sidebar-dot.active { background: #1a6b4a; }
-  .sidebar-empty { font-size: 12px; color: var(--text3); padding: 8px 4px; }
-  .sidebar-count { font-size: 11px; color: var(--text3); margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); }
 
   /* BONUS TIERS MODAL */
   .bt-box { max-width: 440px; padding: 26px 24px 22px; text-align: left; }
@@ -813,7 +793,6 @@
 
 <header class="header" id="main-header">
   <div class="header-brand">
-    <button class="sidebar-toggle-btn" id="sidebar-toggle-btn" onclick="toggleSidebar()" aria-label="Toggle creator search" type="button">&#9776;</button>
     <div class="header-logo"><svg viewBox="0 0 24 24" style="width:19px;height:19px;fill:#fff"><path d="M12 1.5l2.6 7.9 7.9 2.6-7.9 2.6L12 22.5l-2.6-7.9-7.9-2.6 7.9-2.6z"/></svg></div>
     <div>
       <div class="header-title">Northquest Finance</div>
@@ -822,14 +801,6 @@
   </div>
   <nav class="nav-tabs" id="nav-container"></nav>
 </header>
-
-<!-- ADMIN SIDEBAR — quick creator search, collapsed until the header icon is clicked -->
-<div class="sidebar-backdrop" onclick="toggleSidebar()"></div>
-<aside class="admin-sidebar" id="admin-sidebar">
-  <div class="sidebar-title">Find a creator</div>
-  <input class="sidebar-search" id="sidebar-search" type="text" placeholder="Search by name..." oninput="renderSidebarList()" onkeydown="if(event.key==='Enter')openSidebarTopMatch()" autocomplete="off">
-  <div class="sidebar-list" id="sidebar-list"></div>
-</aside>
 
 <!-- SUBMIT -->
 <div id="page-submit" class="page active main">
@@ -1029,7 +1000,10 @@
 <div id="page-weekly" class="page main">
   <div class="section-head">
     <span class="section-title">Daily posting log</span>
-    <span style="font-size:12px;color:var(--text3)">Active creators only</span>
+    <div style="display:flex;align-items:center;gap:12px">
+      <span style="font-size:12px;color:var(--text3)">Active creators only</span>
+      <span class="page-search-wrap"><input class="page-search-input" id="weekly-search" type="text" placeholder="Search creators..." oninput="filterTableRows('weekly-search','weekly-body')" autocomplete="off"></span>
+    </div>
   </div>
   <div class="grid-card">
     <div class="grid-nav">
@@ -1057,6 +1031,7 @@
 <div id="page-detailed" class="page main">
   <div class="section-head">
     <span class="section-title">Detailed log &mdash; by month</span>
+    <span class="page-search-wrap"><input class="page-search-input" id="detailed-search" type="text" placeholder="Search creators..." oninput="filterTableRows('detailed-search','detailed-body')" autocomplete="off"></span>
   </div>
   <div class="month-tabs" id="month-tabs">
     <span style="color:var(--text3);font-size:13px"><span class="spinner"></span> Loading...</span>
@@ -1083,7 +1058,10 @@
     <div class="stat-card"><div class="stat-label">Active creators</div><div class="stat-value" id="d-creators">-</div></div>
     <div class="stat-card"><div class="stat-label">Today</div><div class="stat-value" id="d-today">-</div></div>
   </div>
-  <div class="section-head"><span class="section-title">Creator performance &mdash; this month</span></div>
+  <div class="section-head">
+    <span class="section-title">Creator performance &mdash; this month</span>
+    <span class="page-search-wrap"><input class="page-search-input" id="dash-search" type="text" placeholder="Search creators..." oninput="filterTableRows('dash-search','dash-body')" autocomplete="off"></span>
+  </div>
   <div class="creator-table-wrap">
     <table class="log-table">
       <thead><tr><th>#</th><th>Creator</th><th>This Month</th><th id="dash-progress-header">Progress</th><th>All Time</th><th>Last Post</th></tr></thead>
@@ -1116,17 +1094,21 @@
 
   <div class="section-head" style="margin-top:24px">
     <span class="section-title">All creators</span>
-    <span style="font-size:12px;color:var(--text3)" id="manage-counts"></span>
+    <div style="display:flex;align-items:center;gap:12px">
+      <span style="font-size:12px;color:var(--text3)" id="manage-counts"></span>
+      <span class="page-search-wrap"><input class="page-search-input" id="manage-search" type="text" placeholder="Search creators..." oninput="filterTableRows('manage-search','manage-body')" autocomplete="off"></span>
+    </div>
   </div>
   <div class="creator-table-wrap">
     <table class="log-table">
-      <thead><tr><th>Creator</th><th>Status</th><th>Contract</th><th>Base Pay (&#8358;/month)</th><th>Bonus (This Month)</th><th>Joined</th><th>Left</th><th>Total Posts</th><th>Action</th></tr></thead>
-      <tbody id="manage-body"><tr><td colspan="9" class="empty-state"><span class="spinner"></span></td></tr></tbody>
+      <thead><tr><th>Creator</th><th>Status</th><th>Contract</th><th>Contact</th><th>Base Pay (&#8358;/month)</th><th>Bonus (This Month)</th><th>Joined</th><th>Left</th><th>Total Posts</th><th>Action</th></tr></thead>
+      <tbody id="manage-body"><tr><td colspan="10" class="empty-state"><span class="spinner"></span></td></tr></tbody>
     </table>
   </div>
   <div class="pay-legend" style="margin-top:16px">
     <h4>How these columns work</h4>
-    <strong>Contract</strong> — "Filed" (green) means the signed PDF actually arrived in the Google Drive folder through the onboarding upload step — click it to open the file and check the signature yourself. "Signature only" (amber) and "Not started" are both click-to-WhatsApp: if the creator's phone number is on file, clicking sends them a pre-written follow-up message asking them to complete or upload their contract. The &#128269; next to either one searches your Google Drive by that creator's name, in case a signed copy exists but never got linked automatically.<br>
+    <strong>Contract</strong> — &#128196; opens the signed PDF if one has been filed, or searches your Google Drive by that creator's name if it hasn't (in case a copy exists but never got linked automatically). The line underneath tells you what's outstanding. Handled it another way — a phone call, they showed you in person — but the file still isn't in Drive? Click "mark resolved" so it stops showing as outstanding; "reopen" undoes that any time.<br>
+    <strong>Contact</strong> — &#128172; opens WhatsApp with a pre-written follow-up message asking about their contract, using the phone number they gave at intake. Greyed out means no phone number is on file.<br>
     <strong>Base Pay</strong> — each creator's monthly base pay. Changing it here updates the payment register, the per-video rate (base pay &divide; 62) and the legend instantly. Only shown for active creators.<br>
     <strong id="bonus-legend-label">Bonus (This Month)</strong> — <span id="bonus-legend-text">pick the views milestone a creator hit and the bonus is entered into this month's payment register automatically. Add as many as they earn; use "Remove last" or "Clear all" to fix mistakes. Same tiers for everybody.</span><br>
     <strong>Joined</strong> — the date the creator was added to the roster (from the sheet).<br>
@@ -1138,7 +1120,8 @@
 <div id="page-payments" class="page main">
   <div class="section-head">
     <span class="section-title">Payment register</span>
-    <div style="display:flex;gap:8px;flex-wrap:wrap">
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+      <span class="page-search-wrap"><input class="page-search-input" id="pay-search" type="text" placeholder="Search creators..." oninput="filterTableRows('pay-search','pay-body')" autocomplete="off"></span>
       <button id="pay-refresh-btn" class="btn btn-sm" onclick="refreshPaymentsData(this)">&#x21BB; Refresh</button>
       <button class="btn btn-sm" onclick="exportPaymentsCSV()">&#x2913; Download CSV</button>
     </div>
@@ -1817,7 +1800,7 @@ function refreshAll() {
   renderWeeklyGrid();
   renderMonthTabs();
   renderDetailedLog();
-  if (isAdmin) { renderDashboard(); renderManageCreators(); renderPayments(); renderSidebarList(); }
+  if (isAdmin) { renderDashboard(); renderManageCreators(); renderPayments(); }
   // Re-run the name status in case allRows just loaded/changed
   if (document.getElementById('f-name') && document.getElementById('f-name').value) onNameChange();
 }
@@ -1877,7 +1860,7 @@ function renderWeeklyGrid() {
       const p2ig = p2 && p2.insta  ? c('chip-ig-2','2 IG') : c('chip-none','2 IG');
       return '<td><div class="day-cell"><div class="post-pair">'+p1tt+p1ig+'</div><div class="post-pair">'+p2tt+p2ig+'</div></div></td>';
     }).join('');
-    return '<tr><td>'+escH(creator)+'</td>'+cells+'<td class="week-total">'+weekTotal+'</td></tr>';
+    return '<tr data-creator="'+escH(creator)+'"><td>'+escH(creator)+'</td>'+cells+'<td class="week-total">'+weekTotal+'</td></tr>';
   }).join('');
 }
 
@@ -1917,7 +1900,7 @@ function renderDetailedLog() {
     const badge = r.post==='1' ? '<span class="badge badge-p1">Post 1</span>' : '<span class="badge badge-p2">Post 2</span>';
     const tk = r.tiktok ? '<a href="' + escH(r.tiktok) + '" target="_blank" rel="noopener" style="color:var(--accent);font-size:12px;text-decoration:none">&#x2197; TikTok</a>' : '<span style="color:var(--text3)">—</span>';
     const ig = r.insta  ? '<a href="' + escH(r.insta)  + '" target="_blank" rel="noopener" style="color:var(--pink);font-size:12px;text-decoration:none">&#x2197; Instagram</a>' : '<span style="color:var(--text3)">—</span>';
-    return '<tr><td><span class="creator-link" onclick="openModal(\'' + escH(r.name) + '\')">' + escH(r.name) + '</span></td>' +
+    return '<tr data-creator="' + escH(r.name) + '"><td><span class="creator-link" onclick="openModal(\'' + escH(r.name) + '\')">' + escH(r.name) + '</span></td>' +
       '<td>' + escH(r.date) + '</td><td>' + badge + '</td><td>' + tk + '</td><td>' + ig + '</td>' +
       '<td style="color:var(--text3)">' + (r.issues ? escH(r.issues) : '—') + '</td></tr>';
   }).join('');
@@ -2034,7 +2017,7 @@ function renderDashboard() {
   tbody.innerHTML = sorted.map((r,i) => {
     const pct = Math.min(100, Math.round(r.mc/dashMaxVideos*100));
     const barClass = pct>=80 ? '' : pct>=50 ? 'amber' : 'red';
-    return '<tr><td style="color:var(--text3)">' + (i+1) + '</td>' +
+    return '<tr data-creator="' + escH(r.name) + '"><td style="color:var(--text3)">' + (i+1) + '</td>' +
       '<td><span class="creator-link" onclick="openModal(\'' + escH(r.name) + '\')">' + escH(r.name) + '</span></td>' +
       '<td style="font-weight:700;color:var(--accent)">' + r.mc + '</td>' +
       '<td><div class="progress-wrap"><div class="progress-bar"><div class="progress-fill ' + barClass + '" style="width:' + pct + '%"></div></div><span style="font-size:11px;color:var(--text3)">' + pct + '%</span></div></td>' +
@@ -2239,24 +2222,53 @@ function contractDriveSearchLink(c) {
   return 'https://drive.google.com/drive/search?q=' + encodeURIComponent(c.name);
 }
 
+// Contract column: one neutral document icon (never color-coded by status —
+// only its destination changes) plus a short, muted status line. Once an
+// outstanding item is marked "resolved" it stops reading as an open flag,
+// even though the underlying file still hasn't landed — that override is
+// the point, so this doesn't keep nagging about something already handled.
 function contractCell(c) {
   const st = contractStatus(c);
-  const driveLink = '<a href="' + contractDriveSearchLink(c) + '" target="_blank" rel="noopener" class="drive-check-link" title="Search Google Drive for a signed contract filed under this name">&#128269;</a>';
+  const isResolved = String(c.contractResolved || '').toLowerCase() === 'true';
+  const iconHref = st === 'filed' ? escH(c.contractFileLink) : contractDriveSearchLink(c);
+  const iconTitle = st === 'filed'
+    ? (c.contractFiledAt ? 'Filed ' + new Date(c.contractFiledAt).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}) + ' — click to open and check the signature' : 'Filed — click to open and check the signature')
+    : 'No signed PDF on file yet — click to search your Drive for one under this name';
+  const icon = '<a href="' + iconHref + '" target="_blank" rel="noopener" class="contract-icon-link" title="' + iconTitle + '">&#128196;</a>';
+
+  let note;
   if (st === 'filed') {
-    const when = c.contractFiledAt ? new Date(c.contractFiledAt).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}) : '';
-    return '<a href="' + escH(c.contractFileLink) + '" target="_blank" rel="noopener" class="badge badge-filed" style="text-decoration:none" title="' + (when ? 'Filed ' + when + ' — click to open and check the signature' : 'Filed — click to open and check the signature') + '">&#x2713; Filed</a>';
+    note = '<span class="contract-note">Filed</span>';
+  } else if (isResolved) {
+    note = '<span class="contract-note">Resolved &#x2713; <a href="#" class="resolve-toggle" onclick="toggleContractResolved(\'' + escH(c.name) + '\',false);return false;">reopen</a></span>';
+  } else {
+    const label = st === 'signed' ? 'Signature only, not filed' : 'Not started';
+    note = '<span class="contract-note">' + label + ' &middot; <a href="#" class="resolve-toggle" onclick="toggleContractResolved(\'' + escH(c.name) + '\',true);return false;">mark resolved</a></span>';
   }
+  return '<div class="contract-cell">' + icon + note + '</div>';
+}
+
+// Contact column: same neutral chat icon regardless of status — it's just
+// "how do I reach this person," separate from what state their paperwork is in.
+function contactCell(c) {
   const waLink = contractFollowUpLink(c);
-  if (st === 'signed') {
-    // Nudge harder the longer the file has been missing — this is the
-    // "so I don't have to keep checking" signal he asked for.
-    const days = c.intakeDate ? Math.floor((Date.now() - new Date(c.intakeDate).getTime()) / 86400000) : null;
-    const label = (days !== null && days >= 3) ? '&#x26A0; File pending ' + days + 'd &mdash; follow up' : '&#x26A0; Signature only';
-    if (waLink) return '<a href="' + waLink + '" target="_blank" rel="noopener" class="badge badge-pending" style="text-decoration:none" title="Signature entered at intake, but no PDF uploaded yet — click to WhatsApp them a follow-up">' + label + ' &#128241;</a>' + driveLink;
-    return '<span class="badge badge-pending" title="Signature entered at intake, but no PDF has been uploaded yet — no phone number on file to follow up">' + label + '</span>' + driveLink;
-  }
-  if (waLink) return '<a href="' + waLink + '" target="_blank" rel="noopener" style="text-decoration:none;color:var(--text3)" title="Click to WhatsApp them a follow-up">&mdash; Not started &#128241;</a>' + driveLink;
-  return '<span style="color:var(--text3)">&mdash; Not started</span>' + driveLink;
+  if (!waLink) return '<span class="contact-icon-link disabled" title="No phone number on file">&#128172;</span>';
+  return '<a href="' + waLink + '" target="_blank" rel="noopener" class="contact-icon-link" title="Click to WhatsApp them a follow-up">&#128172;</a>';
+}
+
+function toggleContractResolved(name, resolved) {
+  const c = allCreators.find(c => c.name === name);
+  if (!c) return;
+  const prev = c.contractResolved;
+  c.contractResolved = resolved ? 'true' : '';
+  renderManageCreators();
+  jsonp({ action: 'setContractResolved', name, resolved: resolved ? '1' : '0' }, (data) => {
+    if (!data || data.status !== 'success') {
+      c.contractResolved = prev;
+      renderManageCreators();
+      showToast('error', 'Could not update', 'Please try again.');
+    }
+  });
 }
 
 function updateBonusLegendText() {
@@ -2283,8 +2295,8 @@ function renderOnboardingOverview() {
 function renderManageCreators() {
   const tbody = document.getElementById('manage-body');
   const counts = document.getElementById('manage-counts');
-  if (!creatorsLoaded) { tbody.innerHTML = '<tr><td colspan="9" class="empty-state"><span class="spinner"></span></td></tr>'; return; }
-  if (!allCreators.length) { tbody.innerHTML = '<tr><td colspan="9" class="empty-state"><strong>No creators yet</strong></td></tr>'; counts.textContent = ''; renderOnboardingOverview(); return; }
+  if (!creatorsLoaded) { tbody.innerHTML = '<tr><td colspan="10" class="empty-state"><span class="spinner"></span></td></tr>'; return; }
+  if (!allCreators.length) { tbody.innerHTML = '<tr><td colspan="10" class="empty-state"><strong>No creators yet</strong></td></tr>'; counts.textContent = ''; renderOnboardingOverview(); return; }
   const active = allCreators.filter(c => String(c.status).toLowerCase()==='active').length;
   counts.textContent = active + ' active · ' + (allCreators.length-active) + ' inactive · ' + allCreators.length + ' total';
   renderOnboardingOverview();
@@ -2303,9 +2315,10 @@ function renderManageCreators() {
       ? '<span title="Recorded when the creator was deactivated (or their last logged post for older records)">' + new Date(leftRaw + 'T00:00:00').toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}) + '</span>'
       : '—';
     const posts = allRows.filter(r => r.name===c.name).length;
-    return '<tr><td><span class="creator-link" onclick="openModal(\'' + escH(c.name) + '\')">' + escH(c.name) + '</span></td>' +
+    return '<tr data-creator="' + escH(c.name) + '"><td><span class="creator-link" onclick="openModal(\'' + escH(c.name) + '\')">' + escH(c.name) + '</span></td>' +
       '<td>' + badge + '</td>' +
       '<td>' + contractCell(c) + '</td>' +
+      '<td>' + contactCell(c) + '</td>' +
       '<td>' + (isActive ? basePaySelect(c) : '<span style="color:var(--text3)">—</span>') + '</td>' +
       '<td>' + (isActive ? bonusControl(c.name) : '<span style="color:var(--text3)">—</span>') + '</td>' +
       '<td style="color:var(--text3)">' + added + '</td>' +
@@ -2719,7 +2732,7 @@ function renderPayments() {
       const remarks = man.remarks || '';
       tPosts += effPosts; tBase += base; tPerf += perf; tSpecial += special; tTotal += effTotal;
       const stColor = status === 'Paid' ? 'background:#e6f4ec;color:#1a6b4a' : 'background:#fdf6e3;color:#b7770d';
-      return tierLabel + '<tr>' +
+      return tierLabel + '<tr data-creator="' + escH(name) + '">' +
         '<td class="pay-num" style="white-space:nowrap">' + (i+1) + ' <button class="pay-row-del" onclick="deletePaymentRow(' + i + ')" title="Remove ' + escH(name) + ' from ' + escH(monthLabel(selectedPayMonth)) + '">&times;</button></td>' +
         '<td>' + escH(name) + '</td>' +
         '<td><input class="pay-input" style="max-width:62px;text-align:right" value="' + effPosts + '" title="' + escH(postsTitle) + '" onchange="onPostsEdit(' + i + ',' + posts + ',this.value)"></td>' +
@@ -2981,8 +2994,8 @@ function showPage(name) {
   document.querySelectorAll('.page').forEach(p => { p.classList.remove('active'); p.style.display='none'; });
   const pg = document.getElementById('page-'+name);
   pg.style.display = 'block'; pg.classList.add('active');
+  document.body.classList.toggle('is-admin-page', isAdmin && ADMIN_PAGES.includes(name));
   renderNav();
-  updateSidebarVisibility();
   // Hide inline confirm when navigating away from submit
   if (name !== 'submit') document.getElementById('inline-confirm').classList.remove('show');
   if (name==='weekly') renderWeeklyGrid();
@@ -2994,47 +3007,19 @@ function showPage(name) {
   window.scrollTo({ top: 0, behavior: 'instant' });
 }
 
-// ── ADMIN SIDEBAR — creator search, visible on every ADMIN_PAGES screen ──
-function updateSidebarVisibility() {
-  const show = isAdmin && ADMIN_PAGES.includes(currentPage);
-  document.body.classList.toggle('with-sidebar', show);
-  if (show) renderSidebarList();
-  else document.body.classList.remove('sidebar-open');
-}
-
-function toggleSidebar() {
-  document.body.classList.toggle('sidebar-open');
-}
-
-function renderSidebarList() {
-  const list = document.getElementById('sidebar-list');
-  if (!list) return;
-  const q = (document.getElementById('sidebar-search').value || '').trim().toLowerCase();
-  if (!creatorsLoaded) { list.innerHTML = '<div class="sidebar-empty">Loading creators…</div>'; return; }
-  const matches = [...allCreators]
-    .filter(c => !q || c.name.toLowerCase().includes(q))
-    .sort((a, b) => a.name.localeCompare(b.name));
-  if (!matches.length) { list.innerHTML = '<div class="sidebar-empty">' + (q ? 'No creators match "' + escH(q) + '"' : 'No creators yet') + '</div>'; return; }
-  list.innerHTML = matches.map(c => {
-    const isActive = String(c.status).toLowerCase() === 'active';
-    return '<div class="sidebar-row" onclick="sidebarOpenCreator(\'' + escH(c.name) + '\')">' +
-      '<span class="sidebar-dot' + (isActive ? ' active' : '') + '"></span>' +
-      '<span>' + escH(c.name) + '</span></div>';
-  }).join('') + '<div class="sidebar-count">' + matches.length + ' of ' + allCreators.length + ' creators</div>';
-}
-
-function sidebarOpenCreator(name) {
-  document.body.classList.remove('sidebar-open');
-  openModal(name);
-}
-
-// Enter in the search box jumps straight to the top match — fast path when
-// there's exactly one obvious result.
-function openSidebarTopMatch() {
-  const q = (document.getElementById('sidebar-search').value || '').trim().toLowerCase();
-  if (!q) return;
-  const matches = allCreators.filter(c => c.name.toLowerCase().includes(q));
-  if (matches.length) sidebarOpenCreator(matches[0].name);
+// ── PAGE-NATIVE SEARCH — each admin table filters its own rows only ──
+// Every generated <tr> for a creator carries data-creator="<name>"; this
+// just hides/shows by substring match against whichever table the search
+// box on the current page is wired to.
+function filterTableRows(inputId, tbodyId) {
+  const input = document.getElementById(inputId);
+  const tbody = document.getElementById(tbodyId);
+  if (!input || !tbody) return;
+  const q = input.value.trim().toLowerCase();
+  tbody.querySelectorAll('tr[data-creator]').forEach(tr => {
+    const name = (tr.getAttribute('data-creator') || '').toLowerCase();
+    tr.style.display = (!q || name.includes(q)) ? '' : 'none';
+  });
 }
 </script>
 </body>
