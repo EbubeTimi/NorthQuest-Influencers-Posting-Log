@@ -556,6 +556,8 @@
   .badge-p2 { background: var(--blue-light); color: var(--blue); }
   .badge-active { background: var(--accent-light); color: var(--accent3); }
   .badge-inactive { background: var(--surface2); color: var(--text3); }
+  .badge-pending { background: var(--amber-light); color: var(--amber); }
+  .badge-filed { background: var(--green-light); color: var(--green); }
 
   .empty-state { text-align: center; padding: 52px 24px; color: var(--text3); font-size: 13px; }
   .empty-state strong { display: block; font-size: 16px; font-weight: 600; color: var(--text2); margin-bottom: 6px; }
@@ -640,7 +642,9 @@
   .back-link:hover { color: var(--accent); }
 
   /* DASHBOARD */
-  .creator-table-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow-sm); margin-top: 16px; }
+  .creator-table-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow-x: auto; overflow-y: hidden; box-shadow: var(--shadow-sm); margin-top: 16px; -webkit-overflow-scrolling: touch; }
+  .creator-table-wrap table { min-width: 1350px; }
+  #page-dashboard .creator-table-wrap table { min-width: 0; }
   .progress-wrap { display: flex; align-items: center; gap: 8px; }
   .progress-bar { width: 80px; height: 6px; background: var(--surface3); border-radius: 3px; overflow: hidden; }
   .progress-fill { height: 100%; background: var(--accent); border-radius: 3px; transition: width 0.4s; }
@@ -700,6 +704,52 @@
   .btn-delete { border-color:#c0392b; color:#fff; background:#c0392b; }
   .btn-delete:hover { background:#a93226; border-color:#a93226; }
 
+  /* ADMIN SIDEBAR — creator search, present on all admin pages */
+  .admin-sidebar {
+    display: none;
+    position: fixed; top: 64px; left: 0; bottom: 0; width: 252px;
+    background: var(--surface); border-right: 1px solid var(--border);
+    z-index: 90; overflow-y: auto; padding: 16px 14px;
+    transition: transform 0.2s ease;
+  }
+  body.with-sidebar .admin-sidebar { display: block; }
+  body.with-sidebar .main { margin-left: 252px; max-width: 1300px; }
+  @media (max-width: 900px) {
+    body.with-sidebar .main { margin-left: 0; max-width: 1100px; }
+    .admin-sidebar { transform: translateX(-100%); box-shadow: 0 4px 24px rgba(0,0,0,0.15); }
+    body.with-sidebar.sidebar-open .admin-sidebar { transform: translateX(0); }
+    .sidebar-toggle-btn { display: inline-flex !important; }
+  }
+  .sidebar-toggle-btn {
+    display: none; align-items: center; justify-content: center;
+    width: 34px; height: 34px; border-radius: 8px; border: 1.5px solid var(--border2);
+    background: transparent; color: var(--text2); cursor: pointer; font-size: 16px; margin-right: 4px;
+  }
+  .sidebar-toggle-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .sidebar-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: var(--text3); margin-bottom: 10px; }
+  .sidebar-search {
+    width: 100%; padding: 9px 12px; border: 1.5px solid var(--border); border-radius: var(--radius-sm);
+    font-family: inherit; font-size: 13px; background: var(--surface2); color: var(--text); margin-bottom: 12px;
+  }
+  .sidebar-search:focus { outline: none; border-color: var(--accent); background: var(--surface); }
+  .sidebar-list { display: flex; flex-direction: column; gap: 2px; }
+  .sidebar-row {
+    display: flex; align-items: center; gap: 8px; padding: 7px 9px; border-radius: 7px;
+    cursor: pointer; font-size: 13px; color: var(--text2); transition: background 0.12s;
+  }
+  .sidebar-row:hover { background: var(--surface2); color: var(--text); }
+  .sidebar-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; background: var(--border2); }
+  .sidebar-dot.active { background: #1a6b4a; }
+  .sidebar-empty { font-size: 12px; color: var(--text3); padding: 8px 4px; }
+  .sidebar-count { font-size: 11px; color: var(--text3); margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); }
+
+  /* BONUS TIERS MODAL */
+  .bt-box { max-width: 440px; padding: 26px 24px 22px; text-align: left; }
+  .bt-row { display: grid; grid-template-columns: 1fr auto 1fr auto; align-items: center; gap: 8px; margin-bottom: 8px; }
+  .bt-row input { max-width: none; text-align: right; }
+  .bt-actions { display: flex; justify-content: space-between; align-items: center; margin-top: 14px; gap: 10px; }
+  .bt-actions .btn { width: auto; margin: 0; }
+
   /* CONFIRM DIALOG (before logging a video) */
   .confirm-box { max-width: 400px; padding: 26px 24px 22px; text-align: left; }
   .confirm-title { font-family:'Playfair Display',serif; font-size:19px; font-weight:700; margin-bottom:10px; color:var(--text); }
@@ -755,6 +805,7 @@
 
 <header class="header" id="main-header">
   <div class="header-brand">
+    <button class="sidebar-toggle-btn" id="sidebar-toggle-btn" onclick="toggleSidebar()" aria-label="Toggle creator search" type="button">&#9776;</button>
     <div class="header-logo"><svg viewBox="0 0 24 24" style="width:19px;height:19px;fill:#fff"><path d="M12 1.5l2.6 7.9 7.9 2.6-7.9 2.6L12 22.5l-2.6-7.9-7.9-2.6 7.9-2.6z"/></svg></div>
     <div>
       <div class="header-title">Northquest Finance</div>
@@ -763,6 +814,13 @@
   </div>
   <nav class="nav-tabs" id="nav-container"></nav>
 </header>
+
+<!-- ADMIN SIDEBAR — quick creator search, shown on all admin pages -->
+<aside class="admin-sidebar" id="admin-sidebar">
+  <div class="sidebar-title">Find a creator</div>
+  <input class="sidebar-search" id="sidebar-search" type="text" placeholder="Search by name..." oninput="renderSidebarList()" onkeydown="if(event.key==='Enter')openSidebarTopMatch()" autocomplete="off">
+  <div class="sidebar-list" id="sidebar-list"></div>
+</aside>
 
 <!-- SUBMIT -->
 <div id="page-submit" class="page active main">
@@ -1027,6 +1085,14 @@
 
 <!-- MANAGE -->
 <div id="page-manage" class="page main">
+  <div class="section-head"><span class="section-title">Onboarding overview</span></div>
+  <div class="stats-row" id="onboard-stats">
+    <div class="stat-card"><div class="stat-label">Active creators</div><div class="stat-value" id="ov-active">-</div></div>
+    <div class="stat-card"><div class="stat-label">Contract filed</div><div class="stat-value" id="ov-filed">-</div></div>
+    <div class="stat-card"><div class="stat-label">Signed, file pending</div><div class="stat-value" id="ov-pending">-</div></div>
+    <div class="stat-card"><div class="stat-label">Not started</div><div class="stat-value" id="ov-notstarted">-</div></div>
+  </div>
+
   <div class="section-head"><span class="section-title">Add a new creator</span></div>
   <div class="add-card">
     <div class="form-group">
@@ -1045,14 +1111,15 @@
   </div>
   <div class="creator-table-wrap">
     <table class="log-table">
-      <thead><tr><th>Creator</th><th>Status</th><th>Base Pay (&#8358;/month)</th><th>Bonus (This Month)</th><th>Joined</th><th>Left</th><th>Total Posts</th><th>Action</th></tr></thead>
-      <tbody id="manage-body"><tr><td colspan="8" class="empty-state"><span class="spinner"></span></td></tr></tbody>
+      <thead><tr><th>Creator</th><th>Status</th><th>Contract</th><th>Base Pay (&#8358;/month)</th><th>Bonus (This Month)</th><th>Joined</th><th>Left</th><th>Total Posts</th><th>Action</th></tr></thead>
+      <tbody id="manage-body"><tr><td colspan="9" class="empty-state"><span class="spinner"></span></td></tr></tbody>
     </table>
   </div>
   <div class="pay-legend" style="margin-top:16px">
     <h4>How these columns work</h4>
+    <strong>Contract</strong> — "Filed" (green) means the signed PDF actually arrived in the Google Drive folder through the onboarding upload step — click it to open the file and check the signature yourself. "Signature only" (amber) and "Not started" are both click-to-WhatsApp: if the creator's phone number is on file, clicking sends them a pre-written follow-up message asking them to complete or upload their contract.<br>
     <strong>Base Pay</strong> — each creator's monthly base pay. Changing it here updates the payment register, the per-video rate (base pay &divide; 62) and the legend instantly. Only shown for active creators.<br>
-    <strong>Bonus (This Month)</strong> — pick the views milestone a creator hit and the bonus is entered into this month's payment register automatically (50,000 views = &#8358;50,000 &middot; 100,000 = &#8358;100,000 &middot; 500,000 = &#8358;200,000 &middot; 1,000,000 = &#8358;500,000 &middot; 2,000,000 = &#8358;900,000). Add as many as they earn; use "Remove last" or "Clear all" to fix mistakes. Same tiers for everybody.<br>
+    <strong id="bonus-legend-label">Bonus (This Month)</strong> — <span id="bonus-legend-text">pick the views milestone a creator hit and the bonus is entered into this month's payment register automatically. Add as many as they earn; use "Remove last" or "Clear all" to fix mistakes. Same tiers for everybody.</span><br>
     <strong>Joined</strong> — the date the creator was added to the roster (from the sheet).<br>
     <strong>Left</strong> — recorded automatically on the day you press Deactivate. Reactivating a creator clears it. For creators deactivated before this feature existed, the date of their last logged post is shown instead.
   </div>
@@ -1121,6 +1188,23 @@
   </div>
 </div>
 
+<!-- EDIT BONUS TIERS — changes apply everywhere: Manage creators, Payments, CSV export -->
+<div class="modal-overlay" id="bonus-tiers-modal">
+  <div class="modal bt-box">
+    <div class="confirm-title">Edit bonus tiers</div>
+    <div class="confirm-msg">Set the views threshold and the bonus amount for each tier. These apply to every creator, everywhere in the app, the moment you save.</div>
+    <div id="bonus-tiers-rows"></div>
+    <button type="button" class="btn btn-sm" style="width:auto;margin:6px 0 0" onclick="addBonusTierRow()">+ Add another tier</button>
+    <div class="bt-actions">
+      <button type="button" class="btn btn-sm" onclick="resetBonusTiersDefault()" title="Reset the fields below to the original defaults — you still need to press Save">Reset to defaults</button>
+      <div style="display:flex;gap:8px">
+        <button type="button" class="btn btn-sm" onclick="closeBonusTiersModal()">Cancel</button>
+        <button type="button" class="btn btn-primary" id="bonus-tiers-save-btn" onclick="saveBonusTiers()">Save tiers</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script>
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwLrQ6h0XAOKIxYw_r2uMbb_FtBq_ZBBFdBAQpeLHo9Z9ZKkzISuje9CvuTF-RcWgFgmQ/exec';
 // The admin password lives ONLY in the Apps Script's Script Properties and is
@@ -1163,6 +1247,10 @@ const safeStorage = {
 let allRows = [], allCreators = [], allPayments = [];
 let weekOffset = 0, selectedMonth = null, selectedPayMonth = null;
 let isAdmin = false, dataLoaded = false, creatorsLoaded = false, paysLoaded = false;
+// Bonus tiers — editable from the app (Manage creators / Payments → Edit
+// bonus tiers). This fallback only shows before the real sheet data loads.
+let bonusTiers = [[50000,50000],[100000,100000],[500000,200000],[1000000,500000],[2000000,900000]];
+let bonusTiersLoaded = false;
 let payRowNames = [];
 let currentPage = 'submit';
 let renderPaymentsPending = false;
@@ -1218,6 +1306,7 @@ document.addEventListener('DOMContentLoaded', () => {
   setupIntake();
   loadRows();
   loadCreators();
+  loadBonusTiers();
   // Payment data is admin-only — never requested for regular creators
   if (isAdmin) loadPayments();
   flushQueue();
@@ -1719,7 +1808,7 @@ function refreshAll() {
   renderWeeklyGrid();
   renderMonthTabs();
   renderDetailedLog();
-  if (isAdmin) { renderDashboard(); renderManageCreators(); renderPayments(); }
+  if (isAdmin) { renderDashboard(); renderManageCreators(); renderPayments(); renderSidebarList(); }
   // Re-run the name status in case allRows just loaded/changed
   if (document.getElementById('f-name') && document.getElementById('f-name').value) onNameChange();
 }
@@ -2049,10 +2138,8 @@ const BASE_PAY_TIERS = [100000, 150000, 200000, 250000, 300000];
 // ── BONUS FROM MANAGE CREATORS ──
 // One tap enters a views-milestone bonus into THIS month's payment register
 // (same bonusViews field the register uses), so it calculates automatically
-// and never has to be typed by hand.
-const BONUS_TIERS = [
-  [50000, 50000], [100000, 100000], [500000, 200000], [1000000, 500000], [2000000, 900000]
-];
+// and never has to be typed by hand. Tiers come from the editable bonusTiers
+// global (see loadBonusTiers / saveBonusTiers) — never hardcoded here.
 
 function bonusControl(name) {
   if (!paysLoaded) return '<span style="color:var(--text3);font-size:12px">Loading…</span>';
@@ -2070,7 +2157,7 @@ function bonusControl(name) {
     (chips ? '<div style="display:flex;gap:4px;flex-wrap:wrap;margin:4px 0">' + chips + '</div>' : '') +
     '<select class="pay-input bonus-select" style="max-width:170px;margin-top:3px" onchange="onBonusPick(\'' + escH(name) + '\', this)">' +
       '<option value="">+ Add views bonus…</option>' +
-      BONUS_TIERS.map(t => '<option value="' + t[0] + '">' + t[0].toLocaleString('en-NG') + ' views &rarr; &#8358;' + t[1].toLocaleString('en-NG') + '</option>').join('') +
+      [...bonusTiers].sort((a,b) => a[0]-b[0]).map(t => '<option value="' + t[0] + '">' + t[0].toLocaleString('en-NG') + ' views &rarr; &#8358;' + t[1].toLocaleString('en-NG') + '</option>').join('') +
       (list.length ? '<option value="undo">&#x232B; Remove last bonus</option><option value="clear">&#x2715; Clear all bonuses</option>' : '') +
     '</select></div>';
 }
@@ -2104,13 +2191,86 @@ function basePaySelect(c) {
     '<option value="custom">Custom…</option></select>';
 }
 
+// Onboarding status for one creator: 'filed' (PDF actually landed in Drive),
+// 'signed' (typed a signature at intake but no file yet), or 'none'.
+function contractStatus(c) {
+  if (c.contractFileLink) return 'filed';
+  if (c.contractSigned) return 'signed';
+  return 'none';
+}
+
+// Normalizes whatever a creator typed at intake (080..., +234..., 234...,
+// with spaces/dashes) into the digits-only international format wa.me needs.
+function toWaNumber(raw) {
+  const d = String(raw || '').replace(/[^\d]/g, '');
+  if (!d) return '';
+  if (d.startsWith('234')) return d;
+  if (d.startsWith('0'))   return '234' + d.slice(1);
+  if (d.length === 10)     return '234' + d;
+  return d;
+}
+
+// One-tap WhatsApp follow-up for a creator whose contract isn't filed yet —
+// pre-fills a polite nudge so this is a single click, not a typing chore.
+function contractFollowUpLink(c) {
+  const wa = toWaNumber(c.phone);
+  if (!wa) return '';
+  const first = c.name.split(' ')[0];
+  const msg = c.contractSigned
+    ? 'Hi ' + first + ', this is the NorthQuest team. We have your contract signature on file but haven\'t received the signed PDF copy yet — could you upload it when you get a chance? Let us know if you\'re stuck on any of the signing steps.'
+    : 'Hi ' + first + ', this is the NorthQuest team. We don\'t see your signed contract yet — could you complete the signing steps and upload it when you get a chance? Let us know if you need any help.';
+  return 'https://wa.me/' + wa + '?text=' + encodeURIComponent(msg);
+}
+
+function contractCell(c) {
+  const st = contractStatus(c);
+  if (st === 'filed') {
+    const when = c.contractFiledAt ? new Date(c.contractFiledAt).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}) : '';
+    return '<a href="' + escH(c.contractFileLink) + '" target="_blank" rel="noopener" class="badge badge-filed" style="text-decoration:none" title="' + (when ? 'Filed ' + when + ' — click to open and check the signature' : 'Filed — click to open and check the signature') + '">&#x2713; Filed</a>';
+  }
+  const waLink = contractFollowUpLink(c);
+  if (st === 'signed') {
+    // Nudge harder the longer the file has been missing — this is the
+    // "so I don't have to keep checking" signal he asked for.
+    const days = c.intakeDate ? Math.floor((Date.now() - new Date(c.intakeDate).getTime()) / 86400000) : null;
+    const label = (days !== null && days >= 3) ? '&#x26A0; File pending ' + days + 'd &mdash; follow up' : '&#x26A0; Signature only';
+    if (waLink) return '<a href="' + waLink + '" target="_blank" rel="noopener" class="badge badge-pending" style="text-decoration:none" title="Signature entered at intake, but no PDF uploaded yet — click to WhatsApp them a follow-up">' + label + ' &#128241;</a>';
+    return '<span class="badge badge-pending" title="Signature entered at intake, but no PDF has been uploaded yet — no phone number on file to follow up">' + label + '</span>';
+  }
+  if (waLink) return '<a href="' + waLink + '" target="_blank" rel="noopener" style="text-decoration:none;color:var(--text3)" title="Click to WhatsApp them a follow-up">&mdash; Not started &#128241;</a>';
+  return '<span style="color:var(--text3)">&mdash; Not started</span>';
+}
+
+function updateBonusLegendText() {
+  const el = document.getElementById('bonus-legend-text');
+  if (!el) return;
+  el.innerHTML = 'pick the views milestone a creator hit and the bonus is entered into this month\'s payment register automatically (' +
+    bonusTierLegendText() + '). Add as many as they earn; use "Remove last" or "Clear all" to fix mistakes. Same tiers for everybody — ' +
+    '<a href="#" onclick="openBonusTiersModal();return false;">edit the tiers</a> whenever the bonus structure changes.';
+}
+
+function renderOnboardingOverview() {
+  const active = allCreators.filter(c => String(c.status).toLowerCase()==='active');
+  let filed = 0, signed = 0, none = 0;
+  active.forEach(c => {
+    const st = contractStatus(c);
+    if (st === 'filed') filed++; else if (st === 'signed') signed++; else none++;
+  });
+  document.getElementById('ov-active').textContent = active.length;
+  document.getElementById('ov-filed').textContent = filed;
+  document.getElementById('ov-pending').textContent = signed;
+  document.getElementById('ov-notstarted').textContent = none;
+}
+
 function renderManageCreators() {
   const tbody = document.getElementById('manage-body');
   const counts = document.getElementById('manage-counts');
-  if (!creatorsLoaded) { tbody.innerHTML = '<tr><td colspan="8" class="empty-state"><span class="spinner"></span></td></tr>'; return; }
-  if (!allCreators.length) { tbody.innerHTML = '<tr><td colspan="8" class="empty-state"><strong>No creators yet</strong></td></tr>'; counts.textContent = ''; return; }
+  if (!creatorsLoaded) { tbody.innerHTML = '<tr><td colspan="9" class="empty-state"><span class="spinner"></span></td></tr>'; return; }
+  if (!allCreators.length) { tbody.innerHTML = '<tr><td colspan="9" class="empty-state"><strong>No creators yet</strong></td></tr>'; counts.textContent = ''; renderOnboardingOverview(); return; }
   const active = allCreators.filter(c => String(c.status).toLowerCase()==='active').length;
   counts.textContent = active + ' active · ' + (allCreators.length-active) + ' inactive · ' + allCreators.length + ' total';
+  renderOnboardingOverview();
+  updateBonusLegendText();
   const sorted = [...allCreators].sort((a,b) => {
     const aa = String(a.status).toLowerCase()==='active'?0:1;
     const bb = String(b.status).toLowerCase()==='active'?0:1;
@@ -2127,6 +2287,7 @@ function renderManageCreators() {
     const posts = allRows.filter(r => r.name===c.name).length;
     return '<tr><td><span class="creator-link" onclick="openModal(\'' + escH(c.name) + '\')">' + escH(c.name) + '</span></td>' +
       '<td>' + badge + '</td>' +
+      '<td>' + contractCell(c) + '</td>' +
       '<td>' + (isActive ? basePaySelect(c) : '<span style="color:var(--text3)">—</span>') + '</td>' +
       '<td>' + (isActive ? bonusControl(c.name) : '<span style="color:var(--text3)">—</span>') + '</td>' +
       '<td style="color:var(--text3)">' + added + '</td>' +
@@ -2149,13 +2310,92 @@ function fmtMoney2(n) {
 }
 function calcBonus(viewsList) {
   if (!viewsList) return 0;
-  const TIERS = [[2000000,900000],[1000000,500000],[500000,200000],[100000,100000],[50000,50000]];
   let total = 0;
   String(viewsList).split(',').forEach(v => {
     const n = parseInt(v.trim().replace(/[^\d]/g, '')) || 0;
-    for (let i = 0; i < TIERS.length; i++) { if (n >= TIERS[i][0]) { total += TIERS[i][1]; break; } }
+    for (let i = 0; i < bonusTiers.length; i++) { if (n >= bonusTiers[i][0]) { total += bonusTiers[i][1]; break; } }
   });
   return total;
+}
+
+// ── BONUS TIERS — editable from Manage Creators / Payments, no code changes ──
+function loadBonusTiers() {
+  jsonp({ action:'getBonusTiers' }, (data) => {
+    bonusTiersLoaded = true;
+    if (data && data.status === 'success' && Array.isArray(data.tiers) && data.tiers.length) {
+      bonusTiers = data.tiers.map(t => [Number(t[0]), Number(t[1])]).sort((a,b) => b[0]-a[0]);
+    }
+    if (currentPage === 'manage') renderManageCreators();
+    if (currentPage === 'payments') renderPayments();
+  });
+}
+
+function bonusTierLegendText() {
+  return bonusTiers.map(t => t[0].toLocaleString('en-NG') + ' views = &#8358;' + t[1].toLocaleString('en-NG')).join(' &middot; ');
+}
+
+function openBonusTiersModal() {
+  const body = document.getElementById('bonus-tiers-rows');
+  body.innerHTML = bonusTiers.map((t, i) =>
+    '<div class="bt-row" data-idx="' + i + '">' +
+      '<input type="text" inputmode="numeric" class="pay-input" value="' + t[0] + '" placeholder="Views">' +
+      '<span style="color:var(--text3)">views &rarr;</span>' +
+      '<input type="text" inputmode="numeric" class="pay-input" value="' + t[1] + '" placeholder="Bonus">' +
+      '<button type="button" class="pay-row-del" onclick="this.closest(\'.bt-row\').remove()" title="Remove this tier">&times;</button>' +
+    '</div>'
+  ).join('');
+  document.getElementById('bonus-tiers-modal').classList.add('open');
+}
+
+function closeBonusTiersModal() {
+  document.getElementById('bonus-tiers-modal').classList.remove('open');
+}
+
+function addBonusTierRow() {
+  const body = document.getElementById('bonus-tiers-rows');
+  const div = document.createElement('div');
+  div.className = 'bt-row';
+  div.innerHTML = '<input type="text" inputmode="numeric" class="pay-input" placeholder="Views">' +
+    '<span style="color:var(--text3)">views &rarr;</span>' +
+    '<input type="text" inputmode="numeric" class="pay-input" placeholder="Bonus">' +
+    '<button type="button" class="pay-row-del" onclick="this.closest(\'.bt-row\').remove()" title="Remove this tier">&times;</button>';
+  body.appendChild(div);
+}
+
+function resetBonusTiersDefault() {
+  bonusTiers = [[50000,50000],[100000,100000],[500000,200000],[1000000,500000],[2000000,900000]];
+  openBonusTiersModal();
+}
+
+function saveBonusTiers() {
+  const rows = [...document.querySelectorAll('#bonus-tiers-rows .bt-row')];
+  const tiers = [];
+  const seen = {};
+  for (const row of rows) {
+    const inputs = row.querySelectorAll('input');
+    const views = parseFloat(String(inputs[0].value).replace(/[^\d.]/g, ''));
+    const bonus = parseFloat(String(inputs[1].value).replace(/[^\d.]/g, ''));
+    if (isNaN(views) || isNaN(bonus) || views <= 0) continue;
+    if (seen[views]) continue; // ignore accidental duplicate thresholds
+    seen[views] = true;
+    tiers.push([views, bonus]);
+  }
+  if (!tiers.length) { showToast('error', 'Nothing saved', 'Add at least one valid tier (a views number and a bonus amount).'); return; }
+  tiers.sort((a,b) => b[0]-a[0]);
+  const btn = document.getElementById('bonus-tiers-save-btn');
+  btn.disabled = true; btn.textContent = 'Saving…';
+  jsonp({ action:'setBonusTiers', tiers: JSON.stringify(tiers) }, (d) => {
+    btn.disabled = false; btn.textContent = 'Save tiers';
+    if (d && d.status === 'success') {
+      bonusTiers = tiers;
+      closeBonusTiersModal();
+      showToast('success', 'Bonus tiers updated', 'New bonuses now apply everywhere — Manage creators, the payment register, and the legend.');
+      if (currentPage === 'manage') renderManageCreators();
+      if (currentPage === 'payments') renderPayments();
+    } else {
+      showToast('error', 'Not saved', (d && d.message) || 'Could not save the new tiers. Check your connection and try again.');
+    }
+  });
 }
 
 function loadPayments() {
@@ -2322,8 +2562,8 @@ function payLegendHtml(tiers) {
     'Every creator has their own monthly base pay — set it under <strong>Manage creators</strong> (Base Pay column) or by editing the Rate column here. Default for new creators: &#8358;150,000/month.<br>' +
     'Per-video rate = monthly base pay &divide; 62 (flat — same divisor every month). Base pay tiers in this month\'s register:<br>' + tierLines + '<br>' +
     'Pay = (videos posted that month) &times; per-video rate. &nbsp;Bonuses are the same for everybody regardless of base pay. &nbsp;Staff rows show a fixed monthly salary — not calculated from posts.' +
-    '<h4>Performance Bonus Tiers (same for all creators)</h4>' +
-    '50,000 views = &#8358;50,000<br>100,000 views = &#8358;100,000<br>500,000 views = &#8358;200,000<br>1,000,000 views = &#8358;500,000<br>2,000,000 views = &#8358;900,000' +
+    '<h4>Performance Bonus Tiers (same for all creators) <button type="button" class="btn btn-sm" style="margin-left:8px;padding:3px 10px;font-size:11px" onclick="openBonusTiersModal()">Edit tiers</button></h4>' +
+    [...bonusTiers].sort((a,b) => a[0]-b[0]).map(t => t[0].toLocaleString('en-NG') + ' views = &#8358;' + t[1].toLocaleString('en-NG')).join('<br>') +
     '<h4>How to enter multiple bonuses</h4>' +
     'If a creator hits more than one milestone, type the view counts in the Bonus Views box separated by commas, WITHOUT thousands separators. ' +
     'Example: <strong>100000,50000</strong> &nbsp;&nbsp; Not like this: 100,000, 50,000. The Perf. Bonus and Total update on their own.';
@@ -2569,11 +2809,9 @@ function exportPaymentsCSV() {
   });
   L.push(q('Pay = (videos posted that month) × per-video rate.  Bonuses are the same for everybody regardless of base pay.  In ' + mName + ' ' + y + ' there are ' + (last * 2) + ' possible video slots (' + last + ' days × 2/day).'));
   L.push(''); L.push('PERFORMANCE BONUS TIERS:');
-  L.push(q('• 50,000 views = ₦50,000'));
-  L.push(q('• 100,000 views = ₦100,000'));
-  L.push(q('• 500,000 views = ₦200,000'));
-  L.push(q('• 1,000,000 views = ₦500,000'));
-  L.push(q('• 2,000,000 views = ₦900,000'));
+  [...bonusTiers].sort((a,b) => a[0]-b[0]).forEach(t => {
+    L.push(q('• ' + t[0].toLocaleString('en-NG') + ' views = ₦' + t[1].toLocaleString('en-NG')));
+  });
   const csv = '﻿' + L.join('\n');
   const blob = new Blob([csv], { type:'text/csv;charset=utf-8' });
   const url = URL.createObjectURL(blob);
@@ -2665,6 +2903,7 @@ function grantAdmin(key) {
   // Re-pull creators and payments now that the admin key unlocks full fields
   loadCreators();
   loadPayments();
+  loadBonusTiers();
   showPage('dashboard');
 }
 
@@ -2725,6 +2964,7 @@ function showPage(name) {
   const pg = document.getElementById('page-'+name);
   pg.style.display = 'block'; pg.classList.add('active');
   renderNav();
+  updateSidebarVisibility();
   // Hide inline confirm when navigating away from submit
   if (name !== 'submit') document.getElementById('inline-confirm').classList.remove('show');
   if (name==='weekly') renderWeeklyGrid();
@@ -2734,6 +2974,49 @@ function showPage(name) {
   if (name==='payments') { renderPayments(); refreshPaymentsData(); }
   if (name==='intake') document.title = 'NorthQuest Creator Onboarding';
   window.scrollTo({ top: 0, behavior: 'instant' });
+}
+
+// ── ADMIN SIDEBAR — creator search, visible on every ADMIN_PAGES screen ──
+function updateSidebarVisibility() {
+  const show = isAdmin && ADMIN_PAGES.includes(currentPage);
+  document.body.classList.toggle('with-sidebar', show);
+  if (show) renderSidebarList();
+  else document.body.classList.remove('sidebar-open');
+}
+
+function toggleSidebar() {
+  document.body.classList.toggle('sidebar-open');
+}
+
+function renderSidebarList() {
+  const list = document.getElementById('sidebar-list');
+  if (!list) return;
+  const q = (document.getElementById('sidebar-search').value || '').trim().toLowerCase();
+  if (!creatorsLoaded) { list.innerHTML = '<div class="sidebar-empty">Loading creators…</div>'; return; }
+  const matches = [...allCreators]
+    .filter(c => !q || c.name.toLowerCase().includes(q))
+    .sort((a, b) => a.name.localeCompare(b.name));
+  if (!matches.length) { list.innerHTML = '<div class="sidebar-empty">' + (q ? 'No creators match "' + escH(q) + '"' : 'No creators yet') + '</div>'; return; }
+  list.innerHTML = matches.map(c => {
+    const isActive = String(c.status).toLowerCase() === 'active';
+    return '<div class="sidebar-row" onclick="sidebarOpenCreator(\'' + escH(c.name) + '\')">' +
+      '<span class="sidebar-dot' + (isActive ? ' active' : '') + '"></span>' +
+      '<span>' + escH(c.name) + '</span></div>';
+  }).join('') + '<div class="sidebar-count">' + matches.length + ' of ' + allCreators.length + ' creators</div>';
+}
+
+function sidebarOpenCreator(name) {
+  document.body.classList.remove('sidebar-open');
+  openModal(name);
+}
+
+// Enter in the search box jumps straight to the top match — fast path when
+// there's exactly one obvious result.
+function openSidebarTopMatch() {
+  const q = (document.getElementById('sidebar-search').value || '').trim().toLowerCase();
+  if (!q) return;
+  const matches = allCreators.filter(c => c.name.toLowerCase().includes(q));
+  if (matches.length) sidebarOpenCreator(matches[0].name);
 }
 </script>
 </body>
