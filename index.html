@@ -745,6 +745,25 @@
     font-size:13px; font-weight:600; cursor:pointer; transition:all 0.18s;
   }
   .view-logs-btn:hover { border-color:var(--accent); background:var(--accent-light); }
+  .chooser-btn {
+    display:flex; align-items:center; gap:14px; width:100%; padding:20px 18px;
+    margin-bottom:14px; border:1.5px solid var(--border2); border-radius:var(--radius-sm);
+    background:var(--surface2); color:var(--text); font-family:inherit;
+    text-align:left; cursor:pointer; transition:all 0.18s;
+  }
+  .chooser-btn:hover { border-color:var(--accent); background:var(--accent-light); }
+  .chooser-btn .cb-icon { font-size:26px; flex-shrink:0; }
+  .chooser-btn .cb-title { font-size:15px; font-weight:700; margin-bottom:2px; }
+  .chooser-btn .cb-sub { font-size:12px; color:var(--text3); }
+  .views-video-card { border:1px solid var(--border); border-radius:var(--radius-sm); padding:14px; margin-bottom:12px; background:var(--surface2); }
+  .views-video-card .vv-date { font-weight:700; font-size:13px; margin-bottom:10px; }
+  .views-video-row { display:flex; align-items:center; gap:10px; margin-bottom:8px; }
+  .views-video-row:last-child { margin-bottom:0; }
+  .views-video-row .vv-platform { min-width:64px; font-size:12px; font-weight:600; color:var(--text3); }
+  .views-video-row input { flex:1; padding:9px 10px; border:1px solid var(--border2); border-radius:var(--radius-sm); font-family:inherit; font-size:14px; }
+  .views-video-row .vv-save { padding:8px 14px; border:none; border-radius:var(--radius-sm); background:var(--accent); color:#fff; font-family:inherit; font-size:12px; font-weight:600; cursor:pointer; flex-shrink:0; }
+  .views-video-row .vv-save:disabled { opacity:0.5; cursor:default; }
+  .views-video-row .vv-saved-tag { font-size:11px; color:var(--accent3); font-weight:600; flex-shrink:0; }
   .mylog-summary { display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-bottom:18px; }
   .mylog-stat { background:var(--surface2); border:1px solid var(--border); border-radius:var(--radius-sm); padding:12px; text-align:center; }
   .mylog-stat .v { font-size:22px; font-weight:700; color:var(--accent3); }
@@ -793,8 +812,52 @@
   <nav class="nav-tabs" id="nav-container"></nav>
 </header>
 
+<!-- CHOOSER -->
+<div id="page-chooser" class="page active main">
+  <div class="welcome-banner">
+    <div class="welcome-greeting">Northquest Finance</div>
+    <div class="welcome-title">Welcome, Creator</div>
+    <div class="welcome-sub">What would you like to do?</div>
+  </div>
+  <div class="form-card">
+    <button class="chooser-btn" onclick="showPage('submit')">
+      <span class="cb-icon">&#128249;</span>
+      <span>
+        <div class="cb-title">Log a video</div>
+        <div class="cb-sub">Log today's TikTok/Instagram posts and see your posting history</div>
+      </span>
+    </button>
+    <button class="chooser-btn" onclick="showPage('views')">
+      <span class="cb-icon">&#128200;</span>
+      <span>
+        <div class="cb-title">Log my views</div>
+        <div class="cb-sub">Enter tonight's view count for your recent videos</div>
+      </span>
+    </button>
+  </div>
+</div>
+
+<!-- LOG MY VIEWS -->
+<div id="page-views" class="page main">
+  <div class="welcome-banner">
+    <div class="welcome-greeting">Northquest Finance</div>
+    <div class="welcome-title">Log my views</div>
+    <div class="welcome-sub">Enter tonight's view count for videos from the last 7 days.</div>
+  </div>
+  <div class="form-card">
+    <div class="back-link" onclick="showPage('chooser')">&larr; Back</div>
+    <div class="form-group">
+      <label class="form-label">Your name</label>
+      <select class="form-input" id="v-name" onchange="onViewsNameChange()">
+        <option value="">Select your name...</option>
+      </select>
+    </div>
+    <div id="views-list"></div>
+  </div>
+</div>
+
 <!-- SUBMIT -->
-<div id="page-submit" class="page active main">
+<div id="page-submit" class="page main">
   <div class="welcome-banner">
     <div class="welcome-greeting">Northquest Finance</div>
     <div class="welcome-title">Welcome, Creator</div>
@@ -802,6 +865,7 @@
   </div>
 
   <div class="form-card">
+    <div class="back-link" onclick="showPage('chooser')">&larr; Back</div>
     <!-- Inline confirmation (visible right above form after submit) -->
     <div class="inline-confirm" id="inline-confirm">
       <strong id="inline-confirm-title">Post logged successfully!</strong>
@@ -1145,6 +1209,30 @@
   <div class="pay-legend" id="pay-legend"></div>
 </div>
 
+<!-- VIEW LOG (admin) -->
+<div id="page-viewlog" class="page main">
+  <div class="section-head">
+    <span class="section-title">Creator view log</span>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+      <span class="page-search-wrap"><input class="page-search-input" id="viewlog-search" type="text" placeholder="Search creators..." oninput="filterTableRows('viewlog-search','viewlog-body')" autocomplete="off"></span>
+      <button class="btn btn-sm" onclick="loadViewLogAdmin()">&#x21BB; Refresh</button>
+    </div>
+  </div>
+  <div style="font-size:12px;color:var(--text3);margin-bottom:12px">Self-reported by creators — reference only. Not used in any bonus or pay calculation.</div>
+  <div class="month-tabs" id="viewlog-month-tabs"></div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin:10px 0">
+    <button class="btn btn-sm" onclick="exportViewLogCSV('day')">&#x2913; Export day</button>
+    <button class="btn btn-sm" onclick="exportViewLogCSV('week')">&#x2913; Export week</button>
+    <button class="btn btn-sm" onclick="exportViewLogCSV('month')">&#x2913; Export month</button>
+  </div>
+  <div class="pay-wrap">
+    <table class="pay-table">
+      <thead><tr><th>Name</th><th>Date</th><th>Post</th><th>Platform</th><th>Views</th><th>Logged</th></tr></thead>
+      <tbody id="viewlog-body"><tr><td colspan="6" class="empty-state"><span class="spinner"></span></td></tr></tbody>
+    </table>
+  </div>
+</div>
+
 <!-- CREATOR MODAL -->
 <div class="modal-overlay" id="creator-modal" onclick="closeModalOverlay(event)">
   <div class="modal">
@@ -1235,7 +1323,7 @@ let isAdmin = false, dataLoaded = false, creatorsLoaded = false, paysLoaded = fa
 let bonusTiers = [[50000,50000],[100000,100000],[500000,200000],[1000000,500000],[2000000,900000]];
 let bonusTiersLoaded = false;
 let payRowNames = [];
-let currentPage = 'submit';
+let currentPage = 'chooser';
 let renderPaymentsPending = false;
 let lastPayEditTime = 0;
 let jsonpCtr = 0;
@@ -1959,9 +2047,10 @@ function renderMyLogs(name) {
       '<span class="mylog-slot">' + slot(r && r.insta, 'Insta', 'var(--pink)') + '</span></div>';
   };
 
-  // Only the current month, day 1 down to today — August starts fresh at the top.
+  // Newest first — today at the top, day 1 at the bottom. Creators check
+  // this right after submitting, so today's entry must never require scrolling.
   const dayRowsHtml = [];
-  for (let d = 1; d <= dayOfMonth; d++) {
+  for (let d = dayOfMonth; d >= 1; d--) {
     const ds = ym + '-' + String(d).padStart(2, '0');
     const isToday = ds === today;
     const rows = byDate[ds] || [];
@@ -2843,6 +2932,158 @@ function exportPaymentsCSV() {
   URL.revokeObjectURL(url);
 }
 
+// ══════════════════════════════════════════════════════════
+// LOG MY VIEWS — creator self-reported views (reference log only,
+// does NOT feed CALC_BONUS or any payment calculation)
+// ══════════════════════════════════════════════════════════
+function populateViewsNameDropdown() {
+  const sel = document.getElementById('v-name');
+  const cur = sel.value;
+  const names = getActiveCreators();
+  sel.innerHTML = '<option value="">' + (names.length ? 'Select your name...' : 'Loading names… please wait') + '</option>' +
+    names.map(n => '<option value="' + escH(n) + '">' + escH(n) + '</option>').join('');
+  if (cur && names.includes(cur)) sel.value = cur;
+  document.getElementById('views-list').innerHTML = '';
+}
+
+function onViewsNameChange() {
+  const name = document.getElementById('v-name').value.trim();
+  const listEl = document.getElementById('views-list');
+  if (!name) { listEl.innerHTML = ''; return; }
+  listEl.innerHTML = '<div class="empty-state"><span class="spinner"></span></div>';
+  jsonp({ action: 'getMyViews', name: name }, (data) => {
+    if (!data || data.status !== 'success') {
+      listEl.innerHTML = '<div class="empty-state">Could not load your videos. Please try again.</div>';
+      return;
+    }
+    renderViewsList(data.videos || []);
+  }, 20000);
+}
+
+function renderViewsList(videos) {
+  const listEl = document.getElementById('views-list');
+  if (!videos.length) {
+    listEl.innerHTML = '<div class="empty-state">No videos logged in the last 7 days.</div>';
+    return;
+  }
+  listEl.innerHTML = videos.map(v => {
+    const rows = [];
+    if (v.tiktok) rows.push(viewsRowHtml(v, 'tiktok', 'TikTok', v.tiktok, v.tiktokViews));
+    if (v.insta) rows.push(viewsRowHtml(v, 'insta', 'Insta', v.insta, v.instaViews));
+    return '<div class="views-video-card"><div class="vv-date">' + dayLabel(v.date) + ' — Video ' + escH(v.post) + '</div>' + rows.join('') + '</div>';
+  }).join('');
+}
+
+function viewsRowHtml(v, platform, label, link, currentViews) {
+  const inputId = 'vv-' + v.date + '-' + v.post + '-' + platform;
+  return '<div class="views-video-row">' +
+    '<span class="vv-platform">' + label + '</span>' +
+    '<input type="number" min="0" inputmode="numeric" id="' + inputId + '" value="' + (currentViews === '' ? '' : currentViews) + '" placeholder="Views tonight" />' +
+    '<button class="vv-save" onclick="submitOneView(\'' + v.date + '\',\'' + v.post + '\',\'' + platform + '\',\'' + inputId + '\',this)">' + (currentViews !== '' ? 'Update' : 'Save') + '</button>' +
+    '</div>';
+}
+
+function submitOneView(date, post, platform, inputId, btn) {
+  const name = document.getElementById('v-name').value.trim();
+  const input = document.getElementById(inputId);
+  const views = parseInt(input.value, 10);
+  if (isNaN(views) || views < 0) { input.focus(); return; }
+  btn.disabled = true; const orig = btn.textContent; btn.textContent = 'Saving…';
+  jsonp({ action: 'submitViews', name: name, videoDate: date, post: post, platform: platform, views: views }, (data) => {
+    btn.disabled = false;
+    if (data && data.status === 'success') {
+      btn.textContent = 'Update';
+      showToast('success', 'Saved', 'Views updated.');
+    } else {
+      btn.textContent = orig;
+      showToast('error', 'Could not save', (data && data.message) || 'Please try again.');
+    }
+  }, 20000);
+}
+
+// ══════════════════════════════════════════════════════════
+// VIEW LOG (admin) — full history, month-tabbed, CSV export at three grains
+// ══════════════════════════════════════════════════════════
+let allViewLogRows = [], viewLogLoaded = false, selectedViewLogMonth = null;
+
+function loadViewLogAdmin() {
+  viewLogLoaded = false;
+  document.getElementById('viewlog-body').innerHTML = '<tr><td colspan="6" class="empty-state"><span class="spinner"></span></td></tr>';
+  jsonp({ action: 'getViewLog' }, (data) => {
+    viewLogLoaded = true;
+    if (data && data.status === 'success') allViewLogRows = data.rows || [];
+    renderViewLogMonthTabs();
+    renderViewLogTable();
+  }, 20000);
+}
+
+function getViewLogMonths() { return [...new Set(allViewLogRows.map(r => r.logDate.substring(0,7)))].sort().reverse(); }
+
+function renderViewLogMonthTabs() {
+  const months = getViewLogMonths();
+  const el = document.getElementById('viewlog-month-tabs');
+  if (!viewLogLoaded) { el.innerHTML = '<span class="spinner"></span>'; return; }
+  if (!months.length) { el.innerHTML = '<span style="color:var(--text3);font-size:13px">No data yet</span>'; return; }
+  if (!selectedViewLogMonth || !months.includes(selectedViewLogMonth)) selectedViewLogMonth = months[0];
+  el.innerHTML = months.map(ym => {
+    const count = allViewLogRows.filter(r => r.logDate.substring(0,7) === ym).length;
+    return '<button class="month-tab ' + (ym===selectedViewLogMonth?'active':'') + '" onclick="selectViewLogMonth(\'' + ym + '\')">' +
+      monthShort(ym) + ' <span class="count">' + count + '</span></button>';
+  }).join('');
+}
+
+function selectViewLogMonth(ym) { selectedViewLogMonth = ym; renderViewLogMonthTabs(); renderViewLogTable(); }
+
+function renderViewLogTable() {
+  const tbody = document.getElementById('viewlog-body');
+  if (!viewLogLoaded) { tbody.innerHTML = '<tr><td colspan="6" class="empty-state"><span class="spinner"></span></td></tr>'; return; }
+  if (!selectedViewLogMonth) { tbody.innerHTML = '<tr><td colspan="6" class="empty-state"><strong>No entries yet</strong></td></tr>'; return; }
+  const rows = allViewLogRows.filter(r => r.logDate.substring(0,7) === selectedViewLogMonth);
+  if (!rows.length) { tbody.innerHTML = '<tr><td colspan="6" class="empty-state"><strong>No entries this month</strong></td></tr>'; return; }
+  const sorted = [...rows].sort((a,b) => b.logDate.localeCompare(a.logDate) || a.name.localeCompare(b.name));
+  tbody.innerHTML = sorted.map(r =>
+    '<tr data-creator="' + escH(r.name) + '"><td>' + escH(r.name) + '</td><td>' + escH(r.videoDate) + '</td><td>Post ' + escH(r.post) + '</td><td>' + escH(r.platform) + '</td><td>' + escH(String(r.views)) + '</td><td style="color:var(--text3)">' + escH(r.logDate) + '</td></tr>'
+  ).join('');
+}
+
+// Flat-list CSV (one row per video per platform per day per creator) at
+// three grains. 'day' and 'week' use the most recent date present in the
+// currently selected month so admins don't have to hunt for a date picker —
+// swap the reference date in the row filter below if a different day/week
+// is ever needed.
+function exportViewLogCSV(grain) {
+  const rows = allViewLogRows.filter(r => r.logDate.substring(0,7) === selectedViewLogMonth);
+  if (!rows.length) { showToast('error', 'Nothing to export', 'No entries in the selected month.'); return; }
+  let filtered, label;
+  if (grain === 'month') {
+    filtered = rows; label = monthLabel(selectedViewLogMonth);
+  } else if (grain === 'week') {
+    const latest = rows.map(r => r.logDate).sort().slice(-1)[0];
+    const d = new Date(latest + 'T00:00:00');
+    const day = d.getDay();
+    const mon = new Date(d); mon.setDate(d.getDate() - (day===0?6:day-1));
+    const sun = new Date(mon); sun.setDate(mon.getDate()+6);
+    const monStr = mon.toISOString().split('T')[0], sunStr = sun.toISOString().split('T')[0];
+    filtered = rows.filter(r => r.logDate >= monStr && r.logDate <= sunStr);
+    label = 'Week of ' + monStr;
+  } else {
+    const latest = rows.map(r => r.logDate).sort().slice(-1)[0];
+    filtered = rows.filter(r => r.logDate === latest);
+    label = latest;
+  }
+  const q = v => { v = String(v == null ? '' : v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g,'""') + '"' : v; };
+  const L = [['Name','Video Date','Post','Platform','Views','Log Date'].map(q).join(',')];
+  [...filtered].sort((a,b) => b.logDate.localeCompare(a.logDate) || a.name.localeCompare(b.name))
+    .forEach(r => L.push([r.name, r.videoDate, 'Post ' + r.post, r.platform, r.views, r.logDate].map(q).join(',')));
+  const csv = '﻿' + L.join('\n');
+  const blob = new Blob([csv], { type:'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'NQ View Log - ' + grain + ' - ' + label + '.csv';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
 // ── CREATOR INTAKE / ONBOARDING ──
 function setupIntake() {
   const dt = document.getElementById('i-signdate');
@@ -2959,7 +3200,7 @@ function logout() {
   adminKey = '';
   safeStorage.removeSession(SESSION_KEY);
   safeStorage.removeSession(ADMIN_KEY_SESSION);
-  showPage('submit');
+  showPage('chooser');
 }
 
 function renderNav() {
@@ -2971,6 +3212,7 @@ function renderNav() {
       '<button class="nav-tab ' + (currentPage==='dashboard'?'active':'') + '" onclick="showPage(\'dashboard\')">Dashboard</button>' +
       '<button class="nav-tab ' + (currentPage==='manage'?'active':'') + '" onclick="showPage(\'manage\')">Manage creators</button>' +
       '<button class="nav-tab ' + (currentPage==='payments'?'active':'') + '" onclick="showPage(\'payments\')">Payments</button>' +
+      '<button class="nav-tab ' + (currentPage==='viewlog'?'active':'') + '" onclick="showPage(\'viewlog\')">View log</button>' +
       '<button class="nav-tab ' + (currentPage==='submit'?'active':'') + '" onclick="showPage(\'submit\')">Submit form</button>' +
       '<button class="logout-btn" onclick="logout()">Logout</button>';
   } else {
@@ -2978,7 +3220,7 @@ function renderNav() {
   }
 }
 
-const ADMIN_PAGES = ['weekly','detailed','dashboard','manage','payments'];
+const ADMIN_PAGES = ['weekly','detailed','dashboard','manage','payments','viewlog'];
 function showPage(name) {
   if (ADMIN_PAGES.includes(name) && !isAdmin) { showPage('login'); return; }
   currentPage = name;
@@ -2994,6 +3236,8 @@ function showPage(name) {
   if (name==='dashboard') renderDashboard();
   if (name==='manage') renderManageCreators();
   if (name==='payments') { renderPayments(); refreshPaymentsData(); }
+  if (name==='views') populateViewsNameDropdown();
+  if (name==='viewlog') { loadViewLogAdmin(); }
   if (name==='intake') document.title = 'NorthQuest Creator Onboarding';
   window.scrollTo({ top: 0, behavior: 'instant' });
 }
