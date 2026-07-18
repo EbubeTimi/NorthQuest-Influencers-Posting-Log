@@ -762,9 +762,6 @@
   .views-video-row:last-child { margin-bottom:0; }
   .views-video-row .vv-platform { min-width:64px; font-size:12px; font-weight:600; color:var(--text3); }
   .views-video-row input { flex:1; padding:9px 10px; border:1px solid var(--border2); border-radius:var(--radius-sm); font-family:inherit; font-size:14px; }
-  .views-video-row .vv-save { padding:8px 14px; border:none; border-radius:var(--radius-sm); background:var(--accent); color:#fff; font-family:inherit; font-size:12px; font-weight:600; cursor:pointer; flex-shrink:0; }
-  .views-video-row .vv-save:disabled { opacity:0.5; cursor:default; }
-  .views-video-row .vv-saved-tag { font-size:11px; color:var(--accent3); font-weight:600; flex-shrink:0; }
   .mylog-summary { display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-bottom:18px; }
   .mylog-stat { background:var(--surface2); border:1px solid var(--border); border-radius:var(--radius-sm); padding:12px; text-align:center; }
   .mylog-stat .v { font-size:22px; font-weight:700; color:var(--accent3); }
@@ -2967,39 +2964,50 @@ function renderViewsList(videos) {
     listEl.innerHTML = '<div class="empty-state">No videos logged today or yesterday.</div>';
     return;
   }
-  listEl.innerHTML = videos.map(v => {
+  const cards = videos.map(v => {
     const rows = [];
-    if (v.tiktok) rows.push(viewsRowHtml(v, 'tiktok', 'TikTok', v.tiktok, v.tiktokViews));
-    if (v.insta) rows.push(viewsRowHtml(v, 'insta', 'Insta', v.insta, v.instaViews));
+    if (v.tiktok) rows.push(viewsRowHtml(v, 'tiktok', 'TikTok', v.tiktokViews));
+    if (v.insta) rows.push(viewsRowHtml(v, 'insta', 'Insta', v.instaViews));
     return '<div class="views-video-card"><div class="vv-date">' + dayLabel(v.date) + ' — Video ' + escH(v.post) + '</div>' + rows.join('') + '</div>';
   }).join('');
+  listEl.innerHTML = cards +
+    '<button class="btn btn-primary" id="views-save-all" style="width:100%;margin-top:6px" onclick="submitAllViews(this)">Save all views</button>';
 }
 
-function viewsRowHtml(v, platform, label, link, currentViews) {
-  const inputId = 'vv-' + v.date + '-' + v.post + '-' + platform;
+function viewsRowHtml(v, platform, label, currentViews) {
   return '<div class="views-video-row">' +
     '<span class="vv-platform">' + label + '</span>' +
-    '<input type="number" min="0" inputmode="numeric" id="' + inputId + '" value="' + (currentViews === '' ? '' : currentViews) + '" placeholder="Views tonight" />' +
-    '<button class="vv-save" onclick="submitOneView(\'' + v.date + '\',\'' + v.post + '\',\'' + platform + '\',\'' + inputId + '\',this)">' + (currentViews !== '' ? 'Update' : 'Save') + '</button>' +
+    '<input type="number" min="0" inputmode="numeric" class="vv-input" data-date="' + v.date + '" data-post="' + v.post + '" data-platform="' + platform + '" value="' + (currentViews === '' ? '' : currentViews) + '" placeholder="Views tonight" />' +
     '</div>';
 }
 
-function submitOneView(date, post, platform, inputId, btn) {
+// One button saves every filled-in field at once. There's no batch endpoint
+// on the backend (submitViews only ever wrote one row per call), so this
+// fires one call per filled field behind the scenes and waits for all of
+// them — the creator only ever sees one button and one result.
+function submitAllViews(btn) {
   const name = document.getElementById('v-name').value.trim();
-  const input = document.getElementById(inputId);
-  const views = parseInt(input.value, 10);
-  if (isNaN(views) || views < 0) { input.focus(); return; }
+  const inputs = [...document.querySelectorAll('#views-list .vv-input')].filter(i => i.value !== '');
+  if (!inputs.length) { showToast('error', 'Nothing to save', 'Enter at least one views number first.'); return; }
+
   btn.disabled = true; const orig = btn.textContent; btn.textContent = 'Saving…';
-  jsonp({ action: 'submitViews', name: name, videoDate: date, post: post, platform: platform, views: views }, (data) => {
-    btn.disabled = false;
-    if (data && data.status === 'success') {
-      btn.textContent = 'Update';
-      showToast('success', 'Saved', 'Views updated.');
-    } else {
-      btn.textContent = orig;
-      showToast('error', 'Could not save', (data && data.message) || 'Please try again.');
-    }
-  }, 20000);
+  let remaining = inputs.length, failed = 0;
+  inputs.forEach(input => {
+    const views = parseInt(input.value, 10);
+    if (isNaN(views) || views < 0) { remaining--; failed++; return checkDone(); }
+    jsonp({ action: 'submitViews', name: name, videoDate: input.dataset.date, post: input.dataset.post, platform: input.dataset.platform, views: views }, (data) => {
+      if (!data || data.status !== 'success') failed++;
+      remaining--; checkDone();
+    }, 20000);
+  });
+
+  function checkDone() {
+    if (remaining > 0) return;
+    btn.disabled = false; btn.textContent = orig;
+    if (failed === 0) showToast('success', 'Saved', 'All views updated.');
+    else if (failed < inputs.length) showToast('error', 'Partly saved', failed + ' of ' + inputs.length + ' did not save — try again.');
+    else showToast('error', 'Could not save', 'Please try again.');
+  }
 }
 
 // ══════════════════════════════════════════════════════════
