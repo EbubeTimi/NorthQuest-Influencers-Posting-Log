@@ -560,6 +560,19 @@
   }
   .contract-icon-link:hover, .contact-icon-link:hover { opacity: 1; color: var(--accent3); }
   .contact-icon-link.disabled { color: var(--border2); opacity: 0.7; cursor: default; }
+  .contact-menu { position: relative; }
+  .contact-menu summary { list-style: none; cursor: pointer; }
+  .contact-menu summary::-webkit-details-marker { display: none; }
+  .contact-menu[open] summary { color: var(--accent3); opacity: 1; }
+  .contact-menu-list {
+    position: absolute; z-index: 20; top: 22px; left: 0; background: var(--surface);
+    border: 1px solid var(--border); border-radius: var(--radius-sm); box-shadow: 0 4px 14px rgba(0,0,0,0.12);
+    padding: 6px; display: flex; flex-direction: column; min-width: 190px;
+  }
+  .contact-menu-list a {
+    padding: 7px 10px; font-size: 12px; color: var(--text); text-decoration: none; border-radius: 6px; white-space: nowrap;
+  }
+  .contact-menu-list a:hover { background: var(--accent-light); color: var(--accent3); }
   .contract-note { font-size: 11px; color: var(--text3); white-space: nowrap; }
   .resolve-toggle { color: var(--accent3); text-decoration: none; font-weight: 600; }
   .resolve-toggle:hover { text-decoration: underline; }
@@ -849,6 +862,9 @@
       <select class="form-input" id="v-name" onchange="onViewsNameChange()">
         <option value="">Select your name...</option>
       </select>
+      <div id="ig-connect-row" style="display:none;margin-top:10px">
+        <a href="#" id="ig-connect-link" target="_blank" rel="noopener" style="font-size:12px;color:var(--accent);text-decoration:none">Connect Instagram — skip typing this in every night &rarr;</a>
+      </div>
     </div>
     <div id="views-list"></div>
   </div>
@@ -1177,6 +1193,7 @@
       <span class="page-search-wrap"><input class="page-search-input" id="pay-search" type="text" placeholder="Search creators..." oninput="filterTableRows('pay-search','pay-body')" autocomplete="off"></span>
       <button id="pay-refresh-btn" class="btn btn-sm" onclick="refreshPaymentsData(this)">&#x21BB; Refresh</button>
       <button class="btn btn-sm" onclick="exportPaymentsCSV()">&#x2913; Download CSV</button>
+      <button id="pay-clear-bonuses-btn" class="btn btn-sm" onclick="clearAllBonusesThisMonth(this)" style="color:var(--red)">&#x2715; Clear all bonuses (this month)</button>
     </div>
   </div>
   <div class="month-tabs" id="pay-tabs"><span class="spinner"></span></div>
@@ -2280,16 +2297,42 @@ function toWaNumber(raw) {
   return d;
 }
 
-// One-tap WhatsApp follow-up for a creator whose contract isn't filed yet —
-// pre-fills a polite nudge so this is a single click, not a typing chore.
-function contractFollowUpLink(c) {
+// A creator can be contacted for several different reasons — contract
+// follow-up, account details, a general check-in, or (for anyone no longer
+// active) a plain "you've left" message. Each builds its own pre-filled
+// wa.me link off the same phone number; picking one is what used to be a
+// single fixed message.
+function waMessages(c) {
+  const first = c.name.split(' ')[0];
+  const isActive = String(c.status).toLowerCase() === 'active';
+  const msgs = [];
+  msgs.push({
+    label: 'Contract follow-up',
+    text: c.contractSigned
+      ? 'Hi ' + first + ', this is the NorthQuest team. We have your contract signature on file but haven\'t received the signed PDF copy yet — could you upload it when you get a chance? Let us know if you\'re stuck on any of the signing steps.'
+      : 'Hi ' + first + ', this is the NorthQuest team. We don\'t see your signed contract yet — could you complete the signing steps and upload it when you get a chance? Let us know if you need any help.'
+  });
+  msgs.push({
+    label: 'Request account details',
+    text: 'Hi ' + first + ', this is the NorthQuest team. Could you send your bank name, account number, and account name so we can confirm your payment details are correct? Thank you!'
+  });
+  msgs.push({
+    label: 'General check-in',
+    text: 'Hi ' + first + ', this is the NorthQuest team, just checking in — how are things going? Let us know if you need anything.'
+  });
+  if (!isActive) {
+    msgs.push({
+      label: 'Message a former creator',
+      text: 'Hi ' + first + ', this is the NorthQuest team reaching out.'
+    });
+  }
+  return msgs;
+}
+
+function waLinkFor(c, text) {
   const wa = toWaNumber(c.phone);
   if (!wa) return '';
-  const first = c.name.split(' ')[0];
-  const msg = c.contractSigned
-    ? 'Hi ' + first + ', this is the NorthQuest team. We have your contract signature on file but haven\'t received the signed PDF copy yet — could you upload it when you get a chance? Let us know if you\'re stuck on any of the signing steps.'
-    : 'Hi ' + first + ', this is the NorthQuest team. We don\'t see your signed contract yet — could you complete the signing steps and upload it when you get a chance? Let us know if you need any help.';
-  return 'https://wa.me/' + wa + '?text=' + encodeURIComponent(msg);
+  return 'https://wa.me/' + wa + '?text=' + encodeURIComponent(text);
 }
 
 // Manual escape hatch: search the admin's own Google Drive by the creator's
@@ -2326,12 +2369,16 @@ function contractCell(c) {
   return '<div class="contract-cell">' + icon + note + '</div>';
 }
 
-// Contact column: same neutral chat icon regardless of status — it's just
-// "how do I reach this person," separate from what state their paperwork is in.
+// Contact column: same neutral chat icon regardless of status — active or
+// fired, reaching them works the same way. Opens a small menu of message
+// templates instead of firing one fixed message straight away.
 function contactCell(c) {
-  const waLink = contractFollowUpLink(c);
-  if (!waLink) return '<span class="contact-icon-link disabled" title="No phone number on file">&#128172;</span>';
-  return '<a href="' + waLink + '" target="_blank" rel="noopener" class="contact-icon-link" title="Click to WhatsApp them a follow-up">&#128172;</a>';
+  const wa = toWaNumber(c.phone);
+  if (!wa) return '<span class="contact-icon-link disabled" title="No phone number on file">&#128172;</span>';
+  const items = waMessages(c).map(m =>
+    '<a href="' + waLinkFor(c, m.text) + '" target="_blank" rel="noopener">' + escH(m.label) + '</a>'
+  ).join('');
+  return '<details class="contact-menu"><summary class="contact-icon-link" title="Click to choose a message">&#128172;</summary><div class="contact-menu-list">' + items + '</div></details>';
 }
 
 function toggleContractResolved(name, resolved) {
@@ -2847,6 +2894,23 @@ function renderPayments() {
   document.getElementById('pay-legend').innerHTML = payLegendHtml(tiersInUse.length ? tiersInUse : [defaultMonthlySalary]);
 }
 
+// Bulk fix for the comma-formatting bug (21 July 2026) — lets admin wipe
+// every bonus entry for the selected month in one go, so they can safely
+// re-enter everything clean rather than fixing each creator by hand.
+function clearAllBonusesThisMonth(btn) {
+  if (!payRowNames.length) { showToast('error', 'Nothing to clear', 'No creators in this month\'s register yet.'); return; }
+  const monthName = monthLabel(selectedPayMonth);
+  const withBonus = payRowNames.filter(name => {
+    const rec = allPayments.find(p => p.month === selectedPayMonth && String(p.name).toLowerCase() === name.toLowerCase());
+    return rec && rec.bonusViews;
+  });
+  if (!withBonus.length) { showToast('error', 'Nothing to clear', 'No bonuses are entered for ' + monthName + ' yet.'); return; }
+  if (!confirm('Clear ALL bonus entries for ' + withBonus.length + ' creator(s) in ' + monthName + '? This cannot be undone — you will need to re-enter them.')) return;
+  withBonus.forEach(name => savePaymentField(selectedPayMonth, name, 'bonusViews', '', false));
+  renderPayments();
+  showToast('success', 'Bonuses cleared', 'All bonus entries for ' + monthName + ' have been cleared. Re-enter them from Manage Creators or the register.');
+}
+
 function exportPaymentsCSV() {
   if (!selectedPayMonth) return;
   const y = selectedPayMonth.split('-')[0];
@@ -2947,7 +3011,10 @@ function populateViewsNameDropdown() {
 function onViewsNameChange() {
   const name = document.getElementById('v-name').value.trim();
   const listEl = document.getElementById('views-list');
-  if (!name) { listEl.innerHTML = ''; return; }
+  const connectRow = document.getElementById('ig-connect-row');
+  if (!name) { listEl.innerHTML = ''; connectRow.style.display = 'none'; return; }
+  document.getElementById('ig-connect-link').href = SCRIPT_URL + '?action=igConnectStart&name=' + encodeURIComponent(name);
+  connectRow.style.display = 'block';
   listEl.innerHTML = '<div class="empty-state"><span class="spinner"></span></div>';
   jsonp({ action: 'getMyViews', name: name }, (data) => {
     if (!data || data.status !== 'success') {
