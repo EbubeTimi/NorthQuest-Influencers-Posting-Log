@@ -33,8 +33,9 @@ export default function OnboardingPage() {
     const path = `${creator.id}/signature.png`;
     const { error: upErr } = await supabase.storage.from("contracts").upload(path, bytes, { contentType: "image/png", upsert: true });
     if (upErr) { setStatus("error"); setError("Signed up, but the signature upload failed: " + upErr.message); return; }
-    const { data: pub } = supabase.storage.from("contracts").getPublicUrl(path);
-    await supabase.from("creators").update({ contract_file_url: pub.publicUrl }).eq("id", creator.id);
+    // The bucket is private, so a public URL would never load. Store the path
+    // and sign it at the moment someone actually opens the contract.
+    await supabase.from("creators").update({ contract_file_url: path }).eq("id", creator.id);
     router.replace("/dashboard");
   }
   if (!user) return null;
