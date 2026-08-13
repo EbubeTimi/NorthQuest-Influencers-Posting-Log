@@ -4,8 +4,8 @@ import { useRouter } from "next/navigation";
 import { supabaseBrowser } from "../../lib/supabaseClient";
 import Header from "../../components/Header";
 function monthBounds(d = new Date()) { const start = new Date(d.getFullYear(), d.getMonth(), 1); const end = new Date(d.getFullYear(), d.getMonth() + 1, 0); const iso = (x) => x.toISOString().slice(0, 10); return { start: iso(start), end: iso(end), label: d.toLocaleDateString("en-GB", { month: "long", year: "numeric" }) }; }
-const STATUS_STYLE = { pending: "bg-amber-100 text-amber-700", approved: "bg-emerald-100 text-emerald-700", rejected: "bg-red-100 text-red-700" };
-const PAY_STATUS_STYLE = { paid: "bg-emerald-100 text-emerald-700", pending: "bg-amber-100 text-amber-700", processing: "bg-sky-100 text-sky-700" };
+const STATUS_STYLE = { pending: "bg-waitingBg text-waitingInk", approved: "bg-okBg text-okInk", rejected: "bg-noBg text-noInk" };
+const PAY_STATUS_STYLE = { paid: "bg-okBg text-okInk", pending: "bg-waitingBg text-waitingInk", processing: "bg-accentSoft text-accent" };
 const naira = (n) => "₦" + Number(n || 0).toLocaleString("en-NG", { maximumFractionDigits: 0 });
 function monthName(isoDate) { return new Date(isoDate + "T00:00:00").toLocaleDateString("en-GB", { month: "long", year: "numeric" }); }
 
@@ -22,7 +22,7 @@ function PaymentsSection({ payments }) {
     return (
       <section className="card mb-6">
         <h2 className="mb-1 font-semibold">Your payments</h2>
-        <p className="text-sm text-slate-400">Nothing to show yet. Once a bonus is approved, or your first month is worked out, it will appear here.</p>
+        <p className="text-base text-faint">Nothing to show yet. Once a bonus is approved, or your first month is worked out, it will appear here.</p>
       </section>
     );
   }
@@ -33,7 +33,7 @@ function PaymentsSection({ payments }) {
         {payments.map((p) => {
           const total = payTotal(p);
           const status = String(p.payment_status || "Pending");
-          const style = PAY_STATUS_STYLE[status.toLowerCase()] || "bg-slate-100 text-slate-600";
+          const style = PAY_STATUS_STYLE[status.toLowerCase()] || "bg-accentSoft text-muted";
           // A month with a bonus but no base pay yet has not been worked out by
           // an admin. Saying so beats showing a total that will change.
           const provisional = Number(p.base_amount || 0) === 0 && status.toLowerCase() !== "paid";
@@ -44,7 +44,7 @@ function PaymentsSection({ payments }) {
             ["Special bonus", p.special_bonus],
           ].filter(([, v]) => Number(v || 0) !== 0);
           return (
-            <div key={p.id} className="rounded-xl border border-slate-100 p-3">
+            <div key={p.id} className="rounded-xl border border-line p-3">
               <div className="flex items-baseline justify-between">
                 <span className="font-medium">{monthName(p.month)}</span>
                 <span className="flex items-center gap-2">
@@ -52,7 +52,7 @@ function PaymentsSection({ payments }) {
                   <span className={`badge ${style}`}>{status}</span>
                 </span>
               </div>
-              <div className="mt-2 space-y-1 text-xs text-slate-500">
+              <div className="mt-2 space-y-1 text-tiny text-muted">
                 {rows.map(([label, v]) => (
                   <div key={label} className="flex justify-between"><span>{label}</span><span>{naira(v)}</span></div>
                 ))}
@@ -61,8 +61,8 @@ function PaymentsSection({ payments }) {
                 )}
                 {p.payment_date && <div className="flex justify-between"><span>Paid on</span><span>{p.payment_date}</span></div>}
               </div>
-              {p.remarks && <p className="mt-2 rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-600">{p.remarks}</p>}
-              {provisional && <p className="mt-2 text-xs text-amber-600">Still being worked out — your base pay for this month has not been finalised yet.</p>}
+              {p.remarks && <p className="mt-2 rounded-lg bg-ground px-3 py-2 text-tiny text-muted">{p.remarks}</p>}
+              {provisional && <p className="mt-2 text-tiny text-amber-600">Still being worked out — your base pay for this month has not been finalised yet.</p>}
             </div>
           );
         })}
@@ -116,7 +116,7 @@ export default function CreatorDashboard() {
     setMsg("Bonus claim sent for review."); setBonusForm({ date: new Date().toISOString().slice(0, 10), videoUrl: "", views: "" }); load();
   }
   if (!profile) return null;
-  if (profile && !creator) return (<main className="flex min-h-screen items-center justify-center px-4 text-center"><p className="text-sm text-slate-500">Setting up your creator profile…</p></main>);
+  if (profile && !creator) return (<main className="flex min-h-screen items-center justify-center px-4 text-center"><p className="text-base text-muted">Setting up your creator profile…</p></main>);
   const totalVideos = videos.length; const adminLogged = videos.filter((v) => v.logged_by === "admin").length;
-  return (<div><Header onSignOut={signOut} /><main className="mx-auto max-w-2xl px-4 py-4"><div className="mb-6"><p className="text-xs font-semibold uppercase tracking-wide text-slate-400">{label}</p><h1 className="font-display text-2xl font-bold">Hi, {profile.full_name?.split(" ")[0]}</h1></div><div className="mb-6 grid grid-cols-2 gap-4"><div className="card"><p className="text-xs font-semibold uppercase text-slate-400">Videos this month</p><p className="mt-1 text-3xl font-bold text-accent">{totalVideos}</p>{adminLogged > 0 && <p className="mt-1 text-xs text-slate-400">{adminLogged} logged by admin</p>}</div><div className="card"><p className="text-xs font-semibold uppercase text-slate-400">Bonus claims</p><p className="mt-1 text-3xl font-bold text-accent">{claims.length}</p><p className="mt-1 text-xs text-slate-400">{claims.filter((c) => c.status === "pending").length} awaiting review</p></div></div>{msg && <p className="mb-4 text-sm text-accent">{msg}</p>}<PaymentsSection payments={payments} /><section className="card mb-6"><h2 className="mb-3 font-semibold">Log a video</h2><form onSubmit={logVideo} className="grid grid-cols-2 gap-3"><input className="input" type="date" value={videoForm.date} onChange={(e) => setVideoForm((f) => ({ ...f, date: e.target.value }))} required /><select className="input" value={videoForm.post} onChange={(e) => setVideoForm((f) => ({ ...f, post: e.target.value }))}><option value="1">Post 1</option><option value="2">Post 2</option></select><input className="input col-span-2" placeholder="TikTok link" value={videoForm.tiktok} onChange={(e) => setVideoForm((f) => ({ ...f, tiktok: e.target.value }))} /><input className="input col-span-2" placeholder="Instagram link" value={videoForm.insta} onChange={(e) => setVideoForm((f) => ({ ...f, insta: e.target.value }))} /><button className="btn-primary col-span-2" disabled={busy}>Log video</button></form></section><section className="card mb-6"><h2 className="mb-3 font-semibold">This month's videos</h2><div className="space-y-2">{videos.length === 0 && <p className="text-sm text-slate-400">Nothing logged yet.</p>}{videos.map((v) => (<div key={v.id} className="flex items-center justify-between rounded-xl border border-slate-100 px-3 py-2 text-sm"><span>{v.log_date} · Post {v.post_number}</span>{v.logged_by === "admin" ? (<span className="badge bg-violet-100 text-violet-700">Logged by admin</span>) : (<span className="badge bg-slate-100 text-slate-600">Self-logged</span>)}</div>))}</div></section><section className="card mb-6"><h2 className="mb-3 font-semibold">Submit a bonus claim</h2><p className="mb-3 text-xs text-slate-500">Paste the link to the specific video and how many views it has now. Admin will approve or reject.</p><form onSubmit={submitBonus} className="grid grid-cols-2 gap-3"><input className="input" type="date" value={bonusForm.date} onChange={(e) => setBonusForm((f) => ({ ...f, date: e.target.value }))} required /><input className="input" type="number" placeholder="Views" value={bonusForm.views} onChange={(e) => setBonusForm((f) => ({ ...f, views: e.target.value }))} required /><input className="input col-span-2" placeholder="Video link (TikTok or Instagram)" value={bonusForm.videoUrl} onChange={(e) => setBonusForm((f) => ({ ...f, videoUrl: e.target.value }))} required /><button className="btn-primary col-span-2" disabled={busy}>Send for review</button></form></section><section className="card"><h2 className="mb-3 font-semibold">Bonus history</h2><div className="space-y-2">{claims.length === 0 && <p className="text-sm text-slate-400">No bonus claims yet.</p>}{claims.map((c) => (<div key={c.id} className="rounded-xl border border-slate-100 px-3 py-2 text-sm"><div className="flex items-center justify-between"><span>{c.claim_date} · {Number(c.views).toLocaleString()} views</span><span className={`badge ${STATUS_STYLE[c.status]}`}>{c.status}</span></div>{c.video_url && (<a href={c.video_url} target="_blank" rel="noopener noreferrer" className="mt-1 block text-xs text-accent underline">View submitted video</a>)}</div>))}</div></section></main></div>);
+  return (<div><Header onSignOut={signOut} /><main className="mx-auto max-w-2xl px-4 py-4"><div className="mb-6"><p className="text-tiny font-semibold uppercase tracking-wide text-faint">{label}</p><h1 className="font-display text-2xl font-bold">Hi, {profile.full_name?.split(" ")[0]}</h1></div><div className="mb-6 grid grid-cols-2 gap-4"><div className="card"><p className="text-tiny font-semibold uppercase text-faint">Videos this month</p><p className="mt-1 text-3xl font-bold text-accent">{totalVideos}</p>{adminLogged > 0 && <p className="mt-1 text-tiny text-faint">{adminLogged} logged by admin</p>}</div><div className="card"><p className="text-tiny font-semibold uppercase text-faint">Bonus claims</p><p className="mt-1 text-3xl font-bold text-accent">{claims.length}</p><p className="mt-1 text-tiny text-faint">{claims.filter((c) => c.status === "pending").length} awaiting review</p></div></div>{msg && <p className="mb-4 text-base text-accent">{msg}</p>}<PaymentsSection payments={payments} /><section className="card mb-6"><h2 className="mb-3 font-semibold">Log a video</h2><form onSubmit={logVideo} className="grid grid-cols-2 gap-3"><input className="input" type="date" value={videoForm.date} onChange={(e) => setVideoForm((f) => ({ ...f, date: e.target.value }))} required /><select className="input" value={videoForm.post} onChange={(e) => setVideoForm((f) => ({ ...f, post: e.target.value }))}><option value="1">Post 1</option><option value="2">Post 2</option></select><input className="input col-span-2" placeholder="TikTok link" value={videoForm.tiktok} onChange={(e) => setVideoForm((f) => ({ ...f, tiktok: e.target.value }))} /><input className="input col-span-2" placeholder="Instagram link" value={videoForm.insta} onChange={(e) => setVideoForm((f) => ({ ...f, insta: e.target.value }))} /><button className="btn-primary col-span-2" disabled={busy}>Log video</button></form></section><section className="card mb-6"><h2 className="mb-3 font-semibold">This month's videos</h2><div className="space-y-2">{videos.length === 0 && <p className="text-base text-faint">Nothing logged yet.</p>}{videos.map((v) => (<div key={v.id} className="flex items-center justify-between rounded-xl border border-line px-3 py-2 text-base"><span>{v.log_date} · Post {v.post_number}</span>{v.logged_by === "admin" ? (<span className="badge bg-violet-100 text-violet-700">Logged by admin</span>) : (<span className="badge bg-accentSoft text-muted">Self-logged</span>)}</div>))}</div></section><section className="card mb-6"><h2 className="mb-3 font-semibold">Submit a bonus claim</h2><p className="mb-3 text-tiny text-muted">Paste the link to the specific video and how many views it has now. Admin will approve or reject.</p><form onSubmit={submitBonus} className="grid grid-cols-2 gap-3"><input className="input" type="date" value={bonusForm.date} onChange={(e) => setBonusForm((f) => ({ ...f, date: e.target.value }))} required /><input className="input" type="number" placeholder="Views" value={bonusForm.views} onChange={(e) => setBonusForm((f) => ({ ...f, views: e.target.value }))} required /><input className="input col-span-2" placeholder="Video link (TikTok or Instagram)" value={bonusForm.videoUrl} onChange={(e) => setBonusForm((f) => ({ ...f, videoUrl: e.target.value }))} required /><button className="btn-primary col-span-2" disabled={busy}>Send for review</button></form></section><section className="card"><h2 className="mb-3 font-semibold">Bonus history</h2><div className="space-y-2">{claims.length === 0 && <p className="text-base text-faint">No bonus claims yet.</p>}{claims.map((c) => (<div key={c.id} className="rounded-xl border border-line px-3 py-2 text-base"><div className="flex items-center justify-between"><span>{c.claim_date} · {Number(c.views).toLocaleString()} views</span><span className={`badge ${STATUS_STYLE[c.status]}`}>{c.status}</span></div>{c.video_url && (<a href={c.video_url} target="_blank" rel="noopener noreferrer" className="mt-1 block text-tiny text-accent underline">View submitted video</a>)}</div>))}</div></section></main></div>);
 }

@@ -16,7 +16,7 @@ export default function Header({ role, onSignOut, right }) {
       <div className="flex items-center gap-3">
         {right}
         {onSignOut && (
-          <button className="btn-secondary text-sm" onClick={() => setConfirming(true)}>Sign out</button>
+          <button className="btn-secondary text-base" onClick={() => setConfirming(true)}>Sign out</button>
         )}
       </div>
       <SignOutConfirm open={confirming} onCancel={() => setConfirming(false)} onConfirm={onSignOut} />

@@ -59,12 +59,12 @@ export default function SignOutConfirm({ open, onCancel, onConfirm }) {
         onClick={(e) => e.stopPropagation()}
       >
         <h2 id="signout-title" className="font-display text-lg font-bold">{copy.title}</h2>
-        <p id="signout-body" className="mt-2 text-sm text-slate-600">{copy.body}</p>
+        <p id="signout-body" className="mt-2 text-base text-muted">{copy.body}</p>
         <div className="mt-5 flex flex-col gap-2">
           {/* The safe choice is first and styled as the primary action. */}
           <button ref={firstButtonRef} className="btn-primary w-full" onClick={onCancel}>{copy.cancel}</button>
           <button
-            className="w-full rounded-xl px-5 py-3 text-sm font-semibold text-red-600 transition hover:bg-red-50"
+            className="w-full rounded-xl px-5 py-3 text-base font-semibold text-red-600 transition hover:bg-red-50"
             onClick={() => (step === 1 ? setStep(2) : onConfirm())}
           >
             {copy.confirm}

@@ -15,5 +15,5 @@ export default function AuthCallbackPage() {
       if (!profile) router.replace("/onboarding"); else if (profile.role === "admin") router.replace("/admin"); else router.replace("/dashboard");
     });
   }, [router]);
-  return (<main className="flex min-h-screen items-center justify-center px-4"><div className="w-full max-w-sm text-center">{error ? (<><p className="text-sm text-red-600">{error}</p><button className="btn-secondary mt-4" onClick={() => router.replace("/")}>Back to sign in</button></>) : (<p className="text-sm text-slate-500">Signing you in…</p>)}</div></main>);
+  return (<main className="flex min-h-screen items-center justify-center px-4"><div className="w-full max-w-sm text-center">{error ? (<><p className="text-base text-red-600">{error}</p><button className="btn-secondary mt-4" onClick={() => router.replace("/")}>Back to sign in</button></>) : (<p className="text-base text-muted">Signing you in…</p>)}</div></main>);
 }
