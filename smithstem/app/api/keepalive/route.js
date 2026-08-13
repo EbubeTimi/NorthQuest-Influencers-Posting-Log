@@ -24,7 +24,10 @@ export async function GET(request) {
       "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp1dWhsb3dqcW5pYWR0Y3BkeXB2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU3Nzc4MTUsImV4cCI6MjEwMTM1MzgxNX0.jVwib7vyA0rL-Ra7BfIOG97b6zOSkNzk4MaJjux0_uo"
   );
 
-  const { data, error } = await supabase.rpc("ping");
+  // ping_external also records the run in system_heartbeat, so this defence is
+  // visible in the same log as the in-database one. Without that there is no
+  // way to tell whether the Vercel cron is actually firing.
+  const { data, error } = await supabase.rpc("ping_external");
 
   if (error) {
     return Response.json({ ok: false, error: error.message }, { status: 500 });
