@@ -8,7 +8,7 @@ const OTP_TTL_SECONDS = 3600;
 // the link below becomes a chat instead of an email.
 const SUPPORT_NAME = "Smith";
 const SUPPORT_EMAIL = "smithonyekwereh1@gmail.com";
-const SUPPORT_WHATSAPP = "";
+const SUPPORT_WHATSAPP = "2349076217386";
 function supportHref(email) {
   if (SUPPORT_WHATSAPP) {
     return `https://wa.me/${SUPPORT_WHATSAPP}?text=${encodeURIComponent(`Hi ${SUPPORT_NAME}, I'm not getting my Smithstem sign-in code. My email is ${email}`)}`;
