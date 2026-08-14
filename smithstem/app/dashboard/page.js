@@ -2,7 +2,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { supabaseBrowser } from "../../lib/supabaseClient";
-import { rate, bonusForViews } from "../../lib/domain";
+import { rate, bonusForViews, tiersOn } from "../../lib/domain";
 import Header from "../../components/Header";
 
 function monthBounds(d = new Date()) {
@@ -41,8 +41,8 @@ function EarnedSoFar({ videos, claims, tiers, basePay }) {
   const baseEarned = Math.round(videos.length * perVideo);
   const approved = claims.filter((c) => c.status === "approved");
   const waiting = claims.filter((c) => c.status === "pending");
-  const bonusEarned = approved.reduce((sum, c) => sum + bonusForViews(c.views, tiers), 0);
-  const bonusWaiting = waiting.reduce((sum, c) => sum + bonusForViews(c.views, tiers), 0);
+  const bonusEarned = approved.reduce((sum, c) => sum + bonusForViews(c.views, tiersOn(tiers, c.claim_date)), 0);
+  const bonusWaiting = waiting.reduce((sum, c) => sum + bonusForViews(c.views, tiersOn(tiers, c.claim_date)), 0);
 
   return (
     <section className="card mb-4">
@@ -189,9 +189,13 @@ export default function CreatorDashboard() {
   if (profile && !creator) return (<main className="flex min-h-screen items-center justify-center px-4 text-center"><p className="text-base text-muted">Setting up your creator profile…</p></main>);
 
   const waitingCount = claims.filter((c) => c.status === "pending").length;
+  // Read the entry threshold from the tiers rather than repeating it in copy,
+  // so it follows Smith whenever she changes the structure.
+  const currentTiers = tiersOn(tiers, new Date());
+  const lowestTier = currentTiers.length ? Math.min(...currentTiers.map((t) => t.min_views)) : null;
   // What this claim is worth, so a creator can see the value of what they sent
   // rather than just a view count.
-  const claimValue = (c) => bonusForViews(c.views, tiers);
+  const claimValue = (c) => bonusForViews(c.views, tiersOn(tiers, c.claim_date));
 
   return (
     <div>
@@ -264,7 +268,7 @@ export default function CreatorDashboard() {
         <section className="card mb-4">
           <h2 className="text-lead font-semibold">Claim a bonus</h2>
           <p className="mb-3 mt-1 text-tiny text-muted">
-            Paste the link to the video and how many views it has now. Bonuses start at 50,000 views.
+            Paste the link to the video and how many views it has now. Bonuses start at {lowestTier ? Number(lowestTier).toLocaleString() : "—"} views.
           </p>
           <form onSubmit={submitBonus} className="grid grid-cols-2 gap-3">
             <input className="input" type="date" value={bonusForm.date} onChange={(e) => setBonusForm((f) => ({ ...f, date: e.target.value }))} required />
@@ -274,9 +278,9 @@ export default function CreatorDashboard() {
                 blind and nobody is surprised by the amount later. */}
             {Number(bonusForm.views) > 0 && (
               <p className="col-span-2 -mt-1 text-tiny text-muted">
-                {bonusForViews(Number(bonusForm.views), tiers) > 0
-                  ? <>That is worth <span className="font-semibold text-ink">{naira(bonusForViews(Number(bonusForm.views), tiers))}</span> if approved.</>
-                  : <>Under 50,000 views, so there is no bonus for this one yet.</>}
+                {bonusForViews(Number(bonusForm.views), tiersOn(tiers, bonusForm.date)) > 0
+                  ? <>That is worth <span className="font-semibold text-ink">{naira(bonusForViews(Number(bonusForm.views), tiersOn(tiers, bonusForm.date)))}</span> if approved.</>
+                  : <>Under {Number(lowestTier || 0).toLocaleString()} views, so there is no bonus for this one yet.</>}
               </p>
             )}
             <button className="btn-primary col-span-2" disabled={busy}>{busy ? "Sending…" : "Send to Smith"}</button>
@@ -286,7 +290,7 @@ export default function CreatorDashboard() {
         <section className="card mb-4">
           <h2 className="mb-3 text-lead font-semibold">Your bonus claims</h2>
           {claims.length === 0 ? (
-            <p className="text-base text-faint">No claims yet. When a video passes 50,000 views, claim it above.</p>
+            <p className="text-base text-faint">No claims yet. When a video passes {lowestTier ? Number(lowestTier).toLocaleString() : "the first"} views, claim it above.</p>
           ) : (
             <div className="space-y-2">
               {claims.map((c) => (
