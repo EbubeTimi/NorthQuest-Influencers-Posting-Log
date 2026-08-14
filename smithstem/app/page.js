@@ -30,7 +30,23 @@ export default function LoginPage() {
     if (maybe && maybe !== suggestion) { setSuggestion(maybe); setStatus("idle"); return; }
     setStatus("sending");
     const supabase = supabaseBrowser();
-    try { const { error } = await withTimeout(supabase.auth.signInWithOtp({ email, options: { shouldCreateUser: true } })); if (error) throw error; } catch (err) { setStatus("error"); setError(err.message); return; }
+    try {
+      const { error } = await withTimeout(supabase.auth.signInWithOtp({ email, options: { shouldCreateUser: true } }));
+      if (error) throw error;
+    } catch (err) {
+      setStatus("error");
+      // Supabase refuses a second code for the same address inside a minute.
+      // Its own wording is "For security purposes, you can only request this
+      // after 38 seconds", which reads like an accusation. Found this by
+      // asking for two codes in a row while testing.
+      const seconds = /after (\d+) seconds/.exec(err.message || "")?.[1];
+      setError(
+        err.message?.includes("rate limit") || seconds
+          ? `A code was just sent to that address. Check your inbox and spam — if it really has not arrived, try again in ${seconds || 60} seconds.`
+          : err.message
+      );
+      return;
+    }
     setStatus("sent"); sessionStorage.setItem("smithstem_pending_email", email); router.push("/verify");
   }
   if (status === "exchanging") return (<main className="flex min-h-screen items-center justify-center px-4"><p className="text-base text-muted">Signing you in…</p></main>);
