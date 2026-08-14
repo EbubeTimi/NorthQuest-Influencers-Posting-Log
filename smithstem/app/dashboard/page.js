@@ -130,7 +130,7 @@ export default function CreatorDashboard() {
 
   return (
     <div>
-      <Header onSignOut={signOut} />
+      <Header profile={profile} onSignOut={signOut} />
       <main className="mx-auto max-w-2xl px-4 py-4">
         <div className="mb-5">
           <p className="kicker">{label}</p>

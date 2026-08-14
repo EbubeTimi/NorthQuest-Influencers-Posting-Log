@@ -1,8 +1,9 @@
 "use client";
 import { useState } from "react";
 import SignOutConfirm from "./SignOutConfirm";
+import BusinessSwitcher from "./BusinessSwitcher";
 
-export default function Header({ role, onSignOut, right }) {
+export default function Header({ role, profile, onSignOut, right }) {
   const [confirming, setConfirming] = useState(false);
   return (
     <header className="mx-auto flex max-w-5xl items-center justify-between px-4 py-4">
@@ -14,6 +15,7 @@ export default function Header({ role, onSignOut, right }) {
         </div>
       </div>
       <div className="flex items-center gap-3">
+        {profile && <BusinessSwitcher profile={profile} />}
         {right}
         {onSignOut && (
           <button className="btn-secondary text-base" onClick={() => setConfirming(true)}>Sign out</button>
