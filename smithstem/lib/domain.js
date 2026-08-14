@@ -1,7 +1,9 @@
 // Two posts a day, every day of that month — so the divisor is 62 in a 31-day
-// month and 60 in a 30-day one, and February is shorter again. Dividing by a
-// flat 62 underpaid every 30-day month: at the 150,000 band that is 2,419 a
-// post instead of 2,500, which is 4,800 naira short over a full month.
+// month and 60 in a 30-day one, and February is shorter again. This is the
+// rule Smith actually runs: 100,000 / 62 = 1,612.90 in August, 100,000 / 60 =
+// 1,666.67 in September. A flat 62 would have been wrong for four months of
+// the year, though no real payment was ever calculated with it — the payments
+// table was still empty when this was caught.
 export function postsExpectedIn(month) {
   const [y, m] = String(month).slice(0, 7).split("-").map(Number);
   return new Date(Date.UTC(y, m, 0)).getUTCDate() * 2;
@@ -45,6 +47,23 @@ export const BUSINESS_TZ = "Africa/Lagos";
 export function today(tz = BUSINESS_TZ) {
   // en-CA formats as YYYY-MM-DD, which is what date inputs and Postgres want.
   return new Intl.DateTimeFormat("en-CA", { timeZone: tz, year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
+}
+
+// Smith's rule: a video posted at or after 11:30pm Lagos time counts as the
+// next day's post, not the calendar day it was actually uploaded on. This is
+// the date the video log form should default to — a creator can still pick a
+// different date by hand, this only decides what the form opens with.
+export function postingDay(at = new Date(), tz = BUSINESS_TZ) {
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    timeZone: tz, year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false,
+  }).formatToParts(at);
+  const get = (t) => Number(parts.find((p) => p.type === t).value);
+  const minutesNow = get("hour") * 60 + get("minute");
+  const cutoff = 23 * 60 + 30;
+  let day = new Date(Date.UTC(get("year"), get("month") - 1, get("day")));
+  if (minutesNow >= cutoff) day = new Date(day.getTime() + 24 * 3600 * 1000);
+  const pad = (n) => String(n).padStart(2, "0");
+  return `${day.getUTCFullYear()}-${pad(day.getUTCMonth() + 1)}-${pad(day.getUTCDate())}`;
 }
 
 // First and last day of the month a creator is actually living in.

@@ -2,7 +2,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { supabaseBrowser } from "../../lib/supabaseClient";
-import { today, monthBoundsLocal } from "../../lib/domain";
+import { today, postingDay, monthBoundsLocal } from "../../lib/domain";
 import Header from "../../components/Header";
 
 const STATUS_STYLE = { pending: "badge-waiting", approved: "badge-ok", rejected: "badge-no" };
@@ -58,10 +58,13 @@ export default function CreatorDashboard() {
   const [videos, setVideos] = useState([]);
   const [claims, setClaims] = useState([]);
   const [payments, setPayments] = useState([]);
-  const [videoForm, setVideoForm] = useState({ date: today(), post: "1", tiktok: "", insta: "" });
+  const [videoForm, setVideoForm] = useState({ date: postingDay(), post: "1", tiktok: "", insta: "" });
   const [bonusForm, setBonusForm] = useState({ date: today(), videoUrl: "", views: "" });
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState("");
+  const [growthOpenFor, setGrowthOpenFor] = useState(null);
+  const [growthViews, setGrowthViews] = useState("");
+  const [growthError, setGrowthError] = useState("");
   const { start, end, label } = (() => { const b = monthBoundsLocal(); return { ...b, label: new Date(b.start + "T12:00:00").toLocaleDateString("en-GB", { month: "long", year: "numeric" }) }; })();
 
   const load = useCallback(async () => {
@@ -105,6 +108,19 @@ export default function CreatorDashboard() {
     const { error } = await supabase.from("bonus_claims").insert({ business_id: creator.business_id, creator_id: creator.id, claim_date: bonusForm.date, video_url: bonusForm.videoUrl || null, views: Number(bonusForm.views), submitted_by: "creator", status: "pending" });
     setBusy(false); if (error) { setMsg("Could not submit: " + error.message); return; }
     setMsg("Bonus claim sent to Smith."); setBonusForm({ date: today(), videoUrl: "", views: "" }); load();
+  }
+
+  // Growth is reported on the same claim, not a new one — the video already
+  // has an approved bonus, and this asks Smith to re-check it at its new view
+  // count. Approving it moves the same row to the new figure, so the old
+  // amount is replaced rather than a second bonus stacking on top of it.
+  async function reportGrowth(claim) {
+    setGrowthError("");
+    const views = Number(growthViews);
+    if (!views || views <= claim.views) { setGrowthError("Enter a view count higher than what was already approved."); return; }
+    const { error } = await supabaseBrowser().rpc("request_bonus_revision", { p_claim_id: claim.id, p_new_views: views });
+    if (error) { setGrowthError(error.message.replace(/^.*?: /, "")); return; }
+    setGrowthOpenFor(null); setGrowthViews(""); setMsg("Update sent to Smith."); load();
   }
 
   if (!profile) return null;
@@ -209,6 +225,34 @@ export default function CreatorDashboard() {
                     <span>{dayName(c.claim_date)}</span>
                     {c.video_url && <a href={c.video_url} target="_blank" rel="noopener noreferrer" className="font-medium text-accent underline">See the video</a>}
                   </div>
+
+                  {c.status === "approved" && c.revision_status === "pending" && (
+                    <p className="mt-2 rounded-lg bg-waitingBg px-3 py-2 text-tiny text-waitingInk">
+                      Growth to {Number(c.revised_views).toLocaleString()} views sent — waiting on Smith.
+                    </p>
+                  )}
+
+                  {c.status === "approved" && c.revision_status !== "pending" && (
+                    growthOpenFor === c.id ? (
+                      <div className="mt-2 flex flex-wrap items-center gap-2">
+                        <input
+                          className="input tnum w-32 py-2"
+                          type="number"
+                          autoFocus
+                          placeholder="New views"
+                          value={growthViews}
+                          onChange={(e) => setGrowthViews(e.target.value)}
+                        />
+                        <button className="btn-primary py-2 text-tiny" onClick={() => reportGrowth(c)}>Send to Smith</button>
+                        <button className="btn-quiet" onClick={() => { setGrowthOpenFor(null); setGrowthViews(""); setGrowthError(""); }}>Cancel</button>
+                        {growthError && <p className="w-full text-tiny text-noInk">{growthError}</p>}
+                      </div>
+                    ) : (
+                      <button className="btn-quiet mt-1 px-0" onClick={() => { setGrowthOpenFor(c.id); setGrowthViews(""); setGrowthError(""); }}>
+                        This video grew — report new views
+                      </button>
+                    )
+                  )}
                 </div>
               ))}
             </div>
