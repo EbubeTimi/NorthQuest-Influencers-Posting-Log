@@ -39,10 +39,10 @@ export default function LoginPage() {
       // Its own wording is "For security purposes, you can only request this
       // after 38 seconds", which reads like an accusation. Found this by
       // asking for two codes in a row while testing.
-      const seconds = /after (\d+) seconds/.exec(err.message || "")?.[1];
+      const rateLimited = err.message?.includes("rate limit") || /after \d+ seconds/.test(err.message || "");
       setError(
-        err.message?.includes("rate limit") || seconds
-          ? `A code was just sent to that address. Check your inbox and spam — if it really has not arrived, try again in ${seconds || 60} seconds.`
+        rateLimited
+          ? "A code was just sent to that address. Check your inbox and spam — if it really has not arrived, try again in a minute."
           : err.message
       );
       return;
