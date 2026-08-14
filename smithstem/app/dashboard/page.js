@@ -2,125 +2,50 @@
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { supabaseBrowser } from "../../lib/supabaseClient";
-import { rate, bonusForViews, tiersOn, today, monthBoundsLocal } from "../../lib/domain";
+import { today, monthBoundsLocal } from "../../lib/domain";
 import Header from "../../components/Header";
 
-function monthBounds() {
-  const { start, end } = monthBoundsLocal();
-  const label = new Date(start + "T12:00:00").toLocaleDateString("en-GB", { month: "long", year: "numeric" });
-  return { start, end, label };
-}
 const STATUS_STYLE = { pending: "badge-waiting", approved: "badge-ok", rejected: "badge-no" };
 // What a creator is waiting on, rather than what the column is called.
 const STATUS_WORD = { pending: "Waiting on Smith", approved: "Approved", rejected: "Not approved" };
-const PAY_STATUS_STYLE = { paid: "badge-ok", pending: "badge-waiting", processing: "badge-waiting" };
 const naira = (n) => "₦" + Number(n || 0).toLocaleString("en-NG", { maximumFractionDigits: 0 });
 function monthName(isoDate) { return new Date(isoDate + "T00:00:00").toLocaleDateString("en-GB", { month: "long", year: "numeric" }); }
 function dayName(isoDate) { return new Date(isoDate + "T00:00:00").toLocaleDateString("en-GB", { day: "numeric", month: "short" }); }
 
-// A figure with the naira sign set smaller and lighter, because the number is
-// the part being read.
-function Money({ value, className = "" }) {
-  return <p className={`figure-money ${className}`}><span className="naira">₦</span>{Number(value || 0).toLocaleString("en-NG", { maximumFractionDigits: 0 })}</p>;
-}
-
-// What a creator is owed for a month once an admin has worked it out.
-// total_payable is an override; without it the figure is built from the parts,
-// so the total always agrees with the breakdown printed underneath.
+// What a creator is owed for a month, used only once a payment has actually
+// been paid — never shown as a running figure before Smith has confirmed it.
 function payTotal(p) {
   if (p.total_payable !== null && p.total_payable !== undefined) return Number(p.total_payable);
   return Number(p.base_amount || 0) + Number(p.perf_bonus || 0) + Number(p.referral_bonus || 0) + Number(p.special_bonus || 0) - Number(p.oop_expense || 0);
 }
 
-// The headline card: what this month is worth so far, built from what has
-// actually been logged and approved rather than waiting on month end. This is
-// the number a creator opens the app to see, so it is the biggest thing on it.
-function EarnedSoFar({ videos, claims, tiers, basePay }) {
-  const perVideo = rate(basePay);
-  const baseEarned = Math.round(videos.length * perVideo);
-  const approved = claims.filter((c) => c.status === "approved");
-  const waiting = claims.filter((c) => c.status === "pending");
-  const bonusEarned = approved.reduce((sum, c) => sum + bonusForViews(c.views, tiersOn(tiers, c.claim_date)), 0);
-  const bonusWaiting = waiting.reduce((sum, c) => sum + bonusForViews(c.views, tiersOn(tiers, c.claim_date)), 0);
-
-  return (
-    <section className="card mb-4">
-      <p className="kicker">Earned so far this month</p>
-      <Money value={baseEarned + bonusEarned} className="mt-1" />
-
-      <div className="mt-4 space-y-2 border-t border-line pt-3">
-        <div className="flex items-baseline justify-between text-base">
-          <span className="text-muted">Base pay · {videos.length} {videos.length === 1 ? "video" : "videos"}</span>
-          <span className="tnum font-medium">{naira(baseEarned)}</span>
-        </div>
-        <div className="flex items-baseline justify-between text-base">
-          <span className="text-muted">Bonuses approved</span>
-          <span className="tnum font-medium">{naira(bonusEarned)}</span>
-        </div>
-        {bonusWaiting > 0 && (
-          <div className="flex items-baseline justify-between text-tiny text-faint">
-            <span>{naira(bonusWaiting)} more waiting on approval</span>
-            <span>not counted yet</span>
-          </div>
-        )}
-      </div>
-
-      <p className="mt-3 text-tiny text-faint">
-        Each video is worth {naira(Math.round(perVideo))}. Smith confirms the final amount at the end of the month.
-      </p>
-    </section>
-  );
-}
-
+// A creator sees money only once it has been paid: the amount and the date,
+// nothing else. No running total, no breakdown, no calculation to argue with
+// before Smith has confirmed it. Their videos and claims stay fully visible
+// elsewhere on this page — this section is money, and only settled money.
 function PaymentsSection({ payments }) {
-  if (!payments.length) {
+  const paid = payments.filter((p) => String(p.payment_status || "").toLowerCase() === "paid");
+  if (!paid.length) {
     return (
       <section className="card mb-4">
         <h2 className="text-lead font-semibold">Your payments</h2>
-        <p className="mt-1 text-base text-faint">Nothing paid out yet. Once Smith works out a month, it appears here with the date it was paid.</p>
+        <p className="mt-1 text-base text-faint">Nothing paid out yet. Once Smith pays a month, it appears here with the date.</p>
       </section>
     );
   }
   return (
     <section className="card mb-4">
       <h2 className="mb-3 text-lead font-semibold">Your payments</h2>
-      <div className="space-y-3">
-        {payments.map((p) => {
-          const total = payTotal(p);
-          const status = String(p.payment_status || "Pending");
-          const style = PAY_STATUS_STYLE[status.toLowerCase()] || "badge-waiting";
-          // A month with a bonus but no base pay has not been worked out yet.
-          // Saying so beats showing a total that is about to change.
-          const provisional = Number(p.base_amount || 0) === 0 && status.toLowerCase() !== "paid";
-          const rows = [
-            ["Base pay", p.base_amount],
-            ["Performance bonus", p.perf_bonus],
-            ["Referral bonus", p.referral_bonus],
-            ["Special bonus", p.special_bonus],
-          ].filter(([, v]) => Number(v || 0) !== 0);
-          return (
-            <div key={p.id} className="rounded-xl border border-line p-3">
-              <div className="flex items-baseline justify-between gap-2">
-                <span className="font-medium">{monthName(p.month)}</span>
-                <span className="flex items-center gap-2">
-                  <span className="tnum text-lead font-semibold text-accent">{naira(total)}</span>
-                  <span className={`badge ${style}`}>{status}</span>
-                </span>
-              </div>
-              <div className="mt-2 space-y-1 text-tiny text-muted">
-                {rows.map(([label, v]) => (
-                  <div key={label} className="flex justify-between"><span>{label}</span><span className="tnum">{naira(v)}</span></div>
-                ))}
-                {Number(p.oop_expense || 0) !== 0 && (
-                  <div className="flex justify-between"><span>Out of pocket</span><span className="tnum">−{naira(p.oop_expense)}</span></div>
-                )}
-                {p.payment_date && <div className="flex justify-between"><span>Paid on</span><span>{p.payment_date}</span></div>}
-              </div>
-              {p.remarks && <p className="mt-2 rounded-lg bg-ground px-3 py-2 text-tiny text-muted">{p.remarks}</p>}
-              {provisional && <p className="mt-2 text-tiny text-waitingInk">Still being worked out — your base pay for this month is not final yet.</p>}
-            </div>
-          );
-        })}
+      <div className="space-y-2">
+        {paid.map((p) => (
+          <div key={p.id} className="flex items-center justify-between rounded-xl border border-line px-3 py-2.5">
+            <span className="font-medium">{monthName(p.month)}</span>
+            <span className="flex items-center gap-3">
+              <span className="tnum text-lead font-semibold text-accent">{naira(payTotal(p))}</span>
+              <span className="text-tiny text-faint">{p.payment_date ? `Paid ${p.payment_date}` : "Paid"}</span>
+            </span>
+          </div>
+        ))}
       </div>
     </section>
   );
@@ -133,12 +58,11 @@ export default function CreatorDashboard() {
   const [videos, setVideos] = useState([]);
   const [claims, setClaims] = useState([]);
   const [payments, setPayments] = useState([]);
-  const [tiers, setTiers] = useState([]);
   const [videoForm, setVideoForm] = useState({ date: today(), post: "1", tiktok: "", insta: "" });
   const [bonusForm, setBonusForm] = useState({ date: today(), videoUrl: "", views: "" });
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState("");
-  const { start, end, label } = monthBounds();
+  const { start, end, label } = (() => { const b = monthBoundsLocal(); return { ...b, label: new Date(b.start + "T12:00:00").toLocaleDateString("en-GB", { month: "long", year: "numeric" }) }; })();
 
   const load = useCallback(async () => {
     const supabase = supabaseBrowser();
@@ -149,14 +73,13 @@ export default function CreatorDashboard() {
     const { data: cr } = await supabase.from("creators").select("*").eq("profile_id", user.user.id).single();
     setCreator(cr);
     if (!cr) return;
-    const [{ data: v }, { data: b }, { data: pay }, { data: t }] = await Promise.all([
+    const [{ data: v }, { data: b }, { data: pay }] = await Promise.all([
       supabase.from("video_logs").select("*").eq("creator_id", cr.id).gte("log_date", start).lte("log_date", end).order("log_date", { ascending: false }),
       supabase.from("bonus_claims").select("*").eq("creator_id", cr.id).gte("claim_date", start).lte("claim_date", end).order("created_at", { ascending: false }),
       // Every month, not just this one — creators ask about past months most.
       supabase.from("payments").select("*").eq("creator_id", cr.id).order("month", { ascending: false }),
-      supabase.from("bonus_tiers").select("*").eq("business_id", cr.business_id),
     ]);
-    setVideos(v || []); setClaims(b || []); setPayments(pay || []); setTiers(t || []);
+    setVideos(v || []); setClaims(b || []); setPayments(pay || []);
   }, [router, start, end]);
 
   useEffect(() => { load(); }, [load]);
@@ -188,13 +111,6 @@ export default function CreatorDashboard() {
   if (profile && !creator) return (<main className="flex min-h-screen items-center justify-center px-4 text-center"><p className="text-base text-muted">Setting up your creator profile…</p></main>);
 
   const waitingCount = claims.filter((c) => c.status === "pending").length;
-  // Read the entry threshold from the tiers rather than repeating it in copy,
-  // so it follows Smith whenever she changes the structure.
-  const currentTiers = tiersOn(tiers, new Date());
-  const lowestTier = currentTiers.length ? Math.min(...currentTiers.map((t) => t.min_views)) : null;
-  // What this claim is worth, so a creator can see the value of what they sent
-  // rather than just a view count.
-  const claimValue = (c) => bonusForViews(c.views, tiersOn(tiers, c.claim_date));
 
   return (
     <div>
@@ -204,8 +120,6 @@ export default function CreatorDashboard() {
           <p className="kicker">{label}</p>
           <h1 className="font-display text-title font-semibold">Hi, {profile.full_name?.split(" ")[0]}</h1>
         </div>
-
-        <EarnedSoFar videos={videos} claims={claims} tiers={tiers} basePay={creator.base_pay} />
 
         <div className="mb-4 grid grid-cols-2 gap-3">
           <div className="card">
@@ -267,21 +181,12 @@ export default function CreatorDashboard() {
         <section className="card mb-4">
           <h2 className="text-lead font-semibold">Claim a bonus</h2>
           <p className="mb-3 mt-1 text-tiny text-muted">
-            Paste the link to the video and how many views it has now. Bonuses start at {lowestTier ? Number(lowestTier).toLocaleString() : "—"} views.
+            Paste the link to the video and how many views it has now. Smith reviews every claim.
           </p>
           <form onSubmit={submitBonus} className="grid grid-cols-2 gap-3">
             <input className="input" type="date" value={bonusForm.date} onChange={(e) => setBonusForm((f) => ({ ...f, date: e.target.value }))} required />
             <input className="input tnum" type="number" placeholder="Views" value={bonusForm.views} onChange={(e) => setBonusForm((f) => ({ ...f, views: e.target.value }))} required />
             <input className="input col-span-2" placeholder="Video link (TikTok or Instagram)" value={bonusForm.videoUrl} onChange={(e) => setBonusForm((f) => ({ ...f, videoUrl: e.target.value }))} required />
-            {/* Show what the claim is worth before it is sent, so nobody submits
-                blind and nobody is surprised by the amount later. */}
-            {Number(bonusForm.views) > 0 && (
-              <p className="col-span-2 -mt-1 text-tiny text-muted">
-                {bonusForViews(Number(bonusForm.views), tiersOn(tiers, bonusForm.date)) > 0
-                  ? <>That is worth <span className="font-semibold text-ink">{naira(bonusForViews(Number(bonusForm.views), tiersOn(tiers, bonusForm.date)))}</span> if approved.</>
-                  : <>Under {Number(lowestTier || 0).toLocaleString()} views, so there is no bonus for this one yet.</>}
-              </p>
-            )}
             <button className="btn-primary col-span-2" disabled={busy}>{busy ? "Sending…" : "Send to Smith"}</button>
           </form>
         </section>
@@ -289,7 +194,7 @@ export default function CreatorDashboard() {
         <section className="card mb-4">
           <h2 className="mb-3 text-lead font-semibold">Your bonus claims</h2>
           {claims.length === 0 ? (
-            <p className="text-base text-faint">No claims yet. When a video passes {lowestTier ? Number(lowestTier).toLocaleString() : "the first"} views, claim it above.</p>
+            <p className="text-base text-faint">No claims yet. Claim a video above once it has picked up views.</p>
           ) : (
             <div className="space-y-2">
               {claims.map((c) => (
@@ -301,7 +206,7 @@ export default function CreatorDashboard() {
                     </span>
                   </div>
                   <div className="mt-1 flex items-center justify-between gap-2 text-tiny text-muted">
-                    <span>{dayName(c.claim_date)}{claimValue(c) > 0 && <> · worth {naira(claimValue(c))}</>}</span>
+                    <span>{dayName(c.claim_date)}</span>
                     {c.video_url && <a href={c.video_url} target="_blank" rel="noopener noreferrer" className="font-medium text-accent underline">See the video</a>}
                   </div>
                 </div>

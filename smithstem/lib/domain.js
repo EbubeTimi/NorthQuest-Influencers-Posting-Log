@@ -1,4 +1,17 @@
-export function rate(basePay) { return basePay / 62; }
+// Two posts a day, every day of that month — so the divisor is 62 in a 31-day
+// month and 60 in a 30-day one, and February is shorter again. Dividing by a
+// flat 62 underpaid every 30-day month: at the 150,000 band that is 2,419 a
+// post instead of 2,500, which is 4,800 naira short over a full month.
+export function postsExpectedIn(month) {
+  const [y, m] = String(month).slice(0, 7).split("-").map(Number);
+  return new Date(Date.UTC(y, m, 0)).getUTCDate() * 2;
+}
+
+export function rate(basePay, month) {
+  // Callers that do not name a month are asking about the current one.
+  const key = month || today();
+  return Number(basePay) / postsExpectedIn(key);
+}
 
 // The bonus structure changes over time, so the table holds several sets, each
 // with the date it came into force. A claim is always valued with the set that
