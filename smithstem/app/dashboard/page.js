@@ -2,14 +2,13 @@
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { supabaseBrowser } from "../../lib/supabaseClient";
-import { rate, bonusForViews, tiersOn } from "../../lib/domain";
+import { rate, bonusForViews, tiersOn, today, monthBoundsLocal } from "../../lib/domain";
 import Header from "../../components/Header";
 
-function monthBounds(d = new Date()) {
-  const start = new Date(d.getFullYear(), d.getMonth(), 1);
-  const end = new Date(d.getFullYear(), d.getMonth() + 1, 0);
-  const iso = (x) => x.toISOString().slice(0, 10);
-  return { start: iso(start), end: iso(end), label: d.toLocaleDateString("en-GB", { month: "long", year: "numeric" }) };
+function monthBounds() {
+  const { start, end } = monthBoundsLocal();
+  const label = new Date(start + "T12:00:00").toLocaleDateString("en-GB", { month: "long", year: "numeric" });
+  return { start, end, label };
 }
 const STATUS_STYLE = { pending: "badge-waiting", approved: "badge-ok", rejected: "badge-no" };
 // What a creator is waiting on, rather than what the column is called.
@@ -135,8 +134,8 @@ export default function CreatorDashboard() {
   const [claims, setClaims] = useState([]);
   const [payments, setPayments] = useState([]);
   const [tiers, setTiers] = useState([]);
-  const [videoForm, setVideoForm] = useState({ date: new Date().toISOString().slice(0, 10), post: "1", tiktok: "", insta: "" });
-  const [bonusForm, setBonusForm] = useState({ date: new Date().toISOString().slice(0, 10), videoUrl: "", views: "" });
+  const [videoForm, setVideoForm] = useState({ date: today(), post: "1", tiktok: "", insta: "" });
+  const [bonusForm, setBonusForm] = useState({ date: today(), videoUrl: "", views: "" });
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState("");
   const { start, end, label } = monthBounds();
@@ -182,7 +181,7 @@ export default function CreatorDashboard() {
     const supabase = supabaseBrowser();
     const { error } = await supabase.from("bonus_claims").insert({ business_id: creator.business_id, creator_id: creator.id, claim_date: bonusForm.date, video_url: bonusForm.videoUrl || null, views: Number(bonusForm.views), submitted_by: "creator", status: "pending" });
     setBusy(false); if (error) { setMsg("Could not submit: " + error.message); return; }
-    setMsg("Bonus claim sent to Smith."); setBonusForm({ date: new Date().toISOString().slice(0, 10), videoUrl: "", views: "" }); load();
+    setMsg("Bonus claim sent to Smith."); setBonusForm({ date: today(), videoUrl: "", views: "" }); load();
   }
 
   if (!profile) return null;

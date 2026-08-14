@@ -2,10 +2,10 @@
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { supabaseBrowser } from "../../lib/supabaseClient";
-import { rate, fmtNaira, bonusForViews, tiersOn } from "../../lib/domain";
+import { rate, fmtNaira, bonusForViews, tiersOn, today, monthBoundsLocal } from "../../lib/domain";
 import Header from "../../components/Header";
 function firstOfMonth(ym) { return `${ym}-01`; }
-function todayYm() { return new Date().toISOString().slice(0, 7); }
+function todayYm() { return monthBoundsLocal().month; }
 function monthEndOf(ym) { const start = new Date(firstOfMonth(ym)); return new Date(start.getFullYear(), start.getMonth() + 1, 0).toISOString().slice(0, 10); }
 // Defined once here and in globals.css, so no screen invents its own amber.
 const STATUS_STYLE = { pending: "bg-waitingBg text-waitingInk", approved: "bg-okBg text-okInk", rejected: "bg-noBg text-noInk" };
@@ -91,7 +91,7 @@ export default function AdminDashboard() {
   }
   async function logForCreator(c) {
     const supabase = supabaseBrowser();
-    const date = prompt(`Date for ${c.profiles?.full_name}'s video (YYYY-MM-DD)?`, new Date().toISOString().slice(0, 10)); if (!date) return;
+    const date = prompt(`Date for ${c.profiles?.full_name}'s video (YYYY-MM-DD)?`, today()); if (!date) return;
     const post = prompt("Post number (1 or 2)?", "1"); if (!post) return;
     const { error } = await supabase.from("video_logs").insert({ business_id: c.business_id, creator_id: c.id, log_date: date, post_number: Number(post), logged_by: "admin" });
     if (error) { setMsg("Failed: " + error.message); return; }

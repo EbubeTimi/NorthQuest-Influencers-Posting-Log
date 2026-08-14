@@ -22,3 +22,23 @@ export function bonusForViews(views, tiers) {
 
 export function monthKey(date) { const d = new Date(date); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-01`; }
 export function fmtNaira(n) { return "₦" + Number(n || 0).toLocaleString("en-NG", { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+
+// Dates are Nigerian, not UTC. Left to the browser's default, a creator logging
+// at half past midnight in Lagos gets yesterday's date — and on the first of a
+// month, a video lands in the previous month's pay. Checked: 00:30 on 1
+// September was being recorded as 31 August.
+export const BUSINESS_TZ = "Africa/Lagos";
+
+export function today(tz = BUSINESS_TZ) {
+  // en-CA formats as YYYY-MM-DD, which is what date inputs and Postgres want.
+  return new Intl.DateTimeFormat("en-CA", { timeZone: tz, year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
+}
+
+// First and last day of the month a creator is actually living in.
+export function monthBoundsLocal(tz = BUSINESS_TZ) {
+  const t = today(tz);
+  const [y, m] = t.split("-").map(Number);
+  const last = new Date(Date.UTC(y, m, 0)).getUTCDate();
+  const pad = (n) => String(n).padStart(2, "0");
+  return { start: `${y}-${pad(m)}-01`, end: `${y}-${pad(m)}-${pad(last)}`, month: `${y}-${pad(m)}` };
+}
