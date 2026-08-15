@@ -267,6 +267,11 @@
   .inline-confirm strong { display: block; font-size: 14px; margin-bottom: 2px; }
 
   .form-group { margin-bottom: 18px; }
+  .i-pick { display: flex; align-items: flex-start; gap: 11px; border: 2px solid var(--border); border-radius: 12px; padding: 13px 14px; margin-bottom: 10px; cursor: pointer; transition: border-color .15s, background .15s; }
+  .i-pick input { width: 18px; height: 18px; margin-top: 2px; flex-shrink: 0; accent-color: var(--accent); }
+  .i-pick:has(input:checked) { border-color: var(--accent); background: var(--accent-soft, rgba(109,76,224,.07)); }
+  .i-pick .i-pick-t { display: block; font-weight: 600; font-size: 14px; }
+  .i-pick .i-pick-d { display: block; font-size: 12.5px; color: var(--text3); margin-top: 2px; line-height: 1.45; }
   .form-label { font-size: 12px; color: var(--text2); font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 6px; display: block; }
   .form-label .optional { font-weight: 400; color: var(--text3); text-transform: none; letter-spacing: 0; font-size: 11px; }
   .form-input {
@@ -324,7 +329,14 @@
   .today-status.s-none { background: var(--surface2); color: var(--text2); }
   .today-status.s-one  { background: var(--green-light); color: var(--green); }
   .today-status.s-done { background: var(--amber-light); color: var(--amber); border: 1.5px solid #f0c050; }
+  /* We asked the server and never got an answer. Deliberately NOT s-none:
+     "no videos logged" and "we do not know" must never look the same. */
+  .today-status.s-unknown { background: var(--amber-light); color: var(--amber); border: 1.5px solid #f0d9a8; }
   .today-status .s-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+  .today-status .s-retry {
+    background: none; border: none; padding: 4px 0 0; margin-top: 4px; display: block;
+    font: inherit; font-weight: 700; color: inherit; text-decoration: underline; cursor: pointer;
+  }
 
   /* FORM DONE STATE */
   .form-done-banner {
@@ -357,6 +369,10 @@
 
   .post-card.pc-locked { background: var(--surface2); opacity: 0.4; }
   .post-card.pc-locked .pc-num, .post-card.pc-locked .pc-title { color: var(--text3); }
+
+  /* Dashed = we could not check. Distinct from locked (known, not yet earned). */
+  .post-card.pc-unknown { background: #fdfaf2; border-style: dashed; border-color: #e0c893; }
+  .post-card.pc-unknown .pc-num, .post-card.pc-unknown .pc-title, .post-card.pc-unknown .pc-note { color: var(--amber); }
 
   .post-card.pc-done { background: var(--green-light); border-color: var(--green); opacity: 0.88; }
   .post-card.pc-done .pc-num { color: var(--green); }
@@ -993,6 +1009,15 @@
     <div class="form-group"><label class="form-label">Personal email</label>
       <input class="form-input" id="i-email" type="email" placeholder="you@email.com" /></div>
 
+    <div class="form-title" style="font-size:16px;margin-top:26px">What you create</div>
+    <div class="form-subtitle">Pick the one you were brought on to do. If you are not sure, ask Smith before you choose.</div>
+    <div class="form-group">
+      <label class="i-pick"><input type="radio" name="i-ctype" value="whatsapp" />
+        <span><span class="i-pick-t">WhatsApp &amp; picture content</span><span class="i-pick-d">Status posts, pictures and written posts</span></span></label>
+      <label class="i-pick"><input type="radio" name="i-ctype" value="video" />
+        <span><span class="i-pick-t">Video content</span><span class="i-pick-d">TikTok and Instagram videos</span></span></label>
+    </div>
+
     <div class="form-title" style="font-size:16px;margin-top:26px">NorthQuest accounts you created</div>
     <div class="form-subtitle">The email and social accounts you opened for NorthQuest content. These belong to the program under your contract.</div>
 
@@ -1333,6 +1358,11 @@ const safeStorage = {
 let allRows = [], allCreators = [], allPayments = [];
 let weekOffset = 0, selectedMonth = null, selectedPayMonth = null;
 let isAdmin = false, dataLoaded = false, creatorsLoaded = false, paysLoaded = false;
+// dataLoaded only means "stop showing spinners". It is set even when every
+// fetch attempt failed, so on its own it cannot tell an empty day from an
+// empty variable. rowsLoadFailed carries that difference: while it is true we
+// know nothing about today and must not claim otherwise.
+let rowsLoadFailed = false;
 // Bonus tiers — editable from the app (Manage creators / Payments → Edit
 // bonus tiers). This fallback only shows before the real sheet data loads.
 let bonusTiers = [[50000,50000],[100000,100000],[500000,200000],[1000000,500000],[2000000,900000]];
@@ -1412,6 +1442,18 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function todayStr() { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); }
+
+// Every date comparison in this file assumes a plain 'YYYY-MM-DD' string.
+// A Google Sheets date cell does not always come back that way — if the cell
+// is a real date rather than text, Apps Script serialises it as a full ISO
+// timestamp ('2026-08-15T23:00:00.000Z'). That still passes startsWith() and
+// still sorts correctly, so it fails silently, but every === comparison
+// against today breaks and the creator's day reads as empty. Normalise once,
+// at the point rows enter the app, so nothing downstream has to care.
+function normDate(v) {
+  const s = String(v == null ? '' : v).trim();
+  return /^\d{4}-\d{2}-\d{2}/.test(s) ? s.slice(0, 10) : s;
+}
 function escH(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
 function fmtDate(str) { return new Date(str + 'T00:00:00').toLocaleDateString('en-GB', { day:'numeric', month:'short' }); }
 function monthYM(d) { return String(d).substring(0,7); }
@@ -1503,16 +1545,22 @@ function loadRows(attempt) {
   jsonp({ action:'get' }, (data, err) => {
     if (data && data.rows) {
       dataLoaded = true;
+      rowsLoadFailed = false;
       allRows = data.rows.map(r => ({
         submitted: r[0]||'', name: (r[1]||'').trim(),
-        date: r[2]||'', post: String(r[3]||''),
+        date: normDate(r[2]), post: String(r[3]||''),
         tiktok: r[4]||'', insta: r[5]||'', issues: r[6]||''
       })).filter(r => r.name && r.date);
       refreshAll();
     } else if (attempt < 4) {
       setTimeout(() => loadRows(attempt + 1), 2000);
     } else {
-      dataLoaded = true; // stop showing spinners forever; render what we have
+      // Every attempt failed. Stop the spinners, but record that allRows is
+      // unknown rather than empty — otherwise the UI tells the creator they
+      // have logged nothing today and the server then rejects the submission
+      // they were invited to make.
+      dataLoaded = true;
+      rowsLoadFailed = true;
       refreshAll();
     }
   }, timeoutMs);
@@ -1591,6 +1639,15 @@ function updatePostCards(count) {
     postInput.value = ''; formFields.style.display = ''; formDone.style.display = 'none';
     return;
   }
+  // Today's count is unknown. Submitting from here is exactly what produces
+  // the "you already logged this" contradiction, so hold the form closed
+  // until a check succeeds.
+  if (count === 'unknown') {
+    c1.className = 'post-card pc-unknown'; n1.textContent = 'Not known yet';
+    c2.className = 'post-card pc-unknown'; n2.textContent = 'Not known yet';
+    postInput.value = ''; formFields.style.display = 'none'; formDone.style.display = 'none';
+    return;
+  }
   if (count === 0) {
     c1.className = 'post-card pc-active';
     n1.textContent = 'This is the video you are submitting now';
@@ -1633,6 +1690,18 @@ function onNameChange(fetchFresh) {
   // (prevents stale cached "both videos done" when the data has actually been cleared)
   if (fetchFresh) loadRows();
 
+  // We could not reach the server, so we do not know what has been logged
+  // today. Say that plainly instead of borrowing the empty-day message.
+  if (rowsLoadFailed) {
+    statusEl.style.display = '';
+    statusEl.className = 'today-status s-unknown';
+    sIcon.textContent = '⚠';
+    sMsg.innerHTML = 'We could not check today\'s logs. Your connection dropped, so we do not know whether you have already logged a video today.' +
+      '<button type="button" class="s-retry" onclick="retryLoadRows(this)">Try checking again</button>';
+    updatePostCards('unknown');
+    return;
+  }
+
   const today = todayStr();
   const count = allRows.filter(function(r) {
     return r.name.toLowerCase() === name.toLowerCase() &&
@@ -1654,6 +1723,17 @@ function onNameChange(fetchFresh) {
     sMsg.textContent = 'Both videos logged for today. You\'re all done — see you tomorrow!';
   }
   updatePostCards(count);
+}
+
+// Manual re-check after a failed load. Kept separate from the automatic
+// retries so the creator can see their tap did something — a silent
+// re-request reads as a dead button on a slow connection.
+function retryLoadRows(btn) {
+  if (btn) { btn.disabled = true; btn.textContent = 'Checking…'; }
+  rowsLoadFailed = false;
+  dataLoaded = false;
+  refreshAll();
+  loadRows();
 }
 
 // ── LOADING STATE — show/hide spinner on submit button ──
@@ -1682,6 +1762,15 @@ function submitLog() {
   if (!name)           { showError('Please select your name from the list.'); return; }
   if (!post)           { showError('Something went wrong. Please refresh the page and try again.'); return; }
   if (!tiktok && !insta) { showError('Please paste at least one video link — TikTok or Instagram.'); return; }
+
+  // Never submit against data we do not have. Both guards below scan allRows,
+  // and an allRows that failed to load waves everything through — which is how
+  // a creator ends up being told a video is already logged straight after
+  // being told nothing was.
+  if (rowsLoadFailed) {
+    showError('We could not check what you have already logged today, so submitting now could double-log your video. Tap "Try checking again" above first.');
+    return;
+  }
 
   // Client-side guard: if allRows already shows 2 for today, block immediately
   const todayCount = allRows.filter(function(r) {
@@ -1819,7 +1908,7 @@ function confirmSaved(name, date, post, tiktok, insta, issues, firstName, isSeco
 function finalizeSuccess(name, date, post, tiktok, insta, issues, firstName, isSecond) {
   setSubmitting(false);
   var already = allRows.find(function(r) {
-    return r.name === name && r.date === date &&
+    return r.name.toLowerCase() === name.toLowerCase() && r.date === date &&
            r.tiktok === tiktok && r.insta === insta;
   });
   if (!already) allRows.push({ name:name, date:date, post:post, tiktok:tiktok, insta:insta, issues:issues, submitted: new Date().toISOString() });
@@ -1848,7 +1937,7 @@ function verifySubmission(name, date, post, tiktok, insta, firstName, isSecond, 
       // It saved! Show the normal success experience.
       setSubmitting(false);
       var already = allRows.find(function(r) {
-        return r.name === name && r.date === date &&
+        return r.name.toLowerCase() === name.toLowerCase() && r.date === date &&
                (r.tiktok === tiktok && r.insta === insta);
       });
       if (!already) allRows.push({ name:name, date:date, post:String(data.post || post), tiktok:tiktok, insta:insta, issues:'', submitted: new Date().toISOString() });
@@ -2595,11 +2684,14 @@ function refreshPaymentsData(btn) {
   jsonp({ action:'get', _bust: Date.now() }, (data) => {
     dataLoaded = true;
     if (data && data.rows) {
+      rowsLoadFailed = false;
       allRows = data.rows.map(r => ({
         submitted: r[0]||'', name: (r[1]||'').trim(),
-        date: r[2]||'', post: String(r[3]||''),
+        date: normDate(r[2]), post: String(r[3]||''),
         tiktok: r[4]||'', insta: r[5]||'', issues: r[6]||''
       })).filter(r => r.name && r.date);
+    } else {
+      rowsLoadFailed = true;
     }
     refreshAll();
     finish();
@@ -3161,6 +3253,21 @@ function exportViewLogCSV(grain) {
 }
 
 // ── CREATOR INTAKE / ONBOARDING ──
+
+// The content a creator makes decides their monthly base pay, so the tier is
+// captured at onboarding rather than corrected by hand in the payment register
+// afterwards. Amounts are deliberately not shown on the form — the question is
+// about the work, not the money. ₦200,000 is absent on purpose: it is the
+// discretionary bump for exceptional creators and stays admin-only.
+const CREATOR_TIERS = {
+  whatsapp: { label: 'WhatsApp & picture creator', rate: 100000 },
+  video:    { label: 'Video creator',              rate: 150000 }
+};
+function intakeTier() {
+  const el = document.querySelector('input[name="i-ctype"]:checked');
+  return el ? CREATOR_TIERS[el.value] : null;
+}
+
 function setupIntake() {
   const dt = document.getElementById('i-signdate');
   if (dt) dt.value = todayStr();
@@ -3189,6 +3296,8 @@ function submitIntake() {
   if (!phone) { fail('Please enter your phone number.'); return; }
   if (!email) { fail('Please enter your email.'); return; }
   if (!bank || !acctNum || !acctName) { fail('Please complete your bank details so you can be paid.'); return; }
+  const tier = intakeTier();
+  if (!tier) { fail('Please pick the kind of content you create.'); return; }
   if (!agree) { fail('Please read and tick the box to agree to the contract.'); return; }
   if (!sign)  { fail('Please type your full name as your signature.'); return; }
 
@@ -3200,6 +3309,7 @@ function submitIntake() {
     igUser:g('i-iguser'), igPass:g('i-igpass'),
     ttUser:g('i-ttuser'), ttPass:g('i-ttpass'),
     bankName:bank, acctNum, acctName,
+    creatorType:tier.label, rate:tier.rate,
     signature:sign, signDate:signDate || todayStr()
   };
   jsonp(payload, (data) => {
@@ -3210,6 +3320,7 @@ function submitIntake() {
       showToast('success', 'Welcome, ' + name.split(' ')[0] + '! 🎉', 'Your onboarding is complete.');
       ['i-name','i-phone','i-email','i-nqemail','i-nqemailpass','i-iguser','i-igpass','i-ttuser','i-ttpass','i-bank','i-acctnum','i-acctname','i-sign'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
       document.getElementById('i-agree').checked = false;
+      document.querySelectorAll('input[name="i-ctype"]').forEach(r => { r.checked = false; });
       loadCreators();
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } else {
