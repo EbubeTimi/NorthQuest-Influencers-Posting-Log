@@ -1,0 +1,204 @@
+# Smithstem — Project Bible
+
+This document exists so that anyone — a new engineer, a business partner, Smith
+herself six months from now — can read it start to finish and understand the
+whole system: what it is, why it's built the way it is, and where the real
+risk and complexity live. It is not a promotional document. Where something is
+unfinished or fragile, it says so.
+
+Live: https://smithstem.vercel.app
+Code: this repository, `smithstem/` directory
+Owner: Smith Onyekwereh
+
+---
+
+## 1. What this is
+
+Smithstem is the operations platform Smith runs her creator businesses on.
+She manages UGC (user-generated content) creators — people who post TikTok
+and Instagram videos promoting her businesses — across three brands:
+
+- **NorthQuest Finance** — the first business on the platform, fully active.
+- **CashDrive** — a second, active tenant with a different pay structure.
+- **Aura by Antroph** — a third business, joining the platform; flat pay, no
+  performance bonuses, same analytics tracking as the others.
+
+Before Smithstem, this ran on spreadsheets and manually screenshotting each
+creator's TikTok/Instagram profile to check their view counts. Smithstem
+replaces that: creators log their own videos, submit their own bonus claims
+with evidence, and see their own pay. Smith approves claims and pays out —
+the system does the arithmetic, not her.
+
+**The one rule that governs every decision in this codebase: the money has to
+be right, and it can never quietly become wrong.** Several real bugs found
+this way are documented in section 6.
+
+## 2. Who uses it, and how
+
+Two roles exist: **admin** (Smith, and anyone she promotes) and **creator**.
+
+A creator's day-to-day: open the app, log today's video (a link, a date, a
+post number), see what they've earned so far this month, submit a bonus claim
+with proof once a video crosses a view threshold, and see their payment
+history once Smith has actually paid them — never a running total she hasn't
+confirmed yet, since that was a real source of confusion before the current
+design (see section 6).
+
+Smith's day-to-day: open the admin dashboard, approve or reject pending bonus
+claims, review creators, and manage the monthly payments register per
+business. Multiple businesses live under one admin login — she switches
+between them, she doesn't sign in separately for each.
+
+## 3. How someone gets in — the identity model
+
+There is no password for ordinary use. Signing in is: enter your email, get
+an 8-digit code by email, enter the code. That single mechanism serves both
+new signups and returning users — `supabase.auth.signInWithOtp` with
+`shouldCreateUser: true`.
+
+Creators can also join **without ever giving an email**, over WhatsApp, via an
+invite link an admin generates. That link runs a real signup under the hood
+(`auth.signUp()` with a random password the creator never sees), which is why
+it depends on Supabase's "Confirm email" setting being off for password
+sign-ups — a dashboard setting, not something this code controls (tracked as
+an open item, see section 8).
+
+Once signed in, the browser stays signed in — the entry screen checks for an
+existing session before ever showing the email form, so nobody re-enters a
+code every time they open the app. Every authenticated screen shows the
+signed-in email under the Smithstem name, specifically so it's never
+ambiguous which account is active on a shared or reused browser.
+
+**Role is never decided by the client.** After sign-in, the app reads
+`profiles.role` from the database and routes to `/admin` or `/dashboard`
+accordingly. A creator cannot make themselves an admin by editing a request —
+see section 5.
+
+## 4. Multi-business, on one account
+
+A real operational fact drove this: some people work for both NorthQuest and
+CashDrive at once. `profiles.business_id` means "which business is active
+right now," not "which business this person belongs to forever." A separate
+`business_memberships` table is the actual record of which businesses a
+profile can access; switching business is just moving that pointer, guarded
+so it can only move into a business the profile actually has a membership
+row for. Every other table (`creators`, `bonus_claims`, `payments`, …) is
+scoped by `business_id`, so switching business is switching *all* the data
+underneath, the same way changing Slack workspaces is.
+
+The header's business switcher is also how a new business gets created —
+admin-only, and it's the same control used to open any business's dashboard.
+
+## 5. Security model
+
+There is no separate backend server. The Next.js app talks to Supabase
+directly from the browser using a public anonymous key — by design, not by
+accident. **Row Level Security (RLS) is the entire access boundary.** Every
+table has policies stating exactly who can read or write which rows, enforced
+by Postgres itself, not by application code that could be bypassed.
+
+The one thing RLS cannot express is *column* immutability — a policy can gate
+which rows you touch, not which columns of a row you're allowed to change
+within an otherwise-permitted update. That gap was a real, since-closed
+vulnerability: any signed-in creator could send `update profiles set
+role='admin' where id = auth.uid()` and the row-level policy alone wouldn't
+stop it, because it was their own row. A `BEFORE UPDATE` trigger
+(`guard_profile_privileges`) now rejects any change to `role` or
+`business_id` arriving on a normal user's token — only a backend/SQL-editor
+session (where `auth.uid()` is null) can promote someone, which is always
+Smith acting deliberately, never a client request.
+
+Contracts and bonus-evidence screenshots live in **private** storage buckets.
+Nothing is ever served from a public URL — every view opens through a
+short-lived signed URL generated at the moment someone actually clicks to
+view it.
+
+## 6. Money — the part that has to be exactly right
+
+Three real bugs, found and fixed this year, all changed how a creator's pay
+is calculated:
+
+- **The per-post rate was a flat divide-by-62.** 62 is two posts a day across
+  31 days. In a 30-day month that divisor is wrong, and every video was
+  shorted by design in four months out of twelve. The rate now divides by the
+  actual number of posting days in the specific month being paid. (Caught
+  before any real payment existed — `payments` was empty at the time — so
+  nobody was actually underpaid, but the bug was live and would have been.)
+- **Dates defaulted through the browser's UTC clock**, not Lagos time. A
+  creator posting at 12:30am WAT — which is 11:30pm the day before in UTC —
+  had their video silently filed under the wrong day, which can move it into
+  the wrong month's pay entirely. Every date in the app now comes from
+  `Africa/Lagos`, including the log-form's default date and the 11:30pm
+  posting cutoff rule.
+- **Bonus tiers didn't carry an effective date.** Changing the bonus
+  structure used to retroactively reprice every past claim the next time
+  anything touched that month. Tiers now carry `effective_from`, and a claim
+  is always valued against whichever tier set was in force on the day the
+  claim's threshold was actually reached — so a past bonus never silently
+  changes value because the schedule changed later.
+
+`lib/domain.js` is where this logic lives: `rate()`, `postsExpectedIn()`,
+`postingDay()`, `tiersOn()`, `bonusForViews()`. Anyone touching pay math
+should start there, and should assume any change to it needs to be checked
+against a 28/29/30/31-day month before it ships.
+
+## 7. What's live vs. what's still a prototype
+
+Everything described above is shipped and in production. Two things are
+deliberately **not** built yet, on purpose:
+
+- **Weekly self-reported views** (NorthQuest only) — a prototype exists;
+  not approved for production.
+- **Trial-to-active creator lifecycle** — trial creators log videos and earn
+  nothing until they cross 10,000 views and Smith approves the move to the
+  paid roster, at which point real onboarding (bank details, contract)
+  triggers for the first time. Prototyped, awaiting sign-off. The open
+  question flagged and not yet resolved: trial creators currently post real
+  content before signing any agreement, since onboarding only happens at
+  promotion — worth a short trial-only acknowledgment even before the real
+  contract.
+- **Standing, reusable per-business onboarding links** — one link per
+  business that never expires, shown together on the admin page, replacing
+  the current per-person invite as the primary way people join. Prototyped,
+  awaiting sign-off. Pairs with a broader move away from hardcoding each
+  business's rules (Aura's flat ₦150,000/month with no performance bonus is
+  the first business that doesn't fit the pattern already written in code).
+
+This project follows a rule: **a major UI/UX change gets a throwaway,
+interactive prototype and explicit approval before it's built into
+production.** That's why the two items above exist as prototypes rather than
+code — nothing about them ships until Smith has clicked through it and said
+yes.
+
+## 8. Known gaps, honestly
+
+- **Recovery links for existing creators on a new phone are not built.**
+  Building them needs a Supabase service-role key, which this development
+  environment does not have access to.
+- **The "Confirm email" setting for password sign-ups** needs to be off in
+  the Supabase dashboard for WhatsApp invite links to work — this is a
+  dashboard toggle, not something in this repository, and its current state
+  has not been independently reconfirmed recently.
+- **No app-level security audit log yet** — who approved what, when, is
+  visible per-row in the tables involved, but there's no dedicated log.
+- **Upload type/size limits on the bonus-evidence and signature buckets**
+  have not been explicitly verified.
+
+## 9. Running and deploying it
+
+See `README.md` in this directory for local setup, the keep-alive mechanism
+(Supabase's free tier pauses an inactive project — two independent defenses
+exist against that), and deploy instructions. In short: Next.js 14 (App
+Router), Tailwind, deployed to Vercel from this git repository, backed by a
+Supabase project (Postgres + Auth + Storage) in `eu-west-1`.
+
+## 10. Design language
+
+"Naira Green" — deep green (`#0B6B4F`) and gold (`#C99A27`), IBM Plex Sans for
+body text and IBM Plex Serif for headings, a defined six-step type scale, and
+tabular numerals wherever digits are read as figures (payment columns, view
+counts). Full tokens in `tailwind.config.js`. The intent, stated plainly: this
+should read as a considered financial product, not a generic dashboard
+template — no stock icon packs, no decorative gradients, no interface
+element that doesn't correspond to something real a creator or admin needs to
+do.
