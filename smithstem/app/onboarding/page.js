@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { supabaseBrowser } from "../../lib/supabaseClient";
+import { supabaseBrowser, withTimeout } from "../../lib/supabaseClient";
 import SignaturePad from "../../components/SignaturePad";
 import Header from "../../components/Header";
 import LoadingScreen from "../../components/LoadingScreen";
@@ -23,36 +23,52 @@ export default function OnboardingPage() {
   const [agreed, setAgreed] = useState(false);
   const [status, setStatus] = useState("idle");
   const [error, setError] = useState("");
+  const [loadError, setLoadError] = useState("");
 
-  useEffect(() => {
+  async function loadOnboarding() {
+    setLoadError("");
     const supabase = supabaseBrowser();
-    supabase.auth.getUser().then(async ({ data }) => {
+    try {
+      const { data } = await withTimeout(supabase.auth.getUser());
       if (!data.user) { router.replace("/"); return; }
       setUser(data.user);
 
-      const { data: prof } = await supabase.from("profiles").select("business_id, full_name, phone").eq("id", data.user.id).maybeSingle();
+      const { data: prof, error: profErr } = await withTimeout(supabase.from("profiles").select("business_id, full_name, phone").eq("id", data.user.id).maybeSingle());
+      if (profErr) throw profErr;
       let businessId = prof?.business_id;
 
+      let biz;
       if (!businessId) {
         // Arrived via the plain email code, no invite. Same default this app
         // has always used.
         const slug = process.env.NEXT_PUBLIC_BUSINESS_SLUG || "northquest";
-        const { data: biz } = await supabase.from("businesses").select("id, slug, name").eq("slug", slug).single();
+        const res = await withTimeout(supabase.from("businesses").select("id, slug, name").eq("slug", slug).maybeSingle());
+        if (res.error) throw res.error;
+        biz = res.data;
         businessId = biz?.id;
-        setBusiness(biz);
       } else {
-        const { data: biz } = await supabase.from("businesses").select("id, slug, name").eq("id", businessId).single();
-        setBusiness(biz);
+        const res = await withTimeout(supabase.from("businesses").select("id, slug, name").eq("id", businessId).maybeSingle());
+        if (res.error) throw res.error;
+        biz = res.data;
       }
+      if (!biz) throw new Error("That business could not be found — message Smith and she'll sort it out.");
+      setBusiness(biz);
 
-      const { data: cr } = await supabase.from("creators").select("id, bank_name").eq("profile_id", data.user.id).eq("business_id", businessId).maybeSingle();
+      const { data: cr, error: crErr } = await withTimeout(supabase.from("creators").select("id, bank_name").eq("profile_id", data.user.id).eq("business_id", businessId).maybeSingle());
+      if (crErr) throw crErr;
       setExistingCreator(cr || null);
       if (prof) setForm((f) => ({ ...f, fullName: prof.full_name || f.fullName, phone: prof.phone || f.phone }));
 
-      const { data: t } = await supabase.from("bonus_tiers").select("min_views, amount, effective_from").eq("business_id", businessId);
+      // Tiers are shown in the contract below but never block getting there —
+      // an empty list just falls back to generic wording.
+      const { data: t } = await withTimeout(supabase.from("bonus_tiers").select("min_views, amount, effective_from").eq("business_id", businessId)).catch(() => ({ data: [] }));
       setTiers(t || []);
-    });
-  }, [router]);
+    } catch (err) {
+      setLoadError(err.message || "Something went wrong loading your details.");
+    }
+  }
+
+  useEffect(() => { loadOnboarding(); }, [router]);
 
   function update(field) { return (e) => setForm((f) => ({ ...f, [field]: e.target.value })); }
 
@@ -91,6 +107,22 @@ export default function OnboardingPage() {
     router.replace("/dashboard");
   }
 
+  if (loadError) {
+    return (
+      <main className="flex min-h-screen items-center justify-center px-4">
+        <div className="card w-full max-w-sm space-y-3 text-center">
+          <p className="text-base text-ink">{loadError}</p>
+          <button className="btn-primary w-full" onClick={loadOnboarding}>Try again</button>
+          <a
+            href={`https://wa.me/2349076217386?text=${encodeURIComponent("Hi Smith, I'm stuck setting up my Smithstem account.")}`}
+            className="block text-tiny text-accent underline"
+          >
+            Message Smith
+          </a>
+        </div>
+      </main>
+    );
+  }
   if (!user || existingCreator === undefined || !business) return <LoadingScreen label="Setting things up…" />;
 
   const party = contractFor(business.slug);

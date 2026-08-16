@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { supabaseBrowser } from "../../lib/supabaseClient";
+import { supabaseBrowser, withTimeout } from "../../lib/supabaseClient";
 import { today, postingDay, monthBoundsLocal } from "../../lib/domain";
 import Header from "../../components/Header";
 import LoadingScreen from "../../components/LoadingScreen";
@@ -68,15 +68,29 @@ export default function CreatorDashboard() {
   const [growthOpenFor, setGrowthOpenFor] = useState(null);
   const [growthViews, setGrowthViews] = useState("");
   const [growthError, setGrowthError] = useState("");
+  const [loadError, setLoadError] = useState("");
   const { start, end, label } = (() => { const b = monthBoundsLocal(); return { ...b, label: new Date(b.start + "T12:00:00").toLocaleDateString("en-GB", { month: "long", year: "numeric" }) }; })();
 
   const load = useCallback(async () => {
     const supabase = supabaseBrowser();
-    const { data: user } = await supabase.auth.getUser();
-    if (!user.user) { router.replace("/"); return; }
-    const { data: prof } = await supabase.from("profiles").select("*").eq("id", user.user.id).single();
+    // This part decides whether the loading screen ever clears, so it must
+    // never hang silently — everything after setProfile only fills in cards
+    // on a screen that is already showing.
+    let user, prof;
+    try {
+      const res = await withTimeout(supabase.auth.getUser());
+      user = res.data;
+      if (!user.user) { router.replace("/"); return; }
+      const profRes = await withTimeout(supabase.from("profiles").select("*").eq("id", user.user.id).maybeSingle());
+      if (profRes.error) throw profRes.error;
+      prof = profRes.data;
+    } catch (err) {
+      setLoadError(err.message || "Something went wrong loading your dashboard.");
+      return;
+    }
+    setLoadError("");
     setProfile(prof);
-    const { data: cr } = await supabase.from("creators").select("*").eq("profile_id", user.user.id).single();
+    const { data: cr } = await supabase.from("creators").select("*").eq("profile_id", user.user.id).maybeSingle();
     setCreator(cr);
     if (!cr) return;
     const [{ data: v }, { data: b }, { data: pay }] = await Promise.all([
@@ -152,8 +166,18 @@ export default function CreatorDashboard() {
     setGrowthOpenFor(null); setGrowthViews(""); setMsg("Update sent to Smith."); load();
   }
 
+  if (loadError) {
+    return (
+      <main className="flex min-h-screen items-center justify-center px-4">
+        <div className="card w-full max-w-sm space-y-3 text-center">
+          <p className="text-base text-ink">{loadError}</p>
+          <button className="btn-primary w-full" onClick={load}>Try again</button>
+        </div>
+      </main>
+    );
+  }
   if (!profile) return <LoadingScreen label="Loading your dashboard…" />;
-  if (profile && !creator) return (<main className="flex min-h-screen items-center justify-center px-4 text-center"><p className="text-base text-muted">Setting up your creator profile…</p></main>);
+  if (profile && !creator) return <LoadingScreen label="Setting up your creator profile…" />;
 
   const waitingCount = claims.filter((c) => c.status === "pending").length;
 
