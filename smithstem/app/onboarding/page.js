@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { supabaseBrowser } from "../../lib/supabaseClient";
 import SignaturePad from "../../components/SignaturePad";
 import Header from "../../components/Header";
+import LoadingScreen from "../../components/LoadingScreen";
 import { contractFor, contractSections } from "../../lib/contract";
 import { today as todayLagos } from "../../lib/domain";
 
@@ -90,7 +91,7 @@ export default function OnboardingPage() {
     router.replace("/dashboard");
   }
 
-  if (!user || existingCreator === undefined || !business) return (<main className="flex min-h-screen items-center justify-center px-4"><p className="text-base text-muted">Setting things up…</p></main>);
+  if (!user || existingCreator === undefined || !business) return <LoadingScreen label="Setting things up…" />;
 
   const party = contractFor(business.slug);
   if (!party) {

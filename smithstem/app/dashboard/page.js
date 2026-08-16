@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { supabaseBrowser } from "../../lib/supabaseClient";
 import { today, postingDay, monthBoundsLocal } from "../../lib/domain";
 import Header from "../../components/Header";
+import LoadingScreen from "../../components/LoadingScreen";
 
 const STATUS_STYLE = { pending: "badge-waiting", approved: "badge-ok", rejected: "badge-no" };
 // What a creator is waiting on, rather than what the column is called.
@@ -151,7 +152,7 @@ export default function CreatorDashboard() {
     setGrowthOpenFor(null); setGrowthViews(""); setMsg("Update sent to Smith."); load();
   }
 
-  if (!profile) return null;
+  if (!profile) return <LoadingScreen label="Loading your dashboard…" />;
   if (profile && !creator) return (<main className="flex min-h-screen items-center justify-center px-4 text-center"><p className="text-base text-muted">Setting up your creator profile…</p></main>);
 
   const waitingCount = claims.filter((c) => c.status === "pending").length;

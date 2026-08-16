@@ -89,7 +89,12 @@ export default function JoinPage() {
           <h1 className="font-display text-2xl font-bold">Smithstem</h1>
         </div>
 
-        {state.phase === "loading" && <p className="text-center text-base text-muted">Checking your link…</p>}
+        {state.phase === "loading" && (
+          <div className="flex flex-col items-center gap-3 py-6">
+            <span className="h-6 w-6 animate-spin rounded-full border-2 border-accentSoft border-t-accent" />
+            <p className="text-center text-base text-muted">Checking your link…</p>
+          </div>
+        )}
 
         {state.phase === "dead-end" && (
           <div className="card space-y-3 text-center">
