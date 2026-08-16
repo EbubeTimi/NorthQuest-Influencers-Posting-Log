@@ -28,10 +28,16 @@ export default function VerifyPage() {
     e.preventDefault(); setStatus("verifying"); setError("");
     const supabase = supabaseBrowser();
     let data;
-    try { const result = await withTimeout(supabase.auth.verifyOtp({ email, token: code, type: "email" })); if (result.error) throw result.error; data = result.data; } catch (err) { setStatus("error"); setError(err.message); return; }
-    sessionStorage.removeItem("smithstem_pending_email");
-    const { data: profile } = await supabase.from("profiles").select("role").eq("id", data.user.id).maybeSingle();
-    if (!profile) router.replace("/onboarding"); else if (profile.role === "admin") router.replace("/admin"); else router.replace("/dashboard");
+    try {
+      const result = await withTimeout(supabase.auth.verifyOtp({ email, token: code, type: "email" }));
+      if (result.error) throw result.error;
+      data = result.data;
+      sessionStorage.removeItem("smithstem_pending_email");
+      const { data: profile } = await withTimeout(supabase.from("profiles").select("role").eq("id", data.user.id).maybeSingle());
+      if (!profile) router.replace("/onboarding"); else if (profile.role === "admin") router.replace("/admin"); else router.replace("/dashboard");
+    } catch (err) {
+      setStatus("error"); setError(err.message);
+    }
   }
   const mm = String(Math.floor(secondsLeft / 60)).padStart(2, "0");
   const ss = String(secondsLeft % 60).padStart(2, "0");

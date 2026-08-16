@@ -14,23 +14,35 @@ export default function LoginPage() {
     const supabase = supabaseBrowser();
     if (code) {
       setStatus("exchanging");
-      supabase.auth.exchangeCodeForSession(code).then(async ({ data, error: exErr }) => {
-        if (exErr) { setStatus("error"); setError(exErr.message); return; }
-        const { data: profile } = await supabase.from("profiles").select("role").eq("id", data.user.id).maybeSingle();
-        if (!profile) router.replace("/onboarding"); else if (profile.role === "admin") router.replace("/admin"); else router.replace("/dashboard");
-      });
+      (async () => {
+        try {
+          const { data, error: exErr } = await withTimeout(supabase.auth.exchangeCodeForSession(code));
+          if (exErr) { setStatus("error"); setError(exErr.message); return; }
+          const { data: profile } = await withTimeout(supabase.from("profiles").select("role").eq("id", data.user.id).maybeSingle());
+          if (!profile) router.replace("/onboarding"); else if (profile.role === "admin") router.replace("/admin"); else router.replace("/dashboard");
+        } catch (err) {
+          setStatus("error"); setError(err.message);
+        }
+      })();
       return;
     }
     // A session from a past sign-in can still be sitting in the browser.
     // Check before ever showing the email form, so a returning admin or
     // creator lands straight on their screen instead of re-entering a code.
+    // Wrapped in a timeout and a catch-all: a hung or failed check must fall
+    // back to the ordinary email form, never leave this screen stuck.
     setStatus("checking");
-    supabase.auth.getSession().then(async ({ data }) => {
-      if (!data.session) { setStatus("idle"); return; }
-      const { data: profile } = await supabase.from("profiles").select("role").eq("id", data.session.user.id).maybeSingle();
-      if (!profile) { router.replace("/onboarding"); return; }
-      router.replace(profile.role === "admin" ? "/admin" : "/dashboard");
-    });
+    (async () => {
+      try {
+        const { data } = await withTimeout(supabase.auth.getSession(), 6000);
+        if (!data.session) { setStatus("idle"); return; }
+        const { data: profile } = await withTimeout(supabase.from("profiles").select("role").eq("id", data.session.user.id).maybeSingle(), 6000);
+        if (!profile) { router.replace("/onboarding"); return; }
+        router.replace(profile.role === "admin" ? "/admin" : "/dashboard");
+      } catch (err) {
+        setStatus("idle");
+      }
+    })();
   }, [router]);
   async function sendCode(e) {
     e.preventDefault(); setError("");
