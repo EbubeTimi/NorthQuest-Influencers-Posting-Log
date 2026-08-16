@@ -60,6 +60,8 @@ export default function CreatorDashboard() {
   const [payments, setPayments] = useState([]);
   const [videoForm, setVideoForm] = useState({ date: postingDay(), post: "1", tiktok: "", insta: "" });
   const [bonusForm, setBonusForm] = useState({ date: today(), videoUrl: "", views: "" });
+  const [bonusScreenshot, setBonusScreenshot] = useState(null);
+  const [evidenceError, setEvidenceError] = useState("");
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState("");
   const [growthOpenFor, setGrowthOpenFor] = useState(null);
@@ -102,12 +104,38 @@ export default function CreatorDashboard() {
     setMsg("Video logged."); setVideoForm((f) => ({ ...f, tiktok: "", insta: "" })); load();
   }
 
+  // Smith cannot verify a typed number against nothing. A claim needs the
+  // video link, a screenshot of the view count, or both — never neither.
+  // Whichever is less trouble for the creator to provide is fine; the point
+  // is that something exists for her to check against.
   async function submitBonus(e) {
-    e.preventDefault(); setBusy(true); setMsg("");
+    e.preventDefault(); setEvidenceError("");
+    if (!bonusForm.videoUrl.trim() && !bonusScreenshot) {
+      setEvidenceError("Add the video link, a screenshot of the views, or both.");
+      return;
+    }
+    setBusy(true); setMsg("");
     const supabase = supabaseBrowser();
-    const { error } = await supabase.from("bonus_claims").insert({ business_id: creator.business_id, creator_id: creator.id, claim_date: bonusForm.date, video_url: bonusForm.videoUrl || null, views: Number(bonusForm.views), submitted_by: "creator", status: "pending" });
+    let screenshotPath = null;
+    if (bonusScreenshot) {
+      const path = `${creator.id}/${Date.now()}-${bonusScreenshot.name}`;
+      const { error: upErr } = await supabase.storage.from("bonus-evidence").upload(path, bonusScreenshot);
+      if (upErr) { setBusy(false); setMsg("Could not upload the screenshot: " + upErr.message); return; }
+      screenshotPath = path;
+    }
+    const { error } = await supabase.from("bonus_claims").insert({
+      business_id: creator.business_id, creator_id: creator.id, claim_date: bonusForm.date,
+      video_url: bonusForm.videoUrl.trim() || null, screenshot_url: screenshotPath,
+      views: Number(bonusForm.views), submitted_by: "creator", status: "pending",
+    });
     setBusy(false); if (error) { setMsg("Could not submit: " + error.message); return; }
-    setMsg("Bonus claim sent to Smith."); setBonusForm({ date: today(), videoUrl: "", views: "" }); load();
+    setMsg("Bonus claim sent to Smith."); setBonusForm({ date: today(), videoUrl: "", views: "" }); setBonusScreenshot(null); load();
+  }
+
+  async function viewEvidence(path) {
+    const { data, error } = await supabaseBrowser().storage.from("bonus-evidence").createSignedUrl(path, 120);
+    if (error || !data?.signedUrl) { setMsg("Could not open that screenshot: " + (error?.message || "not found")); return; }
+    window.open(data.signedUrl, "_blank", "noopener,noreferrer");
   }
 
   // Growth is reported on the same claim, not a new one — the video already
@@ -197,12 +225,18 @@ export default function CreatorDashboard() {
         <section className="card mb-4">
           <h2 className="text-lead font-semibold">Claim a bonus</h2>
           <p className="mb-3 mt-1 text-tiny text-muted">
-            Paste the link to the video and how many views it has now. Smith reviews every claim.
+            How many views the video has now, and either the link, a screenshot of the views, or both — enough for Smith to check it.
           </p>
           <form onSubmit={submitBonus} className="grid grid-cols-2 gap-3">
             <input className="input" type="date" value={bonusForm.date} onChange={(e) => setBonusForm((f) => ({ ...f, date: e.target.value }))} required />
             <input className="input tnum" type="number" placeholder="Views" value={bonusForm.views} onChange={(e) => setBonusForm((f) => ({ ...f, views: e.target.value }))} required />
-            <input className="input col-span-2" placeholder="Video link (TikTok or Instagram)" value={bonusForm.videoUrl} onChange={(e) => setBonusForm((f) => ({ ...f, videoUrl: e.target.value }))} required />
+            <input className="input col-span-2" placeholder="Video link (TikTok or Instagram)" value={bonusForm.videoUrl} onChange={(e) => setBonusForm((f) => ({ ...f, videoUrl: e.target.value }))} />
+            <label className="input col-span-2 flex cursor-pointer items-center justify-between text-muted">
+              <span>{bonusScreenshot ? bonusScreenshot.name : "Screenshot of the views (optional)"}</span>
+              <span className="text-tiny font-semibold text-accent">{bonusScreenshot ? "Change" : "Choose"}</span>
+              <input type="file" accept="image/*" className="hidden" onChange={(e) => setBonusScreenshot(e.target.files?.[0] || null)} />
+            </label>
+            {evidenceError && <p className="col-span-2 text-base text-red-600">{evidenceError}</p>}
             <button className="btn-primary col-span-2" disabled={busy}>{busy ? "Sending…" : "Send to Smith"}</button>
           </form>
         </section>
@@ -223,7 +257,10 @@ export default function CreatorDashboard() {
                   </div>
                   <div className="mt-1 flex items-center justify-between gap-2 text-tiny text-muted">
                     <span>{dayName(c.claim_date)}</span>
-                    {c.video_url && <a href={c.video_url} target="_blank" rel="noopener noreferrer" className="font-medium text-accent underline">See the video</a>}
+                    <span className="flex gap-3">
+                      {c.video_url && <a href={c.video_url} target="_blank" rel="noopener noreferrer" className="font-medium text-accent underline">See the video</a>}
+                      {c.screenshot_url && <button type="button" onClick={() => viewEvidence(c.screenshot_url)} className="font-medium text-accent underline">See the screenshot</button>}
+                    </span>
                   </div>
 
                   {c.status === "approved" && c.revision_status === "pending" && (
