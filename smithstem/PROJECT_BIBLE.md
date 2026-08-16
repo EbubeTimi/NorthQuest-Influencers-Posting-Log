@@ -172,9 +172,15 @@ yes.
 
 ## 8. Known gaps, honestly
 
-- **Recovery links for existing creators on a new phone are not built.**
-  Building them needs a Supabase service-role key, which this development
-  environment does not have access to.
+- **A lost phone is not actually a gap.** Every creator's account — invited
+  by WhatsApp or signed up directly — is tied to a real email they provide
+  during signup (`join/[token]/page.js` asks for it explicitly: "Use one you
+  actually check — this is how you'd sign in on another phone later"). Plain
+  email sign-in already works from any device with no separate mechanism
+  needed. The `creator_invites.creator_id` "recovery link" column exists in
+  the schema but the redemption screen deliberately marks that path
+  unsupported and points back at ordinary sign-in — confirmed correct rather
+  than assumed, and the dead code is worth removing rather than finishing.
 - **The "Confirm email" setting for password sign-ups** needs to be off in
   the Supabase dashboard for WhatsApp invite links to work — this is a
   dashboard toggle, not something in this repository, and its current state
