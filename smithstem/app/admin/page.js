@@ -25,10 +25,11 @@ export default function AdminDashboard() {
   const [ym, setYm] = useState(todayYm());
   const [payments, setPayments] = useState([]);
   const [videoCountByCreator, setVideoCountByCreator] = useState({});
-  const [claimsByCreator, setClaimsByCreator] = useState({});
   const [selectedCreator, setSelectedCreator] = useState(null);
   const [selectedCreatorVideos, setSelectedCreatorVideos] = useState([]);
   const [selectedCreatorClaims, setSelectedCreatorClaims] = useState([])
+  const [selectedCreatorPayments, setSelectedCreatorPayments] = useState([]);
+  const [paymentsByCreator, setPaymentsByCreator] = useState({});
   const [contractError, setContractError] = useState("")
 
   // The contracts bucket is private, so a stored link cannot be opened
@@ -82,20 +83,50 @@ export default function AdminDashboard() {
     const monthStart = firstOfMonth(ym); const monthEnd = monthEndOf(ym);
     const { data: pay } = await supabase.from("payments").select("*, creators(id, base_pay, profiles(full_name))").eq("business_id", prof.business_id).eq("month", monthStart);
     setPayments(pay || []);
-    const { data: allClaims } = await supabase.from("bonus_claims").select("*").eq("business_id", prof.business_id).gte("claim_date", monthStart).lte("claim_date", monthEnd);
-    const grouped = {}; (allClaims || []).forEach((c) => { (grouped[c.creator_id] ||= []).push(c); }); setClaimsByCreator(grouped);
+    // Bonus figures shown on the creator list come from here, never
+    // recomputed in the browser — the database is the only thing that knows
+    // which bonus_tiers schedule was in force on each claim's date.
+    const payByCreator = {}; (pay || []).forEach((p) => { payByCreator[p.creator_id] = p; }); setPaymentsByCreator(payByCreator);
     const { data: allVids } = await supabase.from("video_logs").select("creator_id").eq("business_id", prof.business_id).gte("log_date", monthStart).lte("log_date", monthEnd);
     const vcounts = {}; (allVids || []).forEach((v) => { vcounts[v.creator_id] = (vcounts[v.creator_id] || 0) + 1; }); setVideoCountByCreator(vcounts);
   }, [router, ym]);
   useEffect(() => { load(); }, [load]);
   async function openCreator(c) {
-    if (!c) return; setSelectedCreator(c);
+    if (!c) return; setSelectedCreator(c); setTab("creators");
     const supabase = supabaseBrowser();
-    const [{ data: v }, { data: cl }] = await Promise.all([
+    const [{ data: v }, { data: cl }, { data: pm }] = await Promise.all([
       supabase.from("video_logs").select("*").eq("creator_id", c.id).order("log_date", { ascending: false }).limit(200),
       supabase.from("bonus_claims").select("*").eq("creator_id", c.id).order("created_at", { ascending: false }).limit(200),
+      supabase.from("payments").select("*").eq("creator_id", c.id).order("month", { ascending: false }),
     ]);
-    setSelectedCreatorVideos(v || []); setSelectedCreatorClaims(cl || []);
+    setSelectedCreatorVideos(v || []); setSelectedCreatorClaims(cl || []); setSelectedCreatorPayments(pm || []);
+  }
+  // Deactivating is reversible and keeps every video, claim, and payment on
+  // record — the right choice for someone who's left. Deleting is not:
+  // it removes the creator row and everything tied to it (cascading), so it
+  // stays a deliberate, clearly-worded, separate action from deactivating.
+  async function toggleCreatorStatus(c) {
+    const next = c.status === "active" ? "inactive" : "active";
+    const question = next === "inactive"
+      ? `Deactivate ${c.profiles?.full_name}? They'll stop showing in active totals and payment runs, but every past video, claim, and payment stays on record. You can reactivate any time.`
+      : `Reactivate ${c.profiles?.full_name}? They'll count as active again.`;
+    if (!confirm(question)) return;
+    const { error } = await supabaseBrowser().from("creators").update({ status: next, left_at: next === "inactive" ? today() : null }).eq("id", c.id);
+    if (error) { setMsg("Failed: " + error.message); return; }
+    setMsg(next === "inactive" ? "Deactivated." : "Reactivated.");
+    if (selectedCreator?.id === c.id) setSelectedCreator({ ...c, status: next });
+    load();
+  }
+  async function deleteCreator(c) {
+    const ok = confirm(
+      `Delete ${c.profiles?.full_name} permanently? This removes their creator record and every video, claim, and payment tied to it. This cannot be undone — for someone who's just left, Deactivate is almost always the right choice instead.`
+    );
+    if (!ok) return;
+    const { error } = await supabaseBrowser().from("creators").delete().eq("id", c.id);
+    if (error) { setMsg("Failed: " + error.message); return; }
+    setMsg("Deleted.");
+    if (selectedCreator?.id === c.id) setSelectedCreator(null);
+    load();
   }
   async function signOut() { await supabaseBrowser().auth.signOut(); router.replace("/"); }
   async function reviewClaim(claim, decision) {
@@ -148,6 +179,9 @@ export default function AdminDashboard() {
     if (error || !data?.signedUrl) { setMsg("Could not open that screenshot: " + (error?.message || "not found")); return; }
     window.open(data.signedUrl, "_blank", "noopener,noreferrer");
   }
+  function contractStatus(c) {
+    return c.contract_signed_at ? { text: "Signed", cls: "badge-ok" } : { text: "Awaiting signature", cls: "badge-waiting" };
+  }
   function inviteStatus(inv) {
     if (inv.revoked_at) return { text: "Cancelled", cls: "badge-no" };
     if (inv.used_at) return { text: "Used", cls: "badge-ok" };
@@ -172,11 +206,13 @@ export default function AdminDashboard() {
     const { error } = await supabase.from("video_logs").insert({ business_id: c.business_id, creator_id: c.id, log_date: date, post_number: Number(post), logged_by: "admin" });
     if (error) { setMsg("Failed: " + error.message); return; }
     await recalcPaymentForMonth(c.id, date.slice(0, 7)); setMsg("Logged for creator."); load();
+    if (selectedCreator?.id === c.id) openCreator(c);
   }
   async function deleteClaim(id, creatorId, claimYm) {
     if (!confirm("Delete this bonus entry?")) return;
     const supabase = supabaseBrowser(); await supabase.from("bonus_claims").delete().eq("id", id);
     await recalcPaymentForMonth(creatorId, claimYm); setMsg("Entry deleted."); load();
+    if (selectedCreator?.id === creatorId) openCreator(selectedCreator);
   }
   async function savePaymentField(paymentRow, field, value) {
     const supabase = supabaseBrowser();
@@ -194,5 +230,169 @@ export default function AdminDashboard() {
     );
   }
   if (!profile) return <LoadingScreen label="Loading your dashboard…" />;
-  return (<div><Header role="admin" profile={profile} onSignOut={signOut} /><main className="mx-auto max-w-5xl px-4 py-4"><nav className="mb-6 flex gap-2">{[["approvals", `Bonus approvals${pending.length ? ` (${pending.length})` : ""}`], ["creators", "Manage creators"], ["invites", "Invites"], ["payments", "Payments register"]].map(([key, label]) => (<button key={key} onClick={() => setTab(key)} className={`rounded-xl px-4 py-2 text-base font-semibold ${tab === key ? "bg-accent text-white" : "bg-white text-muted border border-line"}`}>{label}</button>))}</nav>{msg && <p className="mb-4 text-base text-accent">{msg}</p>}{tab === "approvals" && (<><section className="card"><h2 className="mb-3 font-semibold">Pending bonus claims ({pending.length})</h2><div className="space-y-2">{pending.length === 0 && <p className="text-base text-faint">Nothing waiting on you.</p>}{pending.map((c) => (<div key={c.id} className="rounded-xl border border-line px-4 py-3"><div className="flex items-center justify-between"><div><p className="font-medium">{c.creators?.profiles?.full_name}</p><p className="text-base text-muted">{c.claim_date} · {Number(c.views).toLocaleString()} views · +{fmtNaira(bonusForViews(c.views, tiersOn(tiers, c.claim_date)))}</p></div><div className="flex gap-2"><button className="btn-secondary text-tiny" onClick={() => reviewClaim(c, "rejected")}>Reject</button><button className="btn-primary text-tiny" onClick={() => reviewClaim(c, "approved")}>Approve</button></div></div>{(c.video_url || c.screenshot_url) && (<div className="mt-1 flex gap-3">{c.video_url && (<a href={c.video_url} target="_blank" rel="noopener noreferrer" className="text-tiny text-accent underline">Open submitted video</a>)}{c.screenshot_url && (<button type="button" onClick={() => viewEvidence(c.screenshot_url)} className="text-tiny text-accent underline">View screenshot</button>)}</div>)}</div>))}</div></section>{growthUpdates.length > 0 && (<section className="card mt-4"><h2 className="mb-1 font-semibold">Growth updates ({growthUpdates.length})</h2><p className="mb-3 text-tiny text-muted">A video that already has an approved bonus has grown into a bigger tier. Approving replaces the old amount — nothing is added on top.</p><div className="space-y-2">{growthUpdates.map((c) => { const oldAmt = bonusForViews(c.views, tiersOn(tiers, c.claim_date)); const newAmt = bonusForViews(c.revised_views, tiersOn(tiers, c.claim_date)); return (<div key={c.id} className="rounded-xl border border-line px-4 py-3"><div className="flex items-center justify-between"><div><p className="font-medium">{c.creators?.profiles?.full_name}</p><p className="text-base text-muted">{c.claim_date} · {Number(c.views).toLocaleString()} → {Number(c.revised_views).toLocaleString()} views</p><p className="text-tiny text-faint">{fmtNaira(oldAmt)} → {fmtNaira(newAmt)}</p></div><div className="flex gap-2"><button className="btn-secondary text-tiny" onClick={() => reviewGrowth(c, false)}>Reject</button><button className="btn-primary text-tiny" onClick={() => reviewGrowth(c, true)}>Approve</button></div></div>{(c.video_url || c.screenshot_url) && (<div className="mt-1 flex gap-3">{c.video_url && (<a href={c.video_url} target="_blank" rel="noopener noreferrer" className="text-tiny text-accent underline">Open submitted video</a>)}{c.screenshot_url && (<button type="button" onClick={() => viewEvidence(c.screenshot_url)} className="text-tiny text-accent underline">View screenshot</button>)}</div>)}</div>); })}</div></section>)}</>)}{tab === "creators" && (<section><div className="mb-4 flex items-center justify-between gap-3"><div className="flex items-center gap-3"><label className="text-base font-medium text-muted">Editing month:</label><input className="input w-auto" type="month" value={ym} onChange={(e) => setYm(e.target.value)} /></div><button className="btn-secondary text-tiny" onClick={addExistingCreator}>+ Add existing creator</button></div><div className="card divide-y divide-slate-100">{creators.length === 0 && <p className="text-base text-faint">No creators yet.</p>}{creators.map((c) => { const claims = claimsByCreator[c.id] || []; const vidCount = videoCountByCreator[c.id] || 0; return (<div key={c.id} className="py-3 first:pt-0 last:pb-0"><div className="flex items-center justify-between"><button className="text-left" onClick={() => openCreator(c)}><p className="font-semibold text-accent underline decoration-dotted">{c.profiles?.full_name}</p><p className="text-tiny text-faint">Base pay ₦{Number(c.base_pay).toLocaleString()}/mo · {vidCount} video{vidCount !== 1 ? "s" : ""} in {ym} · {c.status}</p></button><button className="btn-secondary text-tiny" onClick={() => logForCreator(c)}>+ Log video</button></div>{claims.length > 0 && (<div className="mt-2 space-y-1">{claims.map((claim) => (<div key={claim.id} className="flex items-center justify-between rounded-lg bg-ground px-3 py-1.5 text-tiny"><span>{claim.claim_date} · {Number(claim.views).toLocaleString()} views · <span className={`badge ${STATUS_STYLE[claim.status]}`}>{claim.status}</span></span><button className="text-red-500 underline" onClick={() => deleteClaim(claim.id, c.id, ym)}>Delete</button></div>))}</div>)}</div>); })}</div></section>)}{tab === "invites" && (<section><div className="card mb-4"><h2 className="mb-1 font-semibold">Invite a creator</h2><p className="mb-3 text-tiny text-muted">No email needed to get in — send this on WhatsApp. Works once and lasts 3 days.</p><form onSubmit={createInvite} className="grid grid-cols-2 gap-3"><input className="input" placeholder="Name (just for you to tell it apart)" value={inviteLabel} onChange={(e) => setInviteLabel(e.target.value)} required /><input className="input" placeholder="Last 4 of their phone (optional)" maxLength={4} value={invitePhone} onChange={(e) => setInvitePhone(e.target.value.replace(/\D/g, ""))} /><button className="btn-primary col-span-2">Create invite link</button></form>{lastInvite && (<div className="mt-4 rounded-xl border border-line bg-ground p-3"><p className="text-tiny font-semibold uppercase text-faint">Ready for {lastInvite.label}</p><p className="mt-1 break-all font-mono text-tiny text-ink">{lastInvite.link}</p><div className="mt-2 flex gap-2"><a className="btn-primary text-tiny" style={{ background: "#25D366" }} target="_blank" rel="noopener noreferrer" href={`https://wa.me/?text=${encodeURIComponent(lastInvite.link)}`}>Send on WhatsApp</a><button type="button" className="btn-secondary text-tiny" onClick={() => navigator.clipboard.writeText(lastInvite.link)}>Copy link</button></div><p className="mt-2 text-tiny text-waitingInk">Send this to {lastInvite.label} only — whoever opens it first joins as them.</p></div>)}</div><div className="card"><h2 className="mb-3 font-semibold">Invites ({invites.length})</h2><div className="space-y-2">{invites.length === 0 && <p className="text-base text-faint">No invites yet.</p>}{invites.map((inv) => { const s = inviteStatus(inv); return (<div key={inv.id} className="flex items-center justify-between rounded-xl border border-line px-4 py-2.5"><div><p className="font-medium">{inv.label}</p><p className="text-tiny text-faint">Sent {new Date(inv.created_at).toLocaleDateString("en-GB")}</p></div><span className={`badge ${s.cls}`}>{s.text}</span></div>); })}</div></div></section>)}{tab === "payments" && (<section><div className="mb-4 flex items-center gap-3"><label className="text-base font-medium text-muted">Month:</label><input className="input w-auto" type="month" value={ym} onChange={(e) => setYm(e.target.value)} /></div><div className="card overflow-x-auto"><table className="w-full text-base"><thead><tr className="border-b border-line text-left text-tiny uppercase text-faint"><th className="py-2 pr-3">Creator</th><th className="pr-3">Base pay</th><th className="pr-3">Videos</th><th className="pr-3">Rate/post</th><th className="pr-3">Earned base</th><th className="pr-3">Perf. bonus</th><th className="pr-3">Referral</th><th className="pr-3">OOP</th><th className="pr-3">Total</th><th className="pr-3">Status</th></tr></thead><tbody>{payments.map((p) => { const basePay = p.creators?.base_pay || 0; const expected = postsExpectedIn(p.month); const perPost = Math.round(rate(basePay, p.month)); const vids = videoCountByCreator[p.creator_id] || Math.round(p.base_amount / (perPost || 1)); return (<tr key={p.id} className="border-b border-line"><td className="py-2 pr-3"><button className="text-accent underline decoration-dotted" onClick={() => openCreator(creators.find((c) => c.id === p.creator_id))}>{p.creators?.profiles?.full_name}</button></td><td className="pr-3">{fmtNaira(basePay)}</td><td className="pr-3">{vids} / {expected}</td><td className="pr-3">{fmtNaira(perPost)}</td><td className="pr-3">{fmtNaira(p.base_amount)}</td><td className="pr-3">{fmtNaira(p.perf_bonus)}</td><td className="pr-3"><input className="input w-20" defaultValue={p.referral_bonus} onBlur={(e) => savePaymentField(p, "referral_bonus", e.target.value)} /></td><td className="pr-3"><input className="input w-20" defaultValue={p.oop_expense} onBlur={(e) => savePaymentField(p, "oop_expense", e.target.value)} /></td><td className="pr-3 font-semibold">{fmtNaira(p.total_payable)}</td><td className="pr-3"><select className="input w-28" defaultValue={p.payment_status} onChange={(e) => savePaymentField(p, "payment_status", e.target.value)}><option value="Pending">Pending</option><option value="Paid">Paid</option><option value="Held">Held</option></select></td></tr>); })}{payments.length === 0 && (<tr><td colSpan={10} className="py-4 text-center text-faint">No payment rows for {ym} yet — created as videos and bonuses are logged and approved.</td></tr>)}</tbody></table></div></section>)}{selectedCreator && (<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4" onClick={() => setSelectedCreator(null)}><div className="max-h-[85vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white p-6" onClick={(e) => e.stopPropagation()}><div className="mb-4 flex items-start justify-between"><div><h3 className="font-display text-xl font-bold">{selectedCreator.profiles?.full_name}</h3><p className="text-base text-muted">{selectedCreator.profiles?.email} · {selectedCreator.profiles?.phone || "—"}</p></div><button className="text-faint hover:text-ink" onClick={() => setSelectedCreator(null)}>✕</button></div><div className="mb-4 grid grid-cols-2 gap-3 text-base"><div className="rounded-xl bg-ground p-3"><p className="text-tiny font-semibold uppercase text-faint">Base pay</p><p className="font-semibold">{fmtNaira(selectedCreator.base_pay)}/mo</p></div><div className="rounded-xl bg-ground p-3"><p className="text-tiny font-semibold uppercase text-faint">Status</p><p className="font-semibold capitalize">{selectedCreator.status}</p></div></div><div className="mb-4 rounded-xl bg-ground p-3 text-base"><p className="mb-1 text-tiny font-semibold uppercase text-faint">Bank</p><p>{selectedCreator.bank_name || "—"} · {selectedCreator.acct_num || "—"} · {selectedCreator.acct_name || "—"}</p></div>{selectedCreator.contract_file_url && (<button type="button" onClick={() => openContract(selectedCreator)} className="mb-4 inline-block text-base text-accent underline">Open signed contract</button>)}{contractError && <p className="mb-4 text-base text-red-600">{contractError}</p>}<div className="mb-4"><p className="mb-2 text-tiny font-semibold uppercase text-faint">All videos ({selectedCreatorVideos.length})</p><div className="max-h-48 space-y-1 overflow-y-auto">{selectedCreatorVideos.length === 0 && <p className="text-tiny text-faint">None logged.</p>}{selectedCreatorVideos.map((v) => (<div key={v.id} className="flex items-center justify-between rounded-lg border border-line px-3 py-1.5 text-tiny"><span>{v.log_date} · Post {v.post_number} · <span className="text-faint">by {v.logged_by}</span></span><div className="flex gap-2">{v.tiktok_url && <a href={v.tiktok_url} target="_blank" rel="noopener noreferrer" className="text-accent underline">TT</a>}{v.insta_url && <a href={v.insta_url} target="_blank" rel="noopener noreferrer" className="text-accent underline">IG</a>}</div></div>))}</div></div><div><p className="mb-2 text-tiny font-semibold uppercase text-faint">All bonus claims ({selectedCreatorClaims.length})</p><div className="max-h-48 space-y-1 overflow-y-auto">{selectedCreatorClaims.length === 0 && <p className="text-tiny text-faint">None submitted.</p>}{selectedCreatorClaims.map((c) => (<div key={c.id} className="rounded-lg border border-line px-3 py-1.5 text-tiny"><div className="flex items-center justify-between"><span>{c.claim_date} · {Number(c.views).toLocaleString()} views · <span className={`badge ${STATUS_STYLE[c.status]}`}>{c.status}</span></span></div>{c.video_url && <a href={c.video_url} target="_blank" rel="noopener noreferrer" className="text-accent underline">Open video</a>}</div>))}</div></div></div></div>)}</main></div>);
+  return (<div><Header role="admin" profile={profile} onSignOut={signOut} /><main className="mx-auto max-w-5xl px-4 py-4"><nav className="mb-6 flex gap-2">{[["approvals", `Bonus approvals${pending.length ? ` (${pending.length})` : ""}`], ["creators", "Manage creators"], ["invites", "Invites"], ["payments", "Payments register"]].map(([key, label]) => (<button key={key} onClick={() => setTab(key)} className={`rounded-xl px-4 py-2 text-base font-semibold ${tab === key ? "bg-accent text-white" : "bg-white text-muted border border-line"}`}>{label}</button>))}</nav>{msg && <p className="mb-4 text-base text-accent">{msg}</p>}{tab === "approvals" && (<><section className="card"><h2 className="mb-3 font-semibold">Pending bonus claims ({pending.length})</h2><div className="space-y-2">{pending.length === 0 && <p className="text-base text-faint">Nothing waiting on you.</p>}{pending.map((c) => (<div key={c.id} className="rounded-xl border border-line px-4 py-3"><div className="flex items-center justify-between"><div><p className="font-medium">{c.creators?.profiles?.full_name}</p><p className="text-base text-muted">{c.claim_date} · {Number(c.views).toLocaleString()} views · +{fmtNaira(bonusForViews(c.views, tiersOn(tiers, c.claim_date)))}</p></div><div className="flex gap-2"><button className="btn-secondary text-tiny" onClick={() => reviewClaim(c, "rejected")}>Reject</button><button className="btn-primary text-tiny" onClick={() => reviewClaim(c, "approved")}>Approve</button></div></div>{(c.video_url || c.screenshot_url) && (<div className="mt-1 flex gap-3">{c.video_url && (<a href={c.video_url} target="_blank" rel="noopener noreferrer" className="text-tiny text-accent underline">Open submitted video</a>)}{c.screenshot_url && (<button type="button" onClick={() => viewEvidence(c.screenshot_url)} className="text-tiny text-accent underline">View screenshot</button>)}</div>)}</div>))}</div></section>{growthUpdates.length > 0 && (<section className="card mt-4"><h2 className="mb-1 font-semibold">Growth updates ({growthUpdates.length})</h2><p className="mb-3 text-tiny text-muted">A video that already has an approved bonus has grown into a bigger tier. Approving replaces the old amount — nothing is added on top.</p><div className="space-y-2">{growthUpdates.map((c) => { const oldAmt = bonusForViews(c.views, tiersOn(tiers, c.claim_date)); const newAmt = bonusForViews(c.revised_views, tiersOn(tiers, c.claim_date)); return (<div key={c.id} className="rounded-xl border border-line px-4 py-3"><div className="flex items-center justify-between"><div><p className="font-medium">{c.creators?.profiles?.full_name}</p><p className="text-base text-muted">{c.claim_date} · {Number(c.views).toLocaleString()} → {Number(c.revised_views).toLocaleString()} views</p><p className="text-tiny text-faint">{fmtNaira(oldAmt)} → {fmtNaira(newAmt)}</p></div><div className="flex gap-2"><button className="btn-secondary text-tiny" onClick={() => reviewGrowth(c, false)}>Reject</button><button className="btn-primary text-tiny" onClick={() => reviewGrowth(c, true)}>Approve</button></div></div>{(c.video_url || c.screenshot_url) && (<div className="mt-1 flex gap-3">{c.video_url && (<a href={c.video_url} target="_blank" rel="noopener noreferrer" className="text-tiny text-accent underline">Open submitted video</a>)}{c.screenshot_url && (<button type="button" onClick={() => viewEvidence(c.screenshot_url)} className="text-tiny text-accent underline">View screenshot</button>)}</div>)}</div>); })}</div></section>)}</>)}{tab === "creators" && !selectedCreator && (
+  <section>
+    {(() => {
+      const activeCount = creators.filter((c) => c.status === "active").length;
+      const postsThisMonth = Object.values(videoCountByCreator).reduce((s, n) => s + n, 0);
+      return (
+        <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <div className="card"><p className="kicker">Total creators</p><p className="figure mt-1 tnum">{creators.length}</p></div>
+          <div className="card"><p className="kicker">Active</p><p className="figure mt-1 tnum text-accent">{activeCount}</p></div>
+          <div className="card"><p className="kicker">Posts this month</p><p className="figure mt-1 tnum">{postsThisMonth}</p></div>
+          <div className="card"><p className="kicker">Pending claims</p><p className="figure mt-1 tnum text-gold">{pending.length}</p></div>
+        </div>
+      );
+    })()}
+    <div className="mb-4 flex items-center justify-between gap-3">
+      <div className="flex items-center gap-3">
+        <label className="text-base font-medium text-muted">Editing month:</label>
+        <input className="input w-auto" type="month" value={ym} onChange={(e) => setYm(e.target.value)} />
+      </div>
+      <button className="btn-secondary text-tiny" onClick={addExistingCreator}>+ Add existing creator</button>
+    </div>
+    <div className="card overflow-x-auto">
+      {creators.length === 0 ? (
+        <p className="text-base text-faint">No creators yet.</p>
+      ) : (
+        <table className="w-full text-base">
+          <thead>
+            <tr className="border-b border-line text-left text-tiny uppercase text-faint">
+              <th className="py-2 pr-3">Creator</th><th className="pr-3">Contract</th><th className="pr-3">Base pay</th>
+              <th className="pr-3">Bonus (mo.)</th><th className="pr-3">Joined</th><th className="pr-3">Left</th>
+              <th className="pr-3">Posts (mo.)</th><th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {creators.map((c) => {
+              const vidCount = videoCountByCreator[c.id] || 0;
+              const bonus = paymentsByCreator[c.id]?.perf_bonus;
+              const cs = contractStatus(c);
+              return (
+                <tr key={c.id} className={`border-b border-line ${c.status === "inactive" ? "opacity-60" : ""}`}>
+                  <td className="py-2.5 pr-3">
+                    <button className="text-left" onClick={() => openCreator(c)}>
+                      <span className="font-semibold text-accent underline decoration-dotted">{c.profiles?.full_name}</span>
+                      <span className={`badge ${c.status === "active" ? "badge-ok" : "bg-ground text-faint"} ml-2`}>{c.status === "active" ? "Active" : "Inactive"}</span>
+                    </button>
+                  </td>
+                  <td className="pr-3"><span className={`badge ${cs.cls}`}>{cs.text}</span></td>
+                  <td className="pr-3 tnum">{fmtNaira(c.base_pay)}</td>
+                  <td className="pr-3 tnum">{bonus ? fmtNaira(bonus) : <span className="text-faint">—</span>}</td>
+                  <td className="pr-3">{c.joined_at}</td>
+                  <td className="pr-3">{c.left_at || <span className="text-faint">—</span>}</td>
+                  <td className="pr-3 tnum">{vidCount}</td>
+                  <td className="pr-3">
+                    <div className="flex justify-end gap-2">
+                      <button className="btn-quiet" onClick={() => toggleCreatorStatus(c)}>{c.status === "active" ? "Deactivate" : "Reactivate"}</button>
+                      <button className="btn-quiet text-noInk" onClick={() => deleteCreator(c)}>Delete</button>
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      )}
+    </div>
+  </section>
+)}
+{tab === "creators" && selectedCreator && (() => {
+  const c = selectedCreator;
+  const cs = contractStatus(c);
+  const vidCount = videoCountByCreator[c.id] || 0;
+  const earned = paymentsByCreator[c.id]?.total_payable;
+  return (
+    <section>
+      <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <button className="mb-1 text-tiny text-muted hover:text-accent" onClick={() => setSelectedCreator(null)}>← Back to Manage creators</button>
+          <h2 className="font-display text-xl font-bold">{c.profiles?.full_name}</h2>
+          <p className="text-tiny text-faint">{c.profiles?.email} · {c.profiles?.phone || "—"} · Joined {c.joined_at}</p>
+        </div>
+        <div className="flex gap-2">
+          <button className="btn-secondary text-tiny" onClick={() => toggleCreatorStatus(c)}>{c.status === "active" ? "Deactivate" : "Reactivate"}</button>
+          <button className="btn-secondary text-tiny text-noInk" onClick={() => deleteCreator(c)}>Delete</button>
+        </div>
+      </div>
+
+      <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <div className="card"><p className="kicker">Status</p><p className="mt-1"><span className={`badge ${c.status === "active" ? "badge-ok" : "bg-ground text-faint"}`}>{c.status === "active" ? "Active" : "Inactive"}</span></p></div>
+        <div className="card"><p className="kicker">Base pay</p><p className="figure mt-1 tnum text-accent">{fmtNaira(c.base_pay)}</p></div>
+        <div className="card"><p className="kicker">Posts this month</p><p className="figure mt-1 tnum">{vidCount}</p></div>
+        <div className="card"><p className="kicker">Earned this month</p><p className="figure mt-1 tnum text-gold">{earned !== undefined ? fmtNaira(earned) : "—"}</p></div>
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-2">
+        <div className="space-y-4">
+          <div className="card">
+            <div className="mb-2 flex items-center justify-between">
+              <h3 className="font-semibold">Videos logged ({selectedCreatorVideos.length})</h3>
+              <button className="btn-quiet" onClick={() => logForCreator(c)}>+ Log video</button>
+            </div>
+            <div className="max-h-64 space-y-1 overflow-y-auto">
+              {selectedCreatorVideos.length === 0 && <p className="text-tiny text-faint">None logged.</p>}
+              {selectedCreatorVideos.map((v) => (
+                <div key={v.id} className="flex items-center justify-between rounded-lg border border-line px-3 py-1.5 text-tiny">
+                  <span>{v.log_date} · Post {v.post_number} · <span className="text-faint">by {v.logged_by}</span></span>
+                  <div className="flex gap-2">
+                    {v.tiktok_url && <a href={v.tiktok_url} target="_blank" rel="noopener noreferrer" className="text-accent underline">TT</a>}
+                    {v.insta_url && <a href={v.insta_url} target="_blank" rel="noopener noreferrer" className="text-accent underline">IG</a>}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="card">
+            <h3 className="mb-2 font-semibold">Bonus claims ({selectedCreatorClaims.length})</h3>
+            <div className="max-h-64 space-y-1 overflow-y-auto">
+              {selectedCreatorClaims.length === 0 && <p className="text-tiny text-faint">None submitted.</p>}
+              {selectedCreatorClaims.map((claim) => (
+                <div key={claim.id} className="rounded-lg border border-line px-3 py-1.5 text-tiny">
+                  <div className="flex items-center justify-between">
+                    <span>{claim.claim_date} · {Number(claim.views).toLocaleString()} views · <span className={`badge ${STATUS_STYLE[claim.status]}`}>{claim.status}</span></span>
+                    <button className="text-red-500 underline" onClick={() => deleteClaim(claim.id, c.id, claim.claim_date.slice(0, 7))}>Delete</button>
+                  </div>
+                  {claim.video_url && <a href={claim.video_url} target="_blank" rel="noopener noreferrer" className="text-accent underline">Open video</a>}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          <div className="card">
+            <h3 className="mb-2 font-semibold">Payment history</h3>
+            <div className="max-h-64 space-y-1 overflow-y-auto">
+              {selectedCreatorPayments.length === 0 && <p className="text-tiny text-faint">Nothing paid yet.</p>}
+              {selectedCreatorPayments.map((p) => (
+                <div key={p.id} className="flex items-center justify-between rounded-lg border border-line px-3 py-1.5 text-tiny">
+                  <span>{p.month}</span>
+                  <span className="flex items-center gap-2">
+                    <span className="tnum">{fmtNaira(p.total_payable)}</span>
+                    <span className={`badge ${p.payment_status === "Paid" ? "badge-ok" : "badge-waiting"}`}>{p.payment_status}</span>
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="card">
+            <h3 className="mb-2 font-semibold">Bank details</h3>
+            <div className="space-y-1 text-tiny">
+              <div className="flex justify-between border-b border-ground py-1"><span className="text-faint">Bank</span><span>{c.bank_name || "—"}</span></div>
+              <div className="flex justify-between border-b border-ground py-1"><span className="text-faint">Account no.</span><span className="tnum">{c.acct_num || "—"}</span></div>
+              <div className="flex justify-between py-1"><span className="text-faint">Account name</span><span>{c.acct_name || "—"}</span></div>
+            </div>
+            {c.contract_file_url ? (
+              <button type="button" onClick={() => openContract(c)} className="btn-secondary mt-3 w-full text-tiny">Open signed contract →</button>
+            ) : (
+              <p className="mt-3 text-tiny"><span className={`badge ${cs.cls}`}>{cs.text}</span></p>
+            )}
+            {contractError && <p className="mt-2 text-tiny text-red-600">{contractError}</p>}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+})()}{tab === "invites" && (<section><div className="card mb-4"><h2 className="mb-1 font-semibold">Invite a creator</h2><p className="mb-3 text-tiny text-muted">No email needed to get in — send this on WhatsApp. Works once and lasts 3 days.</p><form onSubmit={createInvite} className="grid grid-cols-2 gap-3"><input className="input" placeholder="Name (just for you to tell it apart)" value={inviteLabel} onChange={(e) => setInviteLabel(e.target.value)} required /><input className="input" placeholder="Last 4 of their phone (optional)" maxLength={4} value={invitePhone} onChange={(e) => setInvitePhone(e.target.value.replace(/\D/g, ""))} /><button className="btn-primary col-span-2">Create invite link</button></form>{lastInvite && (<div className="mt-4 rounded-xl border border-line bg-ground p-3"><p className="text-tiny font-semibold uppercase text-faint">Ready for {lastInvite.label}</p><p className="mt-1 break-all font-mono text-tiny text-ink">{lastInvite.link}</p><div className="mt-2 flex gap-2"><a className="btn-primary text-tiny" style={{ background: "#25D366" }} target="_blank" rel="noopener noreferrer" href={`https://wa.me/?text=${encodeURIComponent(lastInvite.link)}`}>Send on WhatsApp</a><button type="button" className="btn-secondary text-tiny" onClick={() => navigator.clipboard.writeText(lastInvite.link)}>Copy link</button></div><p className="mt-2 text-tiny text-waitingInk">Send this to {lastInvite.label} only — whoever opens it first joins as them.</p></div>)}</div><div className="card"><h2 className="mb-3 font-semibold">Invites ({invites.length})</h2><div className="space-y-2">{invites.length === 0 && <p className="text-base text-faint">No invites yet.</p>}{invites.map((inv) => { const s = inviteStatus(inv); return (<div key={inv.id} className="flex items-center justify-between rounded-xl border border-line px-4 py-2.5"><div><p className="font-medium">{inv.label}</p><p className="text-tiny text-faint">Sent {new Date(inv.created_at).toLocaleDateString("en-GB")}</p></div><span className={`badge ${s.cls}`}>{s.text}</span></div>); })}</div></div></section>)}{tab === "payments" && (<section><div className="mb-4 flex items-center gap-3"><label className="text-base font-medium text-muted">Month:</label><input className="input w-auto" type="month" value={ym} onChange={(e) => setYm(e.target.value)} /></div><div className="card overflow-x-auto"><table className="w-full text-base"><thead><tr className="border-b border-line text-left text-tiny uppercase text-faint"><th className="py-2 pr-3">Creator</th><th className="pr-3">Base pay</th><th className="pr-3">Videos</th><th className="pr-3">Rate/post</th><th className="pr-3">Earned base</th><th className="pr-3">Perf. bonus</th><th className="pr-3">Referral</th><th className="pr-3">OOP</th><th className="pr-3">Total</th><th className="pr-3">Status</th></tr></thead><tbody>{payments.map((p) => { const basePay = p.creators?.base_pay || 0; const expected = postsExpectedIn(p.month); const perPost = Math.round(rate(basePay, p.month)); const vids = videoCountByCreator[p.creator_id] || Math.round(p.base_amount / (perPost || 1)); return (<tr key={p.id} className="border-b border-line"><td className="py-2 pr-3"><button className="text-accent underline decoration-dotted" onClick={() => openCreator(creators.find((c) => c.id === p.creator_id))}>{p.creators?.profiles?.full_name}</button></td><td className="pr-3">{fmtNaira(basePay)}</td><td className="pr-3">{vids} / {expected}</td><td className="pr-3">{fmtNaira(perPost)}</td><td className="pr-3">{fmtNaira(p.base_amount)}</td><td className="pr-3">{fmtNaira(p.perf_bonus)}</td><td className="pr-3"><input className="input w-20" defaultValue={p.referral_bonus} onBlur={(e) => savePaymentField(p, "referral_bonus", e.target.value)} /></td><td className="pr-3"><input className="input w-20" defaultValue={p.oop_expense} onBlur={(e) => savePaymentField(p, "oop_expense", e.target.value)} /></td><td className="pr-3 font-semibold">{fmtNaira(p.total_payable)}</td><td className="pr-3"><select className="input w-28" defaultValue={p.payment_status} onChange={(e) => savePaymentField(p, "payment_status", e.target.value)}><option value="Pending">Pending</option><option value="Paid">Paid</option><option value="Held">Held</option></select></td></tr>); })}{payments.length === 0 && (<tr><td colSpan={10} className="py-4 text-center text-faint">No payment rows for {ym} yet — created as videos and bonuses are logged and approved.</td></tr>)}</tbody></table></div></section>)}</main></div>);
 }
