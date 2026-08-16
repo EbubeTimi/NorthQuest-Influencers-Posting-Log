@@ -1190,12 +1190,15 @@
     <span class="section-title">All creators</span>
     <div style="display:flex;align-items:center;gap:12px">
       <span style="font-size:12px;color:var(--text3)" id="manage-counts"></span>
+      <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text3)" title="Which month the Bonus column reads and writes. Pick a past month to correct a bonus you missed.">Bonus month
+        <select class="pay-input" id="manage-month" style="max-width:130px" onchange="onManageMonthChange(this.value)"></select>
+      </label>
       <span class="page-search-wrap"><input class="page-search-input" id="manage-search" type="text" placeholder="Search creators..." oninput="filterTableRows('manage-search','manage-body')" autocomplete="off"></span>
     </div>
   </div>
   <div class="creator-table-wrap">
     <table class="log-table">
-      <thead><tr><th>Creator</th><th>Status</th><th>Contract</th><th>Contact</th><th>Base Pay (&#8358;/month)</th><th>Bonus (This Month)</th><th>Joined</th><th>Left</th><th>Total Posts</th><th>Action</th></tr></thead>
+      <thead><tr><th>Creator</th><th>Status</th><th>Contract</th><th>Contact</th><th>Base Pay (&#8358;/month)</th><th id="manage-bonus-th">Bonus (This Month)</th><th>Joined</th><th>Left</th><th>Total Posts</th><th>Action</th></tr></thead>
       <tbody id="manage-body"><tr><td colspan="10" class="empty-state"><span class="spinner"></span></td></tr></tbody>
     </table>
   </div>
@@ -1357,6 +1360,9 @@ const safeStorage = {
 
 let allRows = [], allCreators = [], allPayments = [];
 let weekOffset = 0, selectedMonth = null, selectedPayMonth = null;
+// Which month the Manage Creators bonus column reads and writes. Null means
+// "the current month", which is what it always used to be locked to.
+let manageMonth = null;
 let isAdmin = false, dataLoaded = false, creatorsLoaded = false, paysLoaded = false;
 // dataLoaded only means "stop showing spinners". It is set even when every
 // fetch attempt failed, so on its own it cannot tell an empty day from an
@@ -2317,9 +2323,28 @@ const BASE_PAY_TIERS = [100000, 150000, 200000, 250000, 300000];
 // and never has to be typed by hand. Tiers come from the editable bonusTiers
 // global (see loadBonusTiers / saveBonusTiers) — never hardcoded here.
 
+// The month the bonus column is currently pointed at. Defaults to this month,
+// so nothing changes until an admin deliberately picks an earlier one.
+function manageMonthOrToday() { return manageMonth || todayStr().substring(0, 7); }
+
+// Months worth offering: any month with posts, any month with a payment record,
+// and always the current one (which may have neither yet).
+function getManageMonths() {
+  const set = new Set(getMonths());
+  allPayments.forEach(p => { if (p.month) set.add(String(p.month).substring(0, 7)); });
+  set.add(todayStr().substring(0, 7));
+  return [...set].sort().reverse();
+}
+
+function onManageMonthChange(v) {
+  if (!v) return;
+  manageMonth = v;
+  renderManageCreators();
+}
+
 function bonusControl(name) {
   if (!paysLoaded) return '<span style="color:var(--text3);font-size:12px">Loading…</span>';
-  const ym = todayStr().substring(0, 7);
+  const ym = manageMonthOrToday();
   const rec = allPayments.find(p => p.month === ym && String(p.name).toLowerCase() === name.toLowerCase());
   const views = rec && rec.bonusViews ? String(rec.bonusViews) : '';
   const list = views.split(',').map(v => v.trim()).filter(Boolean);
@@ -2334,7 +2359,12 @@ function bonusControl(name) {
     '<select class="pay-input bonus-select" style="max-width:170px;margin-top:3px" onchange="onBonusPick(\'' + escH(name) + '\', this)">' +
       '<option value="">+ Add views bonus…</option>' +
       [...bonusTiers].sort((a,b) => a[0]-b[0]).map(t => '<option value="' + t[0] + '">' + t[0].toLocaleString('en-NG') + ' views &rarr; &#8358;' + t[1].toLocaleString('en-NG') + '</option>').join('') +
-      (list.length ? '<option value="undo">&#x232B; Remove last bonus</option><option value="clear">&#x2715; Clear all bonuses</option>' : '') +
+      (list.length
+        ? '<optgroup label="Remove one bonus">' +
+            list.map((v, i) => '<option value="del:' + i + '">&#x2715; ' + (Number(v) || 0).toLocaleString('en-NG') + ' views</option>').join('') +
+          '</optgroup>' +
+          '<option value="clear">&#x2715; Clear all bonuses</option>'
+        : '') +
     '</select></div>';
 }
 
@@ -2342,11 +2372,17 @@ function onBonusPick(name, sel) {
   const val = sel.value;
   sel.value = '';
   if (!val) return;
-  const ym = todayStr().substring(0, 7);
+  const ym = manageMonthOrToday();
   const rec = allPayments.find(p => p.month === ym && String(p.name).toLowerCase() === name.toLowerCase());
   let list = rec && rec.bonusViews ? String(rec.bonusViews).split(',').map(v => v.trim()).filter(Boolean) : [];
   if (val === 'clear') list = [];
-  else if (val === 'undo') list.pop();
+  else if (val === 'undo') list.pop();               // legacy option, still honoured
+  else if (val.indexOf('del:') === 0) {
+    // Remove one specific bonus by position, not just the most recent one.
+    const idx = parseInt(val.split(':')[1], 10);
+    if (isNaN(idx) || idx < 0 || idx >= list.length) return;
+    list.splice(idx, 1);
+  }
   else list.push(val);
   const newViews = list.join(',');
   savePaymentField(ym, name, 'bonusViews', newViews, false);
@@ -2506,9 +2542,29 @@ function renderOnboardingOverview() {
   document.getElementById('ov-notstarted').textContent = none;
 }
 
+// Keeps the month dropdown and the Bonus column header in step with each other,
+// so it is always obvious which month a bonus edit is about to land in.
+function renderManageMonthPicker() {
+  const ym = manageMonthOrToday();
+  const sel = document.getElementById('manage-month');
+  if (sel) {
+    const months = getManageMonths();
+    sel.innerHTML = months.map(m =>
+      '<option value="' + m + '"' + (m === ym ? ' selected' : '') + '>' + monthShort(m) + '</option>'
+    ).join('');
+  }
+  const th = document.getElementById('manage-bonus-th');
+  if (th) {
+    const isCurrent = ym === todayStr().substring(0, 7);
+    th.textContent = isCurrent ? 'Bonus (This Month)' : 'Bonus (' + monthShort(ym) + ')';
+    th.style.color = isCurrent ? '' : 'var(--amber, #b7791f)';
+  }
+}
+
 function renderManageCreators() {
   const tbody = document.getElementById('manage-body');
   const counts = document.getElementById('manage-counts');
+  renderManageMonthPicker();
   if (!creatorsLoaded) { tbody.innerHTML = '<tr><td colspan="10" class="empty-state"><span class="spinner"></span></td></tr>'; return; }
   if (!allCreators.length) { tbody.innerHTML = '<tr><td colspan="10" class="empty-state"><strong>No creators yet</strong></td></tr>'; counts.textContent = ''; renderOnboardingOverview(); return; }
   const active = allCreators.filter(c => String(c.status).toLowerCase()==='active').length;
