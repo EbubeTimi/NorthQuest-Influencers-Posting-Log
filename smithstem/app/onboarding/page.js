@@ -90,7 +90,7 @@ export default function OnboardingPage() {
     router.replace("/dashboard");
   }
 
-  if (!user || existingCreator === undefined || !business) return null;
+  if (!user || existingCreator === undefined || !business) return (<main className="flex min-h-screen items-center justify-center px-4"><p className="text-base text-muted">Setting things up…</p></main>);
 
   const party = contractFor(business.slug);
   if (!party) {
