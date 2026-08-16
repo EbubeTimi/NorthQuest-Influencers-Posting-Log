@@ -13,6 +13,17 @@ const naira = (n) => "₦" + Number(n || 0).toLocaleString("en-NG", { maximumFra
 function monthName(isoDate) { return new Date(isoDate + "T00:00:00").toLocaleDateString("en-GB", { month: "long", year: "numeric" }); }
 function dayName(isoDate) { return new Date(isoDate + "T00:00:00").toLocaleDateString("en-GB", { day: "numeric", month: "short" }); }
 
+// Strips protocol, www, query string, and trailing slash so a link a creator
+// re-pastes today still matches the one logged weeks ago even if TikTok or
+// Instagram appended different tracking params in between.
+function normalizeLink(u) {
+  if (!u) return "";
+  let s = String(u).trim().toLowerCase();
+  s = s.replace(/^https?:\/\//, "").replace(/^www\./, "");
+  s = s.split("?")[0].split("#")[0].replace(/\/+$/, "");
+  return s;
+}
+
 // What a creator is owed for a month, used only once a payment has actually
 // been paid — never shown as a running figure before Smith has confirmed it.
 function payTotal(p) {
@@ -60,9 +71,18 @@ export default function CreatorDashboard() {
   const [claims, setClaims] = useState([]);
   const [payments, setPayments] = useState([]);
   const [videoForm, setVideoForm] = useState({ date: postingDay(), post: "1", tiktok: "", insta: "" });
-  const [bonusForm, setBonusForm] = useState({ date: today(), videoUrl: "", views: "" });
-  const [bonusScreenshot, setBonusScreenshot] = useState(null);
-  const [evidenceError, setEvidenceError] = useState("");
+  // All-time (not just this month) so an older video can still be claimed —
+  // matched by pasted link or picked from a list, never typed free-hand.
+  const [myVideos, setMyVideos] = useState([]);
+  const [claimByVideoId, setClaimByVideoId] = useState({});
+  const [bonusView, setBonusView] = useState("link-entry");
+  const [pastedLink, setPastedLink] = useState("");
+  const [activeVideo, setActiveVideo] = useState(null);
+  const [claimViews, setClaimViews] = useState("");
+  const [claimScreenshot, setClaimScreenshot] = useState(null);
+  const [claimError, setClaimError] = useState("");
+  const [growthViews2, setGrowthViews2] = useState("");
+  const [growthError2, setGrowthError2] = useState("");
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState("");
   const [growthOpenFor, setGrowthOpenFor] = useState(null);
@@ -93,13 +113,21 @@ export default function CreatorDashboard() {
     const { data: cr } = await supabase.from("creators").select("*").eq("profile_id", user.user.id).maybeSingle();
     setCreator(cr);
     if (!cr) return;
-    const [{ data: v }, { data: b }, { data: pay }] = await Promise.all([
+    const [{ data: v }, { data: b }, { data: pay }, { data: mv }, { data: mc }] = await Promise.all([
       supabase.from("video_logs").select("*").eq("creator_id", cr.id).gte("log_date", start).lte("log_date", end).order("log_date", { ascending: false }),
       supabase.from("bonus_claims").select("*").eq("creator_id", cr.id).gte("claim_date", start).lte("claim_date", end).order("created_at", { ascending: false }),
       // Every month, not just this one — creators ask about past months most.
       supabase.from("payments").select("*").eq("creator_id", cr.id).order("month", { ascending: false }),
+      // All-time video/claim pool for the claim-a-bonus link matcher below —
+      // a video from two months ago can still cross a tier and get claimed.
+      supabase.from("video_logs").select("*").eq("creator_id", cr.id).order("log_date", { ascending: false }).limit(200),
+      supabase.from("bonus_claims").select("*").eq("creator_id", cr.id).order("created_at", { ascending: false }).limit(400),
     ]);
     setVideos(v || []); setClaims(b || []); setPayments(pay || []);
+    setMyVideos(mv || []);
+    const claimMap = {};
+    (mc || []).forEach((c) => { if (c.video_log_id && !claimMap[c.video_log_id]) claimMap[c.video_log_id] = c; });
+    setClaimByVideoId(claimMap);
   }, [router, start, end]);
 
   useEffect(() => { load(); }, [load]);
@@ -119,32 +147,75 @@ export default function CreatorDashboard() {
     setMsg("Video logged."); setVideoForm((f) => ({ ...f, tiktok: "", insta: "" })); load();
   }
 
-  // Smith cannot verify a typed number against nothing. A claim needs the
-  // video link, a screenshot of the view count, or both — never neither.
-  // Whichever is less trouble for the creator to provide is fine; the point
-  // is that something exists for her to check against.
-  async function submitBonus(e) {
-    e.preventDefault(); setEvidenceError("");
-    if (!bonusForm.videoUrl.trim() && !bonusScreenshot) {
-      setEvidenceError("Add the video link, a screenshot of the views, or both.");
-      return;
-    }
+  // A claim is now made against one specific logged video, found by pasting
+  // its link (matched against what's already logged) or picked from a list —
+  // never typed free-hand. This is what makes a duplicate claim on the same
+  // video structurally impossible rather than just discouraged: the video is
+  // resolved first, and the database refuses a second active claim on it.
+  function videoClaimBadge(video) {
+    const c = claimByVideoId[video.id];
+    if (!c) return { cls: "bg-ground text-faint", text: "Not yet claimed" };
+    return { cls: STATUS_STYLE[c.status], text: STATUS_WORD[c.status] || c.status };
+  }
+
+  function resetClaimFlow() {
+    setBonusView("link-entry"); setPastedLink(""); setActiveVideo(null);
+    setClaimViews(""); setClaimScreenshot(null); setClaimError("");
+    setGrowthViews2(""); setGrowthError2("");
+  }
+
+  function openVideoForClaim(video) {
+    setActiveVideo(video);
+    setClaimViews(""); setClaimScreenshot(null); setClaimError("");
+    const claim = claimByVideoId[video.id];
+    if (!claim) { setBonusView("claim-form"); return; }
+    if (claim.status === "pending") { setBonusView("already-waiting"); return; }
+    if (claim.status === "approved") { setGrowthViews2(""); setGrowthError2(""); setBonusView("already-approved"); return; }
+    setBonusView("claim-form"); // rejected — resubmitting against the same video is allowed
+  }
+
+  function findMyVideo() {
+    setClaimError("");
+    const needle = normalizeLink(pastedLink);
+    if (!needle) return;
+    const match = myVideos.find((v) => (v.tiktok_url && normalizeLink(v.tiktok_url) === needle) || (v.insta_url && normalizeLink(v.insta_url) === needle));
+    if (!match) { setBonusView("link-notfound"); return; }
+    setActiveVideo(match);
+    setBonusView("link-matched");
+  }
+
+  async function submitClaim() {
+    setClaimError("");
+    const viewsNum = Number(claimViews);
+    if (!claimViews.trim() || !viewsNum || viewsNum <= 0) { setClaimError("Enter the view count."); return; }
+    if (!claimScreenshot) { setClaimError("Add a screenshot so Smith can check it."); return; }
     setBusy(true); setMsg("");
     const supabase = supabaseBrowser();
-    let screenshotPath = null;
-    if (bonusScreenshot) {
-      const path = `${creator.id}/${Date.now()}-${bonusScreenshot.name}`;
-      const { error: upErr } = await supabase.storage.from("bonus-evidence").upload(path, bonusScreenshot);
-      if (upErr) { setBusy(false); setMsg("Could not upload the screenshot: " + upErr.message); return; }
-      screenshotPath = path;
-    }
+    const path = `${creator.id}/${Date.now()}-${claimScreenshot.name}`;
+    const { error: upErr } = await supabase.storage.from("bonus-evidence").upload(path, claimScreenshot);
+    if (upErr) { setBusy(false); setClaimError("Could not upload the screenshot: " + upErr.message); return; }
+    const link = activeVideo.tiktok_url || activeVideo.insta_url || null;
     const { error } = await supabase.from("bonus_claims").insert({
-      business_id: creator.business_id, creator_id: creator.id, claim_date: bonusForm.date,
-      video_url: bonusForm.videoUrl.trim() || null, screenshot_url: screenshotPath,
-      views: Number(bonusForm.views), submitted_by: "creator", status: "pending",
+      business_id: creator.business_id, creator_id: creator.id, claim_date: today(),
+      video_log_id: activeVideo.id, video_url: link, screenshot_url: path,
+      views: viewsNum, submitted_by: "creator", status: "pending",
     });
-    setBusy(false); if (error) { setMsg("Could not submit: " + error.message); return; }
-    setMsg("Bonus claim sent to Smith."); setBonusForm({ date: today(), videoUrl: "", views: "" }); setBonusScreenshot(null); load();
+    setBusy(false);
+    if (error) { setClaimError("Could not submit: " + error.message); return; }
+    setMsg("Bonus claim sent to Smith."); resetClaimFlow(); load();
+  }
+
+  // Growth is reported on the video's existing approved claim, not a new
+  // one — same mechanism as the list below, just reached from the claim flow
+  // when the matched or picked video turns out to already be approved.
+  async function submitGrowthForActiveClaim() {
+    setGrowthError2("");
+    const claim = claimByVideoId[activeVideo.id];
+    const v = Number(growthViews2);
+    if (!v || v <= claim.views) { setGrowthError2("Enter a view count higher than what was already approved."); return; }
+    const { error } = await supabaseBrowser().rpc("request_bonus_revision", { p_claim_id: claim.id, p_new_views: v });
+    if (error) { setGrowthError2(error.message.replace(/^.*?: /, "")); return; }
+    setMsg("Update sent to Smith."); resetClaimFlow(); load();
   }
 
   async function viewEvidence(path) {
@@ -249,21 +320,109 @@ export default function CreatorDashboard() {
 
         <section className="card mb-4">
           <h2 className="text-lead font-semibold">Claim a bonus</h2>
-          <p className="mb-3 mt-1 text-tiny text-muted">
-            How many views the video has now, and either the link, a screenshot of the views, or both — enough for Smith to check it.
-          </p>
-          <form onSubmit={submitBonus} className="grid grid-cols-2 gap-3">
-            <input className="input" type="date" value={bonusForm.date} onChange={(e) => setBonusForm((f) => ({ ...f, date: e.target.value }))} required />
-            <input className="input tnum" type="number" placeholder="Views" value={bonusForm.views} onChange={(e) => setBonusForm((f) => ({ ...f, views: e.target.value }))} required />
-            <input className="input col-span-2" placeholder="Video link (TikTok or Instagram)" value={bonusForm.videoUrl} onChange={(e) => setBonusForm((f) => ({ ...f, videoUrl: e.target.value }))} />
-            <label className="input col-span-2 flex cursor-pointer items-center justify-between text-muted">
-              <span>{bonusScreenshot ? bonusScreenshot.name : "Screenshot of the views (optional)"}</span>
-              <span className="text-tiny font-semibold text-accent">{bonusScreenshot ? "Change" : "Choose"}</span>
-              <input type="file" accept="image/*" className="hidden" onChange={(e) => setBonusScreenshot(e.target.files?.[0] || null)} />
-            </label>
-            {evidenceError && <p className="col-span-2 text-base text-red-600">{evidenceError}</p>}
-            <button className="btn-primary col-span-2" disabled={busy}>{busy ? "Sending…" : "Send to Smith"}</button>
-          </form>
+
+          {(bonusView === "link-entry" || bonusView === "link-matched" || bonusView === "link-notfound") && (
+            <>
+              <p className="mb-3 mt-1 text-tiny text-muted">Paste the TikTok or Instagram link — we'll find it in what you've already logged, so you don't have to go hunting for the date.</p>
+              <input
+                className="input"
+                placeholder="Paste the video link here"
+                value={pastedLink}
+                onChange={(e) => { setPastedLink(e.target.value); if (bonusView !== "link-entry") setBonusView("link-entry"); }}
+              />
+              {bonusView === "link-matched" && activeVideo && (
+                <div className="mt-3 rounded-xl bg-ground p-3">
+                  <div className="flex items-center justify-between text-base">
+                    <span className="text-muted">Found it</span>
+                    <span className="font-semibold">{dayName(activeVideo.log_date)} · Post {activeVideo.post_number}</span>
+                  </div>
+                  <span className={`badge mt-2 inline-flex ${videoClaimBadge(activeVideo).cls}`}>{videoClaimBadge(activeVideo).text}</span>
+                  <button className="btn-primary mt-3 w-full" onClick={() => openVideoForClaim(activeVideo)}>
+                    {claimByVideoId[activeVideo.id] ? "View this video" : "Continue with this video"}
+                  </button>
+                </div>
+              )}
+              {bonusView === "link-notfound" && (
+                <div className="mt-3 rounded-xl border border-dashed border-line p-3 text-tiny text-muted">
+                  Couldn't find that link in what you've logged. Check it's the right one, or pick from your videos instead.
+                </div>
+              )}
+              {bonusView === "link-entry" && (
+                <button className="btn-primary mt-3 w-full" onClick={findMyVideo} disabled={!pastedLink.trim()}>Find my video</button>
+              )}
+              <button className="btn-quiet mt-2 w-full" onClick={() => setBonusView("list")}>Or choose from your logged videos</button>
+            </>
+          )}
+
+          {bonusView === "list" && (
+            <>
+              <p className="mb-3 mt-1 text-tiny text-muted">Pick the exact video — already-claimed ones show where they stand, so a second claim can't happen by accident.</p>
+              {myVideos.length === 0 ? (
+                <p className="text-base text-faint">No videos logged yet. Log one above first, then come back here.</p>
+              ) : (
+                <div className="space-y-2">
+                  {myVideos.map((v) => {
+                    const badge = videoClaimBadge(v);
+                    const c = claimByVideoId[v.id];
+                    const disabled = c && c.status === "pending";
+                    return (
+                      <button
+                        key={v.id}
+                        className="w-full rounded-xl border border-line px-3 py-2.5 text-left disabled:opacity-60"
+                        disabled={disabled}
+                        onClick={() => openVideoForClaim(v)}
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="font-medium">{dayName(v.log_date)} · Post {v.post_number}</span>
+                          <span className={`badge ${badge.cls}`}>{badge.text}</span>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+              <button className="btn-quiet mt-2 w-full" onClick={() => setBonusView("link-entry")}>Back to paste a link</button>
+            </>
+          )}
+
+          {bonusView === "claim-form" && activeVideo && (
+            <>
+              <p className="mb-1 mt-1 text-base font-medium">{dayName(activeVideo.log_date)} · Post {activeVideo.post_number}</p>
+              <p className="mb-3 text-tiny text-muted">Views right now, and a screenshot so Smith can check it.</p>
+              <input className="input tnum" type="number" placeholder="Views" value={claimViews} onChange={(e) => setClaimViews(e.target.value)} />
+              <label className="input mt-3 flex cursor-pointer items-center justify-between text-muted">
+                <span>{claimScreenshot ? claimScreenshot.name : "Screenshot of the views"}</span>
+                <span className="text-tiny font-semibold text-accent">{claimScreenshot ? "Change" : "Choose"}</span>
+                <input type="file" accept="image/*" className="hidden" onChange={(e) => setClaimScreenshot(e.target.files?.[0] || null)} />
+              </label>
+              {claimError && <p className="mt-2 text-base text-red-600">{claimError}</p>}
+              <div className="mt-3 flex gap-3">
+                <button className="btn-secondary flex-1" onClick={resetClaimFlow}>Cancel</button>
+                <button className="btn-primary flex-1" onClick={submitClaim} disabled={busy}>{busy ? "Sending…" : "Send to Smith"}</button>
+              </div>
+            </>
+          )}
+
+          {bonusView === "already-waiting" && activeVideo && (
+            <>
+              <p className="mb-1 mt-1 text-base font-medium">{dayName(activeVideo.log_date)} · Post {activeVideo.post_number}</p>
+              <p className="mt-2 rounded-lg bg-waitingBg px-3 py-2 text-tiny text-waitingInk">You already sent a claim for this video — it's waiting on Smith. Nothing else to do until she reviews it.</p>
+              <button className="btn-quiet mt-2" onClick={resetClaimFlow}>Back</button>
+            </>
+          )}
+
+          {bonusView === "already-approved" && activeVideo && (
+            <>
+              <p className="mb-1 mt-1 text-base font-medium">{dayName(activeVideo.log_date)} · Post {activeVideo.post_number}</p>
+              <p className="mb-3 text-tiny text-muted">This one's already approved. If it kept growing past its tier, report the new views instead of sending a new claim.</p>
+              <input className="input tnum" type="number" placeholder="New views" value={growthViews2} onChange={(e) => setGrowthViews2(e.target.value)} />
+              {growthError2 && <p className="mt-2 text-base text-red-600">{growthError2}</p>}
+              <div className="mt-3 flex gap-3">
+                <button className="btn-secondary flex-1" onClick={resetClaimFlow}>Back</button>
+                <button className="btn-primary flex-1" onClick={submitGrowthForActiveClaim}>Send to Smith</button>
+              </div>
+            </>
+          )}
         </section>
 
         <section className="card mb-4">
