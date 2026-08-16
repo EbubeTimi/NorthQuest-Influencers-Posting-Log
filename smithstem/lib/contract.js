@@ -16,10 +16,11 @@ function performanceIncentiveLine(tiers) {
   return `Performance Incentive: ${parts.join("; ")}.`;
 }
 
-// Only NorthQuest has real contract details behind it. A second business
-// needs its own contracting party, terms and liability language decided
-// deliberately — reusing Daniel's contract for a different company by
-// default would be worse than showing nothing until it exists.
+// Only businesses listed here have real contract details behind them. A new
+// business needs its own contracting party, terms and liability language
+// decided deliberately — reusing another company's contract by default
+// would be worse than showing nothing until the real one exists. Aura is
+// not here yet for exactly that reason: no signed contract for it exists.
 const BUSINESS_CONTRACTS = {
   northquest: {
     partyName: "Daniel Torkura",
@@ -29,6 +30,27 @@ const BUSINESS_CONTRACTS = {
     partyPhone: "09079135431",
     brandName: "Northquest Finance",
     signatureUrl: DANIEL_SIGNATURE_URL,
+    termStart: "April 16, 2026",
+    termEnd: "April 15, 2027",
+    bonusModel: "performance",
+  },
+  // Real signed contract (Obiemeka Mmesoma Maryann, 6/8/2026) has no
+  // views/likes-based bonus at all — Section 4.6 there explicitly rules it
+  // out and replaces it with a discretionary, per-sale bonus Daniel confirms
+  // in writing before it's owed. It also carries a non-compete clause
+  // NorthQuest's contract doesn't have, since it's a car dealership.
+  cashdrive: {
+    partyName: "Daniel Torkura",
+    partyRole: "Head of Product at Northquest Finance",
+    partyEmail: "torkuradaniel@gmail.com",
+    partyAddress: "Carlton Gate Estate Ibadan, Oyo State",
+    partyPhone: "09079135431",
+    brandName: "Cashdrive Cars",
+    signatureUrl: DANIEL_SIGNATURE_URL,
+    termStart: "July 15, 2026",
+    termEnd: "July 14, 2027",
+    bonusModel: "discretionary-sales",
+    nonCompete: true,
   },
 };
 
@@ -44,8 +66,26 @@ export function contractSections(creator, todayIsoDate, tiers, party = BUSINESS_
     { heading: "2. DEFINITIONS", body: ['"Content" means all User-Generated Content created by the Creator under this Agreement.', '"Platforms" means TikTok and Instagram, or any other platforms agreed in writing.', `"Brand" means ${party.brandName}. ${party.brandName} is NOT a party to this Agreement.`, '"Administrative Manager" means Smith Onyekwereh (smithonyekwereh1@gmail.com).', '"Monthly Quota" means two (2) pieces of Content per day, 14 per week, 60 in 30-day months, 62 in 31-day months.', '"Monthly Fee" means the base pay agreed for the individual Creator, paid per-piece, or any amount deemed fit by management.', '"Qualifying Content" means Content posted before 11:30 PM WAT, cross-posted to both platforms, logged on the day of posting, and passing quality review.', '"Community Manager" means Ella.'] },
     { heading: "3. SCOPE OF WORK", body: ["3.1 Two pieces of Content per day (second no later than 11:30 PM WAT), 14 per week, cross-posted to both TikTok AND Instagram. The same Content to BOTH platforms each day.", `Content Quality: authentic, aligned with ${party.brandName} brand values.`, "Brand Representation: accurate, no false or misleading claims.", "Content Logging: every piece must be logged on Smithstem the same day it is posted."] },
     { heading: "3.2 CONTENT OWNERSHIP AND IP", body: [`Content mentioning or promoting ${party.brandName} is owned by ${party.partyName}. Content unrelated to ${party.brandName} remains the Creator's sole property.`, "Year One (months 1-12): EXCLUSIVE ownership; removal only for harmful usage under Section 6.", "Year Two (months 13-24): non-exclusive; removal may be requested for competing brand partnerships or harmful usage.", `3.2.2 Social accounts created under this Agreement are owned and operated under ${party.partyName}'s direction for the Agreement duration and the two-year ownership period. Creator provides login credentials, does not change passwords without written approval, forwards platform communications, and cooperates with platform support.`] },
+    ...(party.nonCompete ? [{ heading: "3.3 NON-COMPETE DURING AGREEMENT TERM", body: [`While this Agreement is in effect, the Creator shall not create or post Content that promotes any business competing with ${party.brandName}, or any other brand in a way that undermines the ${party.brandName} messaging the Creator is currently representing.`, "This restriction applies only for the duration of this Agreement and is treated as a material breach under Section 8B.1 if broken."] }] : []),
     { heading: "3A. QUALITY CONTROL", body: [`3A.1 Quality Control Officer: Lawrence Emmanuella Iniikio. QCO assessments are final and binding unless overridden by ${party.partyName} in writing.`, "3A.2 Second piece each day no later than 11:30 PM WAT.", "3A.3 Qualifying Content must meet ALL: posted on time; cross-posted to both platforms; passes review; accurately represents the brand; logged on the day posted.", `3A.4 Review within 24 hours. Rejected Content may be reposted at ${party.partyName}'s discretion.`] },
-    { heading: "4. COMPENSATION", body: ["4.1 Monthly Fee paid per piece of Qualifying Content, subject to meeting the Monthly Quota.", "4.2 Payment requires 14 Qualifying pieces per week, cross-posted and logged, meeting quality standards, with no unexcused absences.", "4.3 Paid monthly, on or before the 10th of the following month.", "4.4 Shortfalls not excused under Section 8A are paid pro-rata at the per-piece rate.", "4.5 Payment by bank transfer to the Creator's designated account.", performanceIncentiveLine(tiers), `4.6a The Performance Incentive schedule set out above is not fixed for the life of this Agreement and may be revised by ${party.partyName} from time to time, in the same way it has been revised before. The schedule in force on the date a bonus threshold is reached shall be the one that applies to that bonus.`, "4.7 Metric disputes resolved via platform native analytics, which are the final arbiter.", `4.8 ${party.partyName} is personally and solely liable for all payments.`] },
+    { heading: "4. COMPENSATION", body: [
+      "4.1 Monthly Fee paid per piece of Qualifying Content, subject to meeting the Monthly Quota.",
+      "4.2 Payment requires 14 Qualifying pieces per week, cross-posted and logged, meeting quality standards, with no unexcused absences.",
+      "4.3 Paid monthly, on or before the 10th of the following month.",
+      "4.4 Shortfalls not excused under Section 8A are paid pro-rata at the per-piece rate.",
+      "4.5 Payment by bank transfer to the Creator's designated account.",
+      ...(party.bonusModel === "discretionary-sales"
+        ? [
+            `4.6 Sales Incentive: This Agreement does not include any performance bonus tied to views, likes, or other engagement metrics. Where a piece of Content directly results in a customer purchase from ${party.brandName}, ${party.partyName} may, at his sole discretion, pay the Creator a bonus in recognition of that sale. Whether a sale is attributable to the Creator, and the amount, is determined by ${party.partyName} case-by-case and confirmed to the Creator in writing before it is treated as owing. No such bonus is presumed without that confirmation.`,
+            "4.7 Metric disputes resolved via platform native analytics, which are the final arbiter.",
+          ]
+        : [
+            performanceIncentiveLine(tiers),
+            `4.6a The Performance Incentive schedule set out above is not fixed for the life of this Agreement and may be revised by ${party.partyName} from time to time, in the same way it has been revised before. The schedule in force on the date a bonus threshold is reached shall be the one that applies to that bonus.`,
+            "4.7 Metric disputes resolved via platform native analytics, which are the final arbiter.",
+          ]),
+      `4.8 ${party.partyName} is personally and solely liable for all payments.`,
+    ] },
     { heading: "5. OWNERSHIP DURATION", body: [`5.1 Rights to use, reproduce, modify, adapt, distribute and transmit the Content for ${party.brandName} marketing.`, "5.2 Two years from creation of each piece. Year One exclusive; Year Two non-exclusive.", "5.3 On the two-year anniversary, rights terminate; continued use requires written consent.", "5.4 Content shall NOT be used in pornographic, political, defamatory or illegal material, or anything objectively harmful to the Creator's reputation.", "5.5 Creator is prohibited from deleting or deactivating Content or the associated accounts during the Agreement and the two-year ownership period, except with written consent, an approved takedown, or platform-initiated removal notified within 24 hours. Breach is material."] },
     { heading: "6. TAKEDOWN RIGHTS", body: ["6.1 Year Two: competing brand partnership. Both Years: harmful usage per Section 5.4.", `6.2 Written notice to ${party.partyEmail} specifying Content, grounds and evidence.`, `6.2.2 Harmful Usage: ${party.partyName} MUST cease use within 24 hours.`, "Competing Brand (Year Two only): comply within 24 hours, or offer payment to retain usage; if declined, must comply.", "6.2.3 Non-compliance is material breach."] },
     { heading: "7. WARRANTIES", body: ["7.1 Creator warrants full authority, original non-infringing Content, all third-party permissions obtained, and compliance with laws and platform policies.", `7.1A Creator is solely liable for third-party IP infringement caused by the Creator and indemnifies ${party.partyName}.`, `7.2 ${party.partyName} warrants full authority, use within the Agreement terms, and personal liability for payments.`] },
@@ -53,7 +93,7 @@ export function contractSections(creator, todayIsoDate, tiers, party = BUSINESS_
     { heading: "8B. BREACH", body: ["8B.1 Creator breach: quota failure without excuse, IP or legal violations, false representations. Daniel may suspend payment, terminate with notice, or seek remedies.", "8B.2 Daniel breach: failure to pay, prohibited use, failure to comply with takedown. Creator may revoke the licence within 14 days, terminate with notice, or seek remedies."] },
     { heading: "8C. PERFORMANCE MONITORING", body: ["8C.1 Consistent Default: two or more defaulting weeks in a calendar month.", "8C.2 Written notice starts a two-week Performance Watch stating shortfalls and expectations.", "8C.3 During the Watch: 14 Qualifying pieces per week expected; per-piece payment continues.", "8C.4 Satisfactory: Watch lifted. Unsatisfactory: immediate termination on written notice.", "8C.5 Final payment for Qualifying Content up to termination within 7 business days.", "8C.6 Repeat default within a rolling three months may lead to direct termination."] },
     { heading: "9. DISPUTE RESOLUTION", body: ["9.1 Good faith negotiation, meeting within 7 business days of notice.", "9.2 Unresolved within 14 business days: mediation, e.g. Lagos Multi-Door Courthouse, costs shared.", "9.3 Unresolved within 30 business days: litigation in the courts of Lagos, Nigeria.", "9.4 Governed by the laws of the Federal Republic of Nigeria."] },
-    { heading: "10. TERM AND TERMINATION", body: ["10.1 Term: April 16, 2026 to April 15, 2027 unless terminated earlier.", "10.2 Creator may terminate on 21 days written notice; payment within 7 business days.", `10.3 ${party.partyName} may terminate with immediate effect on written notice; payment by the 10th of the following month.`, "10.4 Either party may terminate immediately for uncured material breach after 14 days notice.", "10.5 On termination, account control reverts to the Creator; the content licence continues for the two-year period."] },
+    { heading: "10. TERM AND TERMINATION", body: [`10.1 Term: ${party.termStart} to ${party.termEnd} unless terminated earlier.`, "10.2 Creator may terminate on 21 days written notice; payment within 7 business days.", `10.3 ${party.partyName} may terminate with immediate effect on written notice; payment by the 10th of the following month.`, "10.4 Either party may terminate immediately for uncured material breach after 14 days notice.", "10.5 On termination, account control reverts to the Creator; the content licence continues for the two-year period."] },
     { heading: "11. GENERAL", body: ["11.1 Entire Agreement. 11.2 Amendments in writing signed by both parties. 11.3 Severability. 11.4 No assignment without written consent.", "11.5 Notices in writing via email, registered mail or courier.", "11.6 Independent contractor relationship.", `11.7 ${party.brandName} is NOT a party and has no obligations or liabilities. All claims solely against ${party.partyName}.`] },
     { heading: "SIGNATURES", body: ["IN WITNESS WHEREOF, the parties have executed this Agreement as of the date first written above.", `Contract signing date: ${todayIsoDate}`] }
   ];
