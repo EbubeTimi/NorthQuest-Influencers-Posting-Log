@@ -79,6 +79,40 @@ export function postingDay(at = new Date(), tz = BUSINESS_TZ) {
   return `${day.getUTCFullYear()}-${pad(day.getUTCMonth() + 1)}-${pad(day.getUTCDate())}`;
 }
 
+// The most recent Sunday on or before the given date — the universal weekly
+// check-in boundary. Everyone checks in on the same real-world day, rather
+// than each creator running their own personal 7-day clock from whenever
+// they happened to join.
+export function mostRecentSunday(date) {
+  const d = new Date((date || today()) + "T00:00:00");
+  d.setDate(d.getDate() - d.getDay());
+  const pad = (n) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+
+export function daysBetween(fromDate, toDate) {
+  const a = new Date((fromDate || today()) + "T00:00:00");
+  const b = new Date((toDate || today()) + "T00:00:00");
+  return Math.round((b - a) / 86400000);
+}
+
+// One day back from the given date, as a YYYY-MM-DD string.
+export function dayBefore(date) {
+  const d = new Date((date || today()) + "T00:00:00");
+  d.setDate(d.getDate() - 1);
+  const pad = (n) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+
+// Whether it's still morning in Lagos — the grace window for logging
+// yesterday's video closes at noon, same timezone rule as everything else
+// date-related here, not whatever timezone the creator's browser happens
+// to be set to.
+export function isBeforeNoon(tz = BUSINESS_TZ) {
+  const hour = Number(new Intl.DateTimeFormat("en-GB", { timeZone: tz, hour: "2-digit", hour12: false }).format(new Date()));
+  return hour < 12;
+}
+
 // First and last day of the month a creator is actually living in.
 export function monthBoundsLocal(tz = BUSINESS_TZ) {
   const t = today(tz);

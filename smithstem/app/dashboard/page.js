@@ -2,7 +2,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { supabaseBrowser, withTimeout } from "../../lib/supabaseClient";
-import { today, postingDay, monthBoundsLocal } from "../../lib/domain";
+import { today, postingDay, monthBoundsLocal, mostRecentSunday, daysBetween, dayBefore, isBeforeNoon } from "../../lib/domain";
 import Header from "../../components/Header";
 import LoadingScreen from "../../components/LoadingScreen";
 
@@ -71,6 +71,10 @@ export default function CreatorDashboard() {
   const [claims, setClaims] = useState([]);
   const [payments, setPayments] = useState([]);
   const [videoForm, setVideoForm] = useState({ date: postingDay(), post: "1", tiktok: "", insta: "", facebook: "" });
+  const [checkinAnswers, setCheckinAnswers] = useState({});
+  const [checkinBusy, setCheckinBusy] = useState(false);
+  const [checkinError, setCheckinError] = useState("");
+  const [checkinJustDone, setCheckinJustDone] = useState(false);
   // All-time (not just this month) so an older video can still be claimed —
   // matched by pasted link or picked from a list, never typed free-hand.
   const [myVideos, setMyVideos] = useState([]);
@@ -370,6 +374,126 @@ export default function CreatorDashboard() {
     );
   }
 
+  // Every video logged before this week's boundary needs every platform it
+  // was posted to reported before a new video can be logged — universal
+  // Sunday check-in, not a personal clock per creator, and never applied
+  // before someone's had a full week on the platform to actually catch up.
+  function isFullyReported(v) {
+    const rep = platformReportsByVideo[v.id] || {};
+    if (v.tiktok_url && !rep.tiktok) return false;
+    if (v.insta_url && !rep.instagram) return false;
+    if (v.facebook_url && !rep.facebook) return false;
+    return true;
+  }
+  const weekBoundary = mostRecentSunday(today());
+  const joinedDaysAgo = daysBetween(creator.joined_at, today());
+  const unreportedOldVideos = myVideos.filter((v) => v.log_date < weekBoundary && !isFullyReported(v));
+  const weeklyGateActive = joinedDaysAgo >= 7 && unreportedOldVideos.length > 0;
+  const graceAvailable = isBeforeNoon();
+  const yesterday = dayBefore(today());
+
+  function updateCheckinAnswer(videoId, platform, value) {
+    setCheckinAnswers((a) => ({ ...a, [videoId]: { ...(a[videoId] || {}), [platform]: value } }));
+  }
+  function checkinRowDone(v) {
+    const a = checkinAnswers[v.id] || {};
+    if (v.tiktok_url && !(v.tiktok_url && (platformReportsByVideo[v.id]?.tiktok || a.tiktok))) return false;
+    if (v.insta_url && !(platformReportsByVideo[v.id]?.instagram || a.instagram)) return false;
+    if (v.facebook_url && !(platformReportsByVideo[v.id]?.facebook || a.facebook)) return false;
+    return true;
+  }
+  async function submitWeeklyCheckin() {
+    setCheckinError(""); setCheckinBusy(true);
+    const rows = [];
+    for (const v of unreportedOldVideos) {
+      const a = checkinAnswers[v.id] || {};
+      if (v.tiktok_url && !platformReportsByVideo[v.id]?.tiktok) {
+        const n = Number(a.tiktok);
+        if (!n || n <= 0) { setCheckinBusy(false); setCheckinError("Enter every view count before continuing."); return; }
+        rows.push({ business_id: creator.business_id, creator_id: creator.id, video_log_id: v.id, views: n, platform: "tiktok" });
+      }
+      if (v.insta_url && !platformReportsByVideo[v.id]?.instagram) {
+        const n = Number(a.instagram);
+        if (!n || n <= 0) { setCheckinBusy(false); setCheckinError("Enter every view count before continuing."); return; }
+        rows.push({ business_id: creator.business_id, creator_id: creator.id, video_log_id: v.id, views: n, platform: "instagram" });
+      }
+      if (v.facebook_url && !platformReportsByVideo[v.id]?.facebook) {
+        const n = Number(a.facebook);
+        if (!n || n <= 0) { setCheckinBusy(false); setCheckinError("Enter every view count before continuing."); return; }
+        rows.push({ business_id: creator.business_id, creator_id: creator.id, video_log_id: v.id, views: n, platform: "facebook" });
+      }
+    }
+    const { error } = await supabaseBrowser().from("video_view_reports").insert(rows);
+    setCheckinBusy(false);
+    if (error) { setCheckinError(error.message); return; }
+    setCheckinAnswers({}); setCheckinJustDone(true); load();
+  }
+
+  function logVideoDateChips() {
+    return (
+      <div className="col-span-2 mb-1 flex gap-2">
+        <button type="button" className={`flex-1 rounded-xl border-[1.5px] px-3 py-2.5 text-center text-tiny font-semibold ${videoForm.date === today() ? "border-accent bg-accentSoft text-accent" : "border-line text-muted"}`} onClick={() => setVideoForm((f) => ({ ...f, date: today() }))}>
+          Today
+        </button>
+        {graceAvailable && (
+          <button type="button" className={`flex-1 rounded-xl border-[1.5px] px-3 py-2.5 text-center text-tiny font-semibold ${videoForm.date === yesterday ? "border-[#2A4E8C] bg-[#E3EBF9] text-[#2A4E8C]" : "border-[#B7C9E6] bg-[#EEF3FB] text-[#2A4E8C]"}`} onClick={() => setVideoForm((f) => ({ ...f, date: yesterday }))}>
+            Yesterday
+            <span className="block text-[10px] font-medium opacity-80">until 12pm today</span>
+          </button>
+        )}
+      </div>
+    );
+  }
+
+  function weeklyCheckinCard() {
+    const doneCount = unreportedOldVideos.filter(checkinRowDone).length;
+    return (
+      <section className="card mb-4">
+        <h2 className="mb-1 text-lead font-semibold">Report this week's views first</h2>
+        <p className="mt-1 text-base text-muted">It's Sunday check-in day. Report views for everything you posted before this week before logging your next video — only the platforms you actually posted to show below.</p>
+        <p className="mt-1 text-tiny font-medium text-accent">You're not locked out — this takes a minute, then you're straight back to logging normally.</p>
+        <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-accentSoft">
+          <div className="h-full rounded-full bg-accent transition-all" style={{ width: `${Math.round((doneCount / unreportedOldVideos.length) * 100)}%` }} />
+        </div>
+        <p className="mt-1 text-tiny text-faint">{doneCount} of {unreportedOldVideos.length} reported</p>
+        <div className="mt-3 space-y-2">
+          {unreportedOldVideos.map((v) => {
+            const done = checkinRowDone(v);
+            return (
+              <div key={v.id} className={`rounded-xl border px-3 py-2.5 ${done ? "border-okBg bg-accentSoft/30" : "border-line"}`}>
+                <div className="flex items-center justify-between">
+                  <span className="text-tiny font-semibold">{dayName(v.log_date)} · Post {v.post_number}</span>
+                  {done && <span className="badge badge-ok">✓ Reported</span>}
+                </div>
+                <div className="mt-1.5 flex flex-wrap items-end gap-2">
+                  {v.tiktok_url && !platformReportsByVideo[v.id]?.tiktok && (
+                    <label className="text-tiny text-faint">TikTok views
+                      <input className="input tnum mt-0.5 w-24 py-1.5" type="number" value={checkinAnswers[v.id]?.tiktok || ""} onChange={(e) => updateCheckinAnswer(v.id, "tiktok", e.target.value)} />
+                    </label>
+                  )}
+                  {v.insta_url && !platformReportsByVideo[v.id]?.instagram && (
+                    <label className="text-tiny text-faint">Instagram views
+                      <input className="input tnum mt-0.5 w-24 py-1.5" type="number" value={checkinAnswers[v.id]?.instagram || ""} onChange={(e) => updateCheckinAnswer(v.id, "instagram", e.target.value)} />
+                    </label>
+                  )}
+                  {v.facebook_url && !platformReportsByVideo[v.id]?.facebook && (
+                    <label className="text-tiny text-faint">Facebook views
+                      <input className="input tnum mt-0.5 w-24 py-1.5" type="number" value={checkinAnswers[v.id]?.facebook || ""} onChange={(e) => updateCheckinAnswer(v.id, "facebook", e.target.value)} />
+                    </label>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+        {checkinError && <p className="mt-2 text-base text-red-600">{checkinError}</p>}
+        <button className="btn-primary mt-3 w-full" disabled={checkinBusy || doneCount < unreportedOldVideos.length} onClick={submitWeeklyCheckin}>
+          {checkinBusy ? "Saving…" : "Continue to log your next video"}
+        </button>
+      </section>
+    );
+  }
+
   if (creator.status === "trial" || creator.status === "trial_approved") {
     const approved = creator.status === "trial_approved";
     return (
@@ -396,52 +520,114 @@ export default function CreatorDashboard() {
             </section>
           )}
 
-          <section className="card mb-4">
-            <h2 className="mb-3 text-lead font-semibold">Log a video</h2>
-            <form onSubmit={logVideo} className="grid grid-cols-2 gap-3">
-              <input className="input" type="date" value={videoForm.date} onChange={(e) => setVideoForm((f) => ({ ...f, date: e.target.value }))} required />
-              <select className="input" value={videoForm.post} onChange={(e) => setVideoForm((f) => ({ ...f, post: e.target.value }))}>
-                <option value="1">Post 1</option>
-                <option value="2">Post 2</option>
-              </select>
-              <input className="input col-span-2" placeholder="TikTok link" value={videoForm.tiktok} onChange={(e) => setVideoForm((f) => ({ ...f, tiktok: e.target.value }))} />
-              <input className="input col-span-2" placeholder="Instagram link" value={videoForm.insta} onChange={(e) => setVideoForm((f) => ({ ...f, insta: e.target.value }))} />
-              <input className="input col-span-2" placeholder="Facebook link (optional)" value={videoForm.facebook} onChange={(e) => setVideoForm((f) => ({ ...f, facebook: e.target.value }))} />
-              <button className="btn-primary col-span-2" disabled={busy}>{busy ? "Saving…" : "Log video"}</button>
-            </form>
-          </section>
+          {weeklyGateActive ? weeklyCheckinCard() : (
+            <section className="card mb-4">
+              {checkinJustDone && (
+                <p className="mb-3 flex items-center gap-2 rounded-lg bg-accentSoft px-3 py-2 text-tiny text-accent">
+                  <span className="badge badge-ok">✓ Caught up</span> Thanks — you can log normally again.
+                </p>
+              )}
+              <h2 className="mb-3 text-lead font-semibold">Log a video</h2>
+              <form onSubmit={logVideo} className="grid grid-cols-2 gap-3">
+                {logVideoDateChips()}
+                <select className="input col-span-2" value={videoForm.post} onChange={(e) => setVideoForm((f) => ({ ...f, post: e.target.value }))}>
+                  <option value="1">Post 1</option>
+                  <option value="2">Post 2</option>
+                </select>
+                <input className="input col-span-2" placeholder="TikTok link" value={videoForm.tiktok} onChange={(e) => setVideoForm((f) => ({ ...f, tiktok: e.target.value }))} />
+                <input className="input col-span-2" placeholder="Instagram link" value={videoForm.insta} onChange={(e) => setVideoForm((f) => ({ ...f, insta: e.target.value }))} />
+                <input className="input col-span-2" placeholder="Facebook link (optional)" value={videoForm.facebook} onChange={(e) => setVideoForm((f) => ({ ...f, facebook: e.target.value }))} />
+                <button className="btn-primary col-span-2" disabled={busy}>{busy ? "Saving…" : "Log video"}</button>
+              </form>
+            </section>
+          )}
 
-          <section className="card mb-4">
-            <h2 className="mb-3 text-lead font-semibold">Your videos</h2>
-            {myVideos.length === 0 ? (
-              <p className="text-base text-faint">Nothing logged yet. Log your first video above and it will show here.</p>
-            ) : (
-              <div className="space-y-2">
-                {myVideos.map((v) => {
-                  const rep = platformReportsByVideo[v.id];
-                  const combined = (rep?.tiktok || 0) + (rep?.instagram || 0);
-                  return (
-                    <div key={v.id} className="rounded-xl border border-line px-3 py-2.5">
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="text-base font-medium">{dayName(v.log_date)} · Post {v.post_number}</span>
-                        {rep && (
-                          <span className={`badge ${combined >= trialThreshold ? "badge-ok" : "bg-ground text-faint"}`}>{combined.toLocaleString()} views</span>
-                        )}
-                      </div>
-                      {(v.tiktok_url || v.insta_url || v.facebook_url) && (
-                        <div className="mt-1.5 flex flex-wrap gap-3">
-                          {v.tiktok_url && <a href={v.tiktok_url} target="_blank" rel="noopener noreferrer" className="text-tiny font-medium text-accent underline">TikTok</a>}
-                          {v.insta_url && <a href={v.insta_url} target="_blank" rel="noopener noreferrer" className="text-tiny font-medium text-accent underline">Instagram</a>}
-                          {v.facebook_url && <a href={v.facebook_url} target="_blank" rel="noopener noreferrer" className="text-tiny font-medium text-accent underline">Facebook</a>}
+          {(() => {
+            const videosThisMonth = videos.length;
+            const loggedDates = new Set(videos.map((v) => v.log_date));
+            const fullDays = new Set();
+            const dayHasPost = {};
+            videos.forEach((v) => { (dayHasPost[v.log_date] ||= new Set()).add(v.post_number); });
+            Object.entries(dayHasPost).forEach(([d, posts]) => { if (posts.has(1) && posts.has(2)) fullDays.add(d); });
+            let daysMissed = 0;
+            const monthCursor = new Date(start + "T00:00:00");
+            const todayStr = today();
+            while (monthCursor.toISOString().slice(0, 10) <= todayStr && monthCursor.toISOString().slice(0, 10) <= end) {
+              const d = monthCursor.toISOString().slice(0, 10);
+              if (!loggedDates.has(d)) daysMissed += 1;
+              monthCursor.setDate(monthCursor.getDate() + 1);
+            }
+            const illustrativeBasePay = creator.base_pay || 0;
+            const recentDates = [...new Set(myVideos.map((v) => v.log_date))].sort((a, b) => (a < b ? 1 : -1)).slice(0, 7);
+            return (
+              <section className="card mb-4">
+                <h2 className="text-lead font-semibold">Your posting record</h2>
+                <p className="mb-3 text-tiny text-faint">{label}</p>
+                <div className="mb-3 grid grid-cols-3 gap-2">
+                  <div className="rounded-xl bg-ground px-2 py-3 text-center">
+                    <p className="tnum font-display text-title font-semibold text-accent">{videosThisMonth}</p>
+                    <p className="mt-0.5 text-[10px] font-bold uppercase tracking-wide text-faint">Videos this month</p>
+                  </div>
+                  <div className="rounded-xl bg-ground px-2 py-3 text-center">
+                    <p className="tnum font-display text-title font-semibold text-accent">{fullDays.size}</p>
+                    <p className="mt-0.5 text-[10px] font-bold uppercase tracking-wide text-faint">Days fully done</p>
+                  </div>
+                  <div className="rounded-xl bg-ground px-2 py-3 text-center">
+                    <p className="tnum font-display text-title font-semibold text-accent">{daysMissed}</p>
+                    <p className="mt-0.5 text-[10px] font-bold uppercase tracking-wide text-faint">Days missed</p>
+                  </div>
+                </div>
+                <p className="mb-3 rounded-lg bg-accentSoft px-3 py-2 text-tiny text-ink">
+                  A ✓ means that video's views have been reported. Every Sunday, report views for the week before you can log your next video.
+                </p>
+                {illustrativeBasePay > 0 && (
+                  <p className="mb-3 rounded-lg border border-dashed border-gold bg-[#FFFBF0] px-3 py-2 text-tiny">
+                    If you were an active creator right now: <span className="tnum font-semibold">{naira(illustrativeBasePay)}</span>/month base pay, at your current posting pace — this is what to expect once approved, not a payment you're owed while on trial.
+                  </p>
+                )}
+                {recentDates.length === 0 ? (
+                  <p className="text-base text-faint">Nothing logged yet. Log your first video above and it will show here.</p>
+                ) : (
+                  <div className="space-y-1">
+                    {recentDates.map((d) => {
+                      const dayVideos = myVideos.filter((v) => v.log_date === d).sort((a, b) => a.post_number - b.post_number);
+                      return (
+                        <div key={d} className="flex items-start gap-3 border-b border-line py-2 last:border-0">
+                          <div className="w-14 shrink-0">
+                            <p className="tnum text-tiny font-bold">{dayName(d)}</p>
+                            {d === today() && <p className="text-[10px] font-bold text-accent">Today</p>}
+                          </div>
+                          <div className="flex-1 space-y-1">
+                            {[1, 2].map((postNum) => {
+                              const v = dayVideos.find((x) => x.post_number === postNum);
+                              if (!v) return <p key={postNum} className="text-tiny text-faint">Video {postNum} — not logged</p>;
+                              const rep = platformReportsByVideo[v.id];
+                              const fullyReported = isFullyReported(v);
+                              return (
+                                <div key={postNum} className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-tiny">
+                                  <span className={fullyReported ? "font-bold text-okInk" : ""}>{fullyReported ? "✓" : "◦"}</span>
+                                  <span>Video {postNum}</span>
+                                  {v.tiktok_url && <a href={v.tiktok_url} target="_blank" rel="noopener noreferrer" className="font-medium text-accent underline">TikTok ↗</a>}
+                                  {v.insta_url && <a href={v.insta_url} target="_blank" rel="noopener noreferrer" className="font-medium text-accent underline">Instagram ↗</a>}
+                                  {v.facebook_url && <a href={v.facebook_url} target="_blank" rel="noopener noreferrer" className="font-medium text-accent underline">Facebook ↗</a>}
+                                  {fullyReported ? (
+                                    <span className="tnum text-muted">{((rep?.tiktok || 0) + (rep?.instagram || 0) + (rep?.facebook || 0)).toLocaleString()} views</span>
+                                  ) : (
+                                    <span className="text-waitingInk">views not reported yet</span>
+                                  )}
+                                  {reportSummaryAndControls(v)}
+                                </div>
+                              );
+                            })}
+                          </div>
                         </div>
-                      )}
-                      {reportSummaryAndControls(v)}
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </section>
+                      );
+                    })}
+                  </div>
+                )}
+              </section>
+            );
+          })()}
         </main>
       </div>
     );
@@ -476,8 +662,8 @@ export default function CreatorDashboard() {
         <section className="card mb-4">
           <h2 className="mb-3 text-lead font-semibold">Log a video</h2>
           <form onSubmit={logVideo} className="grid grid-cols-2 gap-3">
-            <input className="input" type="date" value={videoForm.date} onChange={(e) => setVideoForm((f) => ({ ...f, date: e.target.value }))} required />
-            <select className="input" value={videoForm.post} onChange={(e) => setVideoForm((f) => ({ ...f, post: e.target.value }))}>
+            {logVideoDateChips()}
+            <select className="input col-span-2" value={videoForm.post} onChange={(e) => setVideoForm((f) => ({ ...f, post: e.target.value }))}>
               <option value="1">Post 1</option>
               <option value="2">Post 2</option>
             </select>
