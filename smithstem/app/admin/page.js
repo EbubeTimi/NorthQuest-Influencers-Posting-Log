@@ -50,6 +50,10 @@ export default function AdminDashboard() {
   const [analyticsLoading, setAnalyticsLoading] = useState(false);
   const [analyticsLoaded, setAnalyticsLoaded] = useState(false);
   const [exportingPayments, setExportingPayments] = useState(false);
+  const [linksEditing, setLinksEditing] = useState(false);
+  const [tiktokLinkInput, setTiktokLinkInput] = useState("");
+  const [instaLinkInput, setInstaLinkInput] = useState("");
+  const [linksMsg, setLinksMsg] = useState("");
   const [tab, setTab] = useState("approvals");
   const [creators, setCreators] = useState([]);
   const [trialVideos, setTrialVideos] = useState([]);
@@ -178,6 +182,7 @@ export default function AdminDashboard() {
   async function openCreator(c) {
     if (!c) return; setSelectedCreator(c); setTab("creators");
     setBasePayEditing(false); setBasePayInput(""); setBasePayMsg("");
+    setLinksEditing(false); setTiktokLinkInput(""); setInstaLinkInput(""); setLinksMsg("");
     const supabase = supabaseBrowser();
     const [{ data: v }, { data: cl }, { data: pm }] = await Promise.all([
       supabase.from("video_logs").select("*").eq("creator_id", c.id).order("log_date", { ascending: false }).limit(200),
@@ -309,6 +314,19 @@ export default function AdminDashboard() {
     setBasePayEditing(false); setBasePayMsg("");
     if (selectedCreator?.id === c.id) setSelectedCreator({ ...c, base_pay: n });
     setMsg("Base pay updated."); load();
+  }
+  // Trial creators arrive with these already set; an invited or plain-signup
+  // creator has no field that ever collects one, so this is the only way
+  // most active creators get a profile link on record at all.
+  async function changeProfileLinks(c) {
+    setLinksMsg("");
+    const { error } = await supabaseBrowser().from("creators").update({
+      tiktok_profile_url: tiktokLinkInput.trim() || null, insta_profile_url: instaLinkInput.trim() || null,
+    }).eq("id", c.id);
+    if (error) { setLinksMsg("Failed: " + error.message); return; }
+    setLinksEditing(false); setLinksMsg("");
+    if (selectedCreator?.id === c.id) setSelectedCreator({ ...c, tiktok_profile_url: tiktokLinkInput.trim() || null, insta_profile_url: instaLinkInput.trim() || null });
+    setMsg("Profile links updated."); load();
   }
   async function deleteCreator(c) {
     const ok = confirm(
@@ -532,6 +550,12 @@ export default function AdminDashboard() {
                       <span className="font-semibold text-accent underline decoration-dotted">{c.profiles?.full_name}</span>
                       <span className={`badge ${c.status === "active" ? "badge-ok" : "bg-ground text-faint"} ml-2`}>{c.status === "active" ? "Active" : "Inactive"}</span>
                     </button>
+                    {(c.tiktok_profile_url || c.insta_profile_url) && (
+                      <div className="mt-0.5 flex gap-2 text-tiny">
+                        {c.tiktok_profile_url && <a href={c.tiktok_profile_url} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="text-accent underline">TikTok</a>}
+                        {c.insta_profile_url && <a href={c.insta_profile_url} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="text-accent underline">Instagram</a>}
+                      </div>
+                    )}
                   </td>
                   <td className="pr-3"><span className={`badge ${cs.cls}`}>{cs.text}</span></td>
                   <td className="pr-3 tnum">{fmtNaira(c.base_pay)}</td>
@@ -567,6 +591,26 @@ export default function AdminDashboard() {
           <button className="mb-1 text-tiny text-muted hover:text-accent" onClick={() => setSelectedCreator(null)}>← Back to Manage creators</button>
           <h2 className="font-display text-xl font-bold">{c.profiles?.full_name}</h2>
           <p className="text-tiny text-faint">{c.profiles?.email} · {c.profiles?.phone || "—"} · Joined {c.joined_at}</p>
+          {linksEditing ? (
+            <div className="mt-2 flex flex-wrap items-center gap-2">
+              <input className="input w-48 py-1.5 text-tiny" placeholder="TikTok profile link" value={tiktokLinkInput} onChange={(e) => setTiktokLinkInput(e.target.value)} />
+              <input className="input w-48 py-1.5 text-tiny" placeholder="Instagram profile link" value={instaLinkInput} onChange={(e) => setInstaLinkInput(e.target.value)} />
+              <button className="btn-quiet px-0" onClick={() => changeProfileLinks(c)}>Save</button>
+              <button className="btn-quiet px-0" onClick={() => { setLinksEditing(false); setLinksMsg(""); }}>Cancel</button>
+              {linksMsg && <p className="w-full text-tiny text-noInk">{linksMsg}</p>}
+            </div>
+          ) : (
+            <div className="mt-1 flex flex-wrap items-center gap-3 text-tiny">
+              {c.tiktok_profile_url && <a href={c.tiktok_profile_url} target="_blank" rel="noopener noreferrer" className="text-accent underline">TikTok</a>}
+              {c.insta_profile_url && <a href={c.insta_profile_url} target="_blank" rel="noopener noreferrer" className="text-accent underline">Instagram</a>}
+              <button
+                className="text-faint underline"
+                onClick={() => { setLinksEditing(true); setTiktokLinkInput(c.tiktok_profile_url || ""); setInstaLinkInput(c.insta_profile_url || ""); setLinksMsg(""); }}
+              >
+                {c.tiktok_profile_url || c.insta_profile_url ? "edit links" : "add profile links"}
+              </button>
+            </div>
+          )}
         </div>
         <div className="flex gap-2">
           <button className="btn-secondary text-tiny" onClick={() => toggleCreatorStatus(c)}>{c.status === "active" ? "Deactivate" : "Reactivate"}</button>
