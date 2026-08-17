@@ -98,6 +98,7 @@ export default function CreatorDashboard() {
   const [reportInstaInput, setReportInstaInput] = useState("");
   const [reportError, setReportError] = useState("");
   const [trialThreshold, setTrialThreshold] = useState(10000);
+  const [bonusEnabled, setBonusEnabled] = useState(true);
   const { start, end, label } = (() => { const b = monthBoundsLocal(); return { ...b, label: new Date(b.start + "T12:00:00").toLocaleDateString("en-GB", { month: "long", year: "numeric" }) }; })();
 
   const load = useCallback(async () => {
@@ -136,10 +137,11 @@ export default function CreatorDashboard() {
       supabase.from("video_view_reports").select("*").eq("creator_id", cr.id),
       // Live setting, not fixed — the same figure Smith's crossing queue uses,
       // read fresh each time rather than assumed.
-      supabase.from("businesses").select("trial_view_threshold").eq("id", cr.business_id).maybeSingle(),
+      supabase.from("businesses").select("trial_view_threshold, bonus_enabled").eq("id", cr.business_id).maybeSingle(),
     ]);
     setVideos(v || []); setClaims(b || []); setPayments(pay || []);
     setTrialThreshold(bizSettings?.trial_view_threshold || 10000);
+    setBonusEnabled(bizSettings?.bonus_enabled !== false);
     setMyVideos(mv || []);
     const claimMap = {};
     (mc || []).forEach((c) => { if (c.video_log_id && !claimMap[c.video_log_id]) claimMap[c.video_log_id] = c; });
@@ -498,6 +500,7 @@ export default function CreatorDashboard() {
           )}
         </section>
 
+        {bonusEnabled && (<>
         <section className="card mb-4">
           <h2 className="text-lead font-semibold">Claim a bonus</h2>
 
@@ -659,6 +662,7 @@ export default function CreatorDashboard() {
             </div>
           )}
         </section>
+        </>)}
 
         <PaymentsSection payments={payments} />
       </main>
