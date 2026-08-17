@@ -73,6 +73,11 @@ export default function AdminDashboard() {
   const [inviteLabel, setInviteLabel] = useState("");
   const [invitePhone, setInvitePhone] = useState("");
   const [lastInvite, setLastInvite] = useState(null);
+  const [isMigration, setIsMigration] = useState(false);
+  const [migrateBasePay, setMigrateBasePay] = useState("");
+  const [migrateTiktok, setMigrateTiktok] = useState("");
+  const [migrateInsta, setMigrateInsta] = useState("");
+  const [migrateJoinedAt, setMigrateJoinedAt] = useState("");
   const [ym, setYm] = useState(todayYm());
   const [payments, setPayments] = useState([]);
   const [videoCountByCreator, setVideoCountByCreator] = useState({});
@@ -445,12 +450,18 @@ export default function AdminDashboard() {
       p_label: inviteLabel.trim(),
       p_phone_last4: invitePhone.trim() || null,
       p_creator_id: null,
+      p_migration_base_pay: isMigration && migrateBasePay ? Number(migrateBasePay) : null,
+      p_migration_tiktok_url: isMigration ? migrateTiktok.trim() || null : null,
+      p_migration_insta_url: isMigration ? migrateInsta.trim() || null : null,
+      p_migration_joined_at: isMigration ? migrateJoinedAt || null : null,
     });
     if (error) { setMsg("Failed: " + error.message); return; }
     const row = Array.isArray(data) ? data[0] : data;
     const link = `${window.location.origin}/join/${row.token}`;
     setLastInvite({ label: inviteLabel.trim(), link });
-    setInviteLabel(""); setInvitePhone(""); load();
+    setInviteLabel(""); setInvitePhone("");
+    setIsMigration(false); setMigrateBasePay(""); setMigrateTiktok(""); setMigrateInsta(""); setMigrateJoinedAt("");
+    load();
   }
   async function viewEvidence(path) {
     const { data, error } = await supabaseBrowser().storage.from("bonus-evidence").createSignedUrl(path, 120);
@@ -881,7 +892,7 @@ export default function AdminDashboard() {
     </section>
   </section>
 )}
-{tab === "invites" && (<section><div className="card mb-4"><h2 className="mb-1 font-semibold">Invite a creator</h2><p className="mb-3 text-tiny text-muted">No email needed to get in — send this on WhatsApp. Works once and lasts 3 days.</p><form onSubmit={createInvite} className="grid grid-cols-2 gap-3"><input className="input" placeholder="Name (just for you to tell it apart)" value={inviteLabel} onChange={(e) => setInviteLabel(e.target.value)} required /><input className="input" placeholder="Last 4 of their phone (optional)" maxLength={4} value={invitePhone} onChange={(e) => setInvitePhone(e.target.value.replace(/\D/g, ""))} /><button className="btn-primary col-span-2">Create invite link</button></form>{lastInvite && (<div className="mt-4 rounded-xl border border-line bg-ground p-3"><p className="text-tiny font-semibold uppercase text-faint">Ready for {lastInvite.label}</p><p className="mt-1 break-all font-mono text-tiny text-ink">{lastInvite.link}</p><div className="mt-2 flex gap-2"><a className="btn-primary text-tiny" style={{ background: "#25D366" }} target="_blank" rel="noopener noreferrer" href={`https://wa.me/?text=${encodeURIComponent(lastInvite.link)}`}>Send on WhatsApp</a><button type="button" className="btn-secondary text-tiny" onClick={() => navigator.clipboard.writeText(lastInvite.link)}>Copy link</button></div><p className="mt-2 text-tiny text-waitingInk">Send this to {lastInvite.label} only — whoever opens it first joins as them.</p></div>)}</div><div className="card"><h2 className="mb-3 font-semibold">Invites ({invites.length})</h2><div className="space-y-2">{invites.length === 0 && <p className="text-base text-faint">No invites yet.</p>}{invites.map((inv) => { const s = inviteStatus(inv); return (<div key={inv.id} className="flex items-center justify-between rounded-xl border border-line px-4 py-2.5"><div><p className="font-medium">{inv.label}</p><p className="text-tiny text-faint">Sent {new Date(inv.created_at).toLocaleDateString("en-GB")}</p></div><span className={`badge ${s.cls}`}>{s.text}</span></div>); })}</div></div></section>)}{tab === "views" && (
+{tab === "invites" && (<section><div className="card mb-4"><h2 className="mb-1 font-semibold">Invite a creator</h2><p className="mb-3 text-tiny text-muted">No email needed to get in — send this on WhatsApp. Works once and lasts 3 days.</p><form onSubmit={createInvite} className="grid grid-cols-2 gap-3"><input className="input" placeholder="Name (just for you to tell it apart)" value={inviteLabel} onChange={(e) => setInviteLabel(e.target.value)} required /><input className="input" placeholder="Last 4 of their phone (optional)" maxLength={4} value={invitePhone} onChange={(e) => setInvitePhone(e.target.value.replace(/\D/g, ""))} /><label className="col-span-2 flex items-center gap-2 text-tiny text-muted"><input type="checkbox" checked={isMigration} onChange={(e) => setIsMigration(e.target.checked)} />This creator already worked with us on the old system — carry over their pay rate, socials and join date</label>{isMigration && (<div className="col-span-2 grid grid-cols-2 gap-3 rounded-xl border border-line bg-ground p-3"><input className="input tnum" type="number" min="1" placeholder="Base pay (naira)" value={migrateBasePay} onChange={(e) => setMigrateBasePay(e.target.value)} /><input className="input" type="date" placeholder="Joined date" value={migrateJoinedAt} onChange={(e) => setMigrateJoinedAt(e.target.value)} /><input className="input" placeholder="TikTok profile link" value={migrateTiktok} onChange={(e) => setMigrateTiktok(e.target.value)} /><input className="input" placeholder="Instagram profile link" value={migrateInsta} onChange={(e) => setMigrateInsta(e.target.value)} /><p className="col-span-2 text-tiny text-faint">They'll skip straight to active — no trial — and land on the usual bank + contract onboarding once they redeem this link.</p></div>)}<button className="btn-primary col-span-2">Create invite link</button></form>{lastInvite && (<div className="mt-4 rounded-xl border border-line bg-ground p-3"><p className="text-tiny font-semibold uppercase text-faint">Ready for {lastInvite.label}</p><p className="mt-1 break-all font-mono text-tiny text-ink">{lastInvite.link}</p><div className="mt-2 flex gap-2"><a className="btn-primary text-tiny" style={{ background: "#25D366" }} target="_blank" rel="noopener noreferrer" href={`https://wa.me/?text=${encodeURIComponent(lastInvite.link)}`}>Send on WhatsApp</a><button type="button" className="btn-secondary text-tiny" onClick={() => navigator.clipboard.writeText(lastInvite.link)}>Copy link</button></div><p className="mt-2 text-tiny text-waitingInk">Send this to {lastInvite.label} only — whoever opens it first joins as them.</p></div>)}</div><div className="card"><h2 className="mb-3 font-semibold">Invites ({invites.length})</h2><div className="space-y-2">{invites.length === 0 && <p className="text-base text-faint">No invites yet.</p>}{invites.map((inv) => { const s = inviteStatus(inv); return (<div key={inv.id} className="flex items-center justify-between rounded-xl border border-line px-4 py-2.5"><div><p className="font-medium">{inv.label}</p><p className="text-tiny text-faint">Sent {new Date(inv.created_at).toLocaleDateString("en-GB")}</p></div><span className={`badge ${s.cls}`}>{s.text}</span></div>); })}</div></div></section>)}{tab === "views" && (
   <section>
     <div className="mb-4 flex items-center justify-between gap-3">
       <p className="text-base text-muted">Every self-reported view count, whoever logged it — trial or active.</p>
