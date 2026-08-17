@@ -99,7 +99,7 @@ export default function TrialEntryPage() {
           <form onSubmit={start} className="card space-y-4">
             <div className="text-center">
               <p className="text-base text-ink">Start a trial with <strong>{state.businessName}</strong> on Smithstem.</p>
-              <p className="mt-1 text-tiny text-muted">Your TikTok or Instagram stays yours — nothing is handed over yet. Post, log your videos, and once one crosses 10,000 views Smith reviews it and you can complete your onboarding.</p>
+              <p className="mt-1 text-tiny text-muted">Your accounts stay yours — nothing is handed over yet. Post the same video to TikTok, Instagram, and Facebook, log it, and once one single video crosses 10,000 views on any platform, Smith reviews it and you can complete your onboarding.</p>
             </div>
             <input className="input" placeholder="Full name" value={form.fullName} onChange={(e) => setForm((f) => ({ ...f, fullName: e.target.value }))} required />
             <input className="input" placeholder="Your TikTok profile link" value={form.tiktok} onChange={(e) => setForm((f) => ({ ...f, tiktok: e.target.value }))} />
