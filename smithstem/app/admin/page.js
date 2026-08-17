@@ -49,6 +49,7 @@ export default function AdminDashboard() {
   const [analyticsRows, setAnalyticsRows] = useState([]);
   const [analyticsLoading, setAnalyticsLoading] = useState(false);
   const [analyticsLoaded, setAnalyticsLoaded] = useState(false);
+  const [exportingPayments, setExportingPayments] = useState(false);
   const [tab, setTab] = useState("approvals");
   const [creators, setCreators] = useState([]);
   const [trialVideos, setTrialVideos] = useState([]);
@@ -163,7 +164,7 @@ export default function AdminDashboard() {
     const { data: inv } = await supabase.from("creator_invites").select("id, label, expires_at, used_at, revoked_at, created_at").eq("business_id", prof.business_id).order("created_at", { ascending: false }).limit(50);
     setInvites(inv || []);
     const monthStart = firstOfMonth(ym); const monthEnd = monthEndOf(ym);
-    const { data: pay } = await supabase.from("payments").select("*, creators(id, base_pay, profiles(full_name))").eq("business_id", prof.business_id).eq("month", monthStart);
+    const { data: pay } = await supabase.from("payments").select("*, creators(id, base_pay, bank_name, acct_num, acct_name, profiles(full_name))").eq("business_id", prof.business_id).eq("month", monthStart);
     setPayments(pay || []);
     // Bonus figures shown on the creator list come from here, never
     // recomputed in the browser — the database is the only thing that knows
@@ -405,6 +406,61 @@ export default function AdminDashboard() {
     const supabase = supabaseBrowser(); await supabase.from("bonus_claims").delete().eq("id", id);
     await recalcPaymentForMonth(creatorId, claimYm); setMsg("Entry deleted."); load();
     if (selectedCreator?.id === creatorId) openCreator(selectedCreator);
+  }
+  // The sheet Smith actually pays from: static values (no formulas — she
+  // was explicit the exported copy must not be self-calculating, even
+  // though the app itself stays live), and the account number locked to
+  // text so a number starting with two zeros survives being opened in
+  // Google Sheets instead of silently losing a digit.
+  async function exportPaymentsExcel() {
+    setExportingPayments(true);
+    try {
+      const columns = [
+        { header: "Creator", key: "creator", width: 24 },
+        { header: "Bank", key: "bank", width: 18 },
+        { header: "Account Number", key: "acct", width: 18 },
+        { header: "Account Name", key: "acctName", width: 22 },
+        { header: "Base Pay", key: "basePay", width: 14 },
+        { header: "Videos", key: "videos", width: 10 },
+        { header: "Rate/Post", key: "rate", width: 12 },
+        { header: "Earned Base", key: "earnedBase", width: 14 },
+        { header: "Perf. Bonus", key: "perfBonus", width: 14 },
+        { header: "Referral", key: "referral", width: 12 },
+        { header: "OOP", key: "oop", width: 12 },
+        { header: "Total", key: "total", width: 14 },
+        { header: "Status", key: "status", width: 10 },
+      ];
+      const moneyKeys = ["basePay", "rate", "earnedBase", "perfBonus", "referral", "oop", "total"];
+      const rows = payments.map((p) => {
+        const basePay = p.creators?.base_pay || 0;
+        const perPost = Math.round(rate(basePay, p.month));
+        const vids = videoCountByCreator[p.creator_id] || Math.round(p.base_amount / (perPost || 1));
+        return {
+          creator: p.creators?.profiles?.full_name || "", bank: p.creators?.bank_name || "",
+          acct: p.creators?.acct_num || "", acctName: p.creators?.acct_name || "",
+          basePay: Number(basePay), videos: vids, rate: perPost,
+          earnedBase: Number(p.base_amount) || 0, perfBonus: Number(p.perf_bonus) || 0,
+          referral: Number(p.referral_bonus) || 0, oop: Number(p.oop_expense) || 0,
+          total: Number(p.total_payable) || 0, status: p.payment_status || "",
+        };
+      });
+      const ExcelJS = (await import("exceljs")).default;
+      const wb = new ExcelJS.Workbook();
+      const ws = wb.addWorksheet("Payments");
+      ws.columns = columns;
+      rows.forEach((r) => ws.addRow(r));
+      moneyKeys.forEach((key) => { ws.getColumn(key).numFmt = '"₦"#,##0.00'; });
+      ws.getColumn("acct").numFmt = "@";
+      const buffer = await wb.xlsx.writeBuffer();
+      const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url; a.download = `${business?.slug || "smithstem"}-payments-${ym}.xlsx`;
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } finally {
+      setExportingPayments(false);
+    }
   }
   async function savePaymentField(paymentRow, field, value) {
     const supabase = supabaseBrowser();
@@ -839,5 +895,5 @@ export default function AdminDashboard() {
     </section>
   );
 })()}
-{tab === "payments" && (<section><div className="mb-4 flex items-center gap-3"><label className="text-base font-medium text-muted">Month:</label><input className="input w-auto" type="month" value={ym} onChange={(e) => setYm(e.target.value)} /></div><div className="card overflow-x-auto"><table className="w-full text-base"><thead><tr className="border-b border-line text-left text-tiny uppercase text-faint"><th className="py-2 pr-3">Creator</th><th className="pr-3">Base pay</th><th className="pr-3">Videos</th><th className="pr-3">Rate/post</th><th className="pr-3">Earned base</th><th className="pr-3">Perf. bonus</th><th className="pr-3">Referral</th><th className="pr-3">OOP</th><th className="pr-3">Total</th><th className="pr-3">Status</th></tr></thead><tbody>{payments.map((p) => { const basePay = p.creators?.base_pay || 0; const expected = postsExpectedIn(p.month); const perPost = Math.round(rate(basePay, p.month)); const vids = videoCountByCreator[p.creator_id] || Math.round(p.base_amount / (perPost || 1)); return (<tr key={p.id} className="border-b border-line"><td className="py-2 pr-3"><button className="text-accent underline decoration-dotted" onClick={() => openCreator(creators.find((c) => c.id === p.creator_id))}>{p.creators?.profiles?.full_name}</button></td><td className="pr-3">{fmtNaira(basePay)}</td><td className="pr-3">{vids} / {expected}</td><td className="pr-3">{fmtNaira(perPost)}</td><td className="pr-3">{fmtNaira(p.base_amount)}</td><td className="pr-3">{fmtNaira(p.perf_bonus)}</td><td className="pr-3"><input className="input w-20" defaultValue={p.referral_bonus} onBlur={(e) => savePaymentField(p, "referral_bonus", e.target.value)} /></td><td className="pr-3"><input className="input w-20" defaultValue={p.oop_expense} onBlur={(e) => savePaymentField(p, "oop_expense", e.target.value)} /></td><td className="pr-3 font-semibold">{fmtNaira(p.total_payable)}</td><td className="pr-3"><select className="input w-28" defaultValue={p.payment_status} onChange={(e) => savePaymentField(p, "payment_status", e.target.value)}><option value="Pending">Pending</option><option value="Paid">Paid</option><option value="Held">Held</option></select></td></tr>); })}{payments.length === 0 && (<tr><td colSpan={10} className="py-4 text-center text-faint">No payment rows for {ym} yet — created as videos and bonuses are logged and approved.</td></tr>)}</tbody></table></div></section>)}</main></div>);
+{tab === "payments" && (<section><div className="mb-4 flex flex-wrap items-center justify-between gap-3"><div className="flex items-center gap-3"><label className="text-base font-medium text-muted">Month:</label><input className="input w-auto" type="month" value={ym} onChange={(e) => setYm(e.target.value)} /></div><button className="btn-secondary text-tiny" disabled={payments.length === 0 || exportingPayments} onClick={exportPaymentsExcel}>{exportingPayments ? "Preparing…" : "Export to Excel"}</button></div><div className="card overflow-x-auto"><table className="w-full text-base"><thead><tr className="border-b border-line text-left text-tiny uppercase text-faint"><th className="py-2 pr-3">Creator</th><th className="pr-3">Base pay</th><th className="pr-3">Videos</th><th className="pr-3">Rate/post</th><th className="pr-3">Earned base</th><th className="pr-3">Perf. bonus</th><th className="pr-3">Referral</th><th className="pr-3">OOP</th><th className="pr-3">Total</th><th className="pr-3">Status</th></tr></thead><tbody>{payments.map((p) => { const basePay = p.creators?.base_pay || 0; const expected = postsExpectedIn(p.month); const perPost = Math.round(rate(basePay, p.month)); const vids = videoCountByCreator[p.creator_id] || Math.round(p.base_amount / (perPost || 1)); return (<tr key={p.id} className="border-b border-line"><td className="py-2 pr-3"><button className="text-accent underline decoration-dotted" onClick={() => openCreator(creators.find((c) => c.id === p.creator_id))}>{p.creators?.profiles?.full_name}</button></td><td className="pr-3">{fmtNaira(basePay)}</td><td className="pr-3">{vids} / {expected}</td><td className="pr-3">{fmtNaira(perPost)}</td><td className="pr-3">{fmtNaira(p.base_amount)}</td><td className="pr-3">{fmtNaira(p.perf_bonus)}</td><td className="pr-3"><input className="input w-20" defaultValue={p.referral_bonus} onBlur={(e) => savePaymentField(p, "referral_bonus", e.target.value)} /></td><td className="pr-3"><input className="input w-20" defaultValue={p.oop_expense} onBlur={(e) => savePaymentField(p, "oop_expense", e.target.value)} /></td><td className="pr-3 font-semibold">{fmtNaira(p.total_payable)}</td><td className="pr-3"><select className="input w-28" defaultValue={p.payment_status} onChange={(e) => savePaymentField(p, "payment_status", e.target.value)}><option value="Pending">Pending</option><option value="Paid">Paid</option><option value="Held">Held</option></select></td></tr>); })}{payments.length === 0 && (<tr><td colSpan={10} className="py-4 text-center text-faint">No payment rows for {ym} yet — created as videos and bonuses are logged and approved.</td></tr>)}</tbody></table></div></section>)}</main></div>);
 }
