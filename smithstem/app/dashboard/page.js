@@ -89,6 +89,12 @@ export default function CreatorDashboard() {
   const [growthViews, setGrowthViews] = useState("");
   const [growthError, setGrowthError] = useState("");
   const [loadError, setLoadError] = useState("");
+  // Trial-only: the highest view count self-reported so far on each video,
+  // and the inline "report views" form state.
+  const [maxReportedByVideo, setMaxReportedByVideo] = useState({});
+  const [reportOpenFor, setReportOpenFor] = useState(null);
+  const [reportViewsInput, setReportViewsInput] = useState("");
+  const [reportError, setReportError] = useState("");
   const { start, end, label } = (() => { const b = monthBoundsLocal(); return { ...b, label: new Date(b.start + "T12:00:00").toLocaleDateString("en-GB", { month: "long", year: "numeric" }) }; })();
 
   const load = useCallback(async () => {
@@ -113,7 +119,7 @@ export default function CreatorDashboard() {
     const { data: cr } = await supabase.from("creators").select("*").eq("profile_id", user.user.id).maybeSingle();
     setCreator(cr);
     if (!cr) return;
-    const [{ data: v }, { data: b }, { data: pay }, { data: mv }, { data: mc }] = await Promise.all([
+    const [{ data: v }, { data: b }, { data: pay }, { data: mv }, { data: mc }, { data: vr }] = await Promise.all([
       supabase.from("video_logs").select("*").eq("creator_id", cr.id).gte("log_date", start).lte("log_date", end).order("log_date", { ascending: false }),
       supabase.from("bonus_claims").select("*").eq("creator_id", cr.id).gte("claim_date", start).lte("claim_date", end).order("created_at", { ascending: false }),
       // Every month, not just this one — creators ask about past months most.
@@ -122,12 +128,18 @@ export default function CreatorDashboard() {
       // a video from two months ago can still cross a tier and get claimed.
       supabase.from("video_logs").select("*").eq("creator_id", cr.id).order("log_date", { ascending: false }).limit(200),
       supabase.from("bonus_claims").select("*").eq("creator_id", cr.id).order("created_at", { ascending: false }).limit(400),
+      // Self-reported view counts — trial creators use this to show their own
+      // progress toward the crossing threshold.
+      supabase.from("video_view_reports").select("*").eq("creator_id", cr.id),
     ]);
     setVideos(v || []); setClaims(b || []); setPayments(pay || []);
     setMyVideos(mv || []);
     const claimMap = {};
     (mc || []).forEach((c) => { if (c.video_log_id && !claimMap[c.video_log_id]) claimMap[c.video_log_id] = c; });
     setClaimByVideoId(claimMap);
+    const reportMap = {};
+    (vr || []).forEach((r) => { reportMap[r.video_log_id] = Math.max(reportMap[r.video_log_id] || 0, Number(r.views)); });
+    setMaxReportedByVideo(reportMap);
   }, [router, start, end]);
 
   useEffect(() => { load(); }, [load]);
@@ -145,6 +157,19 @@ export default function CreatorDashboard() {
       return;
     }
     setMsg("Video logged."); setVideoForm((f) => ({ ...f, tiktok: "", insta: "" })); load();
+  }
+
+  // Trial-only: no evidence, no approval — just what the creator says the
+  // count is right now. This is what Smith's crossing queue reads from.
+  async function reportViews(video) {
+    setReportError("");
+    const v = Number(reportViewsInput);
+    if (!v || v <= 0) { setReportError("Enter the view count."); return; }
+    const { error } = await supabaseBrowser().from("video_view_reports").insert({
+      business_id: creator.business_id, creator_id: creator.id, video_log_id: video.id, views: v,
+    });
+    if (error) { setReportError(error.message); return; }
+    setReportOpenFor(null); setReportViewsInput(""); setMsg("Views reported."); load();
   }
 
   // A claim is now made against one specific logged video, found by pasting
@@ -249,6 +274,116 @@ export default function CreatorDashboard() {
   }
   if (!profile) return <LoadingScreen label="Loading your dashboard…" />;
   if (profile && !creator) return <LoadingScreen label="Setting up your creator profile…" />;
+
+  if (creator.status === "inactive") {
+    return (
+      <div>
+        <Header profile={profile} onSignOut={signOut} />
+        <main className="mx-auto max-w-md px-4 py-10 text-center">
+          <h1 className="font-display text-title font-semibold">Account inactive</h1>
+          <p className="mt-2 text-base text-muted">Your Smithstem account is currently marked inactive. Message Smith if you think that's wrong.</p>
+          <a
+            href={`https://wa.me/2349076217386?text=${encodeURIComponent("Hi Smith, my Smithstem account shows as inactive.")}`}
+            className="btn-primary mt-5 inline-flex"
+          >
+            Message Smith
+          </a>
+        </main>
+      </div>
+    );
+  }
+
+  if (creator.status === "trial" || creator.status === "trial_approved") {
+    const approved = creator.status === "trial_approved";
+    return (
+      <div>
+        <Header profile={profile} onSignOut={signOut} />
+        <main className="mx-auto max-w-2xl px-4 py-4">
+          <div className="mb-5">
+            <p className="kicker">Trial</p>
+            <h1 className="font-display text-title font-semibold">Hi, {profile.full_name?.split(" ")[0]}</h1>
+          </div>
+
+          {msg && <p className="mb-4 rounded-xl bg-accentSoft px-4 py-3 text-base text-accent">{msg}</p>}
+
+          {approved ? (
+            <section className="card mb-4 border-2 border-accent">
+              <h2 className="text-lead font-semibold text-accent">One of your videos crossed the mark 🎉</h2>
+              <p className="mt-1 text-base text-muted">Smith reviewed it and you're clear to join properly. Complete your onboarding to add your bank details and sign your contract — that video carries forward as part of your real posting history, nothing is re-entered.</p>
+              <a href="/onboarding" className="btn-primary mt-3 inline-flex">Complete your onboarding</a>
+            </section>
+          ) : (
+            <section className="card mb-4">
+              <h2 className="text-lead font-semibold">How the trial works</h2>
+              <p className="mt-1 text-base text-muted">Your TikTok and Instagram stay yours — nothing is handed over yet. Post, log each video below, and report the views on it every so often. Once one single video crosses 10,000 views, Smith reviews it, and you'll be able to complete your onboarding here.</p>
+            </section>
+          )}
+
+          <section className="card mb-4">
+            <h2 className="mb-3 text-lead font-semibold">Log a video</h2>
+            <form onSubmit={logVideo} className="grid grid-cols-2 gap-3">
+              <input className="input" type="date" value={videoForm.date} onChange={(e) => setVideoForm((f) => ({ ...f, date: e.target.value }))} required />
+              <select className="input" value={videoForm.post} onChange={(e) => setVideoForm((f) => ({ ...f, post: e.target.value }))}>
+                <option value="1">Post 1</option>
+                <option value="2">Post 2</option>
+              </select>
+              <input className="input col-span-2" placeholder="TikTok link" value={videoForm.tiktok} onChange={(e) => setVideoForm((f) => ({ ...f, tiktok: e.target.value }))} />
+              <input className="input col-span-2" placeholder="Instagram link" value={videoForm.insta} onChange={(e) => setVideoForm((f) => ({ ...f, insta: e.target.value }))} />
+              <button className="btn-primary col-span-2" disabled={busy}>{busy ? "Saving…" : "Log video"}</button>
+            </form>
+          </section>
+
+          <section className="card mb-4">
+            <h2 className="mb-3 text-lead font-semibold">Your videos</h2>
+            {myVideos.length === 0 ? (
+              <p className="text-base text-faint">Nothing logged yet. Log your first video above and it will show here.</p>
+            ) : (
+              <div className="space-y-2">
+                {myVideos.map((v) => {
+                  const reported = maxReportedByVideo[v.id];
+                  return (
+                    <div key={v.id} className="rounded-xl border border-line px-3 py-2.5">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-base font-medium">{dayName(v.log_date)} · Post {v.post_number}</span>
+                        {reported !== undefined && (
+                          <span className={`badge ${reported >= 10000 ? "badge-ok" : "bg-ground text-faint"}`}>{Number(reported).toLocaleString()} views</span>
+                        )}
+                      </div>
+                      {(v.tiktok_url || v.insta_url) && (
+                        <div className="mt-1.5 flex flex-wrap gap-3">
+                          {v.tiktok_url && <a href={v.tiktok_url} target="_blank" rel="noopener noreferrer" className="text-tiny font-medium text-accent underline">TikTok</a>}
+                          {v.insta_url && <a href={v.insta_url} target="_blank" rel="noopener noreferrer" className="text-tiny font-medium text-accent underline">Instagram</a>}
+                        </div>
+                      )}
+                      {reportOpenFor === v.id ? (
+                        <div className="mt-2 flex flex-wrap items-center gap-2">
+                          <input
+                            className="input tnum w-32 py-2"
+                            type="number"
+                            autoFocus
+                            placeholder="Views now"
+                            value={reportViewsInput}
+                            onChange={(e) => setReportViewsInput(e.target.value)}
+                          />
+                          <button className="btn-primary py-2 text-tiny" onClick={() => reportViews(v)}>Save</button>
+                          <button className="btn-quiet" onClick={() => { setReportOpenFor(null); setReportViewsInput(""); setReportError(""); }}>Cancel</button>
+                          {reportError && <p className="w-full text-tiny text-noInk">{reportError}</p>}
+                        </div>
+                      ) : (
+                        <button className="btn-quiet mt-1 px-0" onClick={() => { setReportOpenFor(v.id); setReportViewsInput(""); setReportError(""); }}>
+                          Report views
+                        </button>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </section>
+        </main>
+      </div>
+    );
+  }
 
   const waitingCount = claims.filter((c) => c.status === "pending").length;
 

@@ -13,7 +13,7 @@ Regenerate this after a schema change lands — it's a snapshot, not a live view
 | Type | Values |
 |---|---|
 | `user_role` | `admin`, `creator` |
-| `creator_status` | `active`, `inactive` |
+| `creator_status` | `active`, `inactive`, `trial`, `trial_approved` |
 | `claim_status` | `pending`, `approved`, `rejected` |
 | `log_source` | `creator`, `admin` |
 
@@ -82,13 +82,31 @@ row here per business they're active in.
 | left_at | date | yes | — |
 | contract_signed_at | timestamptz | yes | — |
 | contract_file_url | text | yes | — |
+| tiktok_profile_url | text | yes | — |
+| insta_profile_url | text | yes | — |
+| trial_qualifying_video_id | uuid | yes | — |
+| trial_approved_at | timestamptz | yes | — |
 | created_at | timestamptz | no | `now()` |
 
-Constraints: `PRIMARY KEY (id)`, `UNIQUE (profile_id, business_id)`, `FOREIGN KEY (profile_id) REFERENCES profiles(id) ON DELETE CASCADE`, `FOREIGN KEY (business_id) REFERENCES businesses(id)`.
+Constraints: `PRIMARY KEY (id)`, `UNIQUE (profile_id, business_id)`, `FOREIGN KEY (profile_id) REFERENCES profiles(id) ON DELETE CASCADE`, `FOREIGN KEY (business_id) REFERENCES businesses(id)`, `FOREIGN KEY (trial_qualifying_video_id) REFERENCES video_logs(id)`.
 
 Note: `base_pay` defaults to 150000 and `creators_self_insert`'s RLS policy
 currently hardcodes that exact figure — the pay-bands settings work (task
 #21) needs to touch this default, not just the UI.
+
+Note: `creators` has no self-UPDATE RLS policy at all (only self-SELECT,
+self-INSERT, and admin ALL) — a real gap found while building the trial
+lifecycle, which had silently made every direct client update against a
+creator's own row a no-op. Onboarding completion (bank details, contract,
+and the trial→active status flip) goes through `complete_creator_onboarding`
+and `set_new_creator_contract_file` instead, both SECURITY DEFINER and both
+narrowly scoped, rather than opening a broad self-UPDATE policy.
+
+`tiktok_profile_url`/`insta_profile_url` are set once at trial entry (the
+creator's own existing profile, never handed over). `trial_qualifying_video_id`
+records which video crossed the threshold, once Smith approves it, so it can
+carry forward as the creator's real first/Nth video once onboarding completes
+— nothing about `video_logs` itself changes when that happens.
 
 ### `video_logs`
 One row per posted video.
@@ -104,9 +122,31 @@ One row per posted video.
 | insta_url | text | yes | — |
 | logged_by | log_source | no | `'creator'` |
 | admin_note | text | yes | — |
+| trial_review_dismissed_at | timestamptz | yes | — |
 | created_at | timestamptz | no | `now()` |
 
 Constraints: `PRIMARY KEY (id)`, `UNIQUE (creator_id, log_date, post_number)` (this is what refuses a duplicate second-post-of-the-day), `CHECK (post_number = ANY (ARRAY[1,2]))`, `FOREIGN KEY (creator_id) REFERENCES creators(id) ON DELETE CASCADE`, `FOREIGN KEY (business_id) REFERENCES businesses(id)`.
+
+`trial_review_dismissed_at` is set when Smith dismisses a trial crossing
+without approving it, so that specific video stops resurfacing in her review
+queue — a different video from the same creator can still cross on its own.
+
+### `video_view_reports`
+A trial creator's weekly self-reported view count on one of their own
+videos — no evidence, no approval, just what they say the count is right
+now. This is what crossing detection reads, and doubles as the raw data for
+the weekly views register (task #25) later.
+
+| Column | Type | Null? | Default |
+|---|---|---|---|
+| id | uuid | no | `gen_random_uuid()` |
+| business_id | uuid | no | — |
+| creator_id | uuid | no | — |
+| video_log_id | uuid | no | — |
+| views | bigint | no | — |
+| reported_at | timestamptz | no | `now()` |
+
+Constraints: `PRIMARY KEY (id)`, `FOREIGN KEY (business_id) REFERENCES businesses(id)`, `FOREIGN KEY (creator_id) REFERENCES creators(id) ON DELETE CASCADE`, `FOREIGN KEY (video_log_id) REFERENCES video_logs(id) ON DELETE CASCADE`.
 
 ### `bonus_tiers`
 View-count thresholds and payout amounts, effective-dated so a schedule
@@ -148,8 +188,11 @@ higher tier updates its own row rather than creating a second claim.
 | revision_requested_at | timestamptz | yes | — |
 | revision_reviewed_at | timestamptz | yes | — |
 | revision_reviewed_by | uuid | yes | — |
+| video_log_id | uuid | yes | — |
 
-Constraints: `PRIMARY KEY (id)`, `CHECK (video_url IS NOT NULL OR screenshot_url IS NOT NULL)` (the evidence requirement), `CHECK (revision_status IS NULL OR revision_status = 'pending')`, `FOREIGN KEY (creator_id) REFERENCES creators(id) ON DELETE CASCADE`, `FOREIGN KEY (business_id) REFERENCES businesses(id)`, plus FKs on `reviewed_by`, `revision_reviewed_by` → `profiles(id)` and `supersedes` → itself.
+Constraints: `PRIMARY KEY (id)`, `CHECK (video_url IS NOT NULL OR screenshot_url IS NOT NULL)` (the evidence requirement), `CHECK (revision_status IS NULL OR revision_status = 'pending')`, `FOREIGN KEY (creator_id) REFERENCES creators(id) ON DELETE CASCADE`, `FOREIGN KEY (business_id) REFERENCES businesses(id)`, `FOREIGN KEY (video_log_id) REFERENCES video_logs(id) ON DELETE SET NULL`, plus FKs on `reviewed_by`, `revision_reviewed_by` → `profiles(id)` and `supersedes` → itself. Partial unique index `bonus_claims_one_active_per_video` on `(video_log_id) WHERE video_log_id IS NOT NULL AND status <> 'rejected'` — the database refuses a second active claim on the same video; a rejected claim can be resubmitted.
+
+Self-insert now requires `video_log_id` to be set and to reference a video the inserting creator actually owns — a claim can no longer be made against a free-typed link with nothing behind it.
 
 ### `payments`
 One row per creator per month. `total_payable` and the individual amount
@@ -232,6 +275,10 @@ Signatures and security mode only — full bodies are in `migrations/`, searchab
 | `create_creator_invite(label, phone_last4, creator_id)` | — | DEFINER | Generates an invite/recovery link |
 | `peek_creator_invite(token, phone_last4)` | — | DEFINER | Validates a link without revealing who it's for |
 | `redeem_creator_invite(token, phone_last4, full_name, phone)` | — | DEFINER | Turns a valid invite into a real profile + creator row |
+| `peek_business_by_slug(slug)` | — | DEFINER | Anonymous-safe business lookup for the standing trial link |
+| `start_trial(business_slug, full_name, tiktok_url, insta_url)` | — | DEFINER | Creates a `trial` creator — name + own profile link only, no bank, no contract |
+| `complete_creator_onboarding(creator_id, bank_name, acct_num, acct_name, contract_file_url)` | — | DEFINER | The only path that can flip a creator's own row to `active` — used by invited creators countersigning and by `trial_approved` creators completing the real handover; a plain `trial` creator is rejected |
+| `set_new_creator_contract_file(creator_id, path)` | — | DEFINER | One-time write of `contract_file_url` for the plain-signup path, after the signature upload |
 | `keepalive_tick()`, `ping()`, `ping_external()` | — | DEFINER | The two independent anti-pause defenses |
 | `send_email(to, subject, html, kind)`, `email_shell(...)` | — | mixed | Brevo send path, currently unused (bonus notification emails were removed; sign-in codes go through Supabase Auth directly, not this path) |
 
@@ -246,8 +293,8 @@ count and shape says what's actually enforced, not comments or intent.
 | `businesses` | Any authenticated user can `SELECT` (name/slug aren't sensitive — see `PROJECT_BIBLE.md` for why this had to be added back) |
 | `profiles` | Self `SELECT`/`UPDATE`; admin can `SELECT` anyone in their business; self `INSERT` only as `role = 'creator'` |
 | `business_memberships` | Self `SELECT` only |
-| `creators` | Self `SELECT`; self `INSERT` locked to `base_pay = 150000` and `status = 'active'`; admin full access scoped to their business |
-| `video_logs`, `bonus_claims`, `payments`, `bonus_tiers` | Same shape throughout: creator sees/inserts only their own rows (via `auth_creator_id()`); admin has full access scoped to `auth_business_id()` |
+| `creators` | Self `SELECT`; self `INSERT` locked to `base_pay = 150000` and `status = 'active'` (the plain-signup path only — trial and invited creators are created by `start_trial`/`redeem_creator_invite` instead); **no self-`UPDATE` policy at all** — every legitimate self-update goes through `complete_creator_onboarding`/`set_new_creator_contract_file`; admin full access scoped to their business |
+| `video_logs`, `bonus_claims`, `payments`, `bonus_tiers`, `video_view_reports` | Same shape throughout: creator sees/inserts only their own rows (via `auth_creator_id()`, plus an ownership check on the referenced video for `bonus_claims`/`video_view_reports`); admin has full access scoped to `auth_business_id()` |
 | `creator_invites` | Admin-only, scoped to their business |
 | `app_config`, `system_heartbeat` | Admin-only |
 

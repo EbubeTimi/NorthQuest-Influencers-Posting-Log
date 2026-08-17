@@ -54,7 +54,7 @@ export default function OnboardingPage() {
       if (!biz) throw new Error("That business could not be found — message Smith and she'll sort it out.");
       setBusiness(biz);
 
-      const { data: cr, error: crErr } = await withTimeout(supabase.from("creators").select("id, bank_name").eq("profile_id", data.user.id).eq("business_id", businessId).maybeSingle());
+      const { data: cr, error: crErr } = await withTimeout(supabase.from("creators").select("id, bank_name, status").eq("profile_id", data.user.id).eq("business_id", businessId).maybeSingle());
       if (crErr) throw crErr;
       setExistingCreator(cr || null);
       if (prof) setForm((f) => ({ ...f, fullName: prof.full_name || f.fullName, phone: prof.phone || f.phone }));
@@ -82,13 +82,6 @@ export default function OnboardingPage() {
     let creatorId;
 
     if (existingCreator) {
-      // The invite already created the profile and a bare creator row — this
-      // just fills in the bank details and countersigns it.
-      const { error: upErr } = await supabase.from("creators")
-        .update({ bank_name: form.bankName, acct_num: form.acctNum, acct_name: form.acctName, contract_signed_at: new Date().toISOString() })
-        .eq("id", existingCreator.id);
-      if (upErr) { setStatus("error"); setError(upErr.message); return; }
-      await supabase.from("profiles").update({ phone: form.phone }).eq("id", user.id);
       creatorId = existingCreator.id;
     } else {
       const { error: profileErr } = await supabase.from("profiles").insert({ id: user.id, business_id: business.id, role: "creator", full_name: form.fullName, email: user.email, phone: form.phone });
@@ -103,9 +96,26 @@ export default function OnboardingPage() {
     const path = `${creatorId}/signature.png`;
     const { error: upErr } = await supabase.storage.from("contracts").upload(path, bytes, { contentType: "image/png", upsert: true });
     if (upErr) { setStatus("error"); setError("Signed up, but the signature upload failed: " + upErr.message); return; }
-    // The bucket is private, so a public URL would never load. Store the path
-    // and sign it at the moment someone actually opens the contract.
-    await supabase.from("creators").update({ contract_file_url: path }).eq("id", creatorId);
+
+    if (existingCreator) {
+      // The invite already created the profile and a bare creator row — this
+      // fills in the bank details and countersigns it through the same
+      // narrow, server-checked entry point everywhere, since creators has no
+      // general self-UPDATE policy (a client can't just set its own status).
+      // For a trial_approved creator, this call is also the actual handover
+      // moment — the status flip to 'active' happens here, not at the point
+      // Smith approved the crossing.
+      const { error: rpcErr } = await supabase.rpc("complete_creator_onboarding", {
+        p_creator_id: creatorId, p_bank_name: form.bankName, p_acct_num: form.acctNum, p_acct_name: form.acctName, p_contract_file_url: path,
+      });
+      if (rpcErr) { setStatus("error"); setError(rpcErr.message); return; }
+      await supabase.from("profiles").update({ phone: form.phone }).eq("id", user.id);
+    } else {
+      // The bucket is private, so a public URL would never load. Store the
+      // path and sign it at the moment someone actually opens the contract.
+      const { error: rpcErr } = await supabase.rpc("set_new_creator_contract_file", { p_creator_id: creatorId, p_path: path });
+      if (rpcErr) { setStatus("error"); setError(rpcErr.message); return; }
+    }
     router.replace("/dashboard");
   }
 
@@ -126,6 +136,22 @@ export default function OnboardingPage() {
     );
   }
   if (!user || existingCreator === undefined || !business) return <LoadingScreen label="Setting things up…" />;
+
+  // A trial creator only reaches this page once Smith has reviewed a
+  // crossing and approved it — reaching it before that shouldn't let bank
+  // details and a contract be entered early.
+  if (existingCreator && existingCreator.status === "trial") {
+    return (
+      <div>
+        <Header profile={{ email: user.email }} onSignOut={signOut} />
+        <main className="mx-auto max-w-md px-4 py-10 text-center">
+          <h1 className="font-display text-title font-semibold">Not yet</h1>
+          <p className="mt-2 text-base text-muted">You're still on trial. Once one of your videos crosses 10,000 views and Smith reviews it, you'll be able to complete your onboarding here.</p>
+          <button className="btn-primary mt-5 inline-flex" onClick={() => router.replace("/dashboard")}>Back to your dashboard</button>
+        </main>
+      </div>
+    );
+  }
 
   const party = contractFor(business.slug);
   if (!party) {
