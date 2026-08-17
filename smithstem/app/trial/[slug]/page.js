@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { supabaseBrowser } from "../../../lib/supabaseClient";
+import { contentGuideFor } from "../../../lib/contentGuide";
 
 const SUPPORT_WHATSAPP = "2349076217386";
 function supportHref(text) {
@@ -32,7 +33,11 @@ export default function TrialEntryPage() {
       const row = Array.isArray(data) ? data[0] : data;
       if (rpcErr || !row) { setState({ phase: "not-found" }); return; }
       if (!row.trial_enabled) { setState({ phase: "trial-closed", businessName: row.business_name }); return; }
-      setState({ phase: "ready", businessName: row.business_name });
+      setState({
+        phase: "ready",
+        businessName: row.business_name,
+        trialViews: row.trial_view_threshold || 10000,
+      });
     })();
   }, [slug]);
 
@@ -62,11 +67,17 @@ export default function TrialEntryPage() {
     });
     setBusy(false);
     if (startErr) { setError(startErr.message); return; }
+    // One-shot flag: the dashboard reads this exactly once to show the full
+    // "how the trial works" explanation, then never shows it again on later
+    // visits — this link itself is never reused after today.
+    try { sessionStorage.setItem("smithstem_just_onboarded", "1"); } catch {}
     router.replace("/dashboard");
   }
 
+  const guide = state.businessName ? contentGuideFor(slug) : null;
+
   return (
-    <main className="flex min-h-screen items-center justify-center px-4">
+    <main className="flex min-h-screen items-center justify-center px-4 py-10">
       <div className="w-full max-w-sm">
         <div className="mb-8 text-center">
           <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-accent text-2xl font-bold text-white">Ω</div>
@@ -96,21 +107,61 @@ export default function TrialEntryPage() {
         )}
 
         {state.phase === "ready" && (
-          <form onSubmit={start} className="card space-y-4">
-            <div className="text-center">
-              <p className="text-base text-ink">Start a trial with <strong>{state.businessName}</strong> on Smithstem.</p>
-              <p className="mt-1 text-tiny text-muted">Your accounts stay yours — nothing is handed over yet. Post the same video to TikTok, Instagram, and Facebook, log it, and once one single video crosses 10,000 views on any platform, Smith reviews it and you can complete your onboarding.</p>
-            </div>
-            <input className="input" placeholder="Full name" value={form.fullName} onChange={(e) => setForm((f) => ({ ...f, fullName: e.target.value }))} required />
-            <input className="input" placeholder="Your TikTok profile link" value={form.tiktok} onChange={(e) => setForm((f) => ({ ...f, tiktok: e.target.value }))} />
-            <input className="input" placeholder="Your Instagram profile link" value={form.insta} onChange={(e) => setForm((f) => ({ ...f, insta: e.target.value }))} />
-            <div>
-              <input className="input" type="email" placeholder="Your email" value={form.email} onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))} required />
-              <p className="mt-2 text-tiny text-faint">Use one you actually check — this is how you'd sign in on another phone later.</p>
-            </div>
-            {error && <p className="text-base text-red-600">{error}</p>}
-            <button className="btn-primary w-full" disabled={busy}>{busy ? "Setting you up…" : "Start my trial"}</button>
-          </form>
+          <div className="space-y-4">
+            {guide && (
+              <div className="card space-y-3">
+                <p className="kicker text-accent">Before you start</p>
+                <ol className="space-y-2 pl-4 text-tiny text-muted">
+                  {guide.beforeSteps.map((step, i) => (
+                    <li key={i} className="list-decimal pl-1 leading-relaxed">{step}</li>
+                  ))}
+                </ol>
+
+                <div className="border-t border-line pt-3">
+                  <p className="text-tiny font-semibold uppercase tracking-wide text-faint">How much to post</p>
+                  <p className="mt-1 text-tiny text-muted">{guide.posting}</p>
+                </div>
+                <div className="border-t border-line pt-3">
+                  <p className="text-tiny font-semibold uppercase tracking-wide text-faint">Review</p>
+                  <p className="mt-1 text-tiny text-muted">{guide.reviewNote}</p>
+                </div>
+                <div className="border-t border-line pt-3">
+                  <p className="text-tiny font-semibold uppercase tracking-wide text-faint">Style</p>
+                  <p className="mt-1 text-tiny text-muted">{guide.styleLine}</p>
+                  <div className="mt-1.5 flex flex-wrap gap-1.5">
+                    {guide.formats.map((f) => (
+                      <span key={f.name} className="badge bg-accentSoft text-accent">{f.name}</span>
+                    ))}
+                  </div>
+                </div>
+                <div className="border-t border-line pt-3">
+                  <p className="text-tiny font-semibold uppercase tracking-wide text-faint">Once you're hired</p>
+                  <p className="mt-1 text-tiny text-muted">{guide.afterHire}</p>
+                </div>
+              </div>
+            )}
+
+            <form onSubmit={start} className="card space-y-4">
+              <div className="text-center">
+                <p className="text-base text-ink">You have one week. Post, log it, and once one single video crosses {state.trialViews.toLocaleString()} views on TikTok or Instagram, it's reviewed and you move on to full onboarding.</p>
+              </div>
+              <input className="input" placeholder="Full name" value={form.fullName} onChange={(e) => setForm((f) => ({ ...f, fullName: e.target.value }))} required />
+              <input className="input" placeholder="Your TikTok profile link" value={form.tiktok} onChange={(e) => setForm((f) => ({ ...f, tiktok: e.target.value }))} />
+              <input className="input" placeholder="Your Instagram profile link" value={form.insta} onChange={(e) => setForm((f) => ({ ...f, insta: e.target.value }))} />
+              <div>
+                <input className="input" type="email" placeholder="Your personal email" value={form.email} onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))} required />
+                <p className="mt-2 text-tiny text-faint">Not your {state.businessName} one — you don't have that yet. This also creates your Smithstem sign-in, so use one you actually check.</p>
+              </div>
+              {error && <p className="text-base text-red-600">{error}</p>}
+              <button className="btn-primary w-full" disabled={busy}>{busy ? "Setting you up…" : "Start my trial"}</button>
+            </form>
+
+            <p className="text-center text-tiny">
+              <a href={supportHref(`Hi Smith, I was approved to be a ${state.businessName} creator and I'm having trouble getting set up.`)} className="text-muted underline">
+                Trouble setting this up? Message Smith
+              </a>
+            </p>
+          </div>
         )}
       </div>
     </main>
