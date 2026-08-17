@@ -5,6 +5,31 @@ import { supabaseBrowser, withTimeout } from "../../lib/supabaseClient";
 import { rate, fmtNaira, bonusForViews, tiersOn, basePayOn, today, monthBoundsLocal, postsExpectedIn } from "../../lib/domain";
 import Header from "../../components/Header";
 import LoadingScreen from "../../components/LoadingScreen";
+// The Payments table's columns, editable per business (task from the
+// Business & Payments Settings pass). "included" plus display order is
+// what gets persisted to businesses.payment_columns; label/type for a
+// built-in column always comes from here, never from storage, so a copy
+// change here doesn't need a data migration.
+const BUILTIN_PAYMENT_COLUMNS = [
+  { key: "creator", label: "Creator", type: "text", custom: false },
+  { key: "bank", label: "Bank", type: "text", custom: false },
+  { key: "acct", label: "Account Number", type: "account", custom: false },
+  { key: "acctName", label: "Account Name", type: "text", custom: false },
+  { key: "basePay", label: "Base Pay", type: "currency", custom: false },
+  { key: "videos", label: "Videos", type: "text", custom: false },
+  { key: "rate", label: "Rate/post", type: "currency", custom: false },
+  { key: "earned", label: "Earned base", type: "currency", custom: false },
+  { key: "bonus", label: "Perf. bonus", type: "currency", custom: false },
+  { key: "referral", label: "Referral", type: "currency", custom: false, editable: true },
+  { key: "oop", label: "OOP", type: "currency", custom: false, editable: true },
+  { key: "total", label: "Total", type: "currency", custom: false },
+  { key: "status", label: "Status", type: "status", custom: false },
+];
+const PAYMENT_COLUMN_TYPES = {
+  text: "Text", number: "Number", currency: "Currency (₦)", account: "Account number (locked as text)",
+};
+function slugColKey(s) { return "custom_" + s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "_").replace(/(^_|_$)/g, ""); }
+
 function firstOfMonth(ym) { return `${ym}-01`; }
 function todayYm() { return monthBoundsLocal().month; }
 function monthEndOf(ym) { const start = new Date(firstOfMonth(ym)); return new Date(start.getFullYear(), start.getMonth() + 1, 0).toISOString().slice(0, 10); }
@@ -57,6 +82,15 @@ export default function AdminDashboard() {
   const [bankEditing, setBankEditing] = useState(false);
   const [bankInput, setBankInput] = useState({ bank_name: "", acct_num: "", acct_name: "" });
   const [bankMsg, setBankMsg] = useState("");
+  const [colIncluded, setColIncluded] = useState(BUILTIN_PAYMENT_COLUMNS.map((c) => c.key));
+  const [colExcluded, setColExcluded] = useState([]);
+  const [customCols, setCustomCols] = useState([]);
+  const [colEditorOpen, setColEditorOpen] = useState(false);
+  const [addingCol, setAddingCol] = useState(false);
+  const [newColLabel, setNewColLabel] = useState("");
+  const [newColType, setNewColType] = useState("text");
+  const [colMsg, setColMsg] = useState("");
+  const [colSaving, setColSaving] = useState(false);
   const [tierEditing, setTierEditing] = useState(false);
   const [tierRows, setTierRows] = useState([]);
   const [tierMsg, setTierMsg] = useState("");
@@ -123,7 +157,16 @@ export default function AdminDashboard() {
     if (!prof || prof.role !== "admin") { router.replace("/dashboard"); return; }
     setLoadError("");
     setProfile(prof);
-    const { data: biz } = await supabase.from("businesses").select("id, slug, name, trial_view_threshold, trial_enabled, bonus_enabled, default_base_pay").eq("id", prof.business_id).maybeSingle();
+    const { data: biz } = await supabase.from("businesses").select("id, slug, name, trial_view_threshold, trial_enabled, bonus_enabled, default_base_pay, payment_columns").eq("id", prof.business_id).maybeSingle();
+    if (biz?.payment_columns?.length) {
+      setCustomCols(biz.payment_columns.filter((c) => c.custom).map(({ key, label, type }) => ({ key, label, type, custom: true })));
+      setColIncluded(biz.payment_columns.filter((c) => c.included).map((c) => c.key));
+      setColExcluded(biz.payment_columns.filter((c) => !c.included).map((c) => c.key));
+    } else {
+      setCustomCols([]);
+      setColIncluded(BUILTIN_PAYMENT_COLUMNS.map((c) => c.key));
+      setColExcluded([]);
+    }
     setBusiness(biz || null);
     if (biz) setThresholdInput(String(biz.trial_view_threshold));
     const { data: cr } = await supabase.from("creators").select("*, profiles(full_name, email, phone)").eq("business_id", prof.business_id).order("status");
@@ -410,6 +453,46 @@ export default function AdminDashboard() {
     if (error) { setTierMsg("Failed: " + error.message); return; }
     setTierEditing(false); setMsg("Bonus tiers published — effective today."); load();
   }
+  function colByKey(key) {
+    return customCols.find((c) => c.key === key) || BUILTIN_PAYMENT_COLUMNS.find((c) => c.key === key);
+  }
+  function moveColIncluded(i, dir) {
+    const j = i + dir;
+    if (j < 0 || j >= colIncluded.length) return;
+    setColIncluded((cols) => { const next = cols.slice(); const tmp = next[i]; next[i] = next[j]; next[j] = tmp; return next; });
+    setColMsg("");
+  }
+  function excludeCol(key) {
+    setColIncluded((cols) => cols.filter((k) => k !== key));
+    setColExcluded((cols) => [...cols, key]);
+    setColMsg("");
+  }
+  function includeCol(key) {
+    setColExcluded((cols) => cols.filter((k) => k !== key));
+    setColIncluded((cols) => [...cols, key]);
+    setColMsg("");
+  }
+  function addCustomColumn() {
+    const label = newColLabel.trim();
+    if (!label) { setColMsg("Give the column a name."); return; }
+    const key = slugColKey(label);
+    if (colByKey(key)) { setColMsg("A column with that name already exists."); return; }
+    setCustomCols((cols) => [...cols, { key, label, type: newColType, custom: true }]);
+    setColIncluded((cols) => [...cols, key]);
+    setAddingCol(false); setNewColLabel(""); setNewColType("text"); setColMsg("");
+  }
+  async function saveColumnLayout() {
+    setColSaving(true);
+    const payload = [
+      ...colIncluded.map((k) => ({ ...colByKey(k), included: true })),
+      ...colExcluded.map((k) => ({ ...colByKey(k), included: false })),
+    ];
+    const { error } = await supabaseBrowser().from("businesses").update({ payment_columns: payload }).eq("id", business.id);
+    setColSaving(false);
+    if (error) { setColMsg("Failed: " + error.message); return; }
+    setBusiness((b) => ({ ...b, payment_columns: payload }));
+    setColMsg("Saved.");
+  }
   async function deleteCreator(c) {
     const ok = confirm(
       `Delete ${c.profiles?.full_name} permanently? This removes their creator record and every video, claim, and payment tied to it. This cannot be undone — for someone who's just left, Deactivate is almost always the right choice instead.`
@@ -521,42 +604,27 @@ export default function AdminDashboard() {
   async function exportPaymentsExcel() {
     setExportingPayments(true);
     try {
-      const columns = [
-        { header: "Creator", key: "creator", width: 24 },
-        { header: "Bank", key: "bank", width: 18 },
-        { header: "Account Number", key: "acct", width: 18 },
-        { header: "Account Name", key: "acctName", width: 22 },
-        { header: "Base Pay", key: "basePay", width: 14 },
-        { header: "Videos", key: "videos", width: 10 },
-        { header: "Rate/Post", key: "rate", width: 12 },
-        { header: "Earned Base", key: "earnedBase", width: 14 },
-        { header: "Perf. Bonus", key: "perfBonus", width: 14 },
-        { header: "Referral", key: "referral", width: 12 },
-        { header: "OOP", key: "oop", width: 12 },
-        { header: "Total", key: "total", width: 14 },
-        { header: "Status", key: "status", width: 10 },
-      ];
-      const moneyKeys = ["basePay", "rate", "earnedBase", "perfBonus", "referral", "oop", "total"];
+      const cols = colIncluded.map((k) => colByKey(k)).filter(Boolean);
+      const columns = cols.map((c) => ({ header: c.label, key: c.key, width: c.type === "creator" ? 24 : 16 }));
       const rows = payments.map((p) => {
         const basePay = p.creators?.base_pay || 0;
+        const expected = postsExpectedIn(p.month);
         const perPost = Math.round(rate(basePay, p.month));
         const vids = videoCountByCreator[p.creator_id] || Math.round(p.base_amount / (perPost || 1));
-        return {
-          creator: p.creators?.profiles?.full_name || "", bank: p.creators?.bank_name || "",
-          acct: p.creators?.acct_num || "", acctName: p.creators?.acct_name || "",
-          basePay: Number(basePay), videos: vids, rate: perPost,
-          earnedBase: Number(p.base_amount) || 0, perfBonus: Number(p.perf_bonus) || 0,
-          referral: Number(p.referral_bonus) || 0, oop: Number(p.oop_expense) || 0,
-          total: Number(p.total_payable) || 0, status: p.payment_status || "",
-        };
+        const ctx = { basePay, perPost, vids, expected };
+        const row = {};
+        cols.forEach((c) => { row[c.key] = paymentCellPlainValue(p, c, ctx); });
+        return row;
       });
       const ExcelJS = (await import("exceljs")).default;
       const wb = new ExcelJS.Workbook();
       const ws = wb.addWorksheet("Payments");
       ws.columns = columns;
       rows.forEach((r) => ws.addRow(r));
-      moneyKeys.forEach((key) => { ws.getColumn(key).numFmt = '"₦"#,##0.00'; });
-      ws.getColumn("acct").numFmt = "@";
+      cols.forEach((c) => {
+        if (c.type === "currency") ws.getColumn(c.key).numFmt = '"₦"#,##0.00';
+        if (c.type === "account") ws.getColumn(c.key).numFmt = "@";
+      });
       const buffer = await wb.xlsx.writeBuffer();
       const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
       const url = URL.createObjectURL(blob);
@@ -572,6 +640,60 @@ export default function AdminDashboard() {
     const supabase = supabaseBrowser();
     await supabase.from("payments").update({ [field]: field === "payment_status" ? value : (Number(value) || 0) }).eq("id", paymentRow.id);
     load();
+  }
+  async function saveCustomField(paymentRow, colKey, value) {
+    const supabase = supabaseBrowser();
+    const next = { ...(paymentRow.custom_fields || {}), [colKey]: value };
+    await supabase.from("payments").update({ custom_fields: next }).eq("id", paymentRow.id);
+    load();
+  }
+  // One place both the on-screen table and the .xlsx export read a payment
+  // row's value from, so what you see is genuinely what goes out — a column
+  // definition's type decides formatting, not where it happened to render.
+  function paymentCellPlainValue(p, col, ctx) {
+    switch (col.key) {
+      case "creator": return p.creators?.profiles?.full_name || "";
+      case "bank": return p.creators?.bank_name || "";
+      case "acct": return p.creators?.acct_num || "";
+      case "acctName": return p.creators?.acct_name || "";
+      case "basePay": return Number(ctx.basePay);
+      case "videos": return `${ctx.vids} / ${ctx.expected}`;
+      case "rate": return Number(ctx.perPost);
+      case "earned": return Number(p.base_amount) || 0;
+      case "bonus": return Number(p.perf_bonus) || 0;
+      case "referral": return Number(p.referral_bonus) || 0;
+      case "oop": return Number(p.oop_expense) || 0;
+      case "total": return Number(p.total_payable) || 0;
+      case "status": return p.payment_status || "";
+      default: return (p.custom_fields || {})[col.key] || "";
+    }
+  }
+  function renderPaymentCell(p, col, ctx) {
+    const alignClass = col.type === "currency" || col.type === "number" ? "tnum" : "";
+    if (col.key === "creator") {
+      return <td key={col.key} className="py-2 pr-3"><button className="text-accent underline decoration-dotted" onClick={() => openCreator(creators.find((c) => c.id === p.creator_id))}>{p.creators?.profiles?.full_name}</button></td>;
+    }
+    if (col.key === "referral" || col.key === "oop") {
+      const field = col.key === "referral" ? "referral_bonus" : "oop_expense";
+      return <td key={col.key} className="pr-3"><input className="input w-20" defaultValue={p[field]} onBlur={(e) => savePaymentField(p, field, e.target.value)} /></td>;
+    }
+    if (col.key === "status") {
+      return (
+        <td key={col.key} className="pr-3">
+          <select className="input w-28" defaultValue={p.payment_status} onChange={(e) => savePaymentField(p, "payment_status", e.target.value)}>
+            <option value="Pending">Pending</option><option value="Paid">Paid</option><option value="Held">Held</option>
+          </select>
+        </td>
+      );
+    }
+    if (col.key === "total") {
+      return <td key={col.key} className="pr-3 font-semibold tnum">{fmtNaira(paymentCellPlainValue(p, col, ctx))}</td>;
+    }
+    if (col.custom) {
+      return <td key={col.key} className="pr-3"><input className="input w-24" defaultValue={(p.custom_fields || {})[col.key] || ""} onBlur={(e) => saveCustomField(p, col.key, e.target.value)} /></td>;
+    }
+    const val = paymentCellPlainValue(p, col, ctx);
+    return <td key={col.key} className={`pr-3 ${alignClass}`}>{col.type === "currency" ? fmtNaira(val) : val}</td>;
   }
   if (loadError) {
     return (
@@ -1105,5 +1227,92 @@ export default function AdminDashboard() {
       </div>
     )}
   </div>
-  <div className="mb-4 flex flex-wrap items-center justify-between gap-3"><div className="flex items-center gap-3"><label className="text-base font-medium text-muted">Month:</label><input className="input w-auto" type="month" value={ym} onChange={(e) => setYm(e.target.value)} /></div><button className="btn-secondary text-tiny" disabled={payments.length === 0 || exportingPayments} onClick={exportPaymentsExcel}>{exportingPayments ? "Preparing…" : "Export to Excel"}</button></div><div className="card overflow-x-auto"><table className="w-full text-base"><thead><tr className="border-b border-line text-left text-tiny uppercase text-faint"><th className="py-2 pr-3">Creator</th><th className="pr-3">Base pay</th><th className="pr-3">Videos</th><th className="pr-3">Rate/post</th><th className="pr-3">Earned base</th><th className="pr-3">Perf. bonus</th><th className="pr-3">Referral</th><th className="pr-3">OOP</th><th className="pr-3">Total</th><th className="pr-3">Status</th></tr></thead><tbody>{payments.map((p) => { const basePay = p.creators?.base_pay || 0; const expected = postsExpectedIn(p.month); const perPost = Math.round(rate(basePay, p.month)); const vids = videoCountByCreator[p.creator_id] || Math.round(p.base_amount / (perPost || 1)); return (<tr key={p.id} className="border-b border-line"><td className="py-2 pr-3"><button className="text-accent underline decoration-dotted" onClick={() => openCreator(creators.find((c) => c.id === p.creator_id))}>{p.creators?.profiles?.full_name}</button></td><td className="pr-3">{fmtNaira(basePay)}</td><td className="pr-3">{vids} / {expected}</td><td className="pr-3">{fmtNaira(perPost)}</td><td className="pr-3">{fmtNaira(p.base_amount)}</td><td className="pr-3">{fmtNaira(p.perf_bonus)}</td><td className="pr-3"><input className="input w-20" defaultValue={p.referral_bonus} onBlur={(e) => savePaymentField(p, "referral_bonus", e.target.value)} /></td><td className="pr-3"><input className="input w-20" defaultValue={p.oop_expense} onBlur={(e) => savePaymentField(p, "oop_expense", e.target.value)} /></td><td className="pr-3 font-semibold">{fmtNaira(p.total_payable)}</td><td className="pr-3"><select className="input w-28" defaultValue={p.payment_status} onChange={(e) => savePaymentField(p, "payment_status", e.target.value)}><option value="Pending">Pending</option><option value="Paid">Paid</option><option value="Held">Held</option></select></td></tr>); })}{payments.length === 0 && (<tr><td colSpan={10} className="py-4 text-center text-faint">No payment rows for {ym} yet — created as videos and bonuses are logged and approved.</td></tr>)}</tbody></table></div></section>)}</main></div>);
+  <div className="card mb-4">
+    <div className="mb-2 flex items-center justify-between">
+      <h2 className="font-semibold">Payments columns</h2>
+      {!colEditorOpen && <button className="text-tiny text-faint underline" onClick={() => setColEditorOpen(true)}>edit</button>}
+    </div>
+    {colEditorOpen && (
+      <div className="space-y-2">
+        <p className="text-tiny text-muted">Changes apply to the table below right away — the .xlsx export uses the exact same columns and order, so what you see is what goes out. Save to keep this layout for next time.</p>
+        {colIncluded.map((key, i) => {
+          const c = colByKey(key); if (!c) return null;
+          return (
+            <div key={key} className="flex items-center gap-2">
+              <span className="w-40 truncate text-tiny font-medium">{c.label}{c.custom && <span className="text-faint"> · {PAYMENT_COLUMN_TYPES[c.type]}</span>}</span>
+              <button className="text-tiny text-faint underline disabled:opacity-30" disabled={i === 0} onClick={() => moveColIncluded(i, -1)}>↑</button>
+              <button className="text-tiny text-faint underline disabled:opacity-30" disabled={i === colIncluded.length - 1} onClick={() => moveColIncluded(i, 1)}>↓</button>
+              <button className="text-tiny text-noInk underline" onClick={() => excludeCol(key)}>Remove</button>
+            </div>
+          );
+        })}
+        {colExcluded.length > 0 && (
+          <div className="pt-2">
+            <p className="text-tiny text-faint">Not shown:</p>
+            {colExcluded.map((key) => {
+              const c = colByKey(key); if (!c) return null;
+              return (
+                <div key={key} className="flex items-center gap-2">
+                  <span className="w-40 truncate text-tiny">{c.label}</span>
+                  <button className="text-tiny text-accent underline" onClick={() => includeCol(key)}>Add back</button>
+                </div>
+              );
+            })}
+          </div>
+        )}
+        {addingCol ? (
+          <div className="space-y-2 rounded-xl border border-line bg-ground p-3">
+            <input className="input" placeholder="Column name" value={newColLabel} onChange={(e) => setNewColLabel(e.target.value)} />
+            <div className="flex flex-wrap gap-1.5">
+              {Object.entries(PAYMENT_COLUMN_TYPES).map(([t, label]) => (
+                <button key={t} className={`text-tiny rounded-lg px-2.5 py-1 ${newColType === t ? "bg-accent text-white" : "bg-white text-muted border border-line"}`} onClick={() => setNewColType(t)}>{label}</button>
+              ))}
+            </div>
+            <div className="flex gap-2">
+              <button className="btn-primary text-tiny" onClick={addCustomColumn}>Add column</button>
+              <button className="btn-secondary text-tiny" onClick={() => { setAddingCol(false); setNewColLabel(""); setNewColType("text"); }}>Cancel</button>
+            </div>
+          </div>
+        ) : (
+          <button className="btn-quiet px-0" onClick={() => setAddingCol(true)}>+ Add new column</button>
+        )}
+        <div className="flex items-center gap-2 pt-1">
+          <button className="btn-primary text-tiny" disabled={colSaving || colIncluded.length === 0} onClick={saveColumnLayout}>{colSaving ? "Saving…" : "Save column layout"}</button>
+          <button className="btn-secondary text-tiny" onClick={() => setColEditorOpen(false)}>Done</button>
+        </div>
+        {colMsg && <p className="text-tiny text-noInk">{colMsg}</p>}
+      </div>
+    )}
+  </div>
+  <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+    <div className="flex items-center gap-3"><label className="text-base font-medium text-muted">Month:</label><input className="input w-auto" type="month" value={ym} onChange={(e) => setYm(e.target.value)} /></div>
+    <button className="btn-secondary text-tiny" disabled={payments.length === 0 || exportingPayments} onClick={exportPaymentsExcel}>{exportingPayments ? "Preparing…" : "Export to Excel"}</button>
+  </div>
+  <div className="card overflow-x-auto">
+    <table className="w-full text-base">
+      <thead>
+        <tr className="border-b border-line text-left text-tiny uppercase text-faint">
+          {colIncluded.map((key) => { const c = colByKey(key); return c ? <th key={key} className="py-2 pr-3">{c.label}</th> : null; })}
+        </tr>
+      </thead>
+      <tbody>
+        {payments.map((p) => {
+          const basePay = p.creators?.base_pay || 0;
+          const expected = postsExpectedIn(p.month);
+          const perPost = Math.round(rate(basePay, p.month));
+          const vids = videoCountByCreator[p.creator_id] || Math.round(p.base_amount / (perPost || 1));
+          const ctx = { basePay, perPost, vids, expected };
+          return (
+            <tr key={p.id} className="border-b border-line">
+              {colIncluded.map((key) => { const c = colByKey(key); return c ? renderPaymentCell(p, c, ctx) : null; })}
+            </tr>
+          );
+        })}
+        {payments.length === 0 && (
+          <tr><td colSpan={colIncluded.length || 1} className="py-4 text-center text-faint">No payment rows for {ym} yet — created as videos and bonuses are logged and approved.</td></tr>
+        )}
+      </tbody>
+    </table>
+  </div>
+  </section>)}</main></div>);
 }

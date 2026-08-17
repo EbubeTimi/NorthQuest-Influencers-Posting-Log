@@ -9,10 +9,15 @@ import { supabaseBrowser } from "../lib/supabaseClient";
 // a guarded flow. Every other screen re-queries fresh after a switch, because
 // a different business means genuinely different data underneath, the same
 // way changing Slack workspaces does.
+function slugify(s) { return s.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, ""); }
+
 export default function BusinessSwitcher({ profile }) {
   const [open, setOpen] = useState(false);
   const [memberships, setMemberships] = useState([]);
   const [busy, setBusy] = useState(false);
+  const [adding, setAdding] = useState(false);
+  const [form, setForm] = useState({ name: "", slug: "", slugTouched: false, basePay: "150000", bonusEnabled: true, trialEnabled: true });
+  const [addError, setAddError] = useState("");
   const ref = useRef(null);
 
   useEffect(() => {
@@ -43,13 +48,21 @@ export default function BusinessSwitcher({ profile }) {
     window.location.reload();
   }
 
-  async function addBusiness() {
-    const name = prompt("Name of the new business?");
-    if (!name) return;
-    const slug = name.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+  async function submitAddBusiness(e) {
+    e.preventDefault();
+    setAddError("");
+    if (!form.name.trim()) { setAddError("Give it a name."); return; }
+    if (!form.slug.trim()) { setAddError("Needs a slug for its links to work."); return; }
+    if (!form.basePay || Number(form.basePay) <= 0) { setAddError("Enter a starting base pay above zero."); return; }
     setBusy(true);
-    const { error } = await supabaseBrowser().rpc("create_business", { p_name: name.trim(), p_slug: slug });
-    if (error) { setBusy(false); alert("Could not create: " + error.message); return; }
+    const { error } = await supabaseBrowser().rpc("create_business", {
+      p_name: form.name.trim(),
+      p_slug: form.slug.trim(),
+      p_default_base_pay: Number(form.basePay),
+      p_bonus_enabled: form.bonusEnabled,
+      p_trial_enabled: form.trialEnabled,
+    });
+    if (error) { setBusy(false); setAddError(error.message); return; }
     window.location.reload();
   }
 
@@ -88,11 +101,63 @@ export default function BusinessSwitcher({ profile }) {
               {m.businesses?.name}
             </button>
           ))}
-          {isAdmin && (
-            <button onClick={addBusiness} className="flex w-full items-center gap-2 border-t border-line px-3 py-2.5 text-left text-base text-accent hover:bg-ground">
+          {isAdmin && !adding && (
+            <button onClick={() => setAdding(true)} className="flex w-full items-center gap-2 border-t border-line px-3 py-2.5 text-left text-base text-accent hover:bg-ground">
               <span className="flex h-6 w-6 items-center justify-center rounded-lg border border-dashed border-accent text-tiny font-bold">+</span>
               Add a business
             </button>
+          )}
+          {isAdmin && adding && (
+            <form onSubmit={submitAddBusiness} className="space-y-2 border-t border-line p-3">
+              <input
+                className="input"
+                placeholder="Business name"
+                value={form.name}
+                onChange={(e) => {
+                  const name = e.target.value;
+                  setForm((f) => ({ ...f, name, slug: f.slugTouched ? f.slug : slugify(name) }));
+                }}
+              />
+              <input
+                className="input"
+                placeholder="slug"
+                value={form.slug}
+                onChange={(e) => setForm((f) => ({ ...f, slug: e.target.value, slugTouched: true }))}
+              />
+              <input
+                className="input tnum"
+                type="number"
+                min="1"
+                placeholder="Default base pay (naira)"
+                value={form.basePay}
+                onChange={(e) => setForm((f) => ({ ...f, basePay: e.target.value }))}
+              />
+              <div className="flex items-center justify-between text-tiny">
+                <span className="text-muted">Bonus program</span>
+                <button
+                  type="button"
+                  className={`badge ${form.bonusEnabled ? "badge-ok" : "bg-ground text-faint"}`}
+                  onClick={() => setForm((f) => ({ ...f, bonusEnabled: !f.bonusEnabled }))}
+                >
+                  {form.bonusEnabled ? "On" : "Off"}
+                </button>
+              </div>
+              <div className="flex items-center justify-between text-tiny">
+                <span className="text-muted">Trial sign-ups</span>
+                <button
+                  type="button"
+                  className={`badge ${form.trialEnabled ? "badge-ok" : "bg-ground text-faint"}`}
+                  onClick={() => setForm((f) => ({ ...f, trialEnabled: !f.trialEnabled }))}
+                >
+                  {form.trialEnabled ? "On" : "Off"}
+                </button>
+              </div>
+              {addError && <p className="text-tiny text-noInk">{addError}</p>}
+              <div className="flex gap-2 pt-1">
+                <button type="submit" className="btn-primary flex-1 py-2 text-tiny" disabled={busy}>{busy ? "Creating…" : "Create"}</button>
+                <button type="button" className="btn-secondary flex-1 py-2 text-tiny" onClick={() => { setAdding(false); setAddError(""); }}>Cancel</button>
+              </div>
+            </form>
           )}
         </div>
       )}
