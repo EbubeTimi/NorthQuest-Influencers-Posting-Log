@@ -57,6 +57,10 @@ export default function AdminDashboard() {
   const [bankEditing, setBankEditing] = useState(false);
   const [bankInput, setBankInput] = useState({ bank_name: "", acct_num: "", acct_name: "" });
   const [bankMsg, setBankMsg] = useState("");
+  const [tierEditing, setTierEditing] = useState(false);
+  const [tierRows, setTierRows] = useState([]);
+  const [tierMsg, setTierMsg] = useState("");
+  const [tierSaving, setTierSaving] = useState(false);
   const [tab, setTab] = useState("approvals");
   const [creators, setCreators] = useState([]);
   const [trialVideos, setTrialVideos] = useState([]);
@@ -354,6 +358,42 @@ export default function AdminDashboard() {
     setBankEditing(false); setBankMsg("");
     if (selectedCreator?.id === c.id) setSelectedCreator({ ...c, ...bankInput });
     setMsg("Bank details updated."); load();
+  }
+  // Bonus tiers are managed as whole published sets, not individually edited
+  // rows — tiersOn() picks the latest effective_from and returns everything
+  // sharing that exact date, the same way the real schedule already moved
+  // from its April set to its August one. Saving here publishes a brand new
+  // set effective today; every past set stays exactly as it was, so a
+  // creator's already-approved claim is never repriced by a later change.
+  function openTierEditor() {
+    const current = tiersOn(tiers, today());
+    setTierRows(
+      (current.length ? current : [{ min_views: "", amount: "" }])
+        .slice().sort((a, b) => Number(a.min_views) - Number(b.min_views))
+        .map((t) => ({ min_views: String(t.min_views), amount: String(t.amount) }))
+    );
+    setTierMsg(""); setTierEditing(true);
+  }
+  function updateTierRow(i, field, value) {
+    setTierRows((rows) => rows.map((r, idx) => (idx === i ? { ...r, [field]: value } : r)));
+  }
+  function addTierRow() { setTierRows((rows) => [...rows, { min_views: "", amount: "" }]); }
+  function removeTierRow(i) { setTierRows((rows) => rows.filter((_, idx) => idx !== i)); }
+  async function saveTiers() {
+    setTierMsg("");
+    const parsed = tierRows.map((r) => ({ min_views: Number(r.min_views), amount: Number(r.amount) }));
+    if (parsed.some((r) => !r.min_views || r.min_views <= 0 || r.amount < 0 || Number.isNaN(r.amount))) {
+      setTierMsg("Every row needs a view count above zero and an amount (0 or more).");
+      return;
+    }
+    setTierSaving(true);
+    const effectiveFrom = today();
+    const { error } = await supabaseBrowser().from("bonus_tiers").insert(
+      parsed.map((r) => ({ business_id: profile.business_id, min_views: r.min_views, amount: r.amount, effective_from: effectiveFrom }))
+    );
+    setTierSaving(false);
+    if (error) { setTierMsg("Failed: " + error.message); return; }
+    setTierEditing(false); setMsg("Bonus tiers published — effective today."); load();
   }
   async function deleteCreator(c) {
     const ok = confirm(
@@ -1000,5 +1040,38 @@ export default function AdminDashboard() {
     </section>
   );
 })()}
-{tab === "payments" && (<section><div className="mb-4 flex flex-wrap items-center justify-between gap-3"><div className="flex items-center gap-3"><label className="text-base font-medium text-muted">Month:</label><input className="input w-auto" type="month" value={ym} onChange={(e) => setYm(e.target.value)} /></div><button className="btn-secondary text-tiny" disabled={payments.length === 0 || exportingPayments} onClick={exportPaymentsExcel}>{exportingPayments ? "Preparing…" : "Export to Excel"}</button></div><div className="card overflow-x-auto"><table className="w-full text-base"><thead><tr className="border-b border-line text-left text-tiny uppercase text-faint"><th className="py-2 pr-3">Creator</th><th className="pr-3">Base pay</th><th className="pr-3">Videos</th><th className="pr-3">Rate/post</th><th className="pr-3">Earned base</th><th className="pr-3">Perf. bonus</th><th className="pr-3">Referral</th><th className="pr-3">OOP</th><th className="pr-3">Total</th><th className="pr-3">Status</th></tr></thead><tbody>{payments.map((p) => { const basePay = p.creators?.base_pay || 0; const expected = postsExpectedIn(p.month); const perPost = Math.round(rate(basePay, p.month)); const vids = videoCountByCreator[p.creator_id] || Math.round(p.base_amount / (perPost || 1)); return (<tr key={p.id} className="border-b border-line"><td className="py-2 pr-3"><button className="text-accent underline decoration-dotted" onClick={() => openCreator(creators.find((c) => c.id === p.creator_id))}>{p.creators?.profiles?.full_name}</button></td><td className="pr-3">{fmtNaira(basePay)}</td><td className="pr-3">{vids} / {expected}</td><td className="pr-3">{fmtNaira(perPost)}</td><td className="pr-3">{fmtNaira(p.base_amount)}</td><td className="pr-3">{fmtNaira(p.perf_bonus)}</td><td className="pr-3"><input className="input w-20" defaultValue={p.referral_bonus} onBlur={(e) => savePaymentField(p, "referral_bonus", e.target.value)} /></td><td className="pr-3"><input className="input w-20" defaultValue={p.oop_expense} onBlur={(e) => savePaymentField(p, "oop_expense", e.target.value)} /></td><td className="pr-3 font-semibold">{fmtNaira(p.total_payable)}</td><td className="pr-3"><select className="input w-28" defaultValue={p.payment_status} onChange={(e) => savePaymentField(p, "payment_status", e.target.value)}><option value="Pending">Pending</option><option value="Paid">Paid</option><option value="Held">Held</option></select></td></tr>); })}{payments.length === 0 && (<tr><td colSpan={10} className="py-4 text-center text-faint">No payment rows for {ym} yet — created as videos and bonuses are logged and approved.</td></tr>)}</tbody></table></div></section>)}</main></div>);
+{tab === "payments" && (<section>
+  <div className="card mb-4">
+    <div className="mb-2 flex items-center justify-between">
+      <h2 className="font-semibold">Bonus tiers</h2>
+      {!tierEditing && <button className="text-tiny text-faint underline" onClick={openTierEditor}>edit</button>}
+    </div>
+    {tierEditing ? (
+      <div className="space-y-2">
+        <p className="text-tiny text-muted">Saving publishes this whole list as the active schedule from today — past claims keep whatever was in force when they were made.</p>
+        {tierRows.map((r, i) => (
+          <div key={i} className="flex items-center gap-2">
+            <input className="input tnum w-32" type="number" min="1" placeholder="Views" value={r.min_views} onChange={(e) => updateTierRow(i, "min_views", e.target.value)} />
+            <span className="text-tiny text-faint">views →</span>
+            <input className="input tnum w-32" type="number" min="0" placeholder="Amount" value={r.amount} onChange={(e) => updateTierRow(i, "amount", e.target.value)} />
+            <button className="text-tiny text-noInk underline" onClick={() => removeTierRow(i)}>Remove</button>
+          </div>
+        ))}
+        <button className="btn-quiet px-0" onClick={addTierRow}>+ Add a tier</button>
+        <div className="flex items-center gap-2 pt-1">
+          <button className="btn-primary text-tiny" disabled={tierSaving} onClick={saveTiers}>{tierSaving ? "Publishing…" : "Publish from today"}</button>
+          <button className="btn-secondary text-tiny" onClick={() => { setTierEditing(false); setTierMsg(""); }}>Cancel</button>
+        </div>
+        {tierMsg && <p className="text-tiny text-noInk">{tierMsg}</p>}
+      </div>
+    ) : (
+      <div className="flex flex-wrap gap-2">
+        {tiersOn(tiers, today()).length === 0 && <p className="text-base text-faint">No bonus tiers set yet.</p>}
+        {tiersOn(tiers, today()).slice().sort((a, b) => a.min_views - b.min_views).map((t) => (
+          <span key={t.id} className="badge bg-ground text-ink">{Number(t.min_views).toLocaleString()} views → {fmtNaira(t.amount)}</span>
+        ))}
+      </div>
+    )}
+  </div>
+  <div className="mb-4 flex flex-wrap items-center justify-between gap-3"><div className="flex items-center gap-3"><label className="text-base font-medium text-muted">Month:</label><input className="input w-auto" type="month" value={ym} onChange={(e) => setYm(e.target.value)} /></div><button className="btn-secondary text-tiny" disabled={payments.length === 0 || exportingPayments} onClick={exportPaymentsExcel}>{exportingPayments ? "Preparing…" : "Export to Excel"}</button></div><div className="card overflow-x-auto"><table className="w-full text-base"><thead><tr className="border-b border-line text-left text-tiny uppercase text-faint"><th className="py-2 pr-3">Creator</th><th className="pr-3">Base pay</th><th className="pr-3">Videos</th><th className="pr-3">Rate/post</th><th className="pr-3">Earned base</th><th className="pr-3">Perf. bonus</th><th className="pr-3">Referral</th><th className="pr-3">OOP</th><th className="pr-3">Total</th><th className="pr-3">Status</th></tr></thead><tbody>{payments.map((p) => { const basePay = p.creators?.base_pay || 0; const expected = postsExpectedIn(p.month); const perPost = Math.round(rate(basePay, p.month)); const vids = videoCountByCreator[p.creator_id] || Math.round(p.base_amount / (perPost || 1)); return (<tr key={p.id} className="border-b border-line"><td className="py-2 pr-3"><button className="text-accent underline decoration-dotted" onClick={() => openCreator(creators.find((c) => c.id === p.creator_id))}>{p.creators?.profiles?.full_name}</button></td><td className="pr-3">{fmtNaira(basePay)}</td><td className="pr-3">{vids} / {expected}</td><td className="pr-3">{fmtNaira(perPost)}</td><td className="pr-3">{fmtNaira(p.base_amount)}</td><td className="pr-3">{fmtNaira(p.perf_bonus)}</td><td className="pr-3"><input className="input w-20" defaultValue={p.referral_bonus} onBlur={(e) => savePaymentField(p, "referral_bonus", e.target.value)} /></td><td className="pr-3"><input className="input w-20" defaultValue={p.oop_expense} onBlur={(e) => savePaymentField(p, "oop_expense", e.target.value)} /></td><td className="pr-3 font-semibold">{fmtNaira(p.total_payable)}</td><td className="pr-3"><select className="input w-28" defaultValue={p.payment_status} onChange={(e) => savePaymentField(p, "payment_status", e.target.value)}><option value="Pending">Pending</option><option value="Paid">Paid</option><option value="Held">Held</option></select></td></tr>); })}{payments.length === 0 && (<tr><td colSpan={10} className="py-4 text-center text-faint">No payment rows for {ym} yet — created as videos and bonuses are logged and approved.</td></tr>)}</tbody></table></div></section>)}</main></div>);
 }
