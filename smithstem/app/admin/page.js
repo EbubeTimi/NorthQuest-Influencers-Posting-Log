@@ -123,7 +123,7 @@ export default function AdminDashboard() {
     if (!prof || prof.role !== "admin") { router.replace("/dashboard"); return; }
     setLoadError("");
     setProfile(prof);
-    const { data: biz } = await supabase.from("businesses").select("id, slug, name, trial_view_threshold, trial_enabled").eq("id", prof.business_id).maybeSingle();
+    const { data: biz } = await supabase.from("businesses").select("id, slug, name, trial_view_threshold, trial_enabled, bonus_enabled, default_base_pay").eq("id", prof.business_id).maybeSingle();
     setBusiness(biz || null);
     if (biz) setThresholdInput(String(biz.trial_view_threshold));
     const { data: cr } = await supabase.from("creators").select("*, profiles(full_name, email, phone)").eq("business_id", prof.business_id).order("status");
@@ -240,6 +240,16 @@ export default function AdminDashboard() {
     if (error) { setMsg("Failed: " + error.message); return; }
     setBusiness((b) => ({ ...b, trial_enabled: next }));
     setMsg(next ? "Trial sign-ups reopened." : "Trial sign-ups closed — the link now tells people it isn't open.");
+  }
+  // Not every business pays a bonus — off, this hides the whole "Claim a
+  // bonus" flow from that business's creators instead of quietly letting
+  // them submit claims that would only ever be worth ₦0.
+  async function toggleBonusEnabled() {
+    const next = !business.bonus_enabled;
+    const { error } = await supabaseBrowser().from("businesses").update({ bonus_enabled: next }).eq("id", business.id);
+    if (error) { setMsg("Failed: " + error.message); return; }
+    setBusiness((b) => ({ ...b, bonus_enabled: next }));
+    setMsg(next ? "Bonuses turned on for this business." : "Bonuses turned off — creators here no longer see a claim option.");
   }
   // A planning register, not the payment system of record — built entirely
   // from self-reported view data, so it stays informational until a real
@@ -1055,9 +1065,20 @@ export default function AdminDashboard() {
   <div className="card mb-4">
     <div className="mb-2 flex items-center justify-between">
       <h2 className="font-semibold">Bonus tiers</h2>
-      {!tierEditing && <button className="text-tiny text-faint underline" onClick={openTierEditor}>edit</button>}
+      <div className="flex items-center gap-2">
+        <button
+          className={`badge shrink-0 ${business.bonus_enabled ? "badge-ok" : "bg-ground text-faint"}`}
+          onClick={toggleBonusEnabled}
+          title={business.bonus_enabled ? "Click to turn bonuses off for this business" : "Click to turn bonuses on for this business"}
+        >
+          {business.bonus_enabled ? "Bonuses on — turn off" : "Bonuses off — turn on"}
+        </button>
+        {business.bonus_enabled && !tierEditing && <button className="text-tiny text-faint underline" onClick={openTierEditor}>edit</button>}
+      </div>
     </div>
-    {tierEditing ? (
+    {!business.bonus_enabled ? (
+      <p className="text-base text-faint">This business doesn't pay a bonus — creators here won't see a claim option.</p>
+    ) : tierEditing ? (
       <div className="space-y-2">
         <p className="text-tiny text-muted">Saving publishes this whole list as the active schedule from today — past claims keep whatever was in force when they were made.</p>
         {tierRows.map((r, i) => (
