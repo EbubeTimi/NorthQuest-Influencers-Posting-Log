@@ -10,13 +10,12 @@ function todayYm() { return monthBoundsLocal().month; }
 function monthEndOf(ym) { const start = new Date(firstOfMonth(ym)); return new Date(start.getFullYear(), start.getMonth() + 1, 0).toISOString().slice(0, 10); }
 // Defined once here and in globals.css, so no screen invents its own amber.
 const STATUS_STYLE = { pending: "bg-waitingBg text-waitingInk", approved: "bg-okBg text-okInk", rejected: "bg-noBg text-noInk" };
-// The real number Smith has used all session. A per-business threshold is
-// task #21 — until then this is the one figure everyone actually means.
-const TRIAL_THRESHOLD = 10000;
 export default function AdminDashboard() {
   const router = useRouter();
   const [profile, setProfile] = useState(null);
   const [business, setBusiness] = useState(null);
+  const [thresholdInput, setThresholdInput] = useState("");
+  const [thresholdMsg, setThresholdMsg] = useState("");
   const [tab, setTab] = useState("approvals");
   const [creators, setCreators] = useState([]);
   const [trialVideos, setTrialVideos] = useState([]);
@@ -73,8 +72,9 @@ export default function AdminDashboard() {
     if (!prof || prof.role !== "admin") { router.replace("/dashboard"); return; }
     setLoadError("");
     setProfile(prof);
-    const { data: biz } = await supabase.from("businesses").select("id, slug, name").eq("id", prof.business_id).maybeSingle();
+    const { data: biz } = await supabase.from("businesses").select("id, slug, name, trial_view_threshold").eq("id", prof.business_id).maybeSingle();
     setBusiness(biz || null);
+    if (biz) setThresholdInput(String(biz.trial_view_threshold));
     const { data: cr } = await supabase.from("creators").select("*, profiles(full_name, email, phone)").eq("business_id", prof.business_id).order("status");
     setCreators(cr || []);
     // Crossing candidates only ever come from trial creators' own videos —
@@ -132,6 +132,17 @@ export default function AdminDashboard() {
     setMsg(next === "inactive" ? "Deactivated." : "Reactivated.");
     if (selectedCreator?.id === c.id) setSelectedCreator({ ...c, status: next });
     load();
+  }
+  // A live gate, not effective-dated — changing it re-evaluates every
+  // trial video against the new figure immediately, nothing is locked to
+  // whatever the threshold was when a video was originally logged.
+  async function saveThreshold() {
+    setThresholdMsg("");
+    const n = Number(thresholdInput);
+    if (!n || n <= 0) { setThresholdMsg("Enter a number above zero."); return; }
+    const { error } = await supabaseBrowser().from("businesses").update({ trial_view_threshold: n }).eq("id", business.id);
+    if (error) { setThresholdMsg("Failed: " + error.message); return; }
+    setThresholdMsg("Saved."); load();
   }
   // Approving a crossing does not promote the creator by itself — it just
   // unlocks the "Complete your onboarding" button on their own dashboard.
@@ -265,7 +276,8 @@ export default function AdminDashboard() {
     );
   }
   if (!profile) return <LoadingScreen label="Loading your dashboard…" />;
-  const crossingCandidates = trialVideos.filter((v) => (viewReportsByVideo[v.id] || 0) >= TRIAL_THRESHOLD);
+  const trialThreshold = business?.trial_view_threshold || 10000;
+  const crossingCandidates = trialVideos.filter((v) => (viewReportsByVideo[v.id] || 0) >= trialThreshold);
   const trialRoster = creators.filter((c) => c.status === "trial" || c.status === "trial_approved");
   const trialLink = business ? `${typeof window !== "undefined" ? window.location.origin : ""}/trial/${business.slug}` : "";
   return (<div><Header role="admin" profile={profile} onSignOut={signOut} /><main className="mx-auto max-w-5xl px-4 py-4"><nav className="mb-6 flex gap-2">{[["approvals", `Bonus approvals${pending.length ? ` (${pending.length})` : ""}`], ["creators", "Manage creators"], ["trial", `Trial${crossingCandidates.length ? ` (${crossingCandidates.length})` : ""}`], ["invites", "Invites"], ["payments", "Payments register"]].map(([key, label]) => (<button key={key} onClick={() => setTab(key)} className={`rounded-xl px-4 py-2 text-base font-semibold ${tab === key ? "bg-accent text-white" : "bg-white text-muted border border-line"}`}>{label}</button>))}</nav>{msg && <p className="mb-4 text-base text-accent">{msg}</p>}{tab === "approvals" && (<><section className="card"><h2 className="mb-3 font-semibold">Pending bonus claims ({pending.length})</h2><div className="space-y-2">{pending.length === 0 && <p className="text-base text-faint">Nothing waiting on you.</p>}{pending.map((c) => (<div key={c.id} className="rounded-xl border border-line px-4 py-3"><div className="flex items-center justify-between"><div><p className="font-medium">{c.creators?.profiles?.full_name}</p><p className="text-base text-muted">{c.claim_date} · {Number(c.views).toLocaleString()} views · +{fmtNaira(bonusForViews(c.views, tiersOn(tiers, c.claim_date)))}</p></div><div className="flex gap-2"><button className="btn-secondary text-tiny" onClick={() => reviewClaim(c, "rejected")}>Reject</button><button className="btn-primary text-tiny" onClick={() => reviewClaim(c, "approved")}>Approve</button></div></div>{(c.video_url || c.screenshot_url) && (<div className="mt-1 flex gap-3">{c.video_url && (<a href={c.video_url} target="_blank" rel="noopener noreferrer" className="text-tiny text-accent underline">Open submitted video</a>)}{c.screenshot_url && (<button type="button" onClick={() => viewEvidence(c.screenshot_url)} className="text-tiny text-accent underline">View screenshot</button>)}</div>)}</div>))}</div></section>{growthUpdates.length > 0 && (<section className="card mt-4"><h2 className="mb-1 font-semibold">Growth updates ({growthUpdates.length})</h2><p className="mb-3 text-tiny text-muted">A video that already has an approved bonus has grown into a bigger tier. Approving replaces the old amount — nothing is added on top.</p><div className="space-y-2">{growthUpdates.map((c) => { const oldAmt = bonusForViews(c.views, tiersOn(tiers, c.claim_date)); const newAmt = bonusForViews(c.revised_views, tiersOn(tiers, c.claim_date)); return (<div key={c.id} className="rounded-xl border border-line px-4 py-3"><div className="flex items-center justify-between"><div><p className="font-medium">{c.creators?.profiles?.full_name}</p><p className="text-base text-muted">{c.claim_date} · {Number(c.views).toLocaleString()} → {Number(c.revised_views).toLocaleString()} views</p><p className="text-tiny text-faint">{fmtNaira(oldAmt)} → {fmtNaira(newAmt)}</p></div><div className="flex gap-2"><button className="btn-secondary text-tiny" onClick={() => reviewGrowth(c, false)}>Reject</button><button className="btn-primary text-tiny" onClick={() => reviewGrowth(c, true)}>Approve</button></div></div>{(c.video_url || c.screenshot_url) && (<div className="mt-1 flex gap-3">{c.video_url && (<a href={c.video_url} target="_blank" rel="noopener noreferrer" className="text-tiny text-accent underline">Open submitted video</a>)}{c.screenshot_url && (<button type="button" onClick={() => viewEvidence(c.screenshot_url)} className="text-tiny text-accent underline">View screenshot</button>)}</div>)}</div>); })}</div></section>)}</>)}{tab === "creators" && !selectedCreator && (
@@ -449,11 +461,20 @@ export default function AdminDashboard() {
           <button className="btn-secondary text-tiny" onClick={() => navigator.clipboard.writeText(trialLink)}>Copy</button>
         </div>
       )}
+      <div className="mt-4 border-t border-line pt-3">
+        <label className="mb-1 block text-tiny font-semibold uppercase text-faint">Views needed to trigger a review</label>
+        <p className="mb-2 text-tiny text-muted">Applies right away — raising or lowering it changes who shows up below immediately, not just for videos logged from now on.</p>
+        <div className="flex items-center gap-2">
+          <input className="input tnum w-40" type="number" min="1" value={thresholdInput} onChange={(e) => setThresholdInput(e.target.value)} />
+          <button className="btn-secondary text-tiny" onClick={saveThreshold}>Save</button>
+          {thresholdMsg && <span className="text-tiny text-muted">{thresholdMsg}</span>}
+        </div>
+      </div>
     </div>
 
     <section className="card mb-4">
       <h2 className="mb-1 font-semibold">Crossing requests ({crossingCandidates.length})</h2>
-      <p className="mb-3 text-tiny text-muted">A trial creator's video crossed {TRIAL_THRESHOLD.toLocaleString()} views. Approving unlocks their own "Complete your onboarding" step — it doesn't move them to active by itself.</p>
+      <p className="mb-3 text-tiny text-muted">A trial creator's video crossed {trialThreshold.toLocaleString()} views. Approving unlocks their own "Complete your onboarding" step — it doesn't move them to active by itself.</p>
       <div className="space-y-2">
         {crossingCandidates.length === 0 && <p className="text-base text-faint">Nothing waiting on you.</p>}
         {crossingCandidates.map((v) => (

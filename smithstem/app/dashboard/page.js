@@ -95,6 +95,7 @@ export default function CreatorDashboard() {
   const [reportOpenFor, setReportOpenFor] = useState(null);
   const [reportViewsInput, setReportViewsInput] = useState("");
   const [reportError, setReportError] = useState("");
+  const [trialThreshold, setTrialThreshold] = useState(10000);
   const { start, end, label } = (() => { const b = monthBoundsLocal(); return { ...b, label: new Date(b.start + "T12:00:00").toLocaleDateString("en-GB", { month: "long", year: "numeric" }) }; })();
 
   const load = useCallback(async () => {
@@ -119,7 +120,7 @@ export default function CreatorDashboard() {
     const { data: cr } = await supabase.from("creators").select("*").eq("profile_id", user.user.id).maybeSingle();
     setCreator(cr);
     if (!cr) return;
-    const [{ data: v }, { data: b }, { data: pay }, { data: mv }, { data: mc }, { data: vr }] = await Promise.all([
+    const [{ data: v }, { data: b }, { data: pay }, { data: mv }, { data: mc }, { data: vr }, { data: bizSettings }] = await Promise.all([
       supabase.from("video_logs").select("*").eq("creator_id", cr.id).gte("log_date", start).lte("log_date", end).order("log_date", { ascending: false }),
       supabase.from("bonus_claims").select("*").eq("creator_id", cr.id).gte("claim_date", start).lte("claim_date", end).order("created_at", { ascending: false }),
       // Every month, not just this one — creators ask about past months most.
@@ -131,8 +132,12 @@ export default function CreatorDashboard() {
       // Self-reported view counts — trial creators use this to show their own
       // progress toward the crossing threshold.
       supabase.from("video_view_reports").select("*").eq("creator_id", cr.id),
+      // Live setting, not fixed — the same figure Smith's crossing queue uses,
+      // read fresh each time rather than assumed.
+      supabase.from("businesses").select("trial_view_threshold").eq("id", cr.business_id).maybeSingle(),
     ]);
     setVideos(v || []); setClaims(b || []); setPayments(pay || []);
+    setTrialThreshold(bizSettings?.trial_view_threshold || 10000);
     setMyVideos(mv || []);
     const claimMap = {};
     (mc || []).forEach((c) => { if (c.video_log_id && !claimMap[c.video_log_id]) claimMap[c.video_log_id] = c; });
@@ -315,7 +320,7 @@ export default function CreatorDashboard() {
           ) : (
             <section className="card mb-4">
               <h2 className="text-lead font-semibold">How the trial works</h2>
-              <p className="mt-1 text-base text-muted">Your TikTok and Instagram stay yours — nothing is handed over yet. Post, log each video below, and report the views on it every so often. Once one single video crosses 10,000 views, Smith reviews it, and you'll be able to complete your onboarding here.</p>
+              <p className="mt-1 text-base text-muted">Your TikTok and Instagram stay yours — nothing is handed over yet. Post, log each video below, and report the views on it every so often. Once one single video crosses {trialThreshold.toLocaleString()} views, Smith reviews it, and you'll be able to complete your onboarding here.</p>
             </section>
           )}
 
@@ -346,7 +351,7 @@ export default function CreatorDashboard() {
                       <div className="flex items-center justify-between gap-2">
                         <span className="text-base font-medium">{dayName(v.log_date)} · Post {v.post_number}</span>
                         {reported !== undefined && (
-                          <span className={`badge ${reported >= 10000 ? "badge-ok" : "bg-ground text-faint"}`}>{Number(reported).toLocaleString()} views</span>
+                          <span className={`badge ${reported >= trialThreshold ? "badge-ok" : "bg-ground text-faint"}`}>{Number(reported).toLocaleString()} views</span>
                         )}
                       </div>
                       {(v.tiktok_url || v.insta_url) && (
