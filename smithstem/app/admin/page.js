@@ -10,11 +10,17 @@ function todayYm() { return monthBoundsLocal().month; }
 function monthEndOf(ym) { const start = new Date(firstOfMonth(ym)); return new Date(start.getFullYear(), start.getMonth() + 1, 0).toISOString().slice(0, 10); }
 // Defined once here and in globals.css, so no screen invents its own amber.
 const STATUS_STYLE = { pending: "bg-waitingBg text-waitingInk", approved: "bg-okBg text-okInk", rejected: "bg-noBg text-noInk" };
+// The real number Smith has used all session. A per-business threshold is
+// task #21 — until then this is the one figure everyone actually means.
+const TRIAL_THRESHOLD = 10000;
 export default function AdminDashboard() {
   const router = useRouter();
   const [profile, setProfile] = useState(null);
+  const [business, setBusiness] = useState(null);
   const [tab, setTab] = useState("approvals");
   const [creators, setCreators] = useState([]);
+  const [trialVideos, setTrialVideos] = useState([]);
+  const [viewReportsByVideo, setViewReportsByVideo] = useState({});
   const [tiers, setTiers] = useState([]);
   const [pending, setPending] = useState([]);
   const [growthUpdates, setGrowthUpdates] = useState([]);
@@ -67,8 +73,18 @@ export default function AdminDashboard() {
     if (!prof || prof.role !== "admin") { router.replace("/dashboard"); return; }
     setLoadError("");
     setProfile(prof);
+    const { data: biz } = await supabase.from("businesses").select("id, slug, name").eq("id", prof.business_id).maybeSingle();
+    setBusiness(biz || null);
     const { data: cr } = await supabase.from("creators").select("*, profiles(full_name, email, phone)").eq("business_id", prof.business_id).order("status");
     setCreators(cr || []);
+    // Crossing candidates only ever come from trial creators' own videos —
+    // scoped at the query rather than filtered after, so this never has to
+    // touch an active creator's rows.
+    const { data: tv } = await supabase.from("video_logs").select("*, creators!inner(id, status, tiktok_profile_url, insta_profile_url, profiles(full_name))").eq("business_id", prof.business_id).eq("creators.status", "trial").is("trial_review_dismissed_at", null);
+    setTrialVideos(tv || []);
+    const { data: vr } = await supabase.from("video_view_reports").select("*").eq("business_id", prof.business_id);
+    const maxByVideo = {}; (vr || []).forEach((r) => { maxByVideo[r.video_log_id] = Math.max(maxByVideo[r.video_log_id] || 0, Number(r.views)); });
+    setViewReportsByVideo(maxByVideo);
     const { data: t } = await supabase.from("bonus_tiers").select("*").eq("business_id", prof.business_id).order("min_views", { ascending: false });
     setTiers(t || []);
     const { data: p } = await supabase.from("bonus_claims").select("*, creators(id, profiles(full_name))").eq("business_id", prof.business_id).eq("status", "pending").order("created_at");
@@ -116,6 +132,25 @@ export default function AdminDashboard() {
     setMsg(next === "inactive" ? "Deactivated." : "Reactivated.");
     if (selectedCreator?.id === c.id) setSelectedCreator({ ...c, status: next });
     load();
+  }
+  // Approving a crossing does not promote the creator by itself — it just
+  // unlocks the "Complete your onboarding" button on their own dashboard.
+  // The qualifying video is recorded so it carries forward as their real
+  // first/Nth video once onboarding finishes, rather than being re-entered.
+  async function approveCrossing(video) {
+    const name = video.creators?.profiles?.full_name || "this creator";
+    if (!confirm(`Approve ${name}'s crossing? This unlocks their "Complete your onboarding" step — it doesn't move them to active by itself.`)) return;
+    const { error } = await supabaseBrowser().from("creators").update({
+      status: "trial_approved", trial_qualifying_video_id: video.id, trial_approved_at: new Date().toISOString(),
+    }).eq("id", video.creators.id);
+    if (error) { setMsg("Failed: " + error.message); return; }
+    setMsg("Crossing approved — they can now complete onboarding."); load();
+  }
+  async function dismissCrossing(video) {
+    if (!confirm("Dismiss this crossing? It stops showing here, but a different video from the same creator can still cross and surface on its own.")) return;
+    const { error } = await supabaseBrowser().from("video_logs").update({ trial_review_dismissed_at: new Date().toISOString() }).eq("id", video.id);
+    if (error) { setMsg("Failed: " + error.message); return; }
+    setMsg("Dismissed."); load();
   }
   async function deleteCreator(c) {
     const ok = confirm(
@@ -230,14 +265,21 @@ export default function AdminDashboard() {
     );
   }
   if (!profile) return <LoadingScreen label="Loading your dashboard…" />;
-  return (<div><Header role="admin" profile={profile} onSignOut={signOut} /><main className="mx-auto max-w-5xl px-4 py-4"><nav className="mb-6 flex gap-2">{[["approvals", `Bonus approvals${pending.length ? ` (${pending.length})` : ""}`], ["creators", "Manage creators"], ["invites", "Invites"], ["payments", "Payments register"]].map(([key, label]) => (<button key={key} onClick={() => setTab(key)} className={`rounded-xl px-4 py-2 text-base font-semibold ${tab === key ? "bg-accent text-white" : "bg-white text-muted border border-line"}`}>{label}</button>))}</nav>{msg && <p className="mb-4 text-base text-accent">{msg}</p>}{tab === "approvals" && (<><section className="card"><h2 className="mb-3 font-semibold">Pending bonus claims ({pending.length})</h2><div className="space-y-2">{pending.length === 0 && <p className="text-base text-faint">Nothing waiting on you.</p>}{pending.map((c) => (<div key={c.id} className="rounded-xl border border-line px-4 py-3"><div className="flex items-center justify-between"><div><p className="font-medium">{c.creators?.profiles?.full_name}</p><p className="text-base text-muted">{c.claim_date} · {Number(c.views).toLocaleString()} views · +{fmtNaira(bonusForViews(c.views, tiersOn(tiers, c.claim_date)))}</p></div><div className="flex gap-2"><button className="btn-secondary text-tiny" onClick={() => reviewClaim(c, "rejected")}>Reject</button><button className="btn-primary text-tiny" onClick={() => reviewClaim(c, "approved")}>Approve</button></div></div>{(c.video_url || c.screenshot_url) && (<div className="mt-1 flex gap-3">{c.video_url && (<a href={c.video_url} target="_blank" rel="noopener noreferrer" className="text-tiny text-accent underline">Open submitted video</a>)}{c.screenshot_url && (<button type="button" onClick={() => viewEvidence(c.screenshot_url)} className="text-tiny text-accent underline">View screenshot</button>)}</div>)}</div>))}</div></section>{growthUpdates.length > 0 && (<section className="card mt-4"><h2 className="mb-1 font-semibold">Growth updates ({growthUpdates.length})</h2><p className="mb-3 text-tiny text-muted">A video that already has an approved bonus has grown into a bigger tier. Approving replaces the old amount — nothing is added on top.</p><div className="space-y-2">{growthUpdates.map((c) => { const oldAmt = bonusForViews(c.views, tiersOn(tiers, c.claim_date)); const newAmt = bonusForViews(c.revised_views, tiersOn(tiers, c.claim_date)); return (<div key={c.id} className="rounded-xl border border-line px-4 py-3"><div className="flex items-center justify-between"><div><p className="font-medium">{c.creators?.profiles?.full_name}</p><p className="text-base text-muted">{c.claim_date} · {Number(c.views).toLocaleString()} → {Number(c.revised_views).toLocaleString()} views</p><p className="text-tiny text-faint">{fmtNaira(oldAmt)} → {fmtNaira(newAmt)}</p></div><div className="flex gap-2"><button className="btn-secondary text-tiny" onClick={() => reviewGrowth(c, false)}>Reject</button><button className="btn-primary text-tiny" onClick={() => reviewGrowth(c, true)}>Approve</button></div></div>{(c.video_url || c.screenshot_url) && (<div className="mt-1 flex gap-3">{c.video_url && (<a href={c.video_url} target="_blank" rel="noopener noreferrer" className="text-tiny text-accent underline">Open submitted video</a>)}{c.screenshot_url && (<button type="button" onClick={() => viewEvidence(c.screenshot_url)} className="text-tiny text-accent underline">View screenshot</button>)}</div>)}</div>); })}</div></section>)}</>)}{tab === "creators" && !selectedCreator && (
+  const crossingCandidates = trialVideos.filter((v) => (viewReportsByVideo[v.id] || 0) >= TRIAL_THRESHOLD);
+  const trialRoster = creators.filter((c) => c.status === "trial" || c.status === "trial_approved");
+  const trialLink = business ? `${typeof window !== "undefined" ? window.location.origin : ""}/trial/${business.slug}` : "";
+  return (<div><Header role="admin" profile={profile} onSignOut={signOut} /><main className="mx-auto max-w-5xl px-4 py-4"><nav className="mb-6 flex gap-2">{[["approvals", `Bonus approvals${pending.length ? ` (${pending.length})` : ""}`], ["creators", "Manage creators"], ["trial", `Trial${crossingCandidates.length ? ` (${crossingCandidates.length})` : ""}`], ["invites", "Invites"], ["payments", "Payments register"]].map(([key, label]) => (<button key={key} onClick={() => setTab(key)} className={`rounded-xl px-4 py-2 text-base font-semibold ${tab === key ? "bg-accent text-white" : "bg-white text-muted border border-line"}`}>{label}</button>))}</nav>{msg && <p className="mb-4 text-base text-accent">{msg}</p>}{tab === "approvals" && (<><section className="card"><h2 className="mb-3 font-semibold">Pending bonus claims ({pending.length})</h2><div className="space-y-2">{pending.length === 0 && <p className="text-base text-faint">Nothing waiting on you.</p>}{pending.map((c) => (<div key={c.id} className="rounded-xl border border-line px-4 py-3"><div className="flex items-center justify-between"><div><p className="font-medium">{c.creators?.profiles?.full_name}</p><p className="text-base text-muted">{c.claim_date} · {Number(c.views).toLocaleString()} views · +{fmtNaira(bonusForViews(c.views, tiersOn(tiers, c.claim_date)))}</p></div><div className="flex gap-2"><button className="btn-secondary text-tiny" onClick={() => reviewClaim(c, "rejected")}>Reject</button><button className="btn-primary text-tiny" onClick={() => reviewClaim(c, "approved")}>Approve</button></div></div>{(c.video_url || c.screenshot_url) && (<div className="mt-1 flex gap-3">{c.video_url && (<a href={c.video_url} target="_blank" rel="noopener noreferrer" className="text-tiny text-accent underline">Open submitted video</a>)}{c.screenshot_url && (<button type="button" onClick={() => viewEvidence(c.screenshot_url)} className="text-tiny text-accent underline">View screenshot</button>)}</div>)}</div>))}</div></section>{growthUpdates.length > 0 && (<section className="card mt-4"><h2 className="mb-1 font-semibold">Growth updates ({growthUpdates.length})</h2><p className="mb-3 text-tiny text-muted">A video that already has an approved bonus has grown into a bigger tier. Approving replaces the old amount — nothing is added on top.</p><div className="space-y-2">{growthUpdates.map((c) => { const oldAmt = bonusForViews(c.views, tiersOn(tiers, c.claim_date)); const newAmt = bonusForViews(c.revised_views, tiersOn(tiers, c.claim_date)); return (<div key={c.id} className="rounded-xl border border-line px-4 py-3"><div className="flex items-center justify-between"><div><p className="font-medium">{c.creators?.profiles?.full_name}</p><p className="text-base text-muted">{c.claim_date} · {Number(c.views).toLocaleString()} → {Number(c.revised_views).toLocaleString()} views</p><p className="text-tiny text-faint">{fmtNaira(oldAmt)} → {fmtNaira(newAmt)}</p></div><div className="flex gap-2"><button className="btn-secondary text-tiny" onClick={() => reviewGrowth(c, false)}>Reject</button><button className="btn-primary text-tiny" onClick={() => reviewGrowth(c, true)}>Approve</button></div></div>{(c.video_url || c.screenshot_url) && (<div className="mt-1 flex gap-3">{c.video_url && (<a href={c.video_url} target="_blank" rel="noopener noreferrer" className="text-tiny text-accent underline">Open submitted video</a>)}{c.screenshot_url && (<button type="button" onClick={() => viewEvidence(c.screenshot_url)} className="text-tiny text-accent underline">View screenshot</button>)}</div>)}</div>); })}</div></section>)}</>)}{tab === "creators" && !selectedCreator && (
   <section>
     {(() => {
-      const activeCount = creators.filter((c) => c.status === "active").length;
+      // Trial and trial_approved creators live on the Trial tab — nothing
+      // here to pay or sign yet, so a base-pay/contract row for them would
+      // just be noise.
+      const managedCreators = creators.filter((c) => c.status === "active" || c.status === "inactive");
+      const activeCount = managedCreators.filter((c) => c.status === "active").length;
       const postsThisMonth = Object.values(videoCountByCreator).reduce((s, n) => s + n, 0);
       return (
         <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <div className="card"><p className="kicker">Total creators</p><p className="figure mt-1 tnum">{creators.length}</p></div>
+          <div className="card"><p className="kicker">Total creators</p><p className="figure mt-1 tnum">{managedCreators.length}</p></div>
           <div className="card"><p className="kicker">Active</p><p className="figure mt-1 tnum text-accent">{activeCount}</p></div>
           <div className="card"><p className="kicker">Posts this month</p><p className="figure mt-1 tnum">{postsThisMonth}</p></div>
           <div className="card"><p className="kicker">Pending claims</p><p className="figure mt-1 tnum text-gold">{pending.length}</p></div>
@@ -252,9 +294,10 @@ export default function AdminDashboard() {
       <button className="btn-secondary text-tiny" onClick={addExistingCreator}>+ Add existing creator</button>
     </div>
     <div className="card overflow-x-auto">
-      {creators.length === 0 ? (
-        <p className="text-base text-faint">No creators yet.</p>
-      ) : (
+      {(() => {
+        const managedCreators = creators.filter((c) => c.status === "active" || c.status === "inactive");
+        if (managedCreators.length === 0) return <p className="text-base text-faint">No creators yet.</p>;
+        return (
         <table className="w-full text-base">
           <thead>
             <tr className="border-b border-line text-left text-tiny uppercase text-faint">
@@ -264,7 +307,7 @@ export default function AdminDashboard() {
             </tr>
           </thead>
           <tbody>
-            {creators.map((c) => {
+            {managedCreators.map((c) => {
               const vidCount = videoCountByCreator[c.id] || 0;
               const bonus = paymentsByCreator[c.id]?.perf_bonus;
               const cs = contractStatus(c);
@@ -293,7 +336,8 @@ export default function AdminDashboard() {
             })}
           </tbody>
         </table>
-      )}
+        );
+      })()}
     </div>
   </section>
 )}
@@ -394,5 +438,66 @@ export default function AdminDashboard() {
       </div>
     </section>
   );
-})()}{tab === "invites" && (<section><div className="card mb-4"><h2 className="mb-1 font-semibold">Invite a creator</h2><p className="mb-3 text-tiny text-muted">No email needed to get in — send this on WhatsApp. Works once and lasts 3 days.</p><form onSubmit={createInvite} className="grid grid-cols-2 gap-3"><input className="input" placeholder="Name (just for you to tell it apart)" value={inviteLabel} onChange={(e) => setInviteLabel(e.target.value)} required /><input className="input" placeholder="Last 4 of their phone (optional)" maxLength={4} value={invitePhone} onChange={(e) => setInvitePhone(e.target.value.replace(/\D/g, ""))} /><button className="btn-primary col-span-2">Create invite link</button></form>{lastInvite && (<div className="mt-4 rounded-xl border border-line bg-ground p-3"><p className="text-tiny font-semibold uppercase text-faint">Ready for {lastInvite.label}</p><p className="mt-1 break-all font-mono text-tiny text-ink">{lastInvite.link}</p><div className="mt-2 flex gap-2"><a className="btn-primary text-tiny" style={{ background: "#25D366" }} target="_blank" rel="noopener noreferrer" href={`https://wa.me/?text=${encodeURIComponent(lastInvite.link)}`}>Send on WhatsApp</a><button type="button" className="btn-secondary text-tiny" onClick={() => navigator.clipboard.writeText(lastInvite.link)}>Copy link</button></div><p className="mt-2 text-tiny text-waitingInk">Send this to {lastInvite.label} only — whoever opens it first joins as them.</p></div>)}</div><div className="card"><h2 className="mb-3 font-semibold">Invites ({invites.length})</h2><div className="space-y-2">{invites.length === 0 && <p className="text-base text-faint">No invites yet.</p>}{invites.map((inv) => { const s = inviteStatus(inv); return (<div key={inv.id} className="flex items-center justify-between rounded-xl border border-line px-4 py-2.5"><div><p className="font-medium">{inv.label}</p><p className="text-tiny text-faint">Sent {new Date(inv.created_at).toLocaleDateString("en-GB")}</p></div><span className={`badge ${s.cls}`}>{s.text}</span></div>); })}</div></div></section>)}{tab === "payments" && (<section><div className="mb-4 flex items-center gap-3"><label className="text-base font-medium text-muted">Month:</label><input className="input w-auto" type="month" value={ym} onChange={(e) => setYm(e.target.value)} /></div><div className="card overflow-x-auto"><table className="w-full text-base"><thead><tr className="border-b border-line text-left text-tiny uppercase text-faint"><th className="py-2 pr-3">Creator</th><th className="pr-3">Base pay</th><th className="pr-3">Videos</th><th className="pr-3">Rate/post</th><th className="pr-3">Earned base</th><th className="pr-3">Perf. bonus</th><th className="pr-3">Referral</th><th className="pr-3">OOP</th><th className="pr-3">Total</th><th className="pr-3">Status</th></tr></thead><tbody>{payments.map((p) => { const basePay = p.creators?.base_pay || 0; const expected = postsExpectedIn(p.month); const perPost = Math.round(rate(basePay, p.month)); const vids = videoCountByCreator[p.creator_id] || Math.round(p.base_amount / (perPost || 1)); return (<tr key={p.id} className="border-b border-line"><td className="py-2 pr-3"><button className="text-accent underline decoration-dotted" onClick={() => openCreator(creators.find((c) => c.id === p.creator_id))}>{p.creators?.profiles?.full_name}</button></td><td className="pr-3">{fmtNaira(basePay)}</td><td className="pr-3">{vids} / {expected}</td><td className="pr-3">{fmtNaira(perPost)}</td><td className="pr-3">{fmtNaira(p.base_amount)}</td><td className="pr-3">{fmtNaira(p.perf_bonus)}</td><td className="pr-3"><input className="input w-20" defaultValue={p.referral_bonus} onBlur={(e) => savePaymentField(p, "referral_bonus", e.target.value)} /></td><td className="pr-3"><input className="input w-20" defaultValue={p.oop_expense} onBlur={(e) => savePaymentField(p, "oop_expense", e.target.value)} /></td><td className="pr-3 font-semibold">{fmtNaira(p.total_payable)}</td><td className="pr-3"><select className="input w-28" defaultValue={p.payment_status} onChange={(e) => savePaymentField(p, "payment_status", e.target.value)}><option value="Pending">Pending</option><option value="Paid">Paid</option><option value="Held">Held</option></select></td></tr>); })}{payments.length === 0 && (<tr><td colSpan={10} className="py-4 text-center text-faint">No payment rows for {ym} yet — created as videos and bonuses are logged and approved.</td></tr>)}</tbody></table></div></section>)}</main></div>);
+})()}{tab === "trial" && (
+  <section>
+    <div className="card mb-4">
+      <h2 className="mb-1 font-semibold">Trial sign-up link</h2>
+      <p className="mb-2 text-tiny text-muted">Anyone who opens this starts a trial for {business?.name || "this business"} — no admin action needed per person.</p>
+      {trialLink && (
+        <div className="flex items-center gap-2">
+          <p className="flex-1 break-all rounded-lg bg-ground px-3 py-2 font-mono text-tiny text-ink">{trialLink}</p>
+          <button className="btn-secondary text-tiny" onClick={() => navigator.clipboard.writeText(trialLink)}>Copy</button>
+        </div>
+      )}
+    </div>
+
+    <section className="card mb-4">
+      <h2 className="mb-1 font-semibold">Crossing requests ({crossingCandidates.length})</h2>
+      <p className="mb-3 text-tiny text-muted">A trial creator's video crossed {TRIAL_THRESHOLD.toLocaleString()} views. Approving unlocks their own "Complete your onboarding" step — it doesn't move them to active by itself.</p>
+      <div className="space-y-2">
+        {crossingCandidates.length === 0 && <p className="text-base text-faint">Nothing waiting on you.</p>}
+        {crossingCandidates.map((v) => (
+          <div key={v.id} className="rounded-xl border border-line px-4 py-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="font-medium">{v.creators?.profiles?.full_name}</p>
+                <p className="text-base text-muted">{v.log_date} · Post {v.post_number} · {Number(viewReportsByVideo[v.id]).toLocaleString()} views</p>
+              </div>
+              <div className="flex gap-2">
+                <button className="btn-secondary text-tiny" onClick={() => dismissCrossing(v)}>Dismiss</button>
+                <button className="btn-primary text-tiny" onClick={() => approveCrossing(v)}>Approve</button>
+              </div>
+            </div>
+            <div className="mt-1 flex gap-3">
+              {v.tiktok_url && <a href={v.tiktok_url} target="_blank" rel="noopener noreferrer" className="text-tiny text-accent underline">TikTok</a>}
+              {v.insta_url && <a href={v.insta_url} target="_blank" rel="noopener noreferrer" className="text-tiny text-accent underline">Instagram</a>}
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+
+    <section className="card">
+      <h2 className="mb-3 font-semibold">Trial roster ({trialRoster.length})</h2>
+      <div className="space-y-2">
+        {trialRoster.length === 0 && <p className="text-base text-faint">No one on trial right now.</p>}
+        {trialRoster.map((c) => (
+          <div key={c.id} className="rounded-xl border border-line px-4 py-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="font-medium">{c.profiles?.full_name}</p>
+                <div className="mt-0.5 flex gap-3 text-tiny">
+                  {c.tiktok_profile_url && <a href={c.tiktok_profile_url} target="_blank" rel="noopener noreferrer" className="text-accent underline">TikTok</a>}
+                  {c.insta_profile_url && <a href={c.insta_profile_url} target="_blank" rel="noopener noreferrer" className="text-accent underline">Instagram</a>}
+                </div>
+              </div>
+              <span className={`badge ${c.status === "trial_approved" ? "badge-ok" : "bg-ground text-faint"}`}>{c.status === "trial_approved" ? "Approved — awaiting onboarding" : "On trial"}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+  </section>
+)}
+{tab === "invites" && (<section><div className="card mb-4"><h2 className="mb-1 font-semibold">Invite a creator</h2><p className="mb-3 text-tiny text-muted">No email needed to get in — send this on WhatsApp. Works once and lasts 3 days.</p><form onSubmit={createInvite} className="grid grid-cols-2 gap-3"><input className="input" placeholder="Name (just for you to tell it apart)" value={inviteLabel} onChange={(e) => setInviteLabel(e.target.value)} required /><input className="input" placeholder="Last 4 of their phone (optional)" maxLength={4} value={invitePhone} onChange={(e) => setInvitePhone(e.target.value.replace(/\D/g, ""))} /><button className="btn-primary col-span-2">Create invite link</button></form>{lastInvite && (<div className="mt-4 rounded-xl border border-line bg-ground p-3"><p className="text-tiny font-semibold uppercase text-faint">Ready for {lastInvite.label}</p><p className="mt-1 break-all font-mono text-tiny text-ink">{lastInvite.link}</p><div className="mt-2 flex gap-2"><a className="btn-primary text-tiny" style={{ background: "#25D366" }} target="_blank" rel="noopener noreferrer" href={`https://wa.me/?text=${encodeURIComponent(lastInvite.link)}`}>Send on WhatsApp</a><button type="button" className="btn-secondary text-tiny" onClick={() => navigator.clipboard.writeText(lastInvite.link)}>Copy link</button></div><p className="mt-2 text-tiny text-waitingInk">Send this to {lastInvite.label} only — whoever opens it first joins as them.</p></div>)}</div><div className="card"><h2 className="mb-3 font-semibold">Invites ({invites.length})</h2><div className="space-y-2">{invites.length === 0 && <p className="text-base text-faint">No invites yet.</p>}{invites.map((inv) => { const s = inviteStatus(inv); return (<div key={inv.id} className="flex items-center justify-between rounded-xl border border-line px-4 py-2.5"><div><p className="font-medium">{inv.label}</p><p className="text-tiny text-faint">Sent {new Date(inv.created_at).toLocaleDateString("en-GB")}</p></div><span className={`badge ${s.cls}`}>{s.text}</span></div>); })}</div></div></section>)}{tab === "payments" && (<section><div className="mb-4 flex items-center gap-3"><label className="text-base font-medium text-muted">Month:</label><input className="input w-auto" type="month" value={ym} onChange={(e) => setYm(e.target.value)} /></div><div className="card overflow-x-auto"><table className="w-full text-base"><thead><tr className="border-b border-line text-left text-tiny uppercase text-faint"><th className="py-2 pr-3">Creator</th><th className="pr-3">Base pay</th><th className="pr-3">Videos</th><th className="pr-3">Rate/post</th><th className="pr-3">Earned base</th><th className="pr-3">Perf. bonus</th><th className="pr-3">Referral</th><th className="pr-3">OOP</th><th className="pr-3">Total</th><th className="pr-3">Status</th></tr></thead><tbody>{payments.map((p) => { const basePay = p.creators?.base_pay || 0; const expected = postsExpectedIn(p.month); const perPost = Math.round(rate(basePay, p.month)); const vids = videoCountByCreator[p.creator_id] || Math.round(p.base_amount / (perPost || 1)); return (<tr key={p.id} className="border-b border-line"><td className="py-2 pr-3"><button className="text-accent underline decoration-dotted" onClick={() => openCreator(creators.find((c) => c.id === p.creator_id))}>{p.creators?.profiles?.full_name}</button></td><td className="pr-3">{fmtNaira(basePay)}</td><td className="pr-3">{vids} / {expected}</td><td className="pr-3">{fmtNaira(perPost)}</td><td className="pr-3">{fmtNaira(p.base_amount)}</td><td className="pr-3">{fmtNaira(p.perf_bonus)}</td><td className="pr-3"><input className="input w-20" defaultValue={p.referral_bonus} onBlur={(e) => savePaymentField(p, "referral_bonus", e.target.value)} /></td><td className="pr-3"><input className="input w-20" defaultValue={p.oop_expense} onBlur={(e) => savePaymentField(p, "oop_expense", e.target.value)} /></td><td className="pr-3 font-semibold">{fmtNaira(p.total_payable)}</td><td className="pr-3"><select className="input w-28" defaultValue={p.payment_status} onChange={(e) => savePaymentField(p, "payment_status", e.target.value)}><option value="Pending">Pending</option><option value="Paid">Paid</option><option value="Held">Held</option></select></td></tr>); })}{payments.length === 0 && (<tr><td colSpan={10} className="py-4 text-center text-faint">No payment rows for {ym} yet — created as videos and bonuses are logged and approved.</td></tr>)}</tbody></table></div></section>)}</main></div>);
 }
