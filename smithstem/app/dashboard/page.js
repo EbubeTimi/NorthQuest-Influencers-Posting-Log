@@ -3,6 +3,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { supabaseBrowser, withTimeout } from "../../lib/supabaseClient";
 import { today, postingDay, monthBoundsLocal, mostRecentSunday, daysBetween, dayBefore, isBeforeNoon } from "../../lib/domain";
+import { contentGuideFor } from "../../lib/contentGuide";
 import Header from "../../components/Header";
 import LoadingScreen from "../../components/LoadingScreen";
 
@@ -104,6 +105,8 @@ export default function CreatorDashboard() {
   const [reportError, setReportError] = useState("");
   const [trialThreshold, setTrialThreshold] = useState(10000);
   const [bonusEnabled, setBonusEnabled] = useState(true);
+  const [bizSlug, setBizSlug] = useState("");
+  const [contentGuideOpen, setContentGuideOpen] = useState(false);
   const { start, end, label } = (() => { const b = monthBoundsLocal(); return { ...b, label: new Date(b.start + "T12:00:00").toLocaleDateString("en-GB", { month: "long", year: "numeric" }) }; })();
 
   const load = useCallback(async () => {
@@ -142,11 +145,12 @@ export default function CreatorDashboard() {
       supabase.from("video_view_reports").select("*").eq("creator_id", cr.id),
       // Live setting, not fixed — the same figure Smith's crossing queue uses,
       // read fresh each time rather than assumed.
-      supabase.from("businesses").select("trial_view_threshold, bonus_enabled").eq("id", cr.business_id).maybeSingle(),
+      supabase.from("businesses").select("trial_view_threshold, bonus_enabled, slug").eq("id", cr.business_id).maybeSingle(),
     ]);
     setVideos(v || []); setClaims(b || []); setPayments(pay || []);
     setTrialThreshold(bizSettings?.trial_view_threshold || 10000);
     setBonusEnabled(bizSettings?.bonus_enabled !== false);
+    setBizSlug(bizSettings?.slug || "");
     setMyVideos(mv || []);
     const claimMap = {};
     (mc || []).forEach((c) => { if (c.video_log_id && !claimMap[c.video_log_id]) claimMap[c.video_log_id] = c; });
@@ -494,6 +498,35 @@ export default function CreatorDashboard() {
     );
   }
 
+  function contentIdeasCard() {
+    const guide = contentGuideFor(bizSlug);
+    if (!guide) return null;
+    return (
+      <section className="card mb-4">
+        <button type="button" className="flex w-full items-center justify-between text-left" onClick={() => setContentGuideOpen((o) => !o)}>
+          <h2 className="text-lead font-semibold">Content ideas</h2>
+          <span className="text-tiny text-faint">{contentGuideOpen ? "Hide" : "Show"}</span>
+        </button>
+        {contentGuideOpen && (
+          <div className="mt-2">
+            <p className="text-tiny text-muted">{guide.styleLine}</p>
+            <div className="mt-3 space-y-2">
+              {guide.formats.map((f) => (
+                <div key={f.name} className="rounded-xl border border-line px-3 py-2">
+                  <p className="text-tiny font-semibold text-accent">{f.name}</p>
+                  <p className="mt-0.5 text-tiny text-muted">{f.description}</p>
+                </div>
+              ))}
+            </div>
+            <p className="mt-3 text-tiny text-faint">
+              Every video goes through Ella before it's posted. Follow her on TikTok — <a href="https://www.tiktok.com/@ellaikipo" target="_blank" rel="noopener noreferrer" className="text-accent underline">@ellaikipo</a> — to stay in the loop.
+            </p>
+          </div>
+        )}
+      </section>
+    );
+  }
+
   if (creator.status === "trial" || creator.status === "trial_approved") {
     const approved = creator.status === "trial_approved";
     return (
@@ -519,6 +552,8 @@ export default function CreatorDashboard() {
               <p className="mt-1 text-base text-muted">Your accounts stay yours — nothing is handed over yet. Post the same video to TikTok, Instagram, and Facebook (Facebook posts go out automatically once it's linked to Instagram), log it below, and report the views on it every so often. Once one single video crosses {trialThreshold.toLocaleString()} views on any platform, Smith reviews it, and you'll be able to complete your onboarding here. Every video goes through Ella for quality review first.</p>
             </section>
           )}
+
+          {contentIdeasCard()}
 
           {weeklyGateActive ? weeklyCheckinCard() : (
             <section className="card mb-4">
@@ -658,6 +693,8 @@ export default function CreatorDashboard() {
         </div>
 
         {msg && <p className="mb-4 rounded-xl bg-accentSoft px-4 py-3 text-base text-accent">{msg}</p>}
+
+        {contentIdeasCard()}
 
         <section className="card mb-4">
           <h2 className="mb-3 text-lead font-semibold">Log a video</h2>
