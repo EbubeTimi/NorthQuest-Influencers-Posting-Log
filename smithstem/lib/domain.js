@@ -35,6 +35,19 @@ export function bonusForViews(views, tiers) {
   return 0;
 }
 
+// Same idea as tiersOn, one level down: a creator's own base pay changes
+// over time (moving between pay tiers), so a past period is valued with
+// whatever was in force on its own end date, not today's figure. Falls back
+// to the creator's current base_pay when no history row exists yet — true
+// for anyone who hasn't had a tier change recorded since this was built.
+export function basePayOn(history, fallbackBasePay, creatorId, date) {
+  const on = typeof date === "string" ? date.slice(0, 10) : new Date(date).toISOString().slice(0, 10);
+  const rows = (history || []).filter((h) => h.creator_id === creatorId && (h.effective_from || "2000-01-01") <= on);
+  if (!rows.length) return Number(fallbackBasePay);
+  const latest = rows.reduce((max, h) => (h.effective_from > max.effective_from ? h : max), rows[0]);
+  return Number(latest.base_pay);
+}
+
 export function monthKey(date) { const d = new Date(date); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-01`; }
 export function fmtNaira(n) { return "₦" + Number(n || 0).toLocaleString("en-NG", { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
 

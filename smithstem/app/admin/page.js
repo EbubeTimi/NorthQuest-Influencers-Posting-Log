@@ -2,12 +2,19 @@
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { supabaseBrowser, withTimeout } from "../../lib/supabaseClient";
-import { rate, fmtNaira, bonusForViews, tiersOn, today, monthBoundsLocal, postsExpectedIn } from "../../lib/domain";
+import { rate, fmtNaira, bonusForViews, tiersOn, basePayOn, today, monthBoundsLocal, postsExpectedIn } from "../../lib/domain";
 import Header from "../../components/Header";
 import LoadingScreen from "../../components/LoadingScreen";
 function firstOfMonth(ym) { return `${ym}-01`; }
 function todayYm() { return monthBoundsLocal().month; }
 function monthEndOf(ym) { const start = new Date(firstOfMonth(ym)); return new Date(start.getFullYear(), start.getMonth() + 1, 0).toISOString().slice(0, 10); }
+// Default the register to the trailing 7 days ending today — adjustable to
+// any range from there, since "the week" isn't a fixed Mon-Sun cut for Smith.
+function daysBefore(n, from) {
+  const d = new Date((from || today()) + "T00:00:00");
+  d.setDate(d.getDate() - n);
+  return d.toISOString().slice(0, 10);
+}
 // Excel, Numbers, and Sheets all open CSV natively — no spreadsheet library
 // needed for a flat table with no formulas or formatting. (The one JS
 // library for real .xlsx generation, SheetJS's "xlsx" package, currently
@@ -37,6 +44,11 @@ export default function AdminDashboard() {
   const [basePayEditing, setBasePayEditing] = useState(false);
   const [basePayInput, setBasePayInput] = useState("");
   const [basePayMsg, setBasePayMsg] = useState("");
+  const [analyticsStart, setAnalyticsStart] = useState(() => daysBefore(6));
+  const [analyticsEnd, setAnalyticsEnd] = useState(() => today());
+  const [analyticsRows, setAnalyticsRows] = useState([]);
+  const [analyticsLoading, setAnalyticsLoading] = useState(false);
+  const [analyticsLoaded, setAnalyticsLoaded] = useState(false);
   const [tab, setTab] = useState("approvals");
   const [creators, setCreators] = useState([]);
   const [trialVideos, setTrialVideos] = useState([]);
@@ -146,6 +158,7 @@ export default function AdminDashboard() {
     const vcounts = {}; (allVids || []).forEach((v) => { vcounts[v.creator_id] = (vcounts[v.creator_id] || 0) + 1; }); setVideoCountByCreator(vcounts);
   }, [router, ym]);
   useEffect(() => { load(); }, [load]);
+  useEffect(() => { if (tab === "analytics" && profile) loadAnalytics(); }, [tab, analyticsStart, analyticsEnd, profile]);
   async function openCreator(c) {
     if (!c) return; setSelectedCreator(c); setTab("creators");
     setBasePayEditing(false); setBasePayInput(""); setBasePayMsg("");
@@ -183,6 +196,57 @@ export default function AdminDashboard() {
     const { error } = await supabaseBrowser().from("businesses").update({ trial_view_threshold: n }).eq("id", business.id);
     if (error) { setThresholdMsg("Failed: " + error.message); return; }
     setThresholdMsg("Saved."); load();
+  }
+  // A planning register, not the payment system of record — built entirely
+  // from self-reported view data, so it stays informational until a real
+  // claim goes through the existing approve step. Recomputed fresh on every
+  // period change rather than cached, since it's meant to answer "what would
+  // this week cost right now."
+  async function loadAnalytics() {
+    if (!profile) return;
+    setAnalyticsLoading(true);
+    const supabase = supabaseBrowser();
+    const [{ data: vids }, { data: payHistory }] = await Promise.all([
+      supabase.from("video_logs").select("*, creators!inner(id, base_pay, status, profiles(full_name))")
+        .eq("business_id", profile.business_id).eq("creators.status", "active")
+        .gte("log_date", analyticsStart).lte("log_date", analyticsEnd),
+      supabase.from("creator_base_pay_history").select("*").eq("business_id", profile.business_id),
+    ]);
+    const videoIds = (vids || []).map((v) => v.id);
+    let reportsByVideo = {};
+    if (videoIds.length) {
+      const { data: reports } = await supabase.from("video_view_reports").select("*").in("video_log_id", videoIds);
+      (reports || []).forEach((r) => { reportsByVideo[r.video_log_id] = Math.max(reportsByVideo[r.video_log_id] || 0, Number(r.views)); });
+    }
+    const byCreator = {};
+    (vids || []).forEach((v) => { (byCreator[v.creator_id] ||= { creator: v.creators, videos: [] }).videos.push(v); });
+    const rows = Object.values(byCreator).map(({ creator, videos }) => {
+      const basePayTier = basePayOn(payHistory, creator.base_pay, creator.id, analyticsEnd);
+      const perPost = rate(basePayTier, analyticsEnd.slice(0, 7));
+      const tiktokCount = videos.filter((v) => v.tiktok_url).length;
+      const instaCount = videos.filter((v) => v.insta_url).length;
+      const payableVideos = videos.length;
+      const baseEarned = perPost * payableVideos;
+      const bonusVideos = [];
+      let bonusAmount = 0;
+      videos.forEach((v) => {
+        const views = reportsByVideo[v.id];
+        if (!views) return;
+        const amt = bonusForViews(views, tiersOn(tiers, analyticsEnd));
+        if (amt > 0) {
+          const platform = v.tiktok_url && v.insta_url ? "" : v.tiktok_url ? " (TikTok)" : v.insta_url ? " (Instagram)" : "";
+          bonusVideos.push({ views, amount: amt, platform });
+          bonusAmount += amt;
+        }
+      });
+      return {
+        creatorId: creator.id, creatorName: creator.profiles?.full_name, basePayTier,
+        tiktokCount, instaCount, payableVideos, perPost, baseEarned,
+        bonusVideos, bonusAmount, totalPay: baseEarned + bonusAmount,
+      };
+    }).sort((a, b) => b.basePayTier - a.basePayTier || (a.creatorName || "").localeCompare(b.creatorName || ""));
+    setAnalyticsRows(rows);
+    setAnalyticsLoading(false); setAnalyticsLoaded(true);
   }
   // Approving a crossing does not promote the creator by itself — it just
   // unlocks the "Complete your onboarding" button on their own dashboard.
@@ -336,7 +400,7 @@ export default function AdminDashboard() {
   const crossingCandidates = trialVideos.filter((v) => (viewReportsByVideo[v.id] || 0) >= trialThreshold);
   const trialRoster = creators.filter((c) => c.status === "trial" || c.status === "trial_approved");
   const trialLink = business ? `${typeof window !== "undefined" ? window.location.origin : ""}/trial/${business.slug}` : "";
-  return (<div><Header role="admin" profile={profile} onSignOut={signOut} /><main className="mx-auto max-w-5xl px-4 py-4"><nav className="mb-6 flex gap-2">{[["approvals", `Bonus approvals${pending.length ? ` (${pending.length})` : ""}`], ["creators", "Manage creators"], ["trial", `Trial${crossingCandidates.length ? ` (${crossingCandidates.length})` : ""}`], ["invites", "Invites"], ["views", "Views register"], ["payments", "Payments register"]].map(([key, label]) => (<button key={key} onClick={() => setTab(key)} className={`rounded-xl px-4 py-2 text-base font-semibold ${tab === key ? "bg-accent text-white" : "bg-white text-muted border border-line"}`}>{label}</button>))}</nav>{msg && <p className="mb-4 text-base text-accent">{msg}</p>}{tab === "approvals" && (<><section className="card"><h2 className="mb-3 font-semibold">Pending bonus claims ({pending.length})</h2><div className="space-y-2">{pending.length === 0 && <p className="text-base text-faint">Nothing waiting on you.</p>}{pending.map((c) => (<div key={c.id} className="rounded-xl border border-line px-4 py-3"><div className="flex items-center justify-between"><div><p className="font-medium">{c.creators?.profiles?.full_name}</p><p className="text-base text-muted">{c.claim_date} · {Number(c.views).toLocaleString()} views · +{fmtNaira(bonusForViews(c.views, tiersOn(tiers, c.claim_date)))}</p></div><div className="flex gap-2"><button className="btn-secondary text-tiny" onClick={() => reviewClaim(c, "rejected")}>Reject</button><button className="btn-primary text-tiny" onClick={() => reviewClaim(c, "approved")}>Approve</button></div></div>{(c.video_url || c.screenshot_url) && (<div className="mt-1 flex gap-3">{c.video_url && (<a href={c.video_url} target="_blank" rel="noopener noreferrer" className="text-tiny text-accent underline">Open submitted video</a>)}{c.screenshot_url && (<button type="button" onClick={() => viewEvidence(c.screenshot_url)} className="text-tiny text-accent underline">View screenshot</button>)}</div>)}</div>))}</div></section>{growthUpdates.length > 0 && (<section className="card mt-4"><h2 className="mb-1 font-semibold">Growth updates ({growthUpdates.length})</h2><p className="mb-3 text-tiny text-muted">A video that already has an approved bonus has grown into a bigger tier. Approving replaces the old amount — nothing is added on top.</p><div className="space-y-2">{growthUpdates.map((c) => { const oldAmt = bonusForViews(c.views, tiersOn(tiers, c.claim_date)); const newAmt = bonusForViews(c.revised_views, tiersOn(tiers, c.claim_date)); return (<div key={c.id} className="rounded-xl border border-line px-4 py-3"><div className="flex items-center justify-between"><div><p className="font-medium">{c.creators?.profiles?.full_name}</p><p className="text-base text-muted">{c.claim_date} · {Number(c.views).toLocaleString()} → {Number(c.revised_views).toLocaleString()} views</p><p className="text-tiny text-faint">{fmtNaira(oldAmt)} → {fmtNaira(newAmt)}</p></div><div className="flex gap-2"><button className="btn-secondary text-tiny" onClick={() => reviewGrowth(c, false)}>Reject</button><button className="btn-primary text-tiny" onClick={() => reviewGrowth(c, true)}>Approve</button></div></div>{(c.video_url || c.screenshot_url) && (<div className="mt-1 flex gap-3">{c.video_url && (<a href={c.video_url} target="_blank" rel="noopener noreferrer" className="text-tiny text-accent underline">Open submitted video</a>)}{c.screenshot_url && (<button type="button" onClick={() => viewEvidence(c.screenshot_url)} className="text-tiny text-accent underline">View screenshot</button>)}</div>)}</div>); })}</div></section>)}</>)}{tab === "creators" && !selectedCreator && (
+  return (<div><Header role="admin" profile={profile} onSignOut={signOut} /><main className="mx-auto max-w-5xl px-4 py-4"><nav className="mb-6 flex gap-2">{[["approvals", `Bonus approvals${pending.length ? ` (${pending.length})` : ""}`], ["creators", "Manage creators"], ["trial", `Trial${crossingCandidates.length ? ` (${crossingCandidates.length})` : ""}`], ["invites", "Invites"], ["views", "Views register"], ["analytics", "Analytics register"], ["payments", "Payments register"]].map(([key, label]) => (<button key={key} onClick={() => setTab(key)} className={`rounded-xl px-4 py-2 text-base font-semibold ${tab === key ? "bg-accent text-white" : "bg-white text-muted border border-line"}`}>{label}</button>))}</nav>{msg && <p className="mb-4 text-base text-accent">{msg}</p>}{tab === "approvals" && (<><section className="card"><h2 className="mb-3 font-semibold">Pending bonus claims ({pending.length})</h2><div className="space-y-2">{pending.length === 0 && <p className="text-base text-faint">Nothing waiting on you.</p>}{pending.map((c) => (<div key={c.id} className="rounded-xl border border-line px-4 py-3"><div className="flex items-center justify-between"><div><p className="font-medium">{c.creators?.profiles?.full_name}</p><p className="text-base text-muted">{c.claim_date} · {Number(c.views).toLocaleString()} views · +{fmtNaira(bonusForViews(c.views, tiersOn(tiers, c.claim_date)))}</p></div><div className="flex gap-2"><button className="btn-secondary text-tiny" onClick={() => reviewClaim(c, "rejected")}>Reject</button><button className="btn-primary text-tiny" onClick={() => reviewClaim(c, "approved")}>Approve</button></div></div>{(c.video_url || c.screenshot_url) && (<div className="mt-1 flex gap-3">{c.video_url && (<a href={c.video_url} target="_blank" rel="noopener noreferrer" className="text-tiny text-accent underline">Open submitted video</a>)}{c.screenshot_url && (<button type="button" onClick={() => viewEvidence(c.screenshot_url)} className="text-tiny text-accent underline">View screenshot</button>)}</div>)}</div>))}</div></section>{growthUpdates.length > 0 && (<section className="card mt-4"><h2 className="mb-1 font-semibold">Growth updates ({growthUpdates.length})</h2><p className="mb-3 text-tiny text-muted">A video that already has an approved bonus has grown into a bigger tier. Approving replaces the old amount — nothing is added on top.</p><div className="space-y-2">{growthUpdates.map((c) => { const oldAmt = bonusForViews(c.views, tiersOn(tiers, c.claim_date)); const newAmt = bonusForViews(c.revised_views, tiersOn(tiers, c.claim_date)); return (<div key={c.id} className="rounded-xl border border-line px-4 py-3"><div className="flex items-center justify-between"><div><p className="font-medium">{c.creators?.profiles?.full_name}</p><p className="text-base text-muted">{c.claim_date} · {Number(c.views).toLocaleString()} → {Number(c.revised_views).toLocaleString()} views</p><p className="text-tiny text-faint">{fmtNaira(oldAmt)} → {fmtNaira(newAmt)}</p></div><div className="flex gap-2"><button className="btn-secondary text-tiny" onClick={() => reviewGrowth(c, false)}>Reject</button><button className="btn-primary text-tiny" onClick={() => reviewGrowth(c, true)}>Approve</button></div></div>{(c.video_url || c.screenshot_url) && (<div className="mt-1 flex gap-3">{c.video_url && (<a href={c.video_url} target="_blank" rel="noopener noreferrer" className="text-tiny text-accent underline">Open submitted video</a>)}{c.screenshot_url && (<button type="button" onClick={() => viewEvidence(c.screenshot_url)} className="text-tiny text-accent underline">View screenshot</button>)}</div>)}</div>); })}</div></section>)}</>)}{tab === "creators" && !selectedCreator && (
   <section>
     {(() => {
       // Trial and trial_approved creators live on the Trial tab — nothing
@@ -642,5 +706,98 @@ export default function AdminDashboard() {
     </div>
   </section>
 )}
+{tab === "analytics" && (() => {
+  const tierGroups = {};
+  analyticsRows.forEach((r) => { (tierGroups[r.basePayTier] ||= []).push(r); });
+  const tierKeys = Object.keys(tierGroups).map(Number).sort((a, b) => b - a);
+  const totals = analyticsRows.reduce((t, r) => ({
+    payableVideos: t.payableVideos + r.payableVideos, baseEarned: t.baseEarned + r.baseEarned,
+    bonusAmount: t.bonusAmount + r.bonusAmount, totalPay: t.totalPay + r.totalPay,
+  }), { payableVideos: 0, baseEarned: 0, bonusAmount: 0, totalPay: 0 });
+  let rowNumber = 0;
+  const exportRows = () => {
+    const rows = [];
+    tierKeys.forEach((tier) => {
+      rows.push([`₦${tier.toLocaleString()} BASE PAY`, "", "", "", "", "", "", "", ""]);
+      tierGroups[tier].forEach((r, i) => {
+        const bonusText = r.bonusVideos.length ? r.bonusVideos.map((v) => `${v.views.toLocaleString()}${v.platform} views`).join(" + ") : "—";
+        rows.push([i + 1, r.creatorName, r.tiktokCount, r.instaCount, r.payableVideos, fmtNaira(r.perPost), fmtNaira(r.baseEarned), bonusText, fmtNaira(r.bonusAmount), fmtNaira(r.totalPay)]);
+      });
+    });
+    rows.push(["TOTAL", "", "", "", totals.payableVideos, "", fmtNaira(totals.baseEarned), "", fmtNaira(totals.bonusAmount), fmtNaira(totals.totalPay)]);
+    return rows;
+  };
+  return (
+    <section>
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <label className="text-base font-medium text-muted">Period:</label>
+          <input className="input w-auto" type="date" value={analyticsStart} onChange={(e) => setAnalyticsStart(e.target.value)} />
+          <span className="text-muted">–</span>
+          <input className="input w-auto" type="date" value={analyticsEnd} onChange={(e) => setAnalyticsEnd(e.target.value)} />
+        </div>
+        <button
+          className="btn-secondary text-tiny"
+          disabled={analyticsRows.length === 0}
+          onClick={() => downloadCsv(
+            `${business?.slug || "smithstem"}-creator-analytics-${analyticsStart}-to-${analyticsEnd}.csv`,
+            ["#", "Creator", "TikTok Videos", "Instagram Videos", "Payable Videos", "Rate per Post", "Base Pay", "Bonus Video(s)", "Bonus Amount", "Total Pay"],
+            exportRows()
+          )}
+        >
+          Export to Excel
+        </button>
+      </div>
+      <p className="mb-3 text-tiny text-faint">Computed from self-reported views — a planning figure, not the approved payment record. Views are a single combined count per video (this app doesn't track TikTok and Instagram views separately, unlike the old sheet).</p>
+      {analyticsLoading ? (
+        <p className="text-base text-faint">Loading…</p>
+      ) : analyticsRows.length === 0 ? (
+        <p className="text-base text-faint">{analyticsLoaded ? "No videos logged by active creators in this period." : "Pick a period to load the register."}</p>
+      ) : (
+        <div className="space-y-4">
+          {tierKeys.map((tier) => (
+            <div key={tier} className="card overflow-x-auto">
+              <h3 className="mb-2 font-semibold">₦{tier.toLocaleString()} base pay</h3>
+              <table className="w-full text-base">
+                <thead>
+                  <tr className="border-b border-line text-left text-tiny uppercase text-faint">
+                    <th className="py-2 pr-2">#</th><th className="pr-3">Creator</th><th className="pr-3">TT</th><th className="pr-3">IG</th>
+                    <th className="pr-3">Payable</th><th className="pr-3">Rate/post</th><th className="pr-3">Base pay</th>
+                    <th className="pr-3">Bonus video(s)</th><th className="pr-3">Bonus</th><th className="pr-3">Total</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {tierGroups[tier].map((r) => {
+                    rowNumber += 1;
+                    return (
+                      <tr key={r.creatorId} className="border-b border-line">
+                        <td className="py-2 pr-2 text-faint">{rowNumber}</td>
+                        <td className="pr-3 font-medium">{r.creatorName}</td>
+                        <td className="pr-3 tnum">{r.tiktokCount}</td>
+                        <td className="pr-3 tnum">{r.instaCount}</td>
+                        <td className="pr-3 tnum">{r.payableVideos}</td>
+                        <td className="pr-3 tnum">{fmtNaira(r.perPost)}</td>
+                        <td className="pr-3 tnum">{fmtNaira(r.baseEarned)}</td>
+                        <td className="pr-3 text-tiny">{r.bonusVideos.length ? r.bonusVideos.map((v) => `${v.views.toLocaleString()}${v.platform}`).join(" + ") : <span className="text-faint">—</span>}</td>
+                        <td className="pr-3 tnum">{fmtNaira(r.bonusAmount)}</td>
+                        <td className="pr-3 tnum font-semibold">{fmtNaira(r.totalPay)}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          ))}
+          <div className="card">
+            <div className="flex flex-wrap items-center justify-between gap-2 text-base">
+              <span className="font-semibold">Total — {totals.payableVideos} payable videos</span>
+              <span className="tnum font-semibold text-accent">{fmtNaira(totals.totalPay)} ({fmtNaira(totals.baseEarned)} base + {fmtNaira(totals.bonusAmount)} bonus)</span>
+            </div>
+          </div>
+        </div>
+      )}
+    </section>
+  );
+})()}
 {tab === "payments" && (<section><div className="mb-4 flex items-center gap-3"><label className="text-base font-medium text-muted">Month:</label><input className="input w-auto" type="month" value={ym} onChange={(e) => setYm(e.target.value)} /></div><div className="card overflow-x-auto"><table className="w-full text-base"><thead><tr className="border-b border-line text-left text-tiny uppercase text-faint"><th className="py-2 pr-3">Creator</th><th className="pr-3">Base pay</th><th className="pr-3">Videos</th><th className="pr-3">Rate/post</th><th className="pr-3">Earned base</th><th className="pr-3">Perf. bonus</th><th className="pr-3">Referral</th><th className="pr-3">OOP</th><th className="pr-3">Total</th><th className="pr-3">Status</th></tr></thead><tbody>{payments.map((p) => { const basePay = p.creators?.base_pay || 0; const expected = postsExpectedIn(p.month); const perPost = Math.round(rate(basePay, p.month)); const vids = videoCountByCreator[p.creator_id] || Math.round(p.base_amount / (perPost || 1)); return (<tr key={p.id} className="border-b border-line"><td className="py-2 pr-3"><button className="text-accent underline decoration-dotted" onClick={() => openCreator(creators.find((c) => c.id === p.creator_id))}>{p.creators?.profiles?.full_name}</button></td><td className="pr-3">{fmtNaira(basePay)}</td><td className="pr-3">{vids} / {expected}</td><td className="pr-3">{fmtNaira(perPost)}</td><td className="pr-3">{fmtNaira(p.base_amount)}</td><td className="pr-3">{fmtNaira(p.perf_bonus)}</td><td className="pr-3"><input className="input w-20" defaultValue={p.referral_bonus} onBlur={(e) => savePaymentField(p, "referral_bonus", e.target.value)} /></td><td className="pr-3"><input className="input w-20" defaultValue={p.oop_expense} onBlur={(e) => savePaymentField(p, "oop_expense", e.target.value)} /></td><td className="pr-3 font-semibold">{fmtNaira(p.total_payable)}</td><td className="pr-3"><select className="input w-28" defaultValue={p.payment_status} onChange={(e) => savePaymentField(p, "payment_status", e.target.value)}><option value="Pending">Pending</option><option value="Paid">Paid</option><option value="Held">Held</option></select></td></tr>); })}{payments.length === 0 && (<tr><td colSpan={10} className="py-4 text-center text-faint">No payment rows for {ym} yet — created as videos and bonuses are logged and approved.</td></tr>)}</tbody></table></div></section>)}</main></div>);
 }
