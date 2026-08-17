@@ -2,7 +2,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { supabaseBrowser, withTimeout } from "../../lib/supabaseClient";
-import { today, postingDay, monthBoundsLocal, mostRecentSunday, daysBetween, dayBefore, isBeforeNoon } from "../../lib/domain";
+import { today, postingDay, monthBoundsLocal, mostRecentMonthWeekBoundary, daysBetween, dayBefore, isBeforeNoon } from "../../lib/domain";
 import { contentGuideFor } from "../../lib/contentGuide";
 import Header from "../../components/Header";
 import LoadingScreen from "../../components/LoadingScreen";
@@ -407,7 +407,7 @@ export default function CreatorDashboard() {
     if (v.facebook_url && !rep.facebook) return false;
     return true;
   }
-  const weekBoundary = mostRecentSunday(today());
+  const weekBoundary = mostRecentMonthWeekBoundary(today());
   const joinedDaysAgo = daysBetween(creator.joined_at, today());
   const unreportedOldVideos = myVideos.filter((v) => v.log_date < weekBoundary && !isFullyReported(v));
   const weeklyGateActive = joinedDaysAgo >= 7 && unreportedOldVideos.length > 0;

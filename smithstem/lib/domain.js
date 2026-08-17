@@ -79,15 +79,17 @@ export function postingDay(at = new Date(), tz = BUSINESS_TZ) {
   return `${day.getUTCFullYear()}-${pad(day.getUTCMonth() + 1)}-${pad(day.getUTCDate())}`;
 }
 
-// The most recent Sunday on or before the given date — the universal weekly
-// check-in boundary. Everyone checks in on the same real-world day, rather
-// than each creator running their own personal 7-day clock from whenever
-// they happened to join.
-export function mostRecentSunday(date) {
+// The start of the current 7-day check-in block, anchored to the 1st of the
+// month rather than the calendar week — Smith's rule: 1-7, 8-14, 15-21,
+// 22-28, then whatever's left (29-30/31) as a shorter trailing block. Blocks
+// reset every month regardless of where the 1st falls, so a creator logging
+// on the 9th sits in the 8-14 block whether or not they were even here for
+// 1-7 — the gate only ever asks for videos they actually logged themselves.
+export function mostRecentMonthWeekBoundary(date) {
   const d = new Date((date || today()) + "T00:00:00");
-  d.setDate(d.getDate() - d.getDay());
+  const blockStartDay = Math.floor((d.getDate() - 1) / 7) * 7 + 1;
   const pad = (n) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(blockStartDay)}`;
 }
 
 export function daysBetween(fromDate, toDate) {
