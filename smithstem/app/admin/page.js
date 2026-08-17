@@ -8,6 +8,24 @@ import LoadingScreen from "../../components/LoadingScreen";
 function firstOfMonth(ym) { return `${ym}-01`; }
 function todayYm() { return monthBoundsLocal().month; }
 function monthEndOf(ym) { const start = new Date(firstOfMonth(ym)); return new Date(start.getFullYear(), start.getMonth() + 1, 0).toISOString().slice(0, 10); }
+// Excel, Numbers, and Sheets all open CSV natively — no spreadsheet library
+// needed for a flat table with no formulas or formatting. (The one JS
+// library for real .xlsx generation, SheetJS's "xlsx" package, currently
+// ships with an unpatched prototype-pollution/ReDoS advisory on npm; not
+// worth pulling in for something CSV already covers.)
+function downloadCsv(filename, headers, rows) {
+  const escape = (v) => {
+    const s = v === null || v === undefined ? "" : String(v);
+    return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+  };
+  const csv = [headers, ...rows].map((row) => row.map(escape).join(",")).join("\r\n");
+  const blob = new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
 // Defined once here and in globals.css, so no screen invents its own amber.
 const STATUS_STYLE = { pending: "bg-waitingBg text-waitingInk", approved: "bg-okBg text-okInk", rejected: "bg-noBg text-noInk" };
 export default function AdminDashboard() {
@@ -540,8 +558,19 @@ export default function AdminDashboard() {
 )}
 {tab === "invites" && (<section><div className="card mb-4"><h2 className="mb-1 font-semibold">Invite a creator</h2><p className="mb-3 text-tiny text-muted">No email needed to get in — send this on WhatsApp. Works once and lasts 3 days.</p><form onSubmit={createInvite} className="grid grid-cols-2 gap-3"><input className="input" placeholder="Name (just for you to tell it apart)" value={inviteLabel} onChange={(e) => setInviteLabel(e.target.value)} required /><input className="input" placeholder="Last 4 of their phone (optional)" maxLength={4} value={invitePhone} onChange={(e) => setInvitePhone(e.target.value.replace(/\D/g, ""))} /><button className="btn-primary col-span-2">Create invite link</button></form>{lastInvite && (<div className="mt-4 rounded-xl border border-line bg-ground p-3"><p className="text-tiny font-semibold uppercase text-faint">Ready for {lastInvite.label}</p><p className="mt-1 break-all font-mono text-tiny text-ink">{lastInvite.link}</p><div className="mt-2 flex gap-2"><a className="btn-primary text-tiny" style={{ background: "#25D366" }} target="_blank" rel="noopener noreferrer" href={`https://wa.me/?text=${encodeURIComponent(lastInvite.link)}`}>Send on WhatsApp</a><button type="button" className="btn-secondary text-tiny" onClick={() => navigator.clipboard.writeText(lastInvite.link)}>Copy link</button></div><p className="mt-2 text-tiny text-waitingInk">Send this to {lastInvite.label} only — whoever opens it first joins as them.</p></div>)}</div><div className="card"><h2 className="mb-3 font-semibold">Invites ({invites.length})</h2><div className="space-y-2">{invites.length === 0 && <p className="text-base text-faint">No invites yet.</p>}{invites.map((inv) => { const s = inviteStatus(inv); return (<div key={inv.id} className="flex items-center justify-between rounded-xl border border-line px-4 py-2.5"><div><p className="font-medium">{inv.label}</p><p className="text-tiny text-faint">Sent {new Date(inv.created_at).toLocaleDateString("en-GB")}</p></div><span className={`badge ${s.cls}`}>{s.text}</span></div>); })}</div></div></section>)}{tab === "views" && (
   <section>
-    <div className="mb-4 flex items-center justify-between">
+    <div className="mb-4 flex items-center justify-between gap-3">
       <p className="text-base text-muted">Every self-reported view count, whoever logged it — trial or active.</p>
+      <button
+        className="btn-secondary text-tiny"
+        disabled={viewsRegister.length === 0}
+        onClick={() => downloadCsv(
+          `${business?.slug || "smithstem"}-views-register-${today()}.csv`,
+          ["Creator", "Video date", "Post", "TikTok", "Instagram", "Latest report", "Highest reported", "Last reported"],
+          viewsRegister.map((r) => [r.creatorName, r.logDate, r.postNumber, r.tiktokUrl || "", r.instaUrl || "", r.lastViews, r.maxViews, r.lastReportedAt ? new Date(r.lastReportedAt).toLocaleDateString("en-GB") : ""])
+        )}
+      >
+        Export to Excel
+      </button>
     </div>
     <div className="card overflow-x-auto">
       {viewsRegister.length === 0 ? (
