@@ -34,6 +34,9 @@ export default function AdminDashboard() {
   const [business, setBusiness] = useState(null);
   const [thresholdInput, setThresholdInput] = useState("");
   const [thresholdMsg, setThresholdMsg] = useState("");
+  const [basePayEditing, setBasePayEditing] = useState(false);
+  const [basePayInput, setBasePayInput] = useState("");
+  const [basePayMsg, setBasePayMsg] = useState("");
   const [tab, setTab] = useState("approvals");
   const [creators, setCreators] = useState([]);
   const [trialVideos, setTrialVideos] = useState([]);
@@ -145,6 +148,7 @@ export default function AdminDashboard() {
   useEffect(() => { load(); }, [load]);
   async function openCreator(c) {
     if (!c) return; setSelectedCreator(c); setTab("creators");
+    setBasePayEditing(false); setBasePayInput(""); setBasePayMsg("");
     const supabase = supabaseBrowser();
     const [{ data: v }, { data: cl }, { data: pm }] = await Promise.all([
       supabase.from("video_logs").select("*").eq("creator_id", c.id).order("log_date", { ascending: false }).limit(200),
@@ -198,6 +202,22 @@ export default function AdminDashboard() {
     const { error } = await supabaseBrowser().from("video_logs").update({ trial_review_dismissed_at: new Date().toISOString() }).eq("id", video.id);
     if (error) { setMsg("Failed: " + error.message); return; }
     setMsg("Dismissed."); load();
+  }
+  // Recorded as a new dated row, not just overwritten — so a past week's pay
+  // is still computed with whichever tier was actually in force on that
+  // week, even after the creator moves to a different one later.
+  async function changeBasePay(c) {
+    setBasePayMsg("");
+    const n = Number(basePayInput);
+    if (!n || n <= 0) { setBasePayMsg("Enter a number above zero."); return; }
+    const supabase = supabaseBrowser();
+    const { error: upErr } = await supabase.from("creators").update({ base_pay: n }).eq("id", c.id);
+    if (upErr) { setBasePayMsg("Failed: " + upErr.message); return; }
+    const { error: histErr } = await supabase.from("creator_base_pay_history").insert({ business_id: c.business_id, creator_id: c.id, base_pay: n });
+    if (histErr) { setBasePayMsg("Failed: " + histErr.message); return; }
+    setBasePayEditing(false); setBasePayMsg("");
+    if (selectedCreator?.id === c.id) setSelectedCreator({ ...c, base_pay: n });
+    setMsg("Base pay updated."); load();
   }
   async function deleteCreator(c) {
     const ok = confirm(
@@ -410,7 +430,24 @@ export default function AdminDashboard() {
 
       <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
         <div className="card"><p className="kicker">Status</p><p className="mt-1"><span className={`badge ${c.status === "active" ? "badge-ok" : "bg-ground text-faint"}`}>{c.status === "active" ? "Active" : "Inactive"}</span></p></div>
-        <div className="card"><p className="kicker">Base pay</p><p className="figure mt-1 tnum text-accent">{fmtNaira(c.base_pay)}</p></div>
+        <div className="card">
+          <p className="kicker">Base pay</p>
+          {basePayEditing ? (
+            <div className="mt-1">
+              <input className="input tnum w-full py-1.5 text-tiny" type="number" min="1" autoFocus value={basePayInput} onChange={(e) => setBasePayInput(e.target.value)} />
+              <div className="mt-1.5 flex gap-2">
+                <button className="btn-quiet px-0" onClick={() => changeBasePay(c)}>Save</button>
+                <button className="btn-quiet px-0" onClick={() => { setBasePayEditing(false); setBasePayMsg(""); }}>Cancel</button>
+              </div>
+              {basePayMsg && <p className="mt-1 text-tiny text-noInk">{basePayMsg}</p>}
+            </div>
+          ) : (
+            <button className="mt-1 block text-left" onClick={() => { setBasePayEditing(true); setBasePayInput(String(c.base_pay)); setBasePayMsg(""); }}>
+              <span className="figure tnum text-accent">{fmtNaira(c.base_pay)}</span>
+              <span className="ml-1 text-tiny text-faint underline">change</span>
+            </button>
+          )}
+        </div>
         <div className="card"><p className="kicker">Posts this month</p><p className="figure mt-1 tnum">{vidCount}</p></div>
         <div className="card"><p className="kicker">Earned this month</p><p className="figure mt-1 tnum text-gold">{earned !== undefined ? fmtNaira(earned) : "—"}</p></div>
       </div>
