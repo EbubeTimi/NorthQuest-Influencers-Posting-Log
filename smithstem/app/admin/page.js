@@ -180,35 +180,35 @@ export default function AdminDashboard() {
     // trial crossing queue and the Views register below read from, so a
     // creator reporting once is visible in both places without a second entry.
     const { data: vr } = await supabase.from("video_view_reports")
-      .select("*, video_logs(log_date, post_number, tiktok_url, insta_url), creators(profiles(full_name))")
+      .select("*, video_logs(log_date, post_number, tiktok_url, insta_url, facebook_url), creators(profiles(full_name))")
       .eq("business_id", prof.business_id).order("reported_at", { ascending: false });
-    // Platform-specific, since a video posted to both can cross a bonus
-    // threshold on TikTok and Instagram independently — combined is only
-    // ever the sum of the two, never a shared count.
+    // Platform-specific, since a video posted to more than one place can
+    // cross a bonus threshold on each independently — combined is only ever
+    // the sum across whichever platforms it was actually reported on.
     const platformMaxByVideo = {};
     (vr || []).forEach((r) => {
-      const entry = (platformMaxByVideo[r.video_log_id] ||= { tiktok: 0, instagram: 0 });
+      const entry = (platformMaxByVideo[r.video_log_id] ||= {});
       entry[r.platform] = Math.max(entry[r.platform] || 0, Number(r.views));
     });
     const combinedByVideo = {};
-    Object.entries(platformMaxByVideo).forEach(([vid, e]) => { combinedByVideo[vid] = e.tiktok + e.instagram; });
+    Object.entries(platformMaxByVideo).forEach(([vid, e]) => { combinedByVideo[vid] = Object.values(e).reduce((sum, v) => sum + v, 0); });
     setViewReportsByVideo(combinedByVideo);
     const registerMap = {};
     (vr || []).forEach((r) => {
       const row = registerMap[r.video_log_id] || {
         videoLogId: r.video_log_id, creatorName: r.creators?.profiles?.full_name,
         logDate: r.video_logs?.log_date, postNumber: r.video_logs?.post_number,
-        tiktokUrl: r.video_logs?.tiktok_url, instaUrl: r.video_logs?.insta_url,
-        tiktokViews: 0, instaViews: 0, lastReportedAt: r.reported_at,
+        tiktokUrl: r.video_logs?.tiktok_url, instaUrl: r.video_logs?.insta_url, facebookUrl: r.video_logs?.facebook_url,
+        tiktokViews: 0, instaViews: 0, facebookViews: 0, lastReportedAt: r.reported_at,
       };
-      const key = r.platform === "tiktok" ? "tiktokViews" : "instaViews";
+      const key = r.platform === "tiktok" ? "tiktokViews" : r.platform === "instagram" ? "instaViews" : "facebookViews";
       row[key] = Math.max(row[key], Number(r.views));
       if (new Date(r.reported_at) > new Date(row.lastReportedAt)) row.lastReportedAt = r.reported_at;
       registerMap[r.video_log_id] = row;
     });
     setViewsRegister(
       Object.values(registerMap)
-        .map((row) => ({ ...row, combinedViews: row.tiktokViews + row.instaViews }))
+        .map((row) => ({ ...row, combinedViews: row.tiktokViews + row.instaViews + row.facebookViews }))
         .sort((a, b) => new Date(b.lastReportedAt) - new Date(a.lastReportedAt))
     );
     const { data: t } = await supabase.from("bonus_tiers").select("*").eq("business_id", prof.business_id).order("min_views", { ascending: false });
@@ -317,7 +317,7 @@ export default function AdminDashboard() {
     if (videoIds.length) {
       const { data: reports } = await supabase.from("video_view_reports").select("*").in("video_log_id", videoIds);
       (reports || []).forEach((r) => {
-        const entry = (platformByVideo[r.video_log_id] ||= { tiktok: 0, instagram: 0 });
+        const entry = (platformByVideo[r.video_log_id] ||= {});
         entry[r.platform] = Math.max(entry[r.platform] || 0, Number(r.views));
       });
     }
@@ -328,9 +328,10 @@ export default function AdminDashboard() {
       const perPost = rate(basePayTier, analyticsEnd.slice(0, 7));
       const tiktokCount = videos.filter((v) => v.tiktok_url).length;
       const instaCount = videos.filter((v) => v.insta_url).length;
+      const facebookCount = videos.filter((v) => v.facebook_url).length;
       const payableVideos = videos.length;
       const baseEarned = perPost * payableVideos;
-      let tiktokViews = 0, instaViews = 0;
+      let tiktokViews = 0, instaViews = 0, facebookViews = 0;
       const bonusVideos = [];
       let bonusAmount = 0;
       const tiersForPeriod = tiersOn(tiers, analyticsEnd);
@@ -339,7 +340,8 @@ export default function AdminDashboard() {
         if (!rep) return;
         tiktokViews += rep.tiktok || 0;
         instaViews += rep.instagram || 0;
-        [["tiktok", "TikTok"], ["instagram", "Instagram"]].forEach(([key, label]) => {
+        facebookViews += rep.facebook || 0;
+        [["tiktok", "TikTok"], ["instagram", "Instagram"], ["facebook", "Facebook"]].forEach(([key, label]) => {
           const views = rep[key];
           if (!views) return;
           const amt = bonusForViews(views, tiersForPeriod);
@@ -348,8 +350,8 @@ export default function AdminDashboard() {
       });
       return {
         creatorId: creator.id, creatorName: creator.profiles?.full_name, basePayTier,
-        tiktokViews, instaViews, combinedViews: tiktokViews + instaViews,
-        tiktokCount, instaCount, payableVideos, perPost, baseEarned,
+        tiktokViews, instaViews, facebookViews, combinedViews: tiktokViews + instaViews + facebookViews,
+        tiktokCount, instaCount, facebookCount, payableVideos, perPost, baseEarned,
         bonusVideos, bonusAmount, totalPay: baseEarned + bonusAmount,
       };
     }).sort((a, b) => b.basePayTier - a.basePayTier || (a.creatorName || "").localeCompare(b.creatorName || ""));
@@ -1033,8 +1035,8 @@ export default function AdminDashboard() {
         disabled={viewsRegister.length === 0}
         onClick={() => downloadCsv(
           `${business?.slug || "smithstem"}-views-register-${today()}.csv`,
-          ["Creator", "Video date", "Post", "TikTok Views", "Instagram Views", "Combined Views", "Last reported"],
-          viewsRegister.map((r) => [r.creatorName, r.logDate, r.postNumber, r.tiktokViews.toLocaleString(), r.instaViews.toLocaleString(), r.combinedViews.toLocaleString(), r.lastReportedAt ? new Date(r.lastReportedAt).toLocaleDateString("en-GB") : ""])
+          ["Creator", "Video date", "Post", "TikTok Views", "Instagram Views", "Facebook Views", "Combined Views", "Last reported"],
+          viewsRegister.map((r) => [r.creatorName, r.logDate, r.postNumber, r.tiktokViews.toLocaleString(), r.instaViews.toLocaleString(), r.facebookViews.toLocaleString(), r.combinedViews.toLocaleString(), r.lastReportedAt ? new Date(r.lastReportedAt).toLocaleDateString("en-GB") : ""])
         )}
       >
         Export to Excel
@@ -1048,7 +1050,7 @@ export default function AdminDashboard() {
           <thead>
             <tr className="border-b border-line text-left text-tiny uppercase text-faint">
               <th className="py-2 pr-3">Creator</th><th className="pr-3">Video</th><th className="pr-3">TikTok</th>
-              <th className="pr-3">Instagram</th><th className="pr-3">Combined</th><th className="pr-3">Last reported</th>
+              <th className="pr-3">Instagram</th><th className="pr-3">Facebook</th><th className="pr-3">Combined</th><th className="pr-3">Last reported</th>
             </tr>
           </thead>
           <tbody>
@@ -1060,10 +1062,12 @@ export default function AdminDashboard() {
                   <div className="mt-0.5 flex gap-2 text-tiny">
                     {r.tiktokUrl && <a href={r.tiktokUrl} target="_blank" rel="noopener noreferrer" className="text-accent underline">TikTok</a>}
                     {r.instaUrl && <a href={r.instaUrl} target="_blank" rel="noopener noreferrer" className="text-accent underline">Instagram</a>}
+                    {r.facebookUrl && <a href={r.facebookUrl} target="_blank" rel="noopener noreferrer" className="text-accent underline">Facebook</a>}
                   </div>
                 </td>
                 <td className="pr-3 tnum">{r.tiktokUrl ? r.tiktokViews.toLocaleString() : <span className="text-faint">—</span>}</td>
                 <td className="pr-3 tnum">{r.instaUrl ? r.instaViews.toLocaleString() : <span className="text-faint">—</span>}</td>
+                <td className="pr-3 tnum">{r.facebookUrl ? r.facebookViews.toLocaleString() : <span className="text-faint">—</span>}</td>
                 <td className="pr-3 tnum font-semibold">{r.combinedViews.toLocaleString()}</td>
                 <td className="pr-3">{new Date(r.lastReportedAt).toLocaleDateString("en-GB")}</td>
               </tr>
@@ -1081,25 +1085,25 @@ export default function AdminDashboard() {
   const totals = analyticsRows.reduce((t, r) => ({
     payableVideos: t.payableVideos + r.payableVideos, baseEarned: t.baseEarned + r.baseEarned,
     bonusAmount: t.bonusAmount + r.bonusAmount, totalPay: t.totalPay + r.totalPay,
-    tiktokViews: t.tiktokViews + r.tiktokViews, instaViews: t.instaViews + r.instaViews, combinedViews: t.combinedViews + r.combinedViews,
-  }), { payableVideos: 0, baseEarned: 0, bonusAmount: 0, totalPay: 0, tiktokViews: 0, instaViews: 0, combinedViews: 0 });
+    tiktokViews: t.tiktokViews + r.tiktokViews, instaViews: t.instaViews + r.instaViews, facebookViews: t.facebookViews + r.facebookViews, combinedViews: t.combinedViews + r.combinedViews,
+  }), { payableVideos: 0, baseEarned: 0, bonusAmount: 0, totalPay: 0, tiktokViews: 0, instaViews: 0, facebookViews: 0, combinedViews: 0 });
   let rowNumber = 0;
   const exportRows = () => {
     const rows = [];
     tierKeys.forEach((tier) => {
-      rows.push([`₦${tier.toLocaleString()} BASE PAY`, "", "", "", "", "", "", "", "", "", "", "", ""]);
+      rows.push([`₦${tier.toLocaleString()} BASE PAY`, "", "", "", "", "", "", "", "", "", "", "", "", "", ""]);
       tierGroups[tier].forEach((r, i) => {
         const bonusText = r.bonusVideos.length ? r.bonusVideos.map((v) => `${v.views.toLocaleString()}${v.platform} views`).join(" + ") : "—";
         rows.push([
-          i + 1, r.creatorName, r.tiktokCount, r.instaCount, r.payableVideos,
-          r.tiktokViews.toLocaleString(), r.instaViews.toLocaleString(), r.combinedViews.toLocaleString(),
+          i + 1, r.creatorName, r.tiktokCount, r.instaCount, r.facebookCount, r.payableVideos,
+          r.tiktokViews.toLocaleString(), r.instaViews.toLocaleString(), r.facebookViews.toLocaleString(), r.combinedViews.toLocaleString(),
           fmtNaira(r.perPost), fmtNaira(r.baseEarned), bonusText, fmtNaira(r.bonusAmount), fmtNaira(r.totalPay),
         ]);
       });
     });
     rows.push([
-      "TOTAL", "", "", "", totals.payableVideos,
-      totals.tiktokViews.toLocaleString(), totals.instaViews.toLocaleString(), totals.combinedViews.toLocaleString(),
+      "TOTAL", "", "", "", "", totals.payableVideos,
+      totals.tiktokViews.toLocaleString(), totals.instaViews.toLocaleString(), totals.facebookViews.toLocaleString(), totals.combinedViews.toLocaleString(),
       "", fmtNaira(totals.baseEarned), "", fmtNaira(totals.bonusAmount), fmtNaira(totals.totalPay),
     ]);
     return rows;
@@ -1118,7 +1122,7 @@ export default function AdminDashboard() {
           disabled={analyticsRows.length === 0}
           onClick={() => downloadCsv(
             `${business?.slug || "smithstem"}-creator-analytics-${analyticsStart}-to-${analyticsEnd}.csv`,
-            ["#", "Creator", "TikTok Videos", "Instagram Videos", "Payable Videos", "TikTok Views", "Instagram Views", "Combined Views", "Rate per Post", "Base Pay", "Bonus Video(s)", "Bonus Amount", "Total Pay"],
+            ["#", "Creator", "TikTok Videos", "Instagram Videos", "Facebook Videos", "Payable Videos", "TikTok Views", "Instagram Views", "Facebook Views", "Combined Views", "Rate per Post", "Base Pay", "Bonus Video(s)", "Bonus Amount", "Total Pay"],
             exportRows()
           )}
         >
@@ -1141,8 +1145,8 @@ export default function AdminDashboard() {
               <table className="w-full text-base">
                 <thead>
                   <tr className="border-b border-line text-left text-tiny uppercase text-faint">
-                    <th className="py-2 pr-2">#</th><th className="pr-3">Creator</th><th className="pr-3">TT</th><th className="pr-3">IG</th>
-                    <th className="pr-3">Payable</th><th className="pr-3">TT views</th><th className="pr-3">IG views</th><th className="pr-3">Combined</th>
+                    <th className="py-2 pr-2">#</th><th className="pr-3">Creator</th><th className="pr-3">TT</th><th className="pr-3">IG</th><th className="pr-3">FB</th>
+                    <th className="pr-3">Payable</th><th className="pr-3">TT views</th><th className="pr-3">IG views</th><th className="pr-3">FB views</th><th className="pr-3">Combined</th>
                     <th className="pr-3">Rate/post</th><th className="pr-3">Base pay</th>
                     <th className="pr-3">Bonus video(s)</th><th className="pr-3">Bonus</th><th className="pr-3">Total</th>
                   </tr>
@@ -1156,9 +1160,11 @@ export default function AdminDashboard() {
                         <td className="pr-3 font-medium">{r.creatorName}</td>
                         <td className="pr-3 tnum">{r.tiktokCount}</td>
                         <td className="pr-3 tnum">{r.instaCount}</td>
+                        <td className="pr-3 tnum">{r.facebookCount}</td>
                         <td className="pr-3 tnum">{r.payableVideos}</td>
                         <td className="pr-3 tnum">{r.tiktokViews.toLocaleString()}</td>
                         <td className="pr-3 tnum">{r.instaViews.toLocaleString()}</td>
+                        <td className="pr-3 tnum">{r.facebookViews.toLocaleString()}</td>
                         <td className="pr-3 tnum font-medium">{r.combinedViews.toLocaleString()}</td>
                         <td className="pr-3 tnum">{fmtNaira(r.perPost)}</td>
                         <td className="pr-3 tnum">{fmtNaira(r.baseEarned)}</td>

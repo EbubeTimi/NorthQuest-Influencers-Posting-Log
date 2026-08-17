@@ -70,7 +70,7 @@ export default function CreatorDashboard() {
   const [videos, setVideos] = useState([]);
   const [claims, setClaims] = useState([]);
   const [payments, setPayments] = useState([]);
-  const [videoForm, setVideoForm] = useState({ date: postingDay(), post: "1", tiktok: "", insta: "" });
+  const [videoForm, setVideoForm] = useState({ date: postingDay(), post: "1", tiktok: "", insta: "", facebook: "" });
   // All-time (not just this month) so an older video can still be claimed —
   // matched by pasted link or picked from a list, never typed free-hand.
   const [myVideos, setMyVideos] = useState([]);
@@ -96,6 +96,7 @@ export default function CreatorDashboard() {
   const [reportOpenFor, setReportOpenFor] = useState(null);
   const [reportTiktokInput, setReportTiktokInput] = useState("");
   const [reportInstaInput, setReportInstaInput] = useState("");
+  const [reportFacebookInput, setReportFacebookInput] = useState("");
   const [reportError, setReportError] = useState("");
   const [trialThreshold, setTrialThreshold] = useState(10000);
   const [bonusEnabled, setBonusEnabled] = useState(true);
@@ -160,7 +161,7 @@ export default function CreatorDashboard() {
   async function logVideo(e) {
     e.preventDefault(); setBusy(true); setMsg("");
     const supabase = supabaseBrowser();
-    const { error } = await supabase.from("video_logs").insert({ business_id: creator.business_id, creator_id: creator.id, log_date: videoForm.date, post_number: Number(videoForm.post), tiktok_url: videoForm.tiktok || null, insta_url: videoForm.insta || null, logged_by: "creator" });
+    const { error } = await supabase.from("video_logs").insert({ business_id: creator.business_id, creator_id: creator.id, log_date: videoForm.date, post_number: Number(videoForm.post), tiktok_url: videoForm.tiktok || null, insta_url: videoForm.insta || null, facebook_url: videoForm.facebook || null, logged_by: "creator" });
     setBusy(false);
     if (error) {
       // The database refuses a second video with the same date and post number.
@@ -168,7 +169,7 @@ export default function CreatorDashboard() {
       setMsg(dupe ? "You have already logged that post for that day." : "Could not save: " + error.message);
       return;
     }
-    setMsg("Video logged."); setVideoForm((f) => ({ ...f, tiktok: "", insta: "" })); load();
+    setMsg("Video logged."); setVideoForm((f) => ({ ...f, tiktok: "", insta: "", facebook: "" })); load();
   }
 
   // No evidence, no approval — just what the creator says the count is right
@@ -187,10 +188,15 @@ export default function CreatorDashboard() {
       if (!n || n <= 0) { setReportError("Enter a valid Instagram view count."); return; }
       rows.push({ business_id: creator.business_id, creator_id: creator.id, video_log_id: video.id, views: n, platform: "instagram" });
     }
+    if (video.facebook_url && reportFacebookInput.trim()) {
+      const n = Number(reportFacebookInput);
+      if (!n || n <= 0) { setReportError("Enter a valid Facebook view count."); return; }
+      rows.push({ business_id: creator.business_id, creator_id: creator.id, video_log_id: video.id, views: n, platform: "facebook" });
+    }
     if (!rows.length) { setReportError("Enter at least one view count."); return; }
     const { error } = await supabaseBrowser().from("video_view_reports").insert(rows);
     if (error) { setReportError(error.message); return; }
-    setReportOpenFor(null); setReportTiktokInput(""); setReportInstaInput(""); setMsg("Views reported."); load();
+    setReportOpenFor(null); setReportTiktokInput(""); setReportInstaInput(""); setReportFacebookInput(""); setMsg("Views reported."); load();
   }
 
   // A claim is now made against one specific logged video, found by pasting
@@ -224,7 +230,7 @@ export default function CreatorDashboard() {
     setClaimError("");
     const needle = normalizeLink(pastedLink);
     if (!needle) return;
-    const match = myVideos.find((v) => (v.tiktok_url && normalizeLink(v.tiktok_url) === needle) || (v.insta_url && normalizeLink(v.insta_url) === needle));
+    const match = myVideos.find((v) => (v.tiktok_url && normalizeLink(v.tiktok_url) === needle) || (v.insta_url && normalizeLink(v.insta_url) === needle) || (v.facebook_url && normalizeLink(v.facebook_url) === needle));
     if (!match) { setBonusView("link-notfound"); return; }
     setActiveVideo(match);
     setBonusView("link-matched");
@@ -240,7 +246,7 @@ export default function CreatorDashboard() {
     const path = `${creator.id}/${Date.now()}-${claimScreenshot.name}`;
     const { error: upErr } = await supabase.storage.from("bonus-evidence").upload(path, claimScreenshot);
     if (upErr) { setBusy(false); setClaimError("Could not upload the screenshot: " + upErr.message); return; }
-    const link = activeVideo.tiktok_url || activeVideo.insta_url || null;
+    const link = activeVideo.tiktok_url || activeVideo.insta_url || activeVideo.facebook_url || null;
     const { error } = await supabase.from("bonus_claims").insert({
       business_id: creator.business_id, creator_id: creator.id, claim_date: today(),
       video_log_id: activeVideo.id, video_url: link, screenshot_url: path,
@@ -319,14 +325,16 @@ export default function CreatorDashboard() {
   // the video actually has a link for.
   function reportSummaryAndControls(v) {
     const rep = platformReportsByVideo[v.id];
-    const combined = (rep?.tiktok || 0) + (rep?.instagram || 0);
+    const platformCount = [v.tiktok_url, v.insta_url, v.facebook_url].filter(Boolean).length;
+    const combined = (rep?.tiktok || 0) + (rep?.instagram || 0) + (rep?.facebook || 0);
     return (
       <>
         {rep && (
           <p className="mt-1.5 flex flex-wrap gap-x-3 text-tiny text-faint">
             {v.tiktok_url && <span>TikTok: <span className="tnum font-medium text-ink">{rep.tiktok.toLocaleString()}</span></span>}
             {v.insta_url && <span>Instagram: <span className="tnum font-medium text-ink">{rep.instagram.toLocaleString()}</span></span>}
-            {v.tiktok_url && v.insta_url && <span>Combined: <span className="tnum font-medium text-ink">{combined.toLocaleString()}</span></span>}
+            {v.facebook_url && <span>Facebook: <span className="tnum font-medium text-ink">{rep.facebook.toLocaleString()}</span></span>}
+            {platformCount > 1 && <span>Combined: <span className="tnum font-medium text-ink">{combined.toLocaleString()}</span></span>}
           </p>
         )}
         {reportOpenFor === v.id ? (
@@ -343,12 +351,18 @@ export default function CreatorDashboard() {
                 <input className="input tnum mt-0.5 w-28 py-2" type="number" placeholder="e.g. 3,000" value={reportInstaInput} onChange={(e) => setReportInstaInput(e.target.value)} />
               </label>
             )}
+            {v.facebook_url && (
+              <label className="text-tiny text-faint">
+                Facebook views
+                <input className="input tnum mt-0.5 w-28 py-2" type="number" placeholder="e.g. 3,000" value={reportFacebookInput} onChange={(e) => setReportFacebookInput(e.target.value)} />
+              </label>
+            )}
             <button className="btn-primary py-2 text-tiny" onClick={() => reportViews(v)}>Save</button>
-            <button className="btn-quiet" onClick={() => { setReportOpenFor(null); setReportTiktokInput(""); setReportInstaInput(""); setReportError(""); }}>Cancel</button>
+            <button className="btn-quiet" onClick={() => { setReportOpenFor(null); setReportTiktokInput(""); setReportInstaInput(""); setReportFacebookInput(""); setReportError(""); }}>Cancel</button>
             {reportError && <p className="w-full text-tiny text-noInk">{reportError}</p>}
           </div>
         ) : (
-          <button className="btn-quiet mt-1 px-0" onClick={() => { setReportOpenFor(v.id); setReportTiktokInput(""); setReportInstaInput(""); setReportError(""); }}>
+          <button className="btn-quiet mt-1 px-0" onClick={() => { setReportOpenFor(v.id); setReportTiktokInput(""); setReportInstaInput(""); setReportFacebookInput(""); setReportError(""); }}>
             Report views
           </button>
         )}
@@ -378,7 +392,7 @@ export default function CreatorDashboard() {
           ) : (
             <section className="card mb-4">
               <h2 className="text-lead font-semibold">How the trial works</h2>
-              <p className="mt-1 text-base text-muted">Your TikTok and Instagram stay yours — nothing is handed over yet. Post, log each video below, and report the views on it every so often. Once one single video crosses {trialThreshold.toLocaleString()} views, Smith reviews it, and you'll be able to complete your onboarding here.</p>
+              <p className="mt-1 text-base text-muted">Your accounts stay yours — nothing is handed over yet. Post the same video to TikTok, Instagram, and Facebook (Facebook posts go out automatically once it's linked to Instagram), log it below, and report the views on it every so often. Once one single video crosses {trialThreshold.toLocaleString()} views on any platform, Smith reviews it, and you'll be able to complete your onboarding here. Every video goes through Ella for quality review first.</p>
             </section>
           )}
 
@@ -392,6 +406,7 @@ export default function CreatorDashboard() {
               </select>
               <input className="input col-span-2" placeholder="TikTok link" value={videoForm.tiktok} onChange={(e) => setVideoForm((f) => ({ ...f, tiktok: e.target.value }))} />
               <input className="input col-span-2" placeholder="Instagram link" value={videoForm.insta} onChange={(e) => setVideoForm((f) => ({ ...f, insta: e.target.value }))} />
+              <input className="input col-span-2" placeholder="Facebook link (optional)" value={videoForm.facebook} onChange={(e) => setVideoForm((f) => ({ ...f, facebook: e.target.value }))} />
               <button className="btn-primary col-span-2" disabled={busy}>{busy ? "Saving…" : "Log video"}</button>
             </form>
           </section>
@@ -413,10 +428,11 @@ export default function CreatorDashboard() {
                           <span className={`badge ${combined >= trialThreshold ? "badge-ok" : "bg-ground text-faint"}`}>{combined.toLocaleString()} views</span>
                         )}
                       </div>
-                      {(v.tiktok_url || v.insta_url) && (
+                      {(v.tiktok_url || v.insta_url || v.facebook_url) && (
                         <div className="mt-1.5 flex flex-wrap gap-3">
                           {v.tiktok_url && <a href={v.tiktok_url} target="_blank" rel="noopener noreferrer" className="text-tiny font-medium text-accent underline">TikTok</a>}
                           {v.insta_url && <a href={v.insta_url} target="_blank" rel="noopener noreferrer" className="text-tiny font-medium text-accent underline">Instagram</a>}
+                          {v.facebook_url && <a href={v.facebook_url} target="_blank" rel="noopener noreferrer" className="text-tiny font-medium text-accent underline">Facebook</a>}
                         </div>
                       )}
                       {reportSummaryAndControls(v)}
@@ -467,6 +483,7 @@ export default function CreatorDashboard() {
             </select>
             <input className="input col-span-2" placeholder="TikTok link" value={videoForm.tiktok} onChange={(e) => setVideoForm((f) => ({ ...f, tiktok: e.target.value }))} />
             <input className="input col-span-2" placeholder="Instagram link" value={videoForm.insta} onChange={(e) => setVideoForm((f) => ({ ...f, insta: e.target.value }))} />
+            <input className="input col-span-2" placeholder="Facebook link (optional)" value={videoForm.facebook} onChange={(e) => setVideoForm((f) => ({ ...f, facebook: e.target.value }))} />
             <button className="btn-primary col-span-2" disabled={busy}>{busy ? "Saving…" : "Log video"}</button>
           </form>
         </section>
@@ -487,10 +504,11 @@ export default function CreatorDashboard() {
                   </div>
                   {/* The links they submitted, so this reads like the posting log
                       rather than a bare count. */}
-                  {(v.tiktok_url || v.insta_url) && (
+                  {(v.tiktok_url || v.insta_url || v.facebook_url) && (
                     <div className="mt-1.5 flex flex-wrap gap-3">
                       {v.tiktok_url && <a href={v.tiktok_url} target="_blank" rel="noopener noreferrer" className="text-tiny font-medium text-accent underline">TikTok</a>}
                       {v.insta_url && <a href={v.insta_url} target="_blank" rel="noopener noreferrer" className="text-tiny font-medium text-accent underline">Instagram</a>}
+                      {v.facebook_url && <a href={v.facebook_url} target="_blank" rel="noopener noreferrer" className="text-tiny font-medium text-accent underline">Facebook</a>}
                     </div>
                   )}
                   {reportSummaryAndControls(v)}
