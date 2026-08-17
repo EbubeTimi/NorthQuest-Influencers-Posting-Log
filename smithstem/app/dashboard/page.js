@@ -89,11 +89,13 @@ export default function CreatorDashboard() {
   const [growthViews, setGrowthViews] = useState("");
   const [growthError, setGrowthError] = useState("");
   const [loadError, setLoadError] = useState("");
-  // Trial-only: the highest view count self-reported so far on each video,
-  // and the inline "report views" form state.
-  const [maxReportedByVideo, setMaxReportedByVideo] = useState({});
+  // The highest view count self-reported so far on each video, split by
+  // platform since a video posted to both can earn a bonus on each
+  // independently — { tiktok, instagram } per video_log_id.
+  const [platformReportsByVideo, setPlatformReportsByVideo] = useState({});
   const [reportOpenFor, setReportOpenFor] = useState(null);
-  const [reportViewsInput, setReportViewsInput] = useState("");
+  const [reportTiktokInput, setReportTiktokInput] = useState("");
+  const [reportInstaInput, setReportInstaInput] = useState("");
   const [reportError, setReportError] = useState("");
   const [trialThreshold, setTrialThreshold] = useState(10000);
   const { start, end, label } = (() => { const b = monthBoundsLocal(); return { ...b, label: new Date(b.start + "T12:00:00").toLocaleDateString("en-GB", { month: "long", year: "numeric" }) }; })();
@@ -143,8 +145,11 @@ export default function CreatorDashboard() {
     (mc || []).forEach((c) => { if (c.video_log_id && !claimMap[c.video_log_id]) claimMap[c.video_log_id] = c; });
     setClaimByVideoId(claimMap);
     const reportMap = {};
-    (vr || []).forEach((r) => { reportMap[r.video_log_id] = Math.max(reportMap[r.video_log_id] || 0, Number(r.views)); });
-    setMaxReportedByVideo(reportMap);
+    (vr || []).forEach((r) => {
+      const entry = (reportMap[r.video_log_id] ||= { tiktok: 0, instagram: 0 });
+      entry[r.platform] = Math.max(entry[r.platform] || 0, Number(r.views));
+    });
+    setPlatformReportsByVideo(reportMap);
   }, [router, start, end]);
 
   useEffect(() => { load(); }, [load]);
@@ -164,17 +169,26 @@ export default function CreatorDashboard() {
     setMsg("Video logged."); setVideoForm((f) => ({ ...f, tiktok: "", insta: "" })); load();
   }
 
-  // Trial-only: no evidence, no approval — just what the creator says the
-  // count is right now. This is what Smith's crossing queue reads from.
+  // No evidence, no approval — just what the creator says the count is right
+  // now, per platform, since TikTok and Instagram are tracked (and can earn
+  // a bonus) independently even on the same video.
   async function reportViews(video) {
     setReportError("");
-    const v = Number(reportViewsInput);
-    if (!v || v <= 0) { setReportError("Enter the view count."); return; }
-    const { error } = await supabaseBrowser().from("video_view_reports").insert({
-      business_id: creator.business_id, creator_id: creator.id, video_log_id: video.id, views: v,
-    });
+    const rows = [];
+    if (video.tiktok_url && reportTiktokInput.trim()) {
+      const n = Number(reportTiktokInput);
+      if (!n || n <= 0) { setReportError("Enter a valid TikTok view count."); return; }
+      rows.push({ business_id: creator.business_id, creator_id: creator.id, video_log_id: video.id, views: n, platform: "tiktok" });
+    }
+    if (video.insta_url && reportInstaInput.trim()) {
+      const n = Number(reportInstaInput);
+      if (!n || n <= 0) { setReportError("Enter a valid Instagram view count."); return; }
+      rows.push({ business_id: creator.business_id, creator_id: creator.id, video_log_id: video.id, views: n, platform: "instagram" });
+    }
+    if (!rows.length) { setReportError("Enter at least one view count."); return; }
+    const { error } = await supabaseBrowser().from("video_view_reports").insert(rows);
     if (error) { setReportError(error.message); return; }
-    setReportOpenFor(null); setReportViewsInput(""); setMsg("Views reported."); load();
+    setReportOpenFor(null); setReportTiktokInput(""); setReportInstaInput(""); setMsg("Views reported."); load();
   }
 
   // A claim is now made against one specific logged video, found by pasting
@@ -298,6 +312,48 @@ export default function CreatorDashboard() {
     );
   }
 
+  // Shared between the trial and active video lists: shows whatever's been
+  // reported per platform so far, and — when open — one input per platform
+  // the video actually has a link for.
+  function reportSummaryAndControls(v) {
+    const rep = platformReportsByVideo[v.id];
+    const combined = (rep?.tiktok || 0) + (rep?.instagram || 0);
+    return (
+      <>
+        {rep && (
+          <p className="mt-1.5 flex flex-wrap gap-x-3 text-tiny text-faint">
+            {v.tiktok_url && <span>TikTok: <span className="tnum font-medium text-ink">{rep.tiktok.toLocaleString()}</span></span>}
+            {v.insta_url && <span>Instagram: <span className="tnum font-medium text-ink">{rep.instagram.toLocaleString()}</span></span>}
+            {v.tiktok_url && v.insta_url && <span>Combined: <span className="tnum font-medium text-ink">{combined.toLocaleString()}</span></span>}
+          </p>
+        )}
+        {reportOpenFor === v.id ? (
+          <div className="mt-2 flex flex-wrap items-end gap-2">
+            {v.tiktok_url && (
+              <label className="text-tiny text-faint">
+                TikTok views
+                <input className="input tnum mt-0.5 w-28 py-2" type="number" placeholder="e.g. 12,000" value={reportTiktokInput} onChange={(e) => setReportTiktokInput(e.target.value)} />
+              </label>
+            )}
+            {v.insta_url && (
+              <label className="text-tiny text-faint">
+                Instagram views
+                <input className="input tnum mt-0.5 w-28 py-2" type="number" placeholder="e.g. 3,000" value={reportInstaInput} onChange={(e) => setReportInstaInput(e.target.value)} />
+              </label>
+            )}
+            <button className="btn-primary py-2 text-tiny" onClick={() => reportViews(v)}>Save</button>
+            <button className="btn-quiet" onClick={() => { setReportOpenFor(null); setReportTiktokInput(""); setReportInstaInput(""); setReportError(""); }}>Cancel</button>
+            {reportError && <p className="w-full text-tiny text-noInk">{reportError}</p>}
+          </div>
+        ) : (
+          <button className="btn-quiet mt-1 px-0" onClick={() => { setReportOpenFor(v.id); setReportTiktokInput(""); setReportInstaInput(""); setReportError(""); }}>
+            Report views
+          </button>
+        )}
+      </>
+    );
+  }
+
   if (creator.status === "trial" || creator.status === "trial_approved") {
     const approved = creator.status === "trial_approved";
     return (
@@ -345,13 +401,14 @@ export default function CreatorDashboard() {
             ) : (
               <div className="space-y-2">
                 {myVideos.map((v) => {
-                  const reported = maxReportedByVideo[v.id];
+                  const rep = platformReportsByVideo[v.id];
+                  const combined = (rep?.tiktok || 0) + (rep?.instagram || 0);
                   return (
                     <div key={v.id} className="rounded-xl border border-line px-3 py-2.5">
                       <div className="flex items-center justify-between gap-2">
                         <span className="text-base font-medium">{dayName(v.log_date)} · Post {v.post_number}</span>
-                        {reported !== undefined && (
-                          <span className={`badge ${reported >= trialThreshold ? "badge-ok" : "bg-ground text-faint"}`}>{Number(reported).toLocaleString()} views</span>
+                        {rep && (
+                          <span className={`badge ${combined >= trialThreshold ? "badge-ok" : "bg-ground text-faint"}`}>{combined.toLocaleString()} views</span>
                         )}
                       </div>
                       {(v.tiktok_url || v.insta_url) && (
@@ -360,25 +417,7 @@ export default function CreatorDashboard() {
                           {v.insta_url && <a href={v.insta_url} target="_blank" rel="noopener noreferrer" className="text-tiny font-medium text-accent underline">Instagram</a>}
                         </div>
                       )}
-                      {reportOpenFor === v.id ? (
-                        <div className="mt-2 flex flex-wrap items-center gap-2">
-                          <input
-                            className="input tnum w-32 py-2"
-                            type="number"
-                            autoFocus
-                            placeholder="Views now"
-                            value={reportViewsInput}
-                            onChange={(e) => setReportViewsInput(e.target.value)}
-                          />
-                          <button className="btn-primary py-2 text-tiny" onClick={() => reportViews(v)}>Save</button>
-                          <button className="btn-quiet" onClick={() => { setReportOpenFor(null); setReportViewsInput(""); setReportError(""); }}>Cancel</button>
-                          {reportError && <p className="w-full text-tiny text-noInk">{reportError}</p>}
-                        </div>
-                      ) : (
-                        <button className="btn-quiet mt-1 px-0" onClick={() => { setReportOpenFor(v.id); setReportViewsInput(""); setReportError(""); }}>
-                          Report views
-                        </button>
-                      )}
+                      {reportSummaryAndControls(v)}
                     </div>
                   );
                 })}
@@ -452,28 +491,7 @@ export default function CreatorDashboard() {
                       {v.insta_url && <a href={v.insta_url} target="_blank" rel="noopener noreferrer" className="text-tiny font-medium text-accent underline">Instagram</a>}
                     </div>
                   )}
-                  {maxReportedByVideo[v.id] !== undefined && (
-                    <p className="mt-1.5 text-tiny text-faint">Last reported: <span className="tnum font-medium text-ink">{Number(maxReportedByVideo[v.id]).toLocaleString()} views</span></p>
-                  )}
-                  {reportOpenFor === v.id ? (
-                    <div className="mt-2 flex flex-wrap items-center gap-2">
-                      <input
-                        className="input tnum w-32 py-2"
-                        type="number"
-                        autoFocus
-                        placeholder="Views now"
-                        value={reportViewsInput}
-                        onChange={(e) => setReportViewsInput(e.target.value)}
-                      />
-                      <button className="btn-primary py-2 text-tiny" onClick={() => reportViews(v)}>Save</button>
-                      <button className="btn-quiet" onClick={() => { setReportOpenFor(null); setReportViewsInput(""); setReportError(""); }}>Cancel</button>
-                      {reportError && <p className="w-full text-tiny text-noInk">{reportError}</p>}
-                    </div>
-                  ) : (
-                    <button className="btn-quiet mt-1 px-0" onClick={() => { setReportOpenFor(v.id); setReportViewsInput(""); setReportError(""); }}>
-                      Report views
-                    </button>
-                  )}
+                  {reportSummaryAndControls(v)}
                 </div>
               ))}
             </div>
