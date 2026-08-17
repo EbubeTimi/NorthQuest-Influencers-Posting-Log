@@ -452,6 +452,28 @@ export default function CreatorDashboard() {
                       {v.insta_url && <a href={v.insta_url} target="_blank" rel="noopener noreferrer" className="text-tiny font-medium text-accent underline">Instagram</a>}
                     </div>
                   )}
+                  {maxReportedByVideo[v.id] !== undefined && (
+                    <p className="mt-1.5 text-tiny text-faint">Last reported: <span className="tnum font-medium text-ink">{Number(maxReportedByVideo[v.id]).toLocaleString()} views</span></p>
+                  )}
+                  {reportOpenFor === v.id ? (
+                    <div className="mt-2 flex flex-wrap items-center gap-2">
+                      <input
+                        className="input tnum w-32 py-2"
+                        type="number"
+                        autoFocus
+                        placeholder="Views now"
+                        value={reportViewsInput}
+                        onChange={(e) => setReportViewsInput(e.target.value)}
+                      />
+                      <button className="btn-primary py-2 text-tiny" onClick={() => reportViews(v)}>Save</button>
+                      <button className="btn-quiet" onClick={() => { setReportOpenFor(null); setReportViewsInput(""); setReportError(""); }}>Cancel</button>
+                      {reportError && <p className="w-full text-tiny text-noInk">{reportError}</p>}
+                    </div>
+                  ) : (
+                    <button className="btn-quiet mt-1 px-0" onClick={() => { setReportOpenFor(v.id); setReportViewsInput(""); setReportError(""); }}>
+                      Report views
+                    </button>
+                  )}
                 </div>
               ))}
             </div>
