@@ -54,6 +54,9 @@ export default function AdminDashboard() {
   const [tiktokLinkInput, setTiktokLinkInput] = useState("");
   const [instaLinkInput, setInstaLinkInput] = useState("");
   const [linksMsg, setLinksMsg] = useState("");
+  const [bankEditing, setBankEditing] = useState(false);
+  const [bankInput, setBankInput] = useState({ bank_name: "", acct_num: "", acct_name: "" });
+  const [bankMsg, setBankMsg] = useState("");
   const [tab, setTab] = useState("approvals");
   const [creators, setCreators] = useState([]);
   const [trialVideos, setTrialVideos] = useState([]);
@@ -183,6 +186,7 @@ export default function AdminDashboard() {
     if (!c) return; setSelectedCreator(c); setTab("creators");
     setBasePayEditing(false); setBasePayInput(""); setBasePayMsg("");
     setLinksEditing(false); setTiktokLinkInput(""); setInstaLinkInput(""); setLinksMsg("");
+    setBankEditing(false); setBankInput({ bank_name: "", acct_num: "", acct_name: "" }); setBankMsg("");
     const supabase = supabaseBrowser();
     const [{ data: v }, { data: cl }, { data: pm }] = await Promise.all([
       supabase.from("video_logs").select("*").eq("creator_id", c.id).order("log_date", { ascending: false }).limit(200),
@@ -327,6 +331,19 @@ export default function AdminDashboard() {
     setLinksEditing(false); setLinksMsg("");
     if (selectedCreator?.id === c.id) setSelectedCreator({ ...c, tiktok_profile_url: tiktokLinkInput.trim() || null, insta_profile_url: instaLinkInput.trim() || null });
     setMsg("Profile links updated."); load();
+  }
+  // A typo caught after the fact (wrong digit in an account number, bank
+  // renamed) shouldn't need the creator to redo onboarding — admin can
+  // correct it directly, same trust boundary as base pay and profile links.
+  async function changeBankDetails(c) {
+    setBankMsg("");
+    const { error } = await supabaseBrowser().from("creators").update({
+      bank_name: bankInput.bank_name.trim() || null, acct_num: bankInput.acct_num.trim() || null, acct_name: bankInput.acct_name.trim() || null,
+    }).eq("id", c.id);
+    if (error) { setBankMsg("Failed: " + error.message); return; }
+    setBankEditing(false); setBankMsg("");
+    if (selectedCreator?.id === c.id) setSelectedCreator({ ...c, ...bankInput });
+    setMsg("Bank details updated."); load();
   }
   async function deleteCreator(c) {
     const ok = confirm(
@@ -696,12 +713,30 @@ export default function AdminDashboard() {
             </div>
           </div>
           <div className="card">
-            <h3 className="mb-2 font-semibold">Bank details</h3>
-            <div className="space-y-1 text-tiny">
-              <div className="flex justify-between border-b border-ground py-1"><span className="text-faint">Bank</span><span>{c.bank_name || "—"}</span></div>
-              <div className="flex justify-between border-b border-ground py-1"><span className="text-faint">Account no.</span><span className="tnum">{c.acct_num || "—"}</span></div>
-              <div className="flex justify-between py-1"><span className="text-faint">Account name</span><span>{c.acct_name || "—"}</span></div>
+            <div className="mb-2 flex items-center justify-between">
+              <h3 className="font-semibold">Bank details</h3>
+              {!bankEditing && (
+                <button className="text-tiny text-faint underline" onClick={() => { setBankEditing(true); setBankInput({ bank_name: c.bank_name || "", acct_num: c.acct_num || "", acct_name: c.acct_name || "" }); setBankMsg(""); }}>edit</button>
+              )}
             </div>
+            {bankEditing ? (
+              <div className="space-y-2">
+                <input className="input text-tiny" placeholder="Bank name" value={bankInput.bank_name} onChange={(e) => setBankInput((f) => ({ ...f, bank_name: e.target.value }))} />
+                <input className="input text-tiny" placeholder="Account number" value={bankInput.acct_num} onChange={(e) => setBankInput((f) => ({ ...f, acct_num: e.target.value }))} />
+                <input className="input text-tiny" placeholder="Account name" value={bankInput.acct_name} onChange={(e) => setBankInput((f) => ({ ...f, acct_name: e.target.value }))} />
+                <div className="flex gap-2">
+                  <button className="btn-quiet px-0" onClick={() => changeBankDetails(c)}>Save</button>
+                  <button className="btn-quiet px-0" onClick={() => { setBankEditing(false); setBankMsg(""); }}>Cancel</button>
+                </div>
+                {bankMsg && <p className="text-tiny text-noInk">{bankMsg}</p>}
+              </div>
+            ) : (
+              <div className="space-y-1 text-tiny">
+                <div className="flex justify-between border-b border-ground py-1"><span className="text-faint">Bank</span><span>{c.bank_name || "—"}</span></div>
+                <div className="flex justify-between border-b border-ground py-1"><span className="text-faint">Account no.</span><span className="tnum">{c.acct_num || "—"}</span></div>
+                <div className="flex justify-between py-1"><span className="text-faint">Account name</span><span>{c.acct_name || "—"}</span></div>
+              </div>
+            )}
             {c.contract_file_url ? (
               <button type="button" onClick={() => openContract(c)} className="btn-secondary mt-3 w-full text-tiny">Open signed contract →</button>
             ) : (
