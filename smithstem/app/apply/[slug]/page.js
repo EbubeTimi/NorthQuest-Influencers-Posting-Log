@@ -104,7 +104,7 @@ export default function ApplyPage() {
           <div className="card space-y-3 text-center">
             <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-okBg text-2xl font-bold text-okInk">✓</div>
             <h2 className="font-display text-title font-semibold">Application received</h2>
-            <p className="text-base text-muted">Ella will take a look and get back to you by email. If you're approved, you'll get a link to start your trial straight away.</p>
+            <p className="text-base text-muted">Keep an eye on your email — we'll write either way, whether you're approved or not. If you're approved, your trial link comes straight there.</p>
           </div>
         )}
 
