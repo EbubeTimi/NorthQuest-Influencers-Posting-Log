@@ -107,6 +107,9 @@ export default function CreatorDashboard() {
   const [bonusEnabled, setBonusEnabled] = useState(true);
   const [bizSlug, setBizSlug] = useState("");
   const [contentGuideOpen, setContentGuideOpen] = useState(false);
+  const [screen, setScreen] = useState("home");
+  const [logsOpen, setLogsOpen] = useState(false);
+  const [issueNote, setIssueNote] = useState("");
   const { start, end, label } = (() => { const b = monthBoundsLocal(); return { ...b, label: new Date(b.start + "T12:00:00").toLocaleDateString("en-GB", { month: "long", year: "numeric" }) }; })();
 
   const load = useCallback(async () => {
@@ -164,12 +167,19 @@ export default function CreatorDashboard() {
   }, [router, start, end]);
 
   useEffect(() => { load(); }, [load]);
+  // Once real logs are in, land the picker on whichever slot is actually
+  // still open for the selected date, rather than always assuming Video 1.
+  useEffect(() => {
+    const slotOneDone = myVideos.some((v) => v.log_date === videoForm.date && v.post_number === 1);
+    setVideoForm((f) => (f.date === videoForm.date ? { ...f, post: slotOneDone ? "2" : "1" } : f));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [myVideos, videoForm.date]);
   async function signOut() { await supabaseBrowser().auth.signOut(); router.replace("/"); }
 
   async function logVideo(e) {
     e.preventDefault(); setBusy(true); setMsg("");
     const supabase = supabaseBrowser();
-    const { error } = await supabase.from("video_logs").insert({ business_id: creator.business_id, creator_id: creator.id, log_date: videoForm.date, post_number: Number(videoForm.post), tiktok_url: videoForm.tiktok || null, insta_url: videoForm.insta || null, facebook_url: videoForm.facebook || null, logged_by: "creator" });
+    const { error } = await supabase.from("video_logs").insert({ business_id: creator.business_id, creator_id: creator.id, log_date: videoForm.date, post_number: Number(videoForm.post), tiktok_url: videoForm.tiktok || null, insta_url: videoForm.insta || null, facebook_url: videoForm.facebook || null, issue_note: issueNote.trim() || null, logged_by: "creator" });
     setBusy(false);
     if (error) {
       // The database refuses a second video with the same date and post number.
@@ -177,7 +187,15 @@ export default function CreatorDashboard() {
       setMsg(dupe ? "You have already logged that post for that day." : "Could not save: " + error.message);
       return;
     }
-    setMsg("Video logged."); setVideoForm((f) => ({ ...f, tiktok: "", insta: "", facebook: "" })); load();
+    setMsg("Video logged."); setVideoForm((f) => ({ ...f, tiktok: "", insta: "", facebook: "" })); setIssueNote(""); load();
+  }
+  // What's already logged for a given date, by post number — this is what
+  // makes the Video 1/Video 2 tiles date-aware rather than only ever
+  // reflecting today, and what locks a slot once it's actually submitted.
+  function loggedSlotsForDate(dateStr) {
+    const slots = { 1: false, 2: false };
+    myVideos.forEach((v) => { if (v.log_date === dateStr) slots[v.post_number] = true; });
+    return slots;
   }
 
   // No evidence, no approval — just what the creator says the count is right
@@ -433,18 +451,67 @@ export default function CreatorDashboard() {
     setCheckinAnswers({}); setCheckinJustDone(true); load();
   }
 
+  // Picking a slot to submit into — whichever is the first not-yet-logged
+  // slot for that date, so a date change (Today ↔ Yesterday) always lands
+  // on the right tile without the creator having to think about it.
+  function pickDate(dateStr) {
+    const slots = loggedSlotsForDate(dateStr);
+    setVideoForm((f) => ({ ...f, date: dateStr, post: !slots[1] ? "1" : "2" }));
+  }
   function logVideoDateChips() {
+    if (!graceAvailable) {
+      return (
+        <div className="col-span-2 mb-1 flex items-center justify-between rounded-xl border border-line bg-ground px-3.5 py-2.5">
+          <span className="flex items-center gap-2 text-tiny font-semibold">
+            <span className="inline-block h-3.5 w-3.5 rounded-sm border-2 border-faint" />
+            {new Date(today() + "T12:00:00").toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
+          </span>
+          <span className="text-tiny text-faint">Today only</span>
+        </div>
+      );
+    }
     return (
       <div className="col-span-2 mb-1 flex gap-2">
-        <button type="button" className={`flex-1 rounded-xl border-[1.5px] px-3 py-2.5 text-center text-tiny font-semibold ${videoForm.date === today() ? "border-accent bg-accentSoft text-accent" : "border-line text-muted"}`} onClick={() => setVideoForm((f) => ({ ...f, date: today() }))}>
+        <button type="button" className={`flex-1 rounded-xl border-[1.5px] px-3 py-2.5 text-center text-tiny font-semibold ${videoForm.date === today() ? "border-accent bg-accentSoft text-accent" : "border-line text-muted"}`} onClick={() => pickDate(today())}>
           Today
         </button>
-        {graceAvailable && (
-          <button type="button" className={`flex-1 rounded-xl border-[1.5px] px-3 py-2.5 text-center text-tiny font-semibold ${videoForm.date === yesterday ? "border-[#2A4E8C] bg-[#E3EBF9] text-[#2A4E8C]" : "border-[#B7C9E6] bg-[#EEF3FB] text-[#2A4E8C]"}`} onClick={() => setVideoForm((f) => ({ ...f, date: yesterday }))}>
-            Yesterday
-            <span className="block text-[10px] font-medium opacity-80">until 12pm today</span>
-          </button>
-        )}
+        <button type="button" className={`flex-1 rounded-xl border-[1.5px] px-3 py-2.5 text-center text-tiny font-semibold ${videoForm.date === yesterday ? "border-[#2A4E8C] bg-[#E3EBF9] text-[#2A4E8C]" : "border-[#B7C9E6] bg-[#EEF3FB] text-[#2A4E8C]"}`} onClick={() => pickDate(yesterday)}>
+          Yesterday
+          <span className="block text-[10px] font-medium opacity-80">until 12pm today</span>
+        </button>
+      </div>
+    );
+  }
+  // The Video 1 / Video 2 tiles — date-aware (switching Today ↔ Yesterday
+  // reflects that date's own progress, not today's), and a submitted slot
+  // shows as done and locked rather than just "unavailable."
+  function videoTilePicker() {
+    const slots = loggedSlotsForDate(videoForm.date);
+    return (
+      <div className="col-span-2 mb-1 flex gap-2.5">
+        {[1, 2].map((n) => {
+          const done = slots[n];
+          const locked = n === 2 && !slots[1];
+          const selected = !done && !locked && String(videoForm.post) === String(n);
+          return (
+            <button
+              type="button"
+              key={n}
+              disabled={locked || done}
+              onClick={() => setVideoForm((f) => ({ ...f, post: String(n) }))}
+              className={`relative flex-1 rounded-2xl border-[1.5px] px-3 py-4 text-center ${
+                done ? "border-okBg bg-[#F7FCF9] cursor-default" : locked ? "cursor-not-allowed border-line opacity-50" : selected ? "border-accent bg-accentSoft" : "border-line"
+              }`}
+            >
+              {done && <span className="absolute right-2 top-2 flex h-[18px] w-[18px] items-center justify-center rounded-full bg-okInk text-[11px] font-bold text-white">✓</span>}
+              <p className={`font-display text-title font-bold ${done ? "text-okInk" : selected ? "text-accent" : "text-faint"}`}>{n}</p>
+              <p className={`mt-0.5 text-[11px] font-bold uppercase tracking-wide ${done ? "text-okInk" : selected ? "text-accent" : "text-faint"}`}>{n === 1 ? "First video" : "Second video"}</p>
+              <p className="mt-1.5 text-[11.5px] leading-tight text-faint">
+                {done ? "Already logged — can't be changed here" : locked ? "Submit Video 1 first — then this unlocks" : "This is the video you're submitting now"}
+              </p>
+            </button>
+          );
+        })}
       </div>
     );
   }
@@ -529,6 +596,25 @@ export default function CreatorDashboard() {
 
   if (creator.status === "trial" || creator.status === "trial_approved") {
     const approved = creator.status === "trial_approved";
+    const videosThisMonth = videos.length;
+    const loggedDates = new Set(videos.map((v) => v.log_date));
+    const fullDays = new Set();
+    const dayHasPost = {};
+    videos.forEach((v) => { (dayHasPost[v.log_date] ||= new Set()).add(v.post_number); });
+    Object.entries(dayHasPost).forEach(([d, posts]) => { if (posts.has(1) && posts.has(2)) fullDays.add(d); });
+    let daysMissed = 0;
+    const monthCursor = new Date(start + "T00:00:00");
+    const todayStr = today();
+    while (monthCursor.toISOString().slice(0, 10) <= todayStr && monthCursor.toISOString().slice(0, 10) <= end) {
+      const d = monthCursor.toISOString().slice(0, 10);
+      if (!loggedDates.has(d)) daysMissed += 1;
+      monthCursor.setDate(monthCursor.getDate() + 1);
+    }
+    const illustrativeBasePay = creator.base_pay || 0;
+    const recentDates = [...new Set(myVideos.map((v) => v.log_date))].sort((a, b) => (a < b ? 1 : -1)).slice(0, 7);
+    const dayLoggedToday = loggedSlotsForDate(videoForm.date);
+    const doneToday = (dayLoggedToday[1] ? 1 : 0) + (dayLoggedToday[2] ? 1 : 0);
+
     return (
       <div>
         <Header profile={profile} onSignOut={signOut} />
@@ -540,135 +626,140 @@ export default function CreatorDashboard() {
 
           {msg && <p className="mb-4 rounded-xl bg-accentSoft px-4 py-3 text-base text-accent">{msg}</p>}
 
-          {approved ? (
-            <section className="card mb-4 border-2 border-accent">
-              <h2 className="text-lead font-semibold text-accent">One of your videos crossed the mark</h2>
-              <p className="mt-1 text-base text-muted">Smith reviewed it and you're clear to join properly. Complete your onboarding to add your bank details and sign your contract — that video carries forward as part of your real posting history, nothing is re-entered.</p>
-              <a href="/onboarding" className="btn-primary mt-3 inline-flex">Complete your onboarding</a>
-            </section>
-          ) : (
-            <section className="card mb-4">
-              <h2 className="text-lead font-semibold">How the trial works</h2>
-              <p className="mt-1 text-base text-muted">Your accounts stay yours — nothing is handed over yet. Post the same video to TikTok, Instagram, and Facebook (Facebook posts go out automatically once it's linked to Instagram), log it below, and report the views on it every so often. Once one single video crosses {trialThreshold.toLocaleString()} views on any platform, Smith reviews it, and you'll be able to complete your onboarding here. Every video goes through Ella for quality review first.</p>
-            </section>
-          )}
+          {screen === "home" && (
+            <>
+              {approved && (
+                <section className="card mb-4 border-2 border-accent">
+                  <h2 className="text-lead font-semibold text-accent">One of your videos crossed the mark</h2>
+                  <p className="mt-1 text-base text-muted">Smith reviewed it and you're clear to join properly. Complete your onboarding to add your bank details and sign your contract — that video carries forward as part of your real posting history, nothing is re-entered.</p>
+                  <a href="/onboarding" className="btn-primary mt-3 inline-flex">Complete your onboarding</a>
+                </section>
+              )}
 
-          {contentIdeasCard()}
+              <div className="mb-4 grid grid-cols-3 gap-2">
+                <div className="card px-2 py-3 text-center">
+                  <p className="tnum font-display text-title font-semibold text-accent">{videosThisMonth}</p>
+                  <p className="mt-0.5 text-[10px] font-bold uppercase tracking-wide text-faint">Videos this month</p>
+                </div>
+                <div className="card px-2 py-3 text-center">
+                  <p className="tnum font-display text-title font-semibold text-accent">{fullDays.size}</p>
+                  <p className="mt-0.5 text-[10px] font-bold uppercase tracking-wide text-faint">Days fully done</p>
+                </div>
+                <div className="card px-2 py-3 text-center">
+                  <p className="tnum font-display text-title font-semibold text-accent">{daysMissed}</p>
+                  <p className="mt-0.5 text-[10px] font-bold uppercase tracking-wide text-faint">Days missed</p>
+                </div>
+              </div>
 
-          {weeklyGateActive ? weeklyCheckinCard() : (
-            <section className="card mb-4">
-              {checkinJustDone && (
-                <p className="mb-3 flex items-center gap-2 rounded-lg bg-accentSoft px-3 py-2 text-tiny text-accent">
-                  <span className="badge badge-ok">✓ Caught up</span> Thanks — you can log normally again.
+              {illustrativeBasePay > 0 && (
+                <p className="mb-4 rounded-lg border border-dashed border-gold bg-[#FFFBF0] px-3 py-2 text-tiny">
+                  If you were an active creator right now: <span className="tnum font-semibold">{naira(illustrativeBasePay)}</span>/month base pay, at your current posting pace — this is what to expect once approved, not a payment you're owed while on trial.
                 </p>
               )}
-              <h2 className="mb-3 text-lead font-semibold">Log a video</h2>
-              <form onSubmit={logVideo} className="grid grid-cols-2 gap-3">
-                {logVideoDateChips()}
-                <select className="input col-span-2" value={videoForm.post} onChange={(e) => setVideoForm((f) => ({ ...f, post: e.target.value }))}>
-                  <option value="1">Post 1</option>
-                  <option value="2">Post 2</option>
-                </select>
-                <input className="input col-span-2" placeholder="TikTok link" value={videoForm.tiktok} onChange={(e) => setVideoForm((f) => ({ ...f, tiktok: e.target.value }))} />
-                <input className="input col-span-2" placeholder="Instagram link" value={videoForm.insta} onChange={(e) => setVideoForm((f) => ({ ...f, insta: e.target.value }))} />
-                <input className="input col-span-2" placeholder="Facebook link (optional)" value={videoForm.facebook} onChange={(e) => setVideoForm((f) => ({ ...f, facebook: e.target.value }))} />
-                <button className="btn-primary col-span-2" disabled={busy}>{busy ? "Saving…" : "Log video"}</button>
-              </form>
-            </section>
+
+              <button type="button" className="mb-3 flex w-full items-center justify-between rounded-2xl border border-line bg-white px-4 py-4 text-left shadow-card" onClick={() => setScreen("log")}>
+                <span>
+                  <span className="block font-semibold">Log your videos</span>
+                  <span className="mt-0.5 block text-tiny text-muted">{doneToday === 0 ? "Nothing logged yet today" : doneToday === 1 ? "Video 1 done — Video 2 next" : "Both done for today"}</span>
+                </span>
+                <span className="text-lead text-accent">→</span>
+              </button>
+
+              {contentIdeasCard()}
+
+              <section className="card mb-4">
+                <h2 className="text-lead font-semibold">How the trial works</h2>
+                <p className="mt-1 text-base text-muted">Your accounts stay yours — nothing is handed over yet. Post the same video to TikTok, Instagram, and Facebook (Facebook posts go out automatically once it's linked to Instagram), and report the views on it every so often. Once one single video crosses {trialThreshold.toLocaleString()} views on any platform, Smith reviews it, and you'll be able to complete your onboarding here. Every video goes through Ella for quality review first.</p>
+              </section>
+            </>
           )}
 
-          {(() => {
-            const videosThisMonth = videos.length;
-            const loggedDates = new Set(videos.map((v) => v.log_date));
-            const fullDays = new Set();
-            const dayHasPost = {};
-            videos.forEach((v) => { (dayHasPost[v.log_date] ||= new Set()).add(v.post_number); });
-            Object.entries(dayHasPost).forEach(([d, posts]) => { if (posts.has(1) && posts.has(2)) fullDays.add(d); });
-            let daysMissed = 0;
-            const monthCursor = new Date(start + "T00:00:00");
-            const todayStr = today();
-            while (monthCursor.toISOString().slice(0, 10) <= todayStr && monthCursor.toISOString().slice(0, 10) <= end) {
-              const d = monthCursor.toISOString().slice(0, 10);
-              if (!loggedDates.has(d)) daysMissed += 1;
-              monthCursor.setDate(monthCursor.getDate() + 1);
-            }
-            const illustrativeBasePay = creator.base_pay || 0;
-            const recentDates = [...new Set(myVideos.map((v) => v.log_date))].sort((a, b) => (a < b ? 1 : -1)).slice(0, 7);
-            return (
-              <section className="card mb-4">
-                <h2 className="text-lead font-semibold">Your posting record</h2>
-                <p className="mb-3 text-tiny text-faint">{label}</p>
-                <div className="mb-3 grid grid-cols-3 gap-2">
-                  <div className="rounded-xl bg-ground px-2 py-3 text-center">
-                    <p className="tnum font-display text-title font-semibold text-accent">{videosThisMonth}</p>
-                    <p className="mt-0.5 text-[10px] font-bold uppercase tracking-wide text-faint">Videos this month</p>
+          {screen === "log" && (
+            <>
+              <button type="button" className="btn-quiet mb-3 px-0" onClick={() => setScreen("home")}>← Back to dashboard</button>
+
+              {weeklyGateActive ? weeklyCheckinCard() : (
+                <section className="card mb-4">
+                  {checkinJustDone && (
+                    <p className="mb-3 flex items-center gap-2 rounded-lg bg-accentSoft px-3 py-2 text-tiny text-accent">
+                      <span className="badge badge-ok">✓ Caught up</span> Thanks — you can log normally again.
+                    </p>
+                  )}
+                  <h2 className="mb-2 text-lead font-semibold">Log a video</h2>
+                  <div className={`mb-3 flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-tiny ${doneToday === 2 ? "bg-okBg text-okInk" : "bg-ground"}`}>
+                    <span className={`h-2 w-2 rounded-full ${doneToday === 2 ? "bg-okInk" : "bg-faint"}`} />
+                    {doneToday === 0 ? `Nothing logged yet for ${videoForm.date === today() ? "today" : "yesterday"}. Submit the first one below.` : doneToday === 1 ? "Video 1 is in — submit Video 2 next." : "Both videos are in. Nice work."}
                   </div>
-                  <div className="rounded-xl bg-ground px-2 py-3 text-center">
-                    <p className="tnum font-display text-title font-semibold text-accent">{fullDays.size}</p>
-                    <p className="mt-0.5 text-[10px] font-bold uppercase tracking-wide text-faint">Days fully done</p>
-                  </div>
-                  <div className="rounded-xl bg-ground px-2 py-3 text-center">
-                    <p className="tnum font-display text-title font-semibold text-accent">{daysMissed}</p>
-                    <p className="mt-0.5 text-[10px] font-bold uppercase tracking-wide text-faint">Days missed</p>
-                  </div>
-                </div>
-                <p className="mb-3 rounded-lg bg-accentSoft px-3 py-2 text-tiny text-ink">
-                  A ✓ means that video's views have been reported. Every Sunday, report views for the week before you can log your next video.
-                </p>
-                {illustrativeBasePay > 0 && (
-                  <p className="mb-3 rounded-lg border border-dashed border-gold bg-[#FFFBF0] px-3 py-2 text-tiny">
-                    If you were an active creator right now: <span className="tnum font-semibold">{naira(illustrativeBasePay)}</span>/month base pay, at your current posting pace — this is what to expect once approved, not a payment you're owed while on trial.
-                  </p>
-                )}
-                {recentDates.length === 0 ? (
-                  <p className="text-base text-faint">Nothing logged yet. Log your first video above and it will show here.</p>
-                ) : (
-                  <div className="space-y-1">
-                    {recentDates.map((d) => {
-                      const dayVideos = myVideos.filter((v) => v.log_date === d).sort((a, b) => a.post_number - b.post_number);
-                      return (
-                        <div key={d} className="flex items-start gap-3 border-b border-line py-2 last:border-0">
-                          <div className="w-14 shrink-0">
-                            <p className="tnum text-tiny font-bold">{dayName(d)}</p>
-                            {d === today() && <p className="text-[10px] font-bold text-accent">Today</p>}
+
+                  <button type="button" className="mb-3 flex w-full items-center justify-between rounded-xl bg-accentSoft px-3.5 py-3 text-left text-tiny font-semibold text-accent" onClick={() => setLogsOpen((o) => !o)}>
+                    <span>View my logs for this month</span>
+                    <span className={`transition-transform ${logsOpen ? "rotate-180" : ""}`}>⌄</span>
+                  </button>
+                  {logsOpen && (
+                    <div className="mb-3 space-y-1 rounded-xl border border-line px-3 py-2">
+                      {recentDates.length === 0 && <p className="py-2 text-tiny text-faint">Nothing logged yet.</p>}
+                      {recentDates.map((d) => {
+                        const dayVideos = myVideos.filter((v) => v.log_date === d).sort((a, b) => a.post_number - b.post_number);
+                        return (
+                          <div key={d} className="flex items-start gap-3 border-b border-line py-2 last:border-0">
+                            <div className="w-14 shrink-0">
+                              <p className="tnum text-tiny font-bold">{dayName(d)}</p>
+                              {d === today() && <p className="text-[10px] font-bold text-accent">Today</p>}
+                            </div>
+                            <div className="flex-1 space-y-1">
+                              {[1, 2].map((postNum) => {
+                                const v = dayVideos.find((x) => x.post_number === postNum);
+                                if (!v) return <p key={postNum} className="text-tiny text-faint">Video {postNum} — not logged</p>;
+                                const rep = platformReportsByVideo[v.id];
+                                const fullyReported = isFullyReported(v);
+                                return (
+                                  <div key={postNum} className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-tiny">
+                                    <span className={fullyReported ? "font-bold text-okInk" : ""}>{fullyReported ? "✓" : "◦"}</span>
+                                    <span>Video {postNum}</span>
+                                    {v.tiktok_url && <a href={v.tiktok_url} target="_blank" rel="noopener noreferrer" className="font-medium text-accent underline">TikTok ↗</a>}
+                                    {v.insta_url && <a href={v.insta_url} target="_blank" rel="noopener noreferrer" className="font-medium text-accent underline">Instagram ↗</a>}
+                                    {v.facebook_url && <a href={v.facebook_url} target="_blank" rel="noopener noreferrer" className="font-medium text-accent underline">Facebook ↗</a>}
+                                    {fullyReported ? (
+                                      <span className="tnum text-muted">{((rep?.tiktok || 0) + (rep?.instagram || 0) + (rep?.facebook || 0)).toLocaleString()} views</span>
+                                    ) : (
+                                      <span className="text-waitingInk">views not reported yet</span>
+                                    )}
+                                    {reportSummaryAndControls(v)}
+                                  </div>
+                                );
+                              })}
+                            </div>
                           </div>
-                          <div className="flex-1 space-y-1">
-                            {[1, 2].map((postNum) => {
-                              const v = dayVideos.find((x) => x.post_number === postNum);
-                              if (!v) return <p key={postNum} className="text-tiny text-faint">Video {postNum} — not logged</p>;
-                              const rep = platformReportsByVideo[v.id];
-                              const fullyReported = isFullyReported(v);
-                              return (
-                                <div key={postNum} className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-tiny">
-                                  <span className={fullyReported ? "font-bold text-okInk" : ""}>{fullyReported ? "✓" : "◦"}</span>
-                                  <span>Video {postNum}</span>
-                                  {v.tiktok_url && <a href={v.tiktok_url} target="_blank" rel="noopener noreferrer" className="font-medium text-accent underline">TikTok ↗</a>}
-                                  {v.insta_url && <a href={v.insta_url} target="_blank" rel="noopener noreferrer" className="font-medium text-accent underline">Instagram ↗</a>}
-                                  {v.facebook_url && <a href={v.facebook_url} target="_blank" rel="noopener noreferrer" className="font-medium text-accent underline">Facebook ↗</a>}
-                                  {fullyReported ? (
-                                    <span className="tnum text-muted">{((rep?.tiktok || 0) + (rep?.instagram || 0) + (rep?.facebook || 0)).toLocaleString()} views</span>
-                                  ) : (
-                                    <span className="text-waitingInk">views not reported yet</span>
-                                  )}
-                                  {reportSummaryAndControls(v)}
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </section>
-            );
-          })()}
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {doneToday < 2 && (
+                    <form onSubmit={logVideo} className="grid grid-cols-2 gap-3">
+                      {logVideoDateChips()}
+                      {graceAvailable && <p className="col-span-2 -mt-1 mb-1 text-tiny text-faint">Switching dates shows what's already logged for that day too.</p>}
+                      {videoTilePicker()}
+                      <input className="input col-span-2" placeholder="TikTok link" value={videoForm.tiktok} onChange={(e) => setVideoForm((f) => ({ ...f, tiktok: e.target.value }))} />
+                      <input className="input col-span-2" placeholder="Instagram link" value={videoForm.insta} onChange={(e) => setVideoForm((f) => ({ ...f, insta: e.target.value }))} />
+                      <input className="input col-span-2" placeholder="Facebook link (optional)" value={videoForm.facebook} onChange={(e) => setVideoForm((f) => ({ ...f, facebook: e.target.value }))} />
+                      <p className="col-span-2 -mt-1.5 text-tiny text-faint">If a platform is unavailable or your account is restricted, paste the other link only.</p>
+                      <input className="input col-span-2" placeholder="Any issues today? (optional)" value={issueNote} onChange={(e) => setIssueNote(e.target.value)} />
+                      <button className="btn-primary col-span-2" disabled={busy}>{busy ? "Saving…" : "Submit video"}</button>
+                    </form>
+                  )}
+                </section>
+              )}
+            </>
+          )}
         </main>
       </div>
     );
   }
 
   const waitingCount = claims.filter((c) => c.status === "pending").length;
+  const dayLoggedActive = loggedSlotsForDate(videoForm.date);
+  const doneTodayActive = (dayLoggedActive[1] ? 1 : 0) + (dayLoggedActive[2] ? 1 : 0);
 
   return (
     <div>
@@ -679,69 +770,117 @@ export default function CreatorDashboard() {
           <h1 className="font-display text-title font-semibold">Hi, {profile.full_name?.split(" ")[0]}</h1>
         </div>
 
-        <div className="mb-4 grid grid-cols-2 gap-3">
-          <div className="card">
-            <p className="kicker">Videos</p>
-            <p className="figure mt-1">{videos.length}</p>
-            <p className="mt-1 text-tiny text-faint">this month</p>
-          </div>
-          <div className="card">
-            <p className="kicker">Bonus claims</p>
-            <p className="figure mt-1">{claims.length}</p>
-            <p className="mt-1 text-tiny text-faint">{waitingCount > 0 ? `${waitingCount} waiting on Smith` : "none waiting"}</p>
-          </div>
-        </div>
-
         {msg && <p className="mb-4 rounded-xl bg-accentSoft px-4 py-3 text-base text-accent">{msg}</p>}
 
-        {contentIdeasCard()}
-
-        <section className="card mb-4">
-          <h2 className="mb-3 text-lead font-semibold">Log a video</h2>
-          <form onSubmit={logVideo} className="grid grid-cols-2 gap-3">
-            {logVideoDateChips()}
-            <select className="input col-span-2" value={videoForm.post} onChange={(e) => setVideoForm((f) => ({ ...f, post: e.target.value }))}>
-              <option value="1">Post 1</option>
-              <option value="2">Post 2</option>
-            </select>
-            <input className="input col-span-2" placeholder="TikTok link" value={videoForm.tiktok} onChange={(e) => setVideoForm((f) => ({ ...f, tiktok: e.target.value }))} />
-            <input className="input col-span-2" placeholder="Instagram link" value={videoForm.insta} onChange={(e) => setVideoForm((f) => ({ ...f, insta: e.target.value }))} />
-            <input className="input col-span-2" placeholder="Facebook link (optional)" value={videoForm.facebook} onChange={(e) => setVideoForm((f) => ({ ...f, facebook: e.target.value }))} />
-            <button className="btn-primary col-span-2" disabled={busy}>{busy ? "Saving…" : "Log video"}</button>
-          </form>
-        </section>
-
-        <section className="card mb-4">
-          <h2 className="mb-3 text-lead font-semibold">Videos you posted this month</h2>
-          {videos.length === 0 ? (
-            <p className="text-base text-faint">Nothing logged yet. Log your first video above and it will show here.</p>
-          ) : (
-            <div className="space-y-2">
-              {videos.map((v) => (
-                <div key={v.id} className="rounded-xl border border-line px-3 py-2.5">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-base font-medium">{dayName(v.log_date)} · Post {v.post_number}</span>
-                    {v.logged_by === "admin"
-                      ? <span className="badge bg-accentSoft text-accent">Logged by Smith</span>
-                      : <span className="badge bg-ground text-muted">You logged this</span>}
-                  </div>
-                  {/* The links they submitted, so this reads like the posting log
-                      rather than a bare count. */}
-                  {(v.tiktok_url || v.insta_url || v.facebook_url) && (
-                    <div className="mt-1.5 flex flex-wrap gap-3">
-                      {v.tiktok_url && <a href={v.tiktok_url} target="_blank" rel="noopener noreferrer" className="text-tiny font-medium text-accent underline">TikTok</a>}
-                      {v.insta_url && <a href={v.insta_url} target="_blank" rel="noopener noreferrer" className="text-tiny font-medium text-accent underline">Instagram</a>}
-                      {v.facebook_url && <a href={v.facebook_url} target="_blank" rel="noopener noreferrer" className="text-tiny font-medium text-accent underline">Facebook</a>}
-                    </div>
-                  )}
-                  {reportSummaryAndControls(v)}
-                </div>
-              ))}
+        {screen === "home" && (
+          <>
+            <div className="mb-4 grid grid-cols-2 gap-2">
+              <div className="card px-3 py-3.5 text-center">
+                <p className="tnum font-display text-title font-semibold text-accent">{naira(creator.base_pay)}</p>
+                <p className="mt-0.5 text-[10px] font-bold uppercase tracking-wide text-faint">Base pay</p>
+              </div>
+              <div className="card px-3 py-3.5 text-center">
+                <p className="tnum font-display text-title font-semibold text-accent">{videos.length}</p>
+                <p className="mt-0.5 text-[10px] font-bold uppercase tracking-wide text-faint">Videos this month</p>
+              </div>
+              <div className="card px-3 py-3.5 text-center">
+                <p className="tnum font-display text-title font-semibold text-gold">{myVideos.length}</p>
+                <p className="mt-0.5 text-[10px] font-bold uppercase tracking-wide text-faint">Videos overall</p>
+              </div>
+              <div className="card px-3 py-3.5 text-center">
+                <p className="tnum font-display text-title font-semibold text-accent">{claims.length}</p>
+                <p className="mt-0.5 text-[10px] font-bold uppercase tracking-wide text-faint">{waitingCount > 0 ? `${waitingCount} waiting on Smith` : "Bonus claims"}</p>
+              </div>
             </div>
-          )}
-        </section>
 
-        {bonusEnabled && (<>
+            <button type="button" className="mb-2.5 flex w-full items-center justify-between rounded-2xl border border-line bg-white px-4 py-4 text-left shadow-card" onClick={() => setScreen("log")}>
+              <span>
+                <span className="block font-semibold">Log your videos</span>
+                <span className="mt-0.5 block text-tiny text-muted">{doneTodayActive === 0 ? "Nothing logged yet today" : doneTodayActive === 1 ? "Video 1 done — Video 2 next" : "Both done for today"}</span>
+              </span>
+              <span className="text-lead text-accent">→</span>
+            </button>
+
+            {bonusEnabled && (
+              <button type="button" className="mb-2.5 flex w-full items-center justify-between rounded-2xl border border-line bg-white px-4 py-4 text-left shadow-card" onClick={() => setScreen("bonus")}>
+                <span>
+                  <span className="block font-semibold">Claim a bonus</span>
+                  <span className="mt-0.5 block text-tiny text-muted">Once a video crosses a milestone</span>
+                </span>
+                <span className="text-lead text-accent">→</span>
+              </button>
+            )}
+
+            <button type="button" className="mb-4 flex w-full items-center justify-between rounded-2xl border border-line bg-white px-4 py-4 text-left shadow-card" onClick={() => setScreen("payments")}>
+              <span>
+                <span className="block font-semibold">Your payments</span>
+                <span className="mt-0.5 block text-tiny text-muted">{payments.some((p) => String(p.payment_status).toLowerCase() === "paid") ? "See what's been paid" : "Nothing paid out yet"}</span>
+              </span>
+              <span className="text-lead text-accent">→</span>
+            </button>
+
+            {contentIdeasCard()}
+          </>
+        )}
+
+        {screen === "log" && (
+          <>
+            <button type="button" className="btn-quiet mb-3 px-0" onClick={() => setScreen("home")}>← Back to dashboard</button>
+
+            <section className="card mb-4">
+              <h2 className="mb-2 text-lead font-semibold">Log a video</h2>
+              <div className={`mb-3 flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-tiny ${doneTodayActive === 2 ? "bg-okBg text-okInk" : "bg-ground"}`}>
+                <span className={`h-2 w-2 rounded-full ${doneTodayActive === 2 ? "bg-okInk" : "bg-faint"}`} />
+                {doneTodayActive === 0 ? `Nothing logged yet for ${videoForm.date === today() ? "today" : "yesterday"}. Submit the first one below.` : doneTodayActive === 1 ? "Video 1 is in — submit Video 2 next." : "Both videos are in. Nice work."}
+              </div>
+
+              <button type="button" className="mb-3 flex w-full items-center justify-between rounded-xl bg-accentSoft px-3.5 py-3 text-left text-tiny font-semibold text-accent" onClick={() => setLogsOpen((o) => !o)}>
+                <span>View my logs for this month</span>
+                <span className={`transition-transform ${logsOpen ? "rotate-180" : ""}`}>⌄</span>
+              </button>
+              {logsOpen && (
+                <div className="mb-3 space-y-2">
+                  {videos.length === 0 && <p className="py-2 text-tiny text-faint">Nothing logged yet.</p>}
+                  {videos.map((v) => (
+                    <div key={v.id} className="rounded-xl border border-line px-3 py-2.5">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-tiny font-medium">{dayName(v.log_date)} · Post {v.post_number}</span>
+                        {v.logged_by === "admin"
+                          ? <span className="badge bg-accentSoft text-accent">Logged by Smith</span>
+                          : <span className="badge bg-ground text-muted">You logged this</span>}
+                      </div>
+                      {(v.tiktok_url || v.insta_url || v.facebook_url) && (
+                        <div className="mt-1.5 flex flex-wrap gap-3">
+                          {v.tiktok_url && <a href={v.tiktok_url} target="_blank" rel="noopener noreferrer" className="text-tiny font-medium text-accent underline">TikTok</a>}
+                          {v.insta_url && <a href={v.insta_url} target="_blank" rel="noopener noreferrer" className="text-tiny font-medium text-accent underline">Instagram</a>}
+                          {v.facebook_url && <a href={v.facebook_url} target="_blank" rel="noopener noreferrer" className="text-tiny font-medium text-accent underline">Facebook</a>}
+                        </div>
+                      )}
+                      {reportSummaryAndControls(v)}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {doneTodayActive < 2 && (
+                <form onSubmit={logVideo} className="grid grid-cols-2 gap-3">
+                  {logVideoDateChips()}
+                  {graceAvailable && <p className="col-span-2 -mt-1 mb-1 text-tiny text-faint">Switching dates shows what's already logged for that day too.</p>}
+                  {videoTilePicker()}
+                  <input className="input col-span-2" placeholder="TikTok link" value={videoForm.tiktok} onChange={(e) => setVideoForm((f) => ({ ...f, tiktok: e.target.value }))} />
+                  <input className="input col-span-2" placeholder="Instagram link" value={videoForm.insta} onChange={(e) => setVideoForm((f) => ({ ...f, insta: e.target.value }))} />
+                  <input className="input col-span-2" placeholder="Facebook link (optional)" value={videoForm.facebook} onChange={(e) => setVideoForm((f) => ({ ...f, facebook: e.target.value }))} />
+                  <p className="col-span-2 -mt-1.5 text-tiny text-faint">If a platform is unavailable or your account is restricted, paste the other link only.</p>
+                  <input className="input col-span-2" placeholder="Any issues today? (optional)" value={issueNote} onChange={(e) => setIssueNote(e.target.value)} />
+                  <button className="btn-primary col-span-2" disabled={busy}>{busy ? "Saving…" : "Submit video"}</button>
+                </form>
+              )}
+            </section>
+          </>
+        )}
+
+        {screen === "bonus" && bonusEnabled && (<>
+        <button type="button" className="btn-quiet mb-3 px-0" onClick={() => setScreen("home")}>← Back to dashboard</button>
         <section className="card mb-4">
           <h2 className="text-lead font-semibold">Claim a bonus</h2>
 
@@ -905,7 +1044,10 @@ export default function CreatorDashboard() {
         </section>
         </>)}
 
+        {screen === "payments" && (<>
+        <button type="button" className="btn-quiet mb-3 px-0" onClick={() => setScreen("home")}>← Back to dashboard</button>
         <PaymentsSection payments={payments} />
+        </>)}
       </main>
     </div>
   );
