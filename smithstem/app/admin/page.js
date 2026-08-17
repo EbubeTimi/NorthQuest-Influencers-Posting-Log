@@ -89,6 +89,17 @@ export default function AdminDashboard() {
   const [rejectOpenFor, setRejectOpenFor] = useState(null);
   const [rejectDraft, setRejectDraft] = useState("");
   const [applicantBusy, setApplicantBusy] = useState(false);
+  // Every business this admin actually runs — the Applicants tab shows
+  // unassigned applicants and every one of these businesses' applicants
+  // together, regardless of which business the switcher currently has
+  // selected. Every other tab stays scoped to that selection; this one
+  // doesn't, because placing someone is the one action that has to happen
+  // before a business context even applies.
+  const [myBusinesses, setMyBusinesses] = useState([]);
+  const [assigningFor, setAssigningFor] = useState(null);
+  const [assignChoice, setAssignChoice] = useState({});
+  const [whatsappLinkInput, setWhatsappLinkInput] = useState("");
+  const [whatsappLinkMsg, setWhatsappLinkMsg] = useState("");
   const [colIncluded, setColIncluded] = useState(BUILTIN_PAYMENT_COLUMNS.map((c) => c.key));
   const [colExcluded, setColExcluded] = useState([]);
   const [customCols, setCustomCols] = useState([]);
@@ -164,7 +175,10 @@ export default function AdminDashboard() {
     if (!prof || prof.role !== "admin") { router.replace("/dashboard"); return; }
     setLoadError("");
     setProfile(prof);
-    const { data: biz } = await supabase.from("businesses").select("id, slug, name, trial_view_threshold, trial_enabled, bonus_enabled, default_base_pay, payment_columns").eq("id", prof.business_id).maybeSingle();
+    const { data: biz } = await supabase.from("businesses").select("id, slug, name, trial_view_threshold, trial_enabled, bonus_enabled, default_base_pay, payment_columns, whatsapp_group_link").eq("id", prof.business_id).maybeSingle();
+    setWhatsappLinkInput(biz?.whatsapp_group_link || "");
+    const { data: mbs } = await supabase.from("business_memberships").select("business_id, role, businesses(id, name, slug)").eq("profile_id", prof.id).eq("role", "admin");
+    setMyBusinesses((mbs || []).map((m) => m.businesses).filter(Boolean));
     if (biz?.payment_columns?.length) {
       setCustomCols(biz.payment_columns.filter((c) => c.custom).map(({ key, label, type }) => ({ key, label, type, custom: true })));
       setColIncluded(biz.payment_columns.filter((c) => c.included).map((c) => c.key));
@@ -229,7 +243,11 @@ export default function AdminDashboard() {
     setGrowthUpdates(gr || []);
     const { data: inv } = await supabase.from("creator_invites").select("id, label, expires_at, used_at, revoked_at, created_at").eq("business_id", prof.business_id).order("created_at", { ascending: false }).limit(50);
     setInvites(inv || []);
-    const { data: apps } = await supabase.from("applicants").select("*").eq("business_id", prof.business_id).order("created_at", { ascending: false }).limit(100);
+    // No business filter — RLS already returns exactly what this admin
+    // should see: every unassigned applicant, plus every applicant already
+    // placed with a business they administer, regardless of which business
+    // the switcher currently has selected.
+    const { data: apps } = await supabase.from("applicants").select("*").order("created_at", { ascending: false }).limit(200);
     setApplicants(apps || []);
     if (apps?.length) {
       const { data: msgs } = await supabase.from("applicant_messages").select("*").in("applicant_id", apps.map((a) => a.id)).order("created_at");
@@ -290,6 +308,15 @@ export default function AdminDashboard() {
     const { error } = await supabaseBrowser().from("businesses").update({ trial_view_threshold: n }).eq("id", business.id);
     if (error) { setThresholdMsg("Failed: " + error.message); return; }
     setThresholdMsg("Saved."); load();
+  }
+  // A fixed, standing group-invite link — not a WhatsApp API integration,
+  // just a URL that gets pulled into the approval email automatically once
+  // this is saved. Same one-per-business shape as the threshold above.
+  async function saveWhatsappLink() {
+    setWhatsappLinkMsg("");
+    const { error } = await supabaseBrowser().from("businesses").update({ whatsapp_group_link: whatsappLinkInput.trim() || null }).eq("id", business.id);
+    if (error) { setWhatsappLinkMsg("Failed: " + error.message); return; }
+    setWhatsappLinkMsg("Saved."); load();
   }
   // Off by default nowhere — every business starts with trial on, this is
   // strictly an opt-out. Doesn't touch anyone already on trial; it only
@@ -584,6 +611,13 @@ export default function AdminDashboard() {
     const { data, error } = await supabaseBrowser().storage.from("applicant-videos").createSignedUrl(path, 120);
     if (error || !data?.signedUrl) { setMsg("Could not open that video: " + (error?.message || "not found")); return; }
     window.open(data.signedUrl, "_blank", "noopener,noreferrer");
+  }
+  async function assignApplicantToBusiness(a, businessId) {
+    setApplicantBusy(true);
+    const { error } = await supabaseBrowser().rpc("assign_applicant_to_business", { p_applicant_id: a.id, p_business_id: businessId });
+    setApplicantBusy(false);
+    if (error) { setMsg("Failed: " + error.message); return; }
+    setAssigningFor(null); load();
   }
   async function approveApplicant(a) {
     if (!confirm(`Approve ${a.full_name}? They'll be emailed the trial link straight away.`)) return;
@@ -1022,6 +1056,15 @@ export default function AdminDashboard() {
           {thresholdMsg && <span className="text-tiny text-muted">{thresholdMsg}</span>}
         </div>
       </div>
+      <div className="mt-4 border-t border-line pt-3">
+        <label className="mb-1 block text-tiny font-semibold uppercase text-faint">WhatsApp trial group link</label>
+        <p className="mb-2 text-tiny text-muted">A fixed group-invite link — set once, pulled into the approval email automatically alongside the trial-start link. Not an integration, just a URL.</p>
+        <div className="flex items-center gap-2">
+          <input className="input" placeholder="https://chat.whatsapp.com/…" value={whatsappLinkInput} onChange={(e) => setWhatsappLinkInput(e.target.value)} />
+          <button className="btn-secondary text-tiny shrink-0" onClick={saveWhatsappLink}>Save</button>
+        </div>
+        {whatsappLinkMsg && <p className="mt-1 text-tiny text-muted">{whatsappLinkMsg}</p>}
+      </div>
     </div>
 
     <section className="card mb-4">
@@ -1072,35 +1115,67 @@ export default function AdminDashboard() {
     </section>
   </section>
 )}
-{tab === "applicants" && (
-  <section>
-    <div className="mb-4 flex items-center justify-between">
-      <p className="text-base text-muted">Recruitment applications — a regular tab on the admin dashboard, same account Ella already has.</p>
-    </div>
-    <div className="space-y-3">
-      {applicants.length === 0 && <p className="text-base text-faint">No applications yet.</p>}
-      {applicants.map((a) => {
-        const msgs = applicantMessages[a.id] || [];
-        const statusBadge = a.status === "approved" ? { cls: "badge-ok", text: "Approved" } : a.status === "rejected" ? { cls: "badge-no", text: "Rejected" } : { cls: "badge-waiting", text: "Pending" };
-        return (
-          <div key={a.id} className="card">
-            <div className="flex items-start justify-between gap-2">
-              <div>
-                <p className="font-medium">{a.full_name}</p>
-                <p className="text-tiny text-faint">{a.email}{a.phone ? ` · ${a.phone}` : ""}</p>
-              </div>
-              <span className={`badge ${statusBadge.cls}`}>{statusBadge.text}</span>
-            </div>
-            <div className="mt-2">
-              {a.content_mode === "link" && a.content_link ? (
-                <a href={a.content_link} target="_blank" rel="noopener noreferrer" className="text-tiny text-accent underline">{a.content_link}</a>
-              ) : a.content_file_path ? (
-                <button type="button" className="text-tiny text-accent underline" onClick={() => viewApplicantVideo(a.content_file_path)}>View uploaded video</button>
-              ) : null}
-              <p className="mt-0.5 text-tiny text-faint">Applied {new Date(a.created_at).toLocaleDateString("en-GB")}</p>
-            </div>
+{tab === "applicants" && (() => {
+  const unassigned = applicants.filter((a) => !a.business_id);
+  const assigned = applicants.filter((a) => a.business_id);
+  function businessNameFor(id) { return myBusinesses.find((b) => b.id === id)?.name || "—"; }
 
-            {(a.question || msgs.length > 0 || replyOpenFor === a.id) && (
+  function applicantCard(a, showBrandPicker) {
+    const msgs = applicantMessages[a.id] || [];
+    const statusBadge = a.status === "approved" ? { cls: "badge-ok", text: "Approved" } : a.status === "rejected" ? { cls: "badge-no", text: "Rejected" } : { cls: "badge-waiting", text: "Pending" };
+    return (
+      <div key={a.id} className="card">
+        <div className="flex items-start justify-between gap-2">
+          <div>
+            <p className="font-medium">{a.full_name}</p>
+            <p className="text-tiny text-faint">{a.email}{a.phone ? ` · ${a.phone}` : ""}</p>
+          </div>
+          {showBrandPicker ? (
+            <span className="badge" style={{ background: "#EFE9F6", color: "#5B3E96" }}>Unassigned</span>
+          ) : (
+            <span className={`badge ${statusBadge.cls}`}>{businessNameFor(a.business_id)} · {statusBadge.text}</span>
+          )}
+        </div>
+        <div className="mt-2">
+          {a.content_mode === "link" && a.content_link ? (
+            <a href={a.content_link} target="_blank" rel="noopener noreferrer" className="text-tiny text-accent underline">{a.content_link}</a>
+          ) : a.content_file_path ? (
+            <button type="button" className="text-tiny text-accent underline" onClick={() => viewApplicantVideo(a.content_file_path)}>View uploaded video</button>
+          ) : null}
+          <p className="mt-0.5 text-tiny text-faint">Applied {new Date(a.created_at).toLocaleDateString("en-GB")}</p>
+        </div>
+
+        {a.question && (
+          <p className="mt-3 rounded-lg bg-ground px-3 py-2 text-tiny">{a.question}</p>
+        )}
+
+        {showBrandPicker ? (
+          <div className="mt-3 border-t border-line pt-3">
+            <p className="mb-2 text-tiny font-semibold uppercase text-faint">Place them with a brand</p>
+            <div className="flex flex-wrap gap-2">
+              {myBusinesses.map((b) => (
+                <button
+                  key={b.id}
+                  type="button"
+                  className={`rounded-lg border px-3 py-1.5 text-tiny font-semibold ${assignChoice[a.id] === b.id ? "border-accent bg-accentSoft text-accent" : "border-line text-ink"}`}
+                  onClick={() => setAssignChoice((c) => ({ ...c, [a.id]: b.id }))}
+                >
+                  {b.name}
+                </button>
+              ))}
+            </div>
+            <button
+              className="btn-primary mt-3 text-tiny"
+              disabled={applicantBusy || !assignChoice[a.id]}
+              onClick={() => assignApplicantToBusiness(a, assignChoice[a.id])}
+            >
+              {assignChoice[a.id] ? `Confirm — place with ${businessNameFor(assignChoice[a.id])}` : "Choose a brand first"}
+            </button>
+            <p className="mt-2 text-tiny text-faint">This only assigns which brand they belong to — nothing is emailed yet. Reply, approve, or reject afterward, same as always.</p>
+          </div>
+        ) : (
+          <>
+            {(msgs.length > 0 || replyOpenFor === a.id) && (
               <div className="mt-3 rounded-xl bg-ground p-3">
                 <p className="mb-2 text-tiny font-semibold">Conversation</p>
                 <div className="flex flex-col gap-1.5">
@@ -1150,12 +1225,32 @@ export default function AdminDashboard() {
                 </div>
               )
             )}
-          </div>
-        );
-      })}
-    </div>
-  </section>
-)}
+          </>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <section>
+      <div className="mb-4">
+        <p className="text-base text-muted">Recruitment applications from the one public link — place each new one with a brand, then reply, approve, or reject as usual.</p>
+      </div>
+
+      <h2 className="mb-2 font-semibold">Unassigned{unassigned.length ? ` (${unassigned.length})` : ""}</h2>
+      <div className="mb-6 space-y-3">
+        {unassigned.length === 0 && <p className="text-base text-faint">Nothing waiting to be placed.</p>}
+        {unassigned.map((a) => applicantCard(a, true))}
+      </div>
+
+      <h2 className="mb-2 font-semibold">Placed with a brand{assigned.length ? ` (${assigned.length})` : ""}</h2>
+      <div className="space-y-3">
+        {assigned.length === 0 && <p className="text-base text-faint">No applications yet.</p>}
+        {assigned.map((a) => applicantCard(a, false))}
+      </div>
+    </section>
+  );
+})()}
 {tab === "invites" && (<section><div className="card mb-4"><h2 className="mb-1 font-semibold">Invite a creator</h2><p className="mb-3 text-tiny text-muted">No email needed to get in — send this on WhatsApp. Works once and lasts 3 days.</p><form onSubmit={createInvite} className="grid grid-cols-2 gap-3"><input className="input" placeholder="Name (just for you to tell it apart)" value={inviteLabel} onChange={(e) => setInviteLabel(e.target.value)} required /><input className="input" placeholder="Last 4 of their phone (optional)" maxLength={4} value={invitePhone} onChange={(e) => setInvitePhone(e.target.value.replace(/\D/g, ""))} /><label className="col-span-2 flex items-center gap-2 text-tiny text-muted"><input type="checkbox" checked={isMigration} onChange={(e) => setIsMigration(e.target.checked)} />This creator already worked with us on the old system — carry over their pay rate, socials and join date</label>{isMigration && (<div className="col-span-2 grid grid-cols-2 gap-3 rounded-xl border border-line bg-ground p-3"><input className="input tnum" type="number" min="1" placeholder="Base pay (naira)" value={migrateBasePay} onChange={(e) => setMigrateBasePay(e.target.value)} /><input className="input" type="date" placeholder="Joined date" value={migrateJoinedAt} onChange={(e) => setMigrateJoinedAt(e.target.value)} /><input className="input" placeholder="TikTok profile link" value={migrateTiktok} onChange={(e) => setMigrateTiktok(e.target.value)} /><input className="input" placeholder="Instagram profile link" value={migrateInsta} onChange={(e) => setMigrateInsta(e.target.value)} /><p className="col-span-2 text-tiny text-faint">They'll skip straight to active — no trial — and land on the usual bank + contract onboarding once they redeem this link.</p></div>)}<button className="btn-primary col-span-2">Create invite link</button></form>{lastInvite && (<div className="mt-4 rounded-xl border border-line bg-ground p-3"><p className="text-tiny font-semibold uppercase text-faint">Ready for {lastInvite.label}</p><p className="mt-1 break-all font-mono text-tiny text-ink">{lastInvite.link}</p><div className="mt-2 flex gap-2"><a className="btn-primary text-tiny" style={{ background: "#25D366" }} target="_blank" rel="noopener noreferrer" href={`https://wa.me/?text=${encodeURIComponent(lastInvite.link)}`}>Send on WhatsApp</a><button type="button" className="btn-secondary text-tiny" onClick={() => navigator.clipboard.writeText(lastInvite.link)}>Copy link</button></div><p className="mt-2 text-tiny text-waitingInk">Send this to {lastInvite.label} only — whoever opens it first joins as them.</p></div>)}</div><div className="card"><h2 className="mb-3 font-semibold">Invites ({invites.length})</h2><div className="space-y-2">{invites.length === 0 && <p className="text-base text-faint">No invites yet.</p>}{invites.map((inv) => { const s = inviteStatus(inv); return (<div key={inv.id} className="flex items-center justify-between rounded-xl border border-line px-4 py-2.5"><div><p className="font-medium">{inv.label}</p><p className="text-tiny text-faint">Sent {new Date(inv.created_at).toLocaleDateString("en-GB")}</p></div><span className={`badge ${s.cls}`}>{s.text}</span></div>); })}</div></div></section>)}{tab === "views" && (
   <section>
     <div className="mb-4 flex items-center justify-between gap-3">

@@ -109,6 +109,16 @@ export default function CreatorDashboard() {
   const [contentGuideOpen, setContentGuideOpen] = useState(false);
   const [screen, setScreen] = useState("home");
   const [logsOpen, setLogsOpen] = useState(false);
+  // Consumed once: /trial/[slug] sets this right before sending someone here
+  // for the first time. Read and cleared on mount, so a refresh or a later
+  // visit never sees the full trial-explainer again — only that first load
+  // does. Not in sessionStorage's absence (SSR) — defaults to false there.
+  const [justOnboarded] = useState(() => {
+    if (typeof window === "undefined") return false;
+    const flag = sessionStorage.getItem("smithstem_just_onboarded") === "1";
+    if (flag) sessionStorage.removeItem("smithstem_just_onboarded");
+    return flag;
+  });
   const [issueNote, setIssueNote] = useState("");
   const { start, end, label } = (() => { const b = monthBoundsLocal(); return { ...b, label: new Date(b.start + "T12:00:00").toLocaleDateString("en-GB", { month: "long", year: "numeric" }) }; })();
 
@@ -665,12 +675,12 @@ export default function CreatorDashboard() {
                 <span className="text-lead text-accent">→</span>
               </button>
 
-              {contentIdeasCard()}
-
-              <section className="card mb-4">
-                <h2 className="text-lead font-semibold">How the trial works</h2>
-                <p className="mt-1 text-base text-muted">Your accounts stay yours — nothing is handed over yet. Post the same video to TikTok, Instagram, and Facebook (Facebook posts go out automatically once it's linked to Instagram), and report the views on it every so often. Once one single video crosses {trialThreshold.toLocaleString()} views on any platform, Smith reviews it, and you'll be able to complete your onboarding here. Every video goes through Ella for quality review first.</p>
-              </section>
+              {justOnboarded ? (
+                <section className="card mb-4">
+                  <h2 className="text-lead font-semibold">How the trial works</h2>
+                  <p className="mt-1 text-base text-muted">Your accounts stay yours — nothing is handed over yet. Post the same video to TikTok, Instagram, and Facebook (Facebook posts go out automatically once it's linked to Instagram), and report the views on it every so often. Once one single video crosses {trialThreshold.toLocaleString()} views on any platform, Smith reviews it, and you'll be able to complete your onboarding here. Every video goes through Ella for quality review first.</p>
+                </section>
+              ) : null}
             </>
           )}
 
