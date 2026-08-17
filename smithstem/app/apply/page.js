@@ -54,7 +54,7 @@ export default function UnifiedApplyPage() {
           <div className="card space-y-3 text-center">
             <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-okBg text-2xl font-bold text-okInk">✓</div>
             <h2 className="font-display text-title font-semibold">Application received</h2>
-            <p className="text-base text-muted">We'll take a look and reach out. If you're taken on, everything you need lands in your email.</p>
+            <p className="text-base text-muted">Keep an eye on your email — we'll write either way, whether you're taken on or not. If you're in, everything you need to get started lands right there too.</p>
           </div>
         ) : (
           <div className="space-y-4">
