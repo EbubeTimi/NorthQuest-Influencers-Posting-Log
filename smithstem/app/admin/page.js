@@ -82,6 +82,13 @@ export default function AdminDashboard() {
   const [bankEditing, setBankEditing] = useState(false);
   const [bankInput, setBankInput] = useState({ bank_name: "", acct_num: "", acct_name: "" });
   const [bankMsg, setBankMsg] = useState("");
+  const [applicants, setApplicants] = useState([]);
+  const [applicantMessages, setApplicantMessages] = useState({});
+  const [replyOpenFor, setReplyOpenFor] = useState(null);
+  const [replyDraft, setReplyDraft] = useState("");
+  const [rejectOpenFor, setRejectOpenFor] = useState(null);
+  const [rejectDraft, setRejectDraft] = useState("");
+  const [applicantBusy, setApplicantBusy] = useState(false);
   const [colIncluded, setColIncluded] = useState(BUILTIN_PAYMENT_COLUMNS.map((c) => c.key));
   const [colExcluded, setColExcluded] = useState([]);
   const [customCols, setCustomCols] = useState([]);
@@ -222,6 +229,16 @@ export default function AdminDashboard() {
     setGrowthUpdates(gr || []);
     const { data: inv } = await supabase.from("creator_invites").select("id, label, expires_at, used_at, revoked_at, created_at").eq("business_id", prof.business_id).order("created_at", { ascending: false }).limit(50);
     setInvites(inv || []);
+    const { data: apps } = await supabase.from("applicants").select("*").eq("business_id", prof.business_id).order("created_at", { ascending: false }).limit(100);
+    setApplicants(apps || []);
+    if (apps?.length) {
+      const { data: msgs } = await supabase.from("applicant_messages").select("*").in("applicant_id", apps.map((a) => a.id)).order("created_at");
+      const byApplicant = {};
+      (msgs || []).forEach((m) => { (byApplicant[m.applicant_id] ||= []).push(m); });
+      setApplicantMessages(byApplicant);
+    } else {
+      setApplicantMessages({});
+    }
     const monthStart = firstOfMonth(ym); const monthEnd = monthEndOf(ym);
     const { data: pay } = await supabase.from("payments").select("*, creators(id, base_pay, bank_name, acct_num, acct_name, profiles(full_name))").eq("business_id", prof.business_id).eq("month", monthStart);
     setPayments(pay || []);
@@ -563,6 +580,34 @@ export default function AdminDashboard() {
     if (error || !data?.signedUrl) { setMsg("Could not open that screenshot: " + (error?.message || "not found")); return; }
     window.open(data.signedUrl, "_blank", "noopener,noreferrer");
   }
+  async function viewApplicantVideo(path) {
+    const { data, error } = await supabaseBrowser().storage.from("applicant-videos").createSignedUrl(path, 120);
+    if (error || !data?.signedUrl) { setMsg("Could not open that video: " + (error?.message || "not found")); return; }
+    window.open(data.signedUrl, "_blank", "noopener,noreferrer");
+  }
+  async function approveApplicant(a) {
+    if (!confirm(`Approve ${a.full_name}? They'll be emailed the trial link straight away.`)) return;
+    setApplicantBusy(true);
+    const { error } = await supabaseBrowser().rpc("approve_applicant", { p_applicant_id: a.id });
+    setApplicantBusy(false);
+    if (error) { setMsg("Failed: " + error.message); return; }
+    setMsg(`${a.full_name} approved — trial link sent.`); load();
+  }
+  async function rejectApplicant(a) {
+    setApplicantBusy(true);
+    const { error } = await supabaseBrowser().rpc("reject_applicant", { p_applicant_id: a.id, p_note: rejectDraft.trim() || null });
+    setApplicantBusy(false);
+    if (error) { setMsg("Failed: " + error.message); return; }
+    setRejectOpenFor(null); setRejectDraft(""); setMsg(`${a.full_name} rejected — they've been emailed.`); load();
+  }
+  async function sendApplicantReply(a) {
+    if (!replyDraft.trim()) return;
+    setApplicantBusy(true);
+    const { error } = await supabaseBrowser().rpc("reply_to_applicant", { p_applicant_id: a.id, p_body: replyDraft.trim() });
+    setApplicantBusy(false);
+    if (error) { setMsg("Failed: " + error.message); return; }
+    setReplyOpenFor(null); setReplyDraft(""); load();
+  }
   function contractStatus(c) {
     return c.contract_signed_at ? { text: "Signed", cls: "badge-ok" } : { text: "Awaiting signature", cls: "badge-waiting" };
   }
@@ -711,8 +756,9 @@ export default function AdminDashboard() {
   const trialThreshold = business?.trial_view_threshold || 10000;
   const crossingCandidates = trialVideos.filter((v) => (viewReportsByVideo[v.id] || 0) >= trialThreshold);
   const trialRoster = creators.filter((c) => c.status === "trial" || c.status === "trial_approved");
+  const pendingApplicants = applicants.filter((a) => a.status === "pending");
   const trialLink = business ? `${typeof window !== "undefined" ? window.location.origin : ""}/trial/${business.slug}` : "";
-  return (<div><Header role="admin" profile={profile} onSignOut={signOut} /><main className="mx-auto max-w-5xl px-4 py-4"><nav className="mb-6 flex gap-2">{[["approvals", `Bonus approvals${pending.length ? ` (${pending.length})` : ""}`], ["creators", "Manage creators"], ["trial", `Trial${crossingCandidates.length ? ` (${crossingCandidates.length})` : ""}`], ["invites", "Invites"], ["views", "Views register"], ["analytics", "Analytics register"], ["payments", "Payments register"]].map(([key, label]) => (<button key={key} onClick={() => setTab(key)} className={`rounded-xl px-4 py-2 text-base font-semibold ${tab === key ? "bg-accent text-white" : "bg-white text-muted border border-line"}`}>{label}</button>))}</nav>{msg && <p className="mb-4 text-base text-accent">{msg}</p>}{tab === "approvals" && (<><section className="card"><h2 className="mb-3 font-semibold">Pending bonus claims ({pending.length})</h2><div className="space-y-2">{pending.length === 0 && <p className="text-base text-faint">Nothing waiting on you.</p>}{pending.map((c) => (<div key={c.id} className="rounded-xl border border-line px-4 py-3"><div className="flex items-center justify-between"><div><p className="font-medium">{c.creators?.profiles?.full_name}</p><p className="text-base text-muted">{c.claim_date} · {Number(c.views).toLocaleString()} views · +{fmtNaira(bonusForViews(c.views, tiersOn(tiers, c.claim_date)))}</p></div><div className="flex gap-2"><button className="btn-secondary text-tiny" onClick={() => reviewClaim(c, "rejected")}>Reject</button><button className="btn-primary text-tiny" onClick={() => reviewClaim(c, "approved")}>Approve</button></div></div>{(c.video_url || c.screenshot_url) && (<div className="mt-1 flex gap-3">{c.video_url && (<a href={c.video_url} target="_blank" rel="noopener noreferrer" className="text-tiny text-accent underline">Open submitted video</a>)}{c.screenshot_url && (<button type="button" onClick={() => viewEvidence(c.screenshot_url)} className="text-tiny text-accent underline">View screenshot</button>)}</div>)}</div>))}</div></section>{growthUpdates.length > 0 && (<section className="card mt-4"><h2 className="mb-1 font-semibold">Growth updates ({growthUpdates.length})</h2><p className="mb-3 text-tiny text-muted">A video that already has an approved bonus has grown into a bigger tier. Approving replaces the old amount — nothing is added on top.</p><div className="space-y-2">{growthUpdates.map((c) => { const oldAmt = bonusForViews(c.views, tiersOn(tiers, c.claim_date)); const newAmt = bonusForViews(c.revised_views, tiersOn(tiers, c.claim_date)); return (<div key={c.id} className="rounded-xl border border-line px-4 py-3"><div className="flex items-center justify-between"><div><p className="font-medium">{c.creators?.profiles?.full_name}</p><p className="text-base text-muted">{c.claim_date} · {Number(c.views).toLocaleString()} → {Number(c.revised_views).toLocaleString()} views</p><p className="text-tiny text-faint">{fmtNaira(oldAmt)} → {fmtNaira(newAmt)}</p></div><div className="flex gap-2"><button className="btn-secondary text-tiny" onClick={() => reviewGrowth(c, false)}>Reject</button><button className="btn-primary text-tiny" onClick={() => reviewGrowth(c, true)}>Approve</button></div></div>{(c.video_url || c.screenshot_url) && (<div className="mt-1 flex gap-3">{c.video_url && (<a href={c.video_url} target="_blank" rel="noopener noreferrer" className="text-tiny text-accent underline">Open submitted video</a>)}{c.screenshot_url && (<button type="button" onClick={() => viewEvidence(c.screenshot_url)} className="text-tiny text-accent underline">View screenshot</button>)}</div>)}</div>); })}</div></section>)}</>)}{tab === "creators" && !selectedCreator && (
+  return (<div><Header role="admin" profile={profile} onSignOut={signOut} /><main className="mx-auto max-w-5xl px-4 py-4"><nav className="mb-6 flex gap-2">{[["approvals", `Bonus approvals${pending.length ? ` (${pending.length})` : ""}`], ["creators", "Manage creators"], ["trial", `Trial${crossingCandidates.length ? ` (${crossingCandidates.length})` : ""}`], ["applicants", `Applicants${pendingApplicants.length ? ` (${pendingApplicants.length})` : ""}`], ["invites", "Invites"], ["views", "Views register"], ["analytics", "Analytics register"], ["payments", "Payments register"]].map(([key, label]) => (<button key={key} onClick={() => setTab(key)} className={`rounded-xl px-4 py-2 text-base font-semibold ${tab === key ? "bg-accent text-white" : "bg-white text-muted border border-line"}`}>{label}</button>))}</nav>{msg && <p className="mb-4 text-base text-accent">{msg}</p>}{tab === "approvals" && (<><section className="card"><h2 className="mb-3 font-semibold">Pending bonus claims ({pending.length})</h2><div className="space-y-2">{pending.length === 0 && <p className="text-base text-faint">Nothing waiting on you.</p>}{pending.map((c) => (<div key={c.id} className="rounded-xl border border-line px-4 py-3"><div className="flex items-center justify-between"><div><p className="font-medium">{c.creators?.profiles?.full_name}</p><p className="text-base text-muted">{c.claim_date} · {Number(c.views).toLocaleString()} views · +{fmtNaira(bonusForViews(c.views, tiersOn(tiers, c.claim_date)))}</p></div><div className="flex gap-2"><button className="btn-secondary text-tiny" onClick={() => reviewClaim(c, "rejected")}>Reject</button><button className="btn-primary text-tiny" onClick={() => reviewClaim(c, "approved")}>Approve</button></div></div>{(c.video_url || c.screenshot_url) && (<div className="mt-1 flex gap-3">{c.video_url && (<a href={c.video_url} target="_blank" rel="noopener noreferrer" className="text-tiny text-accent underline">Open submitted video</a>)}{c.screenshot_url && (<button type="button" onClick={() => viewEvidence(c.screenshot_url)} className="text-tiny text-accent underline">View screenshot</button>)}</div>)}</div>))}</div></section>{growthUpdates.length > 0 && (<section className="card mt-4"><h2 className="mb-1 font-semibold">Growth updates ({growthUpdates.length})</h2><p className="mb-3 text-tiny text-muted">A video that already has an approved bonus has grown into a bigger tier. Approving replaces the old amount — nothing is added on top.</p><div className="space-y-2">{growthUpdates.map((c) => { const oldAmt = bonusForViews(c.views, tiersOn(tiers, c.claim_date)); const newAmt = bonusForViews(c.revised_views, tiersOn(tiers, c.claim_date)); return (<div key={c.id} className="rounded-xl border border-line px-4 py-3"><div className="flex items-center justify-between"><div><p className="font-medium">{c.creators?.profiles?.full_name}</p><p className="text-base text-muted">{c.claim_date} · {Number(c.views).toLocaleString()} → {Number(c.revised_views).toLocaleString()} views</p><p className="text-tiny text-faint">{fmtNaira(oldAmt)} → {fmtNaira(newAmt)}</p></div><div className="flex gap-2"><button className="btn-secondary text-tiny" onClick={() => reviewGrowth(c, false)}>Reject</button><button className="btn-primary text-tiny" onClick={() => reviewGrowth(c, true)}>Approve</button></div></div>{(c.video_url || c.screenshot_url) && (<div className="mt-1 flex gap-3">{c.video_url && (<a href={c.video_url} target="_blank" rel="noopener noreferrer" className="text-tiny text-accent underline">Open submitted video</a>)}{c.screenshot_url && (<button type="button" onClick={() => viewEvidence(c.screenshot_url)} className="text-tiny text-accent underline">View screenshot</button>)}</div>)}</div>); })}</div></section>)}</>)}{tab === "creators" && !selectedCreator && (
   <section>
     {(() => {
       // Trial and trial_approved creators live on the Trial tab — nothing
@@ -1024,6 +1070,90 @@ export default function AdminDashboard() {
         ))}
       </div>
     </section>
+  </section>
+)}
+{tab === "applicants" && (
+  <section>
+    <div className="mb-4 flex items-center justify-between">
+      <p className="text-base text-muted">Recruitment applications — a regular tab on the admin dashboard, same account Ella already has.</p>
+    </div>
+    <div className="space-y-3">
+      {applicants.length === 0 && <p className="text-base text-faint">No applications yet.</p>}
+      {applicants.map((a) => {
+        const msgs = applicantMessages[a.id] || [];
+        const statusBadge = a.status === "approved" ? { cls: "badge-ok", text: "Approved" } : a.status === "rejected" ? { cls: "badge-no", text: "Rejected" } : { cls: "badge-waiting", text: "Pending" };
+        return (
+          <div key={a.id} className="card">
+            <div className="flex items-start justify-between gap-2">
+              <div>
+                <p className="font-medium">{a.full_name}</p>
+                <p className="text-tiny text-faint">{a.email}{a.phone ? ` · ${a.phone}` : ""}</p>
+              </div>
+              <span className={`badge ${statusBadge.cls}`}>{statusBadge.text}</span>
+            </div>
+            <div className="mt-2">
+              {a.content_mode === "link" && a.content_link ? (
+                <a href={a.content_link} target="_blank" rel="noopener noreferrer" className="text-tiny text-accent underline">{a.content_link}</a>
+              ) : a.content_file_path ? (
+                <button type="button" className="text-tiny text-accent underline" onClick={() => viewApplicantVideo(a.content_file_path)}>View uploaded video</button>
+              ) : null}
+              <p className="mt-0.5 text-tiny text-faint">Applied {new Date(a.created_at).toLocaleDateString("en-GB")}</p>
+            </div>
+
+            {(a.question || msgs.length > 0 || replyOpenFor === a.id) && (
+              <div className="mt-3 rounded-xl bg-ground p-3">
+                <p className="mb-2 text-tiny font-semibold">Conversation</p>
+                <div className="flex flex-col gap-1.5">
+                  {a.question && (
+                    <div className="max-w-[85%] self-start rounded-lg border border-line bg-white px-2.5 py-1.5 text-tiny">
+                      {a.question}
+                      <p className="mt-0.5 text-tiny text-faint">Them · {new Date(a.created_at).toLocaleDateString("en-GB")}</p>
+                    </div>
+                  )}
+                  {msgs.map((m) => (
+                    <div key={m.id} className="max-w-[85%] self-end rounded-lg bg-accent px-2.5 py-1.5 text-tiny text-white">
+                      {m.body}
+                      <p className="mt-0.5 text-right text-tiny text-white/80">You · {new Date(m.created_at).toLocaleDateString("en-GB")}</p>
+                    </div>
+                  ))}
+                </div>
+                {replyOpenFor === a.id ? (
+                  <div className="mt-2 space-y-2">
+                    <textarea className="input" rows={2} placeholder="Type your reply — this goes straight to their email" value={replyDraft} onChange={(e) => setReplyDraft(e.target.value)} />
+                    <div className="flex gap-2">
+                      <button className="btn-primary text-tiny" disabled={applicantBusy} onClick={() => sendApplicantReply(a)}>Send reply</button>
+                      <button className="btn-secondary text-tiny" onClick={() => { setReplyOpenFor(null); setReplyDraft(""); }}>Cancel</button>
+                    </div>
+                  </div>
+                ) : (
+                  <button className="btn-quiet mt-1 px-0" onClick={() => { setReplyOpenFor(a.id); setReplyDraft(""); }}>
+                    {msgs.length || a.question ? "Reply →" : "Send a message →"}
+                  </button>
+                )}
+              </div>
+            )}
+
+            {a.status === "pending" && (
+              rejectOpenFor === a.id ? (
+                <div className="mt-3 space-y-2">
+                  <textarea className="input" rows={2} placeholder="Optional note (only shown internally)" value={rejectDraft} onChange={(e) => setRejectDraft(e.target.value)} />
+                  <p className="text-tiny text-faint">They'll get a short email letting them know — this note stays internal.</p>
+                  <div className="flex gap-2">
+                    <button className="btn-primary text-tiny" disabled={applicantBusy} onClick={() => rejectApplicant(a)}>Confirm reject</button>
+                    <button className="btn-secondary text-tiny" onClick={() => { setRejectOpenFor(null); setRejectDraft(""); }}>Cancel</button>
+                  </div>
+                </div>
+              ) : (
+                <div className="mt-3 flex gap-2">
+                  <button className="btn-secondary text-tiny" onClick={() => setRejectOpenFor(a.id)}>Reject</button>
+                  <button className="btn-primary text-tiny" disabled={applicantBusy} onClick={() => approveApplicant(a)}>Approve</button>
+                </div>
+              )
+            )}
+          </div>
+        );
+      })}
+    </div>
   </section>
 )}
 {tab === "invites" && (<section><div className="card mb-4"><h2 className="mb-1 font-semibold">Invite a creator</h2><p className="mb-3 text-tiny text-muted">No email needed to get in — send this on WhatsApp. Works once and lasts 3 days.</p><form onSubmit={createInvite} className="grid grid-cols-2 gap-3"><input className="input" placeholder="Name (just for you to tell it apart)" value={inviteLabel} onChange={(e) => setInviteLabel(e.target.value)} required /><input className="input" placeholder="Last 4 of their phone (optional)" maxLength={4} value={invitePhone} onChange={(e) => setInvitePhone(e.target.value.replace(/\D/g, ""))} /><label className="col-span-2 flex items-center gap-2 text-tiny text-muted"><input type="checkbox" checked={isMigration} onChange={(e) => setIsMigration(e.target.checked)} />This creator already worked with us on the old system — carry over their pay rate, socials and join date</label>{isMigration && (<div className="col-span-2 grid grid-cols-2 gap-3 rounded-xl border border-line bg-ground p-3"><input className="input tnum" type="number" min="1" placeholder="Base pay (naira)" value={migrateBasePay} onChange={(e) => setMigrateBasePay(e.target.value)} /><input className="input" type="date" placeholder="Joined date" value={migrateJoinedAt} onChange={(e) => setMigrateJoinedAt(e.target.value)} /><input className="input" placeholder="TikTok profile link" value={migrateTiktok} onChange={(e) => setMigrateTiktok(e.target.value)} /><input className="input" placeholder="Instagram profile link" value={migrateInsta} onChange={(e) => setMigrateInsta(e.target.value)} /><p className="col-span-2 text-tiny text-faint">They'll skip straight to active — no trial — and land on the usual bank + contract onboarding once they redeem this link.</p></div>)}<button className="btn-primary col-span-2">Create invite link</button></form>{lastInvite && (<div className="mt-4 rounded-xl border border-line bg-ground p-3"><p className="text-tiny font-semibold uppercase text-faint">Ready for {lastInvite.label}</p><p className="mt-1 break-all font-mono text-tiny text-ink">{lastInvite.link}</p><div className="mt-2 flex gap-2"><a className="btn-primary text-tiny" style={{ background: "#25D366" }} target="_blank" rel="noopener noreferrer" href={`https://wa.me/?text=${encodeURIComponent(lastInvite.link)}`}>Send on WhatsApp</a><button type="button" className="btn-secondary text-tiny" onClick={() => navigator.clipboard.writeText(lastInvite.link)}>Copy link</button></div><p className="mt-2 text-tiny text-waitingInk">Send this to {lastInvite.label} only — whoever opens it first joins as them.</p></div>)}</div><div className="card"><h2 className="mb-3 font-semibold">Invites ({invites.length})</h2><div className="space-y-2">{invites.length === 0 && <p className="text-base text-faint">No invites yet.</p>}{invites.map((inv) => { const s = inviteStatus(inv); return (<div key={inv.id} className="flex items-center justify-between rounded-xl border border-line px-4 py-2.5"><div><p className="font-medium">{inv.label}</p><p className="text-tiny text-faint">Sent {new Date(inv.created_at).toLocaleDateString("en-GB")}</p></div><span className={`badge ${s.cls}`}>{s.text}</span></div>); })}</div></div></section>)}{tab === "views" && (
