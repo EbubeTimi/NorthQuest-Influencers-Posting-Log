@@ -369,7 +369,7 @@ export default function CreatorDashboard() {
 
           {approved ? (
             <section className="card mb-4 border-2 border-accent">
-              <h2 className="text-lead font-semibold text-accent">One of your videos crossed the mark 🎉</h2>
+              <h2 className="text-lead font-semibold text-accent">One of your videos crossed the mark</h2>
               <p className="mt-1 text-base text-muted">Smith reviewed it and you're clear to join properly. Complete your onboarding to add your bank details and sign your contract — that video carries forward as part of your real posting history, nothing is re-entered.</p>
               <a href="/onboarding" className="btn-primary mt-3 inline-flex">Complete your onboarding</a>
             </section>

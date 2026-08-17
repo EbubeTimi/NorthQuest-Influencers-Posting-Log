@@ -886,7 +886,10 @@ export default function AdminDashboard() {
       </div>
       <p className="mb-3 text-tiny text-faint">Computed from self-reported views — a planning figure, not the approved payment record.</p>
       {analyticsLoading ? (
-        <p className="text-base text-faint">Loading…</p>
+        <div className="flex items-center gap-3 py-6">
+          <span className="h-5 w-5 animate-spin rounded-full border-2 border-accentSoft border-t-accent" />
+          <p className="text-base text-faint">Computing the register…</p>
+        </div>
       ) : analyticsRows.length === 0 ? (
         <p className="text-base text-faint">{analyticsLoaded ? "No videos logged by active creators in this period." : "Pick a period to load the register."}</p>
       ) : (
