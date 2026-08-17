@@ -114,7 +114,7 @@ export default function AdminDashboard() {
     if (!prof || prof.role !== "admin") { router.replace("/dashboard"); return; }
     setLoadError("");
     setProfile(prof);
-    const { data: biz } = await supabase.from("businesses").select("id, slug, name, trial_view_threshold").eq("id", prof.business_id).maybeSingle();
+    const { data: biz } = await supabase.from("businesses").select("id, slug, name, trial_view_threshold, trial_enabled").eq("id", prof.business_id).maybeSingle();
     setBusiness(biz || null);
     if (biz) setThresholdInput(String(biz.trial_view_threshold));
     const { data: cr } = await supabase.from("creators").select("*, profiles(full_name, email, phone)").eq("business_id", prof.business_id).order("status");
@@ -221,6 +221,16 @@ export default function AdminDashboard() {
     const { error } = await supabaseBrowser().from("businesses").update({ trial_view_threshold: n }).eq("id", business.id);
     if (error) { setThresholdMsg("Failed: " + error.message); return; }
     setThresholdMsg("Saved."); load();
+  }
+  // Off by default nowhere — every business starts with trial on, this is
+  // strictly an opt-out. Doesn't touch anyone already on trial; it only
+  // gates whether the standing link accepts a new sign-up going forward.
+  async function toggleTrialEnabled() {
+    const next = !business.trial_enabled;
+    const { error } = await supabaseBrowser().from("businesses").update({ trial_enabled: next }).eq("id", business.id);
+    if (error) { setMsg("Failed: " + error.message); return; }
+    setBusiness((b) => ({ ...b, trial_enabled: next }));
+    setMsg(next ? "Trial sign-ups reopened." : "Trial sign-ups closed — the link now tells people it isn't open.");
   }
   // A planning register, not the payment system of record — built entirely
   // from self-reported view data, so it stays informational until a real
@@ -751,8 +761,21 @@ export default function AdminDashboard() {
 })()}{tab === "trial" && (
   <section>
     <div className="card mb-4">
-      <h2 className="mb-1 font-semibold">Trial sign-up link</h2>
-      <p className="mb-2 text-tiny text-muted">Anyone who opens this starts a trial for {business?.name || "this business"} — no admin action needed per person.</p>
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <div>
+          <h2 className="font-semibold">Trial sign-up link</h2>
+          <p className="text-tiny text-muted">Anyone who opens this starts a trial for {business?.name || "this business"} — no admin action needed per person.</p>
+        </div>
+        {business && (
+          <button
+            className={`badge shrink-0 ${business.trial_enabled ? "badge-ok" : "bg-ground text-faint"}`}
+            onClick={toggleTrialEnabled}
+            title={business.trial_enabled ? "Click to close trial sign-ups" : "Click to reopen trial sign-ups"}
+          >
+            {business.trial_enabled ? "Trial open — turn off" : "Trial closed — turn on"}
+          </button>
+        )}
+      </div>
       {trialLink && (
         <div className="flex items-center gap-2">
           <p className="flex-1 break-all rounded-lg bg-ground px-3 py-2 font-mono text-tiny text-ink">{trialLink}</p>

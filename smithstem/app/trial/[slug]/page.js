@@ -31,6 +31,7 @@ export default function TrialEntryPage() {
       const { data, error: rpcErr } = await supabaseBrowser().rpc("peek_business_by_slug", { p_slug: slug });
       const row = Array.isArray(data) ? data[0] : data;
       if (rpcErr || !row) { setState({ phase: "not-found" }); return; }
+      if (!row.trial_enabled) { setState({ phase: "trial-closed", businessName: row.business_name }); return; }
       setState({ phase: "ready", businessName: row.business_name });
     })();
   }, [slug]);
@@ -83,6 +84,14 @@ export default function TrialEntryPage() {
           <div className="card space-y-3 text-center">
             <p className="text-base text-ink">This link isn't one we recognise. Check you copied the whole thing.</p>
             <a href={supportHref("Hi Smith, the trial sign-up link isn't working for me.")} className="btn-primary w-full">Message Smith</a>
+          </div>
+        )}
+
+        {state.phase === "trial-closed" && (
+          <div className="card space-y-3 text-center">
+            <p className="text-base text-ink">{state.businessName} isn't taking trial sign-ups right now.</p>
+            <p className="text-tiny text-muted">If you were told to use this link, check with Smith — she may have something else set up for you.</p>
+            <a href={supportHref(`Hi Smith, I tried the trial link for ${state.businessName} but it says trial isn't open right now.`)} className="btn-primary w-full">Message Smith</a>
           </div>
         )}
 
