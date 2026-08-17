@@ -33,6 +33,7 @@ export default function JoinPage() {
   const [form, setForm] = useState({ fullName: "", phone: "", email: "" });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [code, setCode] = useState("");
 
   async function check(digits) {
     const { data, error: rpcErr } = await supabaseBrowser().rpc("peek_creator_invite", { p_token: token, p_phone_last4: digits || null });
@@ -63,13 +64,21 @@ export default function JoinPage() {
     const { error: signUpErr } = await supabase.auth.signUp({ email: form.email, password: throwawayPassword() });
     if (signUpErr) {
       setBusy(false);
-      setError(
-        signUpErr.message?.toLowerCase().includes("already registered")
-          ? "That email already has a Smithstem account. Sign in normally instead of using this link."
-          : signUpErr.message
-      );
+      // An existing Smithstem account (e.g. already a NorthQuest creator,
+      // now also invited to CashDrive) can't get a session through signUp —
+      // it needs an actual sign-in instead, same OTP as everywhere else.
+      if (signUpErr.message?.toLowerCase().includes("already registered")) {
+        setState({ phase: "already-registered", businessName: state.businessName });
+        return;
+      }
+      setError(signUpErr.message);
       return;
     }
+    await redeem();
+  }
+
+  async function redeem() {
+    const supabase = supabaseBrowser();
     const { error: redeemErr } = await supabase.rpc("redeem_creator_invite", {
       p_token: token,
       p_phone_last4: phoneDigits || null,
@@ -79,6 +88,24 @@ export default function JoinPage() {
     setBusy(false);
     if (redeemErr) { setError(redeemErr.message); return; }
     router.replace("/onboarding");
+  }
+
+  async function sendExistingAccountCode() {
+    setBusy(true); setError("");
+    const supabase = supabaseBrowser();
+    const { error } = await supabase.auth.signInWithOtp({ email: form.email, options: { shouldCreateUser: false } });
+    setBusy(false);
+    if (error) { setError(error.message); return; }
+    setState({ phase: "code-entry", businessName: state.businessName });
+  }
+
+  async function verifyAndRedeem(e) {
+    e.preventDefault();
+    setBusy(true); setError("");
+    const supabase = supabaseBrowser();
+    const { error: verifyErr } = await supabase.auth.verifyOtp({ email: form.email, token: code, type: "email" });
+    if (verifyErr) { setBusy(false); setError(verifyErr.message); return; }
+    await redeem();
   }
 
   return (
@@ -144,6 +171,35 @@ export default function JoinPage() {
             </div>
             {error && <p className="text-base text-red-600">{error}</p>}
             <button className="btn-primary w-full" disabled={busy}>{busy ? "Setting you up…" : "Get started"}</button>
+          </form>
+        )}
+
+        {state.phase === "already-registered" && (
+          <div className="card space-y-4 text-center">
+            <p className="text-base text-ink"><span className="font-medium">{form.email}</span> already has a Smithstem account.</p>
+            <p className="text-tiny text-muted">That's fine — this just adds <strong>{state.businessName}</strong> to it. We'll send a code to confirm it's really you.</p>
+            {error && <p className="text-base text-red-600">{error}</p>}
+            <button className="btn-primary w-full" disabled={busy} onClick={sendExistingAccountCode}>{busy ? "Sending…" : "Send me a code"}</button>
+          </div>
+        )}
+
+        {state.phase === "code-entry" && (
+          <form onSubmit={verifyAndRedeem} className="card space-y-4">
+            <div className="text-center">
+              <p className="text-base text-ink">Enter the code sent to <span className="font-medium">{form.email}</span></p>
+              <p className="mt-1 text-tiny text-muted">Confirms it's really you before adding {state.businessName} to your account.</p>
+            </div>
+            <input
+              className="input text-center text-xl tracking-widest font-mono"
+              inputMode="numeric"
+              maxLength={8}
+              placeholder="••••••••"
+              value={code}
+              onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
+              required
+            />
+            {error && <p className="text-base text-red-600">{error}</p>}
+            <button className="btn-primary w-full" disabled={busy}>{busy ? "Verifying…" : "Verify & join"}</button>
           </form>
         )}
       </div>
