@@ -612,6 +612,14 @@ export default function AdminDashboard() {
     if (error || !data?.signedUrl) { setMsg("Could not open that video: " + (error?.message || "not found")); return; }
     window.open(data.signedUrl, "_blank", "noopener,noreferrer");
   }
+  // Opens straight into a chat with this applicant — no copying their
+  // number into a phone contact first. Nigerian local format (leading 0)
+  // gets the country code; anything else is passed through as typed.
+  function waHref(phone) {
+    const digits = String(phone).replace(/\D/g, "");
+    const withCountry = digits.startsWith("0") ? "234" + digits.slice(1) : digits;
+    return `https://wa.me/${withCountry}`;
+  }
   async function assignApplicantToBusiness(a, businessId) {
     setApplicantBusy(true);
     const { error } = await supabaseBrowser().rpc("assign_applicant_to_business", { p_applicant_id: a.id, p_business_id: businessId });
@@ -1128,7 +1136,15 @@ export default function AdminDashboard() {
         <div className="flex items-start justify-between gap-2">
           <div>
             <p className="font-medium">{a.full_name}</p>
-            <p className="text-tiny text-faint">{a.email}{a.phone ? ` · ${a.phone}` : ""}</p>
+            <p className="text-tiny text-faint">
+              {a.email}
+              {a.phone && (
+                <>
+                  {" · " + a.phone + " · "}
+                  <a href={waHref(a.phone)} target="_blank" rel="noopener noreferrer" className="font-semibold text-accent underline">Message on WhatsApp</a>
+                </>
+              )}
+            </p>
           </div>
           {showBrandPicker ? (
             <span className="badge" style={{ background: "#EFE9F6", color: "#5B3E96" }}>Unassigned</span>
