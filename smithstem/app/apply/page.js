@@ -61,11 +61,12 @@ export default function UnifiedApplyPage() {
             <div className="mb-2 text-center">
               <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-ink text-lead font-bold text-gold">TDT</div>
               <p className="kicker">TDT Technologies</p>
-              <h1 className="font-display text-2xl font-bold">Apply to create content</h1>
+              <h1 className="font-display text-2xl font-bold">Create content, get paid</h1>
             </div>
 
             <div className="card space-y-3">
-              <p className="text-base text-muted">TDT Technologies is a marketing agency working with Nigerian brands. Fill in your details and drop a sample of your content — if it's a fit, we'll be in touch by email with next steps.</p>
+              <p className="text-base text-muted">TDT Technologies works with top Nigerian brands, and we're looking for creators to make content for them — your face, your style, real pay every month. No experience needed, just a phone camera and consistency.</p>
+              <p className="text-base text-muted">Drop a sample of what you can do below — if it's a fit, someone from our team will reach out personally to walk you through the rest.</p>
             </div>
 
             <form onSubmit={submit} className="card space-y-3">
