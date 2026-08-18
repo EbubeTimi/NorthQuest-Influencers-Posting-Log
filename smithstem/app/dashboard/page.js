@@ -2,7 +2,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { supabaseBrowser, withTimeout } from "../../lib/supabaseClient";
-import { today, postingDay, monthBoundsLocal, mostRecentMonthWeekBoundary, daysBetween, dayBefore, isBeforeNoon } from "../../lib/domain";
+import { today, postingDay, monthBoundsLocal, gateBoundary, daysBetween, dayBefore, isBeforeNoon } from "../../lib/domain";
 import { contentGuideFor } from "../../lib/contentGuide";
 import Header from "../../components/Header";
 import LoadingScreen from "../../components/LoadingScreen";
@@ -106,6 +106,7 @@ export default function CreatorDashboard() {
   const [trialThreshold, setTrialThreshold] = useState(10000);
   const [bonusEnabled, setBonusEnabled] = useState(true);
   const [bizSlug, setBizSlug] = useState("");
+  const [gateAnchor, setGateAnchor] = useState("calendar_month");
   const [contentGuideOpen, setContentGuideOpen] = useState(false);
   const [screen, setScreen] = useState("home");
   const [logsOpen, setLogsOpen] = useState(false);
@@ -158,12 +159,13 @@ export default function CreatorDashboard() {
       supabase.from("video_view_reports").select("*").eq("creator_id", cr.id),
       // Live setting, not fixed — the same figure Smith's crossing queue uses,
       // read fresh each time rather than assumed.
-      supabase.from("businesses").select("trial_view_threshold, bonus_enabled, slug").eq("id", cr.business_id).maybeSingle(),
+      supabase.from("businesses").select("trial_view_threshold, bonus_enabled, slug, gate_anchor").eq("id", cr.business_id).maybeSingle(),
     ]);
     setVideos(v || []); setClaims(b || []); setPayments(pay || []);
     setTrialThreshold(bizSettings?.trial_view_threshold || 10000);
     setBonusEnabled(bizSettings?.bonus_enabled !== false);
     setBizSlug(bizSettings?.slug || "");
+    setGateAnchor(bizSettings?.gate_anchor || "calendar_month");
     setMyVideos(mv || []);
     const claimMap = {};
     (mc || []).forEach((c) => { if (c.video_log_id && !claimMap[c.video_log_id]) claimMap[c.video_log_id] = c; });
@@ -426,7 +428,7 @@ export default function CreatorDashboard() {
     if (v.facebook_url && !rep.facebook) return false;
     return true;
   }
-  const weekBoundary = mostRecentMonthWeekBoundary(today());
+  const weekBoundary = gateBoundary(gateAnchor, today());
   const joinedDaysAgo = daysBetween(creator.joined_at, today());
   const unreportedOldVideos = myVideos.filter((v) => v.log_date < weekBoundary && !isFullyReported(v));
   const weeklyGateActive = joinedDaysAgo >= 7 && unreportedOldVideos.length > 0;

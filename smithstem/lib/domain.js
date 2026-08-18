@@ -92,6 +92,23 @@ export function mostRecentMonthWeekBoundary(date) {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(blockStartDay)}`;
 }
 
+// Aura's rule instead: its cohort launched mid-month (Monday), so its gate
+// runs a plain Monday-to-Sunday week off its own launch day rather than the
+// 1st-of-the-month blocks above — this just finds the most recent Monday.
+export function mostRecentMonday(date) {
+  const d = new Date((date || today()) + "T00:00:00");
+  const isoDay = d.getDay() === 0 ? 7 : d.getDay(); // Mon=1 .. Sun=7
+  d.setDate(d.getDate() - (isoDay - 1));
+  const pad = (n) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+
+// Picks the right gate boundary for a business's configured anchor —
+// 'weekly_monday' (Aura) or the default 'calendar_month' (everyone else).
+export function gateBoundary(anchor, date) {
+  return anchor === "weekly_monday" ? mostRecentMonday(date) : mostRecentMonthWeekBoundary(date);
+}
+
 export function daysBetween(fromDate, toDate) {
   const a = new Date((fromDate || today()) + "T00:00:00");
   const b = new Date((toDate || today()) + "T00:00:00");
