@@ -293,6 +293,15 @@ export default function CreatorDashboard() {
     setMsg("Bonus claim sent to Smith."); resetClaimFlow(); load();
   }
 
+  // The bell only needs to clear once — mark every claim currently sitting
+  // unseen as seen, locally and in the database, rather than one at a time.
+  async function markBonusClaimsSeen() {
+    const unseenIds = claims.filter((c) => c.status !== "pending" && !c.creator_seen_at).map((c) => c.id);
+    if (!unseenIds.length) return;
+    setClaims((cs) => cs.map((c) => (unseenIds.includes(c.id) ? { ...c, creator_seen_at: new Date().toISOString() } : c)));
+    await supabaseBrowser().from("bonus_claims").update({ creator_seen_at: new Date().toISOString() }).in("id", unseenIds);
+  }
+
   // Growth is reported on the video's existing approved claim, not a new
   // one — same mechanism as the list below, just reached from the claim flow
   // when the matched or picked video turns out to already be approved.
@@ -768,12 +777,34 @@ export default function CreatorDashboard() {
   }
 
   const waitingCount = claims.filter((c) => c.status === "pending").length;
+  const unseenBonusCount = claims.filter((c) => c.status !== "pending" && !c.creator_seen_at).length;
   const dayLoggedActive = loggedSlotsForDate(videoForm.date);
   const doneTodayActive = (dayLoggedActive[1] ? 1 : 0) + (dayLoggedActive[2] ? 1 : 0);
 
   return (
     <div>
-      <Header profile={profile} onSignOut={signOut} />
+      <Header
+        profile={profile}
+        onSignOut={signOut}
+        right={
+          bonusEnabled && (
+            <button
+              type="button"
+              aria-label={unseenBonusCount > 0 ? `${unseenBonusCount} bonus update${unseenBonusCount > 1 ? "s" : ""}` : "Bonus claims"}
+              className="relative flex h-9 w-9 items-center justify-center rounded-xl border border-line text-lead"
+              onClick={() => { setScreen("bonus"); markBonusClaimsSeen(); }}
+            >
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M4 6.5a4 4 0 0 1 8 0c0 3 1 4 1 4H3s1-1 1-4Z" />
+                <path d="M6.5 12.5a1.5 1.5 0 0 0 3 0" />
+              </svg>
+              {unseenBonusCount > 0 && (
+                <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-noInk" />
+              )}
+            </button>
+          )
+        }
+      />
       <main className="mx-auto max-w-2xl px-4 py-4">
         <div className="mb-5">
           <p className="kicker">{label}</p>
