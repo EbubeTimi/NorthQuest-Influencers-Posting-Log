@@ -1,0 +1,578 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Smithstem unified creator flow prototype</title>
+  <style>
+    :root {
+      --ink: #10231d;
+      --muted: #5f6f69;
+      --faint: #7b8984;
+      --ground: #f3f0e8;
+      --paper: #fffdf8;
+      --line: #dcd8cd;
+      --green: #0b6b4f;
+      --green-deep: #074b39;
+      --green-soft: #e7f2ed;
+      --gold: #c99a27;
+      --gold-soft: #f7efdb;
+      --red: #9f352f;
+      --red-soft: #f8e9e6;
+      --blue: #315c8b;
+      --blue-soft: #eaf0f7;
+      --shadow: 0 18px 50px rgba(22, 45, 36, .12);
+      --radius: 18px;
+      --motion: 220ms;
+      --sans: "IBM Plex Sans", "Segoe UI", Arial, sans-serif;
+      --serif: "IBM Plex Serif", Georgia, serif;
+    }
+    * { box-sizing: border-box; }
+    html { color-scheme: light; }
+    body { margin: 0; min-height: 100vh; background: #dfe4df; color: var(--ink); font-family: var(--sans); }
+    button, input, textarea, select { font: inherit; }
+    button { cursor: pointer; }
+    button:disabled { cursor: not-allowed; opacity: .48; }
+    :focus-visible { outline: 3px solid rgba(201, 154, 39, .55); outline-offset: 3px; }
+    .skip { position: fixed; left: 16px; top: -60px; z-index: 99; padding: 10px 14px; color: white; background: var(--green-deep); border-radius: 10px; }
+    .skip:focus { top: 12px; }
+    .prototype-banner { background: #10231d; color: #eef5f1; padding: 9px 18px; text-align: center; font-size: 12px; letter-spacing: .02em; }
+    .prototype-banner strong { color: #f3cc6a; }
+    .workspace { display: grid; grid-template-columns: 310px minmax(0, 1fr); min-height: calc(100vh - 34px); }
+    .review-panel { position: sticky; top: 0; height: calc(100vh - 34px); overflow: auto; background: #f7f5ee; border-right: 1px solid #c9cec8; padding: 20px; }
+    .review-panel h1 { margin: 0; font: 700 22px/1.1 var(--serif); }
+    .review-panel h2 { margin: 22px 0 9px; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+    .review-panel p { margin: 6px 0; font-size: 12px; line-height: 1.5; color: var(--muted); }
+    .mock-tag { display: inline-flex; align-items: center; gap: 6px; margin-top: 10px; padding: 6px 9px; border: 1px solid #d2bf85; border-radius: 999px; background: #fff8e5; color: #6d5312; font-size: 11px; font-weight: 700; }
+    .control-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
+    .control-grid .wide { grid-column: 1 / -1; }
+    .control, .state-button { min-height: 38px; border: 1px solid #cfd3ce; background: white; color: var(--ink); border-radius: 10px; padding: 8px 9px; text-align: left; font-size: 12px; }
+    .state-button[aria-pressed="true"], .control.active { border-color: var(--green); background: var(--green-soft); color: var(--green-deep); font-weight: 700; }
+    .control select { width: 100%; border: 0; background: transparent; color: inherit; outline: 0; }
+    .toggle { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+    .toggle input { width: 36px; height: 20px; accent-color: var(--green); }
+    .annotation { border-left: 3px solid var(--gold); padding-left: 10px; }
+    .annotation dl { display: grid; grid-template-columns: 68px 1fr; gap: 5px 8px; margin: 8px 0 0; font-size: 11px; line-height: 1.4; }
+    .annotation dt { color: var(--faint); }
+    .annotation dd { margin: 0; color: var(--ink); }
+    .decision { display: grid; gap: 8px; }
+    .decision label { display: flex; gap: 8px; align-items: center; font-size: 12px; }
+    .decision textarea { width: 100%; min-height: 74px; resize: vertical; border: 1px solid #cfd3ce; border-radius: 10px; padding: 9px; background: white; }
+    .decision-output { min-height: 18px; color: var(--green-deep) !important; font-weight: 700; }
+    .stage { display: grid; place-items: start center; padding: 34px; overflow: auto; }
+    .viewport-shell { width: min(100%, 1160px); min-height: 720px; background: var(--ground); border: 1px solid rgba(16, 35, 29, .18); border-radius: 26px; overflow: hidden; box-shadow: var(--shadow); transition: width var(--motion) ease; }
+    .viewport-shell.phone { width: 390px; min-height: 780px; }
+    .viewport-shell.tablet { width: 760px; }
+    .product { min-height: 720px; background: var(--ground); }
+    .app-header { position: relative; z-index: 10; display: flex; align-items: center; justify-content: space-between; gap: 14px; min-height: 70px; padding: 14px 24px; border-bottom: 1px solid var(--line); background: rgba(255, 253, 248, .96); }
+    .brand-lockup { display: flex; align-items: center; gap: 10px; }
+    .brand-mark { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%; background: var(--green); color: white; font: 700 17px var(--serif); }
+    .brand-name { font: 700 19px var(--serif); }
+    .brand-sub { margin-top: 1px; color: var(--faint); font-size: 11px; }
+    .header-actions { display: flex; align-items: center; gap: 9px; }
+    .business-button { display: inline-flex; align-items: center; gap: 8px; min-height: 40px; border: 1px solid var(--line); background: white; border-radius: 12px; padding: 7px 10px; color: var(--ink); font-weight: 700; font-size: 12px; }
+    .business-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--green); }
+    .quiet-button { border: 0; background: transparent; color: var(--muted); border-radius: 9px; padding: 9px; font-weight: 700; font-size: 12px; }
+    .business-menu { position: absolute; top: 60px; right: 24px; width: 280px; padding: 9px; background: white; border: 1px solid var(--line); border-radius: 15px; box-shadow: var(--shadow); }
+    .business-menu[hidden] { display: none; }
+    .business-option { display: flex; width: 100%; align-items: center; justify-content: space-between; gap: 12px; border: 0; background: transparent; padding: 10px; border-radius: 10px; color: var(--ink); text-align: left; }
+    .business-option:hover { background: var(--green-soft); }
+    .business-option small { display: block; margin-top: 2px; color: var(--faint); font-weight: 400; }
+    .business-option .current { color: var(--green); font-size: 11px; font-weight: 800; }
+    .screen { min-height: 650px; padding: 30px 28px 46px; animation: screen-in var(--motion) ease both; }
+    @keyframes screen-in { from { opacity: 0; transform: translateY(7px); } to { opacity: 1; transform: none; } }
+    .narrow { max-width: 530px; margin: 0 auto; }
+    .content { max-width: 980px; margin: 0 auto; }
+    .eyebrow { margin: 0 0 8px; color: var(--green); font-size: 11px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
+    h2 { margin: 0; font: 700 34px/1.1 var(--serif); letter-spacing: -.02em; }
+    h3 { margin: 0; font: 700 20px/1.2 var(--serif); }
+    .lede { margin: 10px 0 0; color: var(--muted); font-size: 15px; line-height: 1.55; }
+    .panel { background: var(--paper); border: 1px solid var(--line); border-radius: var(--radius); padding: 20px; }
+    .auth-panel { margin-top: 24px; padding: 24px; box-shadow: 0 10px 30px rgba(22,45,36,.07); }
+    .field { display: grid; gap: 7px; margin-top: 16px; }
+    .field label { color: var(--muted); font-size: 12px; font-weight: 800; }
+    .input { width: 100%; min-height: 46px; border: 1.5px solid #c9cec8; background: white; border-radius: 12px; padding: 11px 12px; color: var(--ink); }
+    .input:focus { border-color: var(--green); outline: 3px solid rgba(11,107,79,.13); }
+    .input.invalid { border-color: var(--red); }
+    .hint, .error-text { margin: 0; font-size: 12px; line-height: 1.45; }
+    .hint { color: var(--faint); }
+    .error-text { color: var(--red); }
+    .primary, .secondary, .danger { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; border-radius: 12px; padding: 10px 15px; font-weight: 800; border: 1px solid transparent; }
+    .primary { color: white; background: var(--green); }
+    .primary:hover { background: var(--green-deep); }
+    .secondary { color: var(--green-deep); border-color: #a6bdb4; background: white; }
+    .danger { color: var(--red); border-color: #dbb2ad; background: var(--red-soft); }
+    .full { width: 100%; }
+    .button-row { display: flex; align-items: center; gap: 9px; margin-top: 18px; }
+    .code-input { letter-spacing: .35em; text-align: center; font-size: 24px; font-variant-numeric: tabular-nums; }
+    .back-button { margin-bottom: 16px; border: 0; padding: 0; color: var(--muted); background: transparent; font-weight: 700; }
+    .business-list { display: grid; gap: 11px; margin-top: 22px; }
+    .business-card { position: relative; display: grid; grid-template-columns: 44px 1fr auto; align-items: center; gap: 13px; width: 100%; min-height: 82px; border: 1.5px solid var(--line); background: var(--paper); border-radius: 16px; padding: 14px; text-align: left; color: var(--ink); }
+    .business-card:hover { border-color: var(--green); background: #fbfffc; }
+    .business-initial { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 13px; background: var(--green-soft); color: var(--green-deep); font: 800 17px var(--serif); }
+    .business-card strong { display: block; }
+    .business-card small { display: block; margin-top: 4px; color: var(--faint); }
+    .chevron { color: var(--green); font-size: 20px; }
+    .dashboard-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; margin-bottom: 18px; }
+    .status-badge { display: inline-flex; align-items: center; gap: 7px; border-radius: 999px; padding: 7px 10px; background: var(--gold-soft); color: #725613; font-size: 11px; font-weight: 800; }
+    .status-badge.success { background: var(--green-soft); color: var(--green-deep); }
+    .dashboard-grid { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(250px, .75fr); gap: 16px; }
+    .cycle-panel { overflow: hidden; }
+    .cycle-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .cycle-top p { margin: 5px 0 0; color: var(--muted); font-size: 12px; }
+    .cycle-days { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; margin-top: 18px; }
+    .cycle-day { position: relative; min-height: 58px; padding: 9px 5px; border-radius: 11px; background: #eef0ec; text-align: center; color: var(--faint); }
+    .cycle-day strong { display: block; color: inherit; font-size: 13px; }
+    .cycle-day span { display: block; margin-top: 5px; font-size: 10px; }
+    .cycle-day.done { background: var(--green-soft); color: var(--green-deep); }
+    .cycle-day.today { color: white; background: var(--green); box-shadow: 0 0 0 3px rgba(11,107,79,.14); }
+    .cycle-day.gate { color: #725613; background: var(--gold-soft); }
+    .cycle-note { display: flex; align-items: flex-start; gap: 9px; margin-top: 13px; border-radius: 12px; padding: 10px 11px; background: var(--blue-soft); color: #294f78; font-size: 12px; line-height: 1.45; }
+    .log-panel { margin-top: 16px; }
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .form-grid .field { margin-top: 12px; }
+    .span-two { grid-column: 1 / -1; }
+    .aside-stack { display: grid; gap: 16px; }
+    .progress-ring { --progress: 72%; position: relative; width: 86px; height: 86px; margin: 14px auto; border-radius: 50%; background: conic-gradient(var(--gold) var(--progress), #ece8dd 0); }
+    .progress-ring::after { content: ""; position: absolute; inset: 9px; border-radius: 50%; background: var(--paper); }
+    .progress-ring span { position: absolute; inset: 0; z-index: 1; display: grid; place-items: center; font: 800 17px var(--serif); }
+    .video-list { display: grid; gap: 8px; margin-top: 12px; }
+    .video-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; border-top: 1px solid #ece8de; padding-top: 9px; font-size: 12px; }
+    .video-row:first-child { border-top: 0; padding-top: 0; }
+    .video-row small { display: block; margin-top: 2px; color: var(--faint); }
+    .count { color: var(--green-deep); font-weight: 800; font-variant-numeric: tabular-nums; }
+    .gate-banner, .success-banner, .warning-banner { border-radius: 15px; padding: 14px 15px; margin-bottom: 16px; }
+    .gate-banner { background: var(--gold-soft); border: 1px solid #e2cc91; }
+    .success-banner { background: var(--green-soft); border: 1px solid #abd0c1; }
+    .warning-banner { background: var(--red-soft); border: 1px solid #ddb4af; }
+    .gate-banner strong, .success-banner strong, .warning-banner strong { display: block; }
+    .gate-banner p, .success-banner p, .warning-banner p { margin: 5px 0 0; color: var(--muted); font-size: 12px; line-height: 1.45; }
+    .gate-list { display: grid; gap: 10px; margin-top: 16px; }
+    .gate-row { border: 1px solid var(--line); border-radius: 14px; padding: 13px; }
+    .gate-row-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+    .gate-row-head p { margin: 3px 0 0; color: var(--faint); font-size: 11px; }
+    .platform-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; margin-top: 10px; }
+    .platform-fields .field { margin: 0; }
+    .qualifier { color: #725613; background: var(--gold-soft); border-radius: 999px; padding: 5px 8px; font-size: 10px; font-weight: 800; }
+    .loading-wrap, .empty-wrap, .deactivated-wrap { min-height: 520px; display: grid; place-items: center; text-align: center; }
+    .center-card { max-width: 500px; }
+    .spinner { width: 34px; height: 34px; margin: 0 auto 16px; border: 3px solid #cad7d1; border-top-color: var(--green); border-radius: 50%; animation: spin .8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .state-icon { display: grid; place-items: center; width: 58px; height: 58px; margin: 0 auto 17px; border-radius: 50%; background: var(--red-soft); color: var(--red); font: 800 22px var(--serif); }
+    .toast { position: fixed; right: 24px; bottom: 24px; z-index: 40; max-width: 330px; padding: 13px 15px; border-radius: 13px; background: var(--green-deep); color: white; box-shadow: var(--shadow); font-size: 12px; line-height: 1.45; transform: translateY(18px); opacity: 0; pointer-events: none; transition: opacity var(--motion) ease, transform var(--motion) ease; }
+    .toast.show { opacity: 1; transform: none; }
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+    .offline-strip { background: #6f2c28; color: white; padding: 8px 18px; text-align: center; font-size: 12px; font-weight: 700; }
+    [hidden] { display: none !important; }
+    body.reduce-motion *, body.reduce-motion *::before, body.reduce-motion *::after { scroll-behavior: auto !important; animation-duration: 1ms !important; transition-duration: 1ms !important; }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; animation-duration: 1ms !important; transition-duration: 1ms !important; }
+    }
+    @media (max-width: 920px) {
+      .workspace { grid-template-columns: 1fr; }
+      .review-panel { position: relative; height: auto; border-right: 0; border-bottom: 1px solid #c9cec8; }
+      .stage { order: -1; padding: 20px; }
+    }
+    @media (max-width: 560px) {
+      .stage { padding: 0; }
+      .viewport-shell, .viewport-shell.phone, .viewport-shell.tablet { width: 100%; min-height: 100vh; border: 0; border-radius: 0; }
+      .app-header { padding: 12px 15px; }
+      .brand-sub, .header-actions .quiet-button { display: none; }
+      .business-button { max-width: 155px; }
+      .business-menu { position: fixed; left: 10px; right: 10px; top: auto; bottom: 10px; width: auto; }
+      .screen { padding: 24px 15px 36px; }
+      h2 { font-size: 29px; }
+      .dashboard-head { display: block; }
+      .dashboard-head .status-badge { margin-top: 12px; }
+      .dashboard-grid { grid-template-columns: 1fr; }
+      .form-grid, .platform-fields { grid-template-columns: 1fr; }
+      .span-two { grid-column: auto; }
+      .cycle-day { min-height: 52px; padding-inline: 2px; }
+      .cycle-day span { font-size: 9px; }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip" href="#product-screen">Skip review controls</a>
+  <div class="prototype-banner"><strong>Read-only prototype.</strong> All accounts, views, notifications, Sheets, analytics, and network delays are local simulations.</div>
+  <div class="workspace">
+    <aside class="review-panel" aria-label="Prototype review controls">
+      <h1>Flow review</h1>
+      <p>Use these controls to reach every branch without timing luck. They are not part of the proposed product UI.</p>
+      <span class="mock-tag">Local mock data only</span>
+
+      <h2>Pathway</h2>
+      <div class="control-grid" id="state-controls">
+        <button class="state-button" data-state="signin">1. Sign in</button>
+        <button class="state-button" data-state="code">2. Enter code</button>
+        <button class="state-button" data-state="chooser">3. Choose business</button>
+        <button class="state-button" data-state="dashboard">4. Trial dashboard</button>
+        <button class="state-button" data-state="gate">5. Weekly gate</button>
+        <button class="state-button" data-state="unlocked">6. Onboarding unlock</button>
+        <button class="state-button" data-state="deactivated">7. Deactivated</button>
+        <button class="state-button" data-state="loading">Loading</button>
+        <button class="state-button" data-state="empty">Empty</button>
+        <button class="state-button" data-state="error">Error / retry</button>
+      </div>
+
+      <h2>Scenario</h2>
+      <div class="control-grid">
+        <label class="control wide">Business
+          <select id="business-control">
+            <option value="northquest">NorthQuest</option>
+            <option value="cashdrive">CashDrive</option>
+            <option value="aura">Aura</option>
+          </select>
+        </label>
+        <label class="control wide">Cycle time
+          <select id="time-control">
+            <option value="day6">Day 6 of 7 (logging open)</option>
+            <option value="after7">Midnight after day 7 (gate active)</option>
+          </select>
+        </label>
+        <label class="control wide">Viewport
+          <select id="viewport-control">
+            <option value="desktop">Desktop 1200</option>
+            <option value="tablet">Tablet 760</option>
+            <option value="phone">Phone 390</option>
+          </select>
+        </label>
+        <label class="control toggle wide"><span>Reduced motion</span><input id="motion-control" type="checkbox"></label>
+        <label class="control toggle wide"><span>Offline simulation</span><input id="offline-control" type="checkbox"></label>
+      </div>
+
+      <h2>Deterministic actions</h2>
+      <div class="control-grid">
+        <button class="control wide" id="qualifying-action">Fill a qualifying 10,240-view report</button>
+        <button class="control wide" id="deactivate-action">Management deactivates this membership</button>
+        <button class="control wide" id="reset-action">Reset prototype</button>
+      </div>
+
+      <h2>Transition annotation</h2>
+      <div class="annotation" aria-live="polite">
+        <p id="transition-title">Entry state</p>
+        <dl>
+          <dt>Container</dt><dd id="annotation-container">Page</dd>
+          <dt>Motion</dt><dd id="annotation-motion">220ms opacity + 7px continuity</dd>
+          <dt>State</dt><dd id="annotation-state">No persistent mutation</dd>
+          <dt>Feedback</dt><dd id="annotation-feedback">No haptic; visual focus only</dd>
+          <dt>Recovery</dt><dd id="annotation-recovery">Change email or exit</dd>
+        </dl>
+      </div>
+
+      <h2>Accessibility notes</h2>
+      <p>Keyboard order follows reading order. Escape closes the business menu and restores focus. Errors and transitions use polite live announcements. Reduced motion removes spatial travel. Native haptics remain implementation guidance only.</p>
+
+      <h2>Decision</h2>
+      <div class="decision">
+        <label><input type="radio" name="decision" value="approve"> Approve interaction direction</label>
+        <label><input type="radio" name="decision" value="revise"> Request revisions</label>
+        <label><input type="radio" name="decision" value="reject"> Reject direction</label>
+        <textarea id="decision-notes" aria-label="Review notes" placeholder="What should change?"></textarea>
+        <button class="primary" id="copy-decision">Copy local review summary</button>
+        <p class="decision-output" id="decision-output" role="status"></p>
+      </div>
+    </aside>
+
+    <main class="stage" id="product-screen">
+      <div class="viewport-shell" id="viewport-shell">
+        <div class="product">
+          <div class="offline-strip" id="offline-strip" hidden>You are offline. Drafts stay on this device until you reconnect.</div>
+          <header class="app-header" id="app-header" hidden>
+            <div class="brand-lockup">
+              <div class="brand-mark" aria-hidden="true">S</div>
+              <div><div class="brand-name">Smithstem</div><div class="brand-sub">amara.okafor@example.com</div></div>
+            </div>
+            <div class="header-actions">
+              <button class="business-button" id="business-menu-button" aria-haspopup="menu" aria-expanded="false">
+                <span class="business-dot" aria-hidden="true"></span><span id="header-business">NorthQuest</span><span aria-hidden="true">⌄</span>
+              </button>
+              <button class="quiet-button" data-action="signout">Sign out</button>
+            </div>
+            <div class="business-menu" id="business-menu" role="menu" hidden></div>
+          </header>
+          <section class="screen" id="screen" tabindex="-1"></section>
+        </div>
+      </div>
+    </main>
+  </div>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <div class="sr-only" id="live-region" aria-live="polite"></div>
+
+  <script>
+    const BUSINESSES = {
+      northquest: { name: "NorthQuest", initial: "NQ", membership: "Trial creator", color: "#0b6b4f" },
+      cashdrive: { name: "CashDrive", initial: "CD", membership: "Trial creator", color: "#315c8b" },
+      aura: { name: "Aura", initial: "A", membership: "Trial creator", color: "#7a5b2a" }
+    };
+    const ANNOTATIONS = {
+      signin: ["Sign-in entry", "Page", "220ms opacity + 7px continuity", "Local email only", "No haptic; focus moves to email", "Correct email or exit"],
+      code: ["Code requested", "Page", "Shared page transition, 220ms", "Simulated code; no email sent", "Light intent after request; browser does not vibrate", "Change email or request another code"],
+      chooser: ["Memberships loaded", "Page", "Cards enter together, 220ms", "Selection updates local mock active business", "Selection intent", "Sign out"],
+      dashboard: ["Business selected", "Page", "Header persists, content crossfades", "Local mock dashboard", "No haptic for navigation", "Switch business or sign out"],
+      gate: ["Cycle closed", "Page region", "Immediate gate replacement", "Draft reports remain local", "Warning intent once, not every field", "Complete reports, retry, or switch business"],
+      unlocked: ["10,000 reached on one video", "Inline success banner", "240ms opacity + height reveal", "Mock status becomes onboarding unlocked", "Success intent; native hardware unverified", "Open onboarding later or switch business"],
+      deactivated: ["Membership deactivated", "Full page access state", "Immediate state change", "Only current mock membership is restricted", "Warning intent", "Switch to another business or sign out"],
+      loading: ["Data loading", "Page", "Spinner; reduced motion becomes static", "Simulated delay", "No haptic", "Cancel or wait"],
+      empty: ["No videos yet", "Page", "Short opacity transition", "No data mutation", "No haptic", "Log first video or switch business"],
+      error: ["Service unavailable", "Page", "Short opacity transition", "Simulated failure", "Warning intent", "Retry or sign out"]
+    };
+    const model = {
+      state: "signin",
+      business: "northquest",
+      viewport: "desktop",
+      time: "day6",
+      reducedMotion: false,
+      offline: false,
+      email: "amara.okafor@example.com",
+      menuOpen: false,
+      qualifyingPrepared: { northquest: false, cashdrive: false, aura: false },
+      unlocked: { northquest: false, cashdrive: false, aura: false },
+      deactivated: { northquest: false, cashdrive: false, aura: false },
+      gateReports: {
+        northquest: { v1: { tiktok: "8420", instagram: "" }, v2: { tiktok: "" } },
+        cashdrive: { v1: { tiktok: "8420", instagram: "" }, v2: { tiktok: "" } },
+        aura: { v1: { tiktok: "8420", instagram: "" }, v2: { tiktok: "" } }
+      }
+    };
+    const screen = document.getElementById("screen");
+    const appHeader = document.getElementById("app-header");
+    const liveRegion = document.getElementById("live-region");
+    const toast = document.getElementById("toast");
+    let toastTimer;
+
+    function esc(value) {
+      return String(value ?? "").replace(/[&<>"']/g, (c) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));
+    }
+    function showToast(message) {
+      clearTimeout(toastTimer);
+      toast.textContent = message;
+      toast.classList.add("show");
+      toastTimer = setTimeout(() => toast.classList.remove("show"), 2600);
+    }
+    function announce(message) { liveRegion.textContent = ""; setTimeout(() => { liveRegion.textContent = message; }, 20); }
+    function setState(next, options = {}) {
+      model.state = next;
+      model.menuOpen = false;
+      render();
+      if (options.announce !== false) announce(options.message || stateLabel(next));
+      if (options.focus !== false) requestAnimationFrame(() => screen.focus());
+    }
+    function stateLabel(state) { return ({signin:"Sign-in screen",code:"Code entry screen",chooser:"Business chooser",dashboard:"Trial dashboard",gate:"Weekly reporting gate",unlocked:"Onboarding unlocked",deactivated:"Membership deactivated",loading:"Loading state",empty:"Empty state",error:"Service error"})[state]; }
+    function setBusiness(slug) {
+      if (!BUSINESSES[slug]) return;
+      model.business = slug;
+      model.menuOpen = false;
+      if (model.deactivated[slug]) setState("deactivated", { message: `${BUSINESSES[slug].name} membership is inactive.` });
+      else setState(model.time === "after7" ? "gate" : (model.unlocked[slug] ? "unlocked" : "dashboard"), { message: `${BUSINESSES[slug].name} selected.` });
+    }
+    function currentBusiness() { return BUSINESSES[model.business]; }
+
+    function authHeader() {
+      appHeader.hidden = !["chooser", "dashboard", "gate", "unlocked", "deactivated", "loading", "empty", "error"].includes(model.state);
+      document.getElementById("header-business").textContent = currentBusiness().name;
+      document.querySelector(".business-dot").style.background = currentBusiness().color;
+      renderBusinessMenu();
+    }
+    function renderBusinessMenu() {
+      const menu = document.getElementById("business-menu");
+      const button = document.getElementById("business-menu-button");
+      menu.hidden = !model.menuOpen;
+      button.setAttribute("aria-expanded", String(model.menuOpen));
+      menu.innerHTML = Object.entries(BUSINESSES).map(([slug, biz]) => `
+        <button class="business-option" role="menuitem" data-switch-business="${slug}">
+          <span><strong>${biz.name}</strong><small>${model.deactivated[slug] ? "Membership inactive" : biz.membership}</small></span>
+          ${slug === model.business ? '<span class="current">Current</span>' : '<span aria-hidden="true">›</span>'}
+        </button>`).join("") + '<button class="business-option" role="menuitem" data-action="chooser"><span><strong>View all businesses</strong><small>Return to the full chooser</small></span><span aria-hidden="true">›</span></button>';
+    }
+    function renderSignin() {
+      return `<div class="narrow">
+        <p class="eyebrow">Creator operations</p>
+        <h2>One sign-in for every business you work with.</h2>
+        <p class="lede">Use the email tied to your creator account. We will show your available businesses after you sign in.</p>
+        <form class="panel auth-panel" id="signin-form" novalidate>
+          <div class="field"><label for="email">Your email</label><input class="input" id="email" type="email" autocomplete="email" value="${esc(model.email)}" aria-describedby="email-hint email-error"><p class="hint" id="email-hint">This prototype does not send an email.</p><p class="error-text" id="email-error" hidden>Enter a complete email address.</p></div>
+          <div class="button-row"><button class="primary full" type="submit">Continue</button></div>
+        </form>
+      </div>`;
+    }
+    function renderCode() {
+      return `<div class="narrow">
+        <button class="back-button" data-action="signin">← Change email</button>
+        <p class="eyebrow">Check your inbox</p><h2>Enter your 8-digit code.</h2>
+        <p class="lede">For this local prototype, use <strong>24681357</strong>. Nothing was sent.</p>
+        <form class="panel auth-panel" id="code-form" novalidate>
+          <div class="field"><label for="code">Sign-in code</label><input class="input code-input" id="code" inputmode="numeric" autocomplete="one-time-code" maxlength="8" value="24681357" aria-describedby="code-error"><p class="error-text" id="code-error" hidden>Enter all 8 digits.</p></div>
+          <div class="button-row"><button class="primary full" type="submit">Verify and continue</button></div>
+          <button class="quiet-button full" type="button" id="expire-code">Show expired code state</button>
+        </form>
+      </div>`;
+    }
+    function renderChooser() {
+      return `<div class="narrow">
+        <p class="eyebrow">Welcome back, Amara</p><h2>Where are you working today?</h2>
+        <p class="lede">Your sign-in stays the same. Each business keeps its own videos, weekly reports, access, and records.</p>
+        <div class="business-list">${Object.entries(BUSINESSES).map(([slug, biz]) => `
+          <button class="business-card" data-choose-business="${slug}" ${model.deactivated[slug] ? 'aria-describedby="disabled-'+slug+'"' : ""}>
+            <span class="business-initial">${biz.initial}</span>
+            <span><strong>${biz.name}</strong><small id="disabled-${slug}">${model.deactivated[slug] ? "Membership inactive. You can still open it to see support options." : biz.membership + " • Week 2 in progress"}</small></span>
+            <span class="chevron" aria-hidden="true">›</span>
+          </button>`).join("")}</div>
+        <button class="quiet-button full" data-action="signout">Sign out of this account</button>
+      </div>`;
+    }
+    function cycleMarkup(gated) {
+      const labels = ["Day 1","Day 2","Day 3","Day 4","Day 5","Day 6","Day 7"];
+      return `<div class="cycle-days">${labels.map((label, i) => `<div class="cycle-day ${gated ? "done" : i < 5 ? "done" : i === 5 ? "today" : ""}"><strong>${i + 8}</strong><span>${label}</span></div>`).join("")}</div>`;
+    }
+    function dashboardShell(body, statusText = "Trial account") {
+      return `<div class="content"><div class="dashboard-head"><div><p class="eyebrow">${currentBusiness().name}</p><h2>Good morning, Amara.</h2><p class="lede">You are in the shared August cycle with every TDT creator.</p></div><span class="status-badge ${model.unlocked[model.business] ? "success" : ""}">${statusText}</span></div>${body}</div>`;
+    }
+    function renderDashboard(unlocked = false) {
+      const success = unlocked ? `<div class="success-banner" role="status"><strong>Onboarding is now open.</strong><p>Your 12 Aug video reached 10,240 self-reported views. This happened automatically. Management has been notified; there is no approval step.</p><button class="primary" type="button" id="open-onboarding" style="margin-top:12px">Complete onboarding</button></div>` : "";
+      const body = `${success}<div class="dashboard-grid">
+        <div>
+          <section class="panel cycle-panel"><div class="cycle-top"><div><h3>Shared weekly cycle</h3><p>8 to 14 August • Day 6 of 7</p></div><span class="status-badge success">Logging open</span></div>${cycleMarkup(false)}<div class="cycle-note"><strong>i</strong><span>At midnight after Day 7, logging pauses only if this business still needs a per-video view report from you.</span></div></section>
+          <section class="panel log-panel"><h3>Log today’s video</h3><p class="hint">Add at least one link. This prototype saves nothing.</p>
+            <form id="video-form" class="form-grid" novalidate>
+              <div class="field"><label for="video-date">Date</label><input class="input" id="video-date" type="date" value="2026-08-13"></div>
+              <div class="field"><label for="video-number">Video</label><select class="input" id="video-number"><option>Video 1</option><option>Video 2</option></select></div>
+              <div class="field span-two"><label for="tiktok-url">TikTok link</label><input class="input" id="tiktok-url" type="url" placeholder="https://tiktok.com/..."></div>
+              <div class="field span-two"><label for="instagram-url">Instagram link (optional)</label><input class="input" id="instagram-url" type="url" placeholder="https://instagram.com/..."></div>
+              <p class="error-text span-two" id="video-error" hidden>Add at least one complete video link.</p>
+              <div class="button-row span-two"><button class="primary" type="submit">Log video</button><button class="secondary" type="button" id="cancel-video">Cancel</button></div>
+            </form>
+          </section>
+        </div>
+        <aside class="aside-stack">
+          <section class="panel"><h3>Trial progress</h3><div class="progress-ring" style="--progress:${unlocked ? "100%" : "84%"}"><span>${unlocked ? "10.2k" : "8.4k"}</span></div><p class="hint" style="text-align:center">One video must reach 10,000 views. Separate videos are never added together.</p></section>
+          <section class="panel"><h3>Videos this cycle</h3><div class="video-list"><div class="video-row"><span>12 Aug • Video 1<small>TikTok + Instagram</small></span><span class="count">${unlocked ? "10,240" : "8,420"}</span></div><div class="video-row"><span>10 Aug • Video 2<small>TikTok</small></span><span class="count">3,180</span></div></div></section>
+        </aside>
+      </div>`;
+      return dashboardShell(body, unlocked ? "Onboarding unlocked" : "Trial account");
+    }
+    function renderGate() {
+      const reports = model.gateReports[model.business];
+      const v1 = reports.v1, v2 = reports.v2;
+      return dashboardShell(`<div class="gate-banner"><strong>Report last week’s views before logging again.</strong><p>The shared cycle closed at midnight. You owe reports only for videos logged after you joined this business.</p></div>
+        <section class="panel"><div class="cycle-top"><div><h3>2 videos need reports</h3><p>Cycle: 1 to 7 August • Joined 4 August</p></div><span class="status-badge">Logging paused</span></div>
+          <form id="gate-form" novalidate><div class="gate-list">
+            <div class="gate-row"><div class="gate-row-head"><div><strong>6 Aug • Video 1</strong><p>Logged after you joined</p></div><span class="qualifier">Highest so far: ${model.qualifyingPrepared[model.business] ? "10,240" : "8,420"}</span></div><div class="platform-fields"><div class="field"><label for="v1-tt">TikTok views</label><input class="input gate-input" id="v1-tt" inputmode="numeric" type="number" min="1" required aria-describedby="gate-error" value="${esc(v1.tiktok)}"></div><div class="field"><label for="v1-ig">Instagram views</label><input class="input gate-input" id="v1-ig" inputmode="numeric" type="number" min="1" required aria-describedby="gate-error" value="${esc(v1.instagram)}"></div></div></div>
+            <div class="gate-row"><div class="gate-row-head"><div><strong>5 Aug • Video 2</strong><p>Logged after you joined</p></div><span class="count">Report due</span></div><div class="platform-fields"><div class="field"><label for="v2-tt">TikTok views</label><input class="input gate-input" id="v2-tt" inputmode="numeric" type="number" min="1" required aria-describedby="gate-error" value="${esc(v2.tiktok)}"></div></div></div>
+          </div><p class="error-text" id="gate-error" hidden style="margin-top:12px">Enter a positive view count for every listed platform.</p><div class="button-row"><button class="primary" type="submit">Save reports and reopen logging</button><button class="secondary" type="button" id="save-draft">Save local draft</button></div></form>
+        </section>`, "Trial account • Weekly check-in");
+    }
+    function renderDeactivated() {
+      return `<div class="deactivated-wrap"><div class="center-card"><div class="state-icon" aria-hidden="true">!</div><p class="eyebrow">${currentBusiness().name}</p><h2>This business membership is inactive.</h2><p class="lede">Your account and past records still exist. Other TDT businesses on your login are not affected.</p><div class="button-row" style="justify-content:center"><button class="primary" data-action="chooser">Choose another business</button><button class="secondary" data-action="signout">Sign out</button></div><p class="hint" style="margin-top:18px">Management can reactivate this membership without deleting your history.</p></div></div>`;
+    }
+    function renderLoading() { return `<div class="loading-wrap"><div class="center-card"><div class="spinner" aria-hidden="true"></div><h2>Loading your business...</h2><p class="lede">Checking membership and weekly-cycle status.</p><button class="secondary" data-action="chooser" style="margin-top:18px">Cancel</button></div></div>`; }
+    function renderEmpty() { return `<div class="empty-wrap"><div class="center-card"><p class="eyebrow">${currentBusiness().name}</p><h2>Your first cycle is ready.</h2><p class="lede">You have no videos yet. When you log one, it will appear here and become part of the shared weekly check-in.</p><button class="primary" data-action="dashboard" style="margin-top:18px">Log my first video</button></div></div>`; }
+    function renderError() { return `<div class="empty-wrap"><div class="center-card"><div class="state-icon" aria-hidden="true">!</div><h2>We could not load this business.</h2><p class="lede">Your account is still safe. Check your connection and try again.</p><div class="button-row" style="justify-content:center"><button class="primary" id="retry-button">Try again</button><button class="secondary" data-action="chooser">Choose another business</button></div></div></div>`; }
+
+    function render() {
+      document.body.classList.toggle("reduce-motion", model.reducedMotion);
+      document.getElementById("viewport-shell").className = `viewport-shell ${model.viewport === "desktop" ? "" : model.viewport}`;
+      document.getElementById("offline-strip").hidden = !model.offline;
+      authHeader();
+      const views = { signin: renderSignin, code: renderCode, chooser: renderChooser, dashboard: () => renderDashboard(false), gate: renderGate, unlocked: () => renderDashboard(true), deactivated: renderDeactivated, loading: renderLoading, empty: renderEmpty, error: renderError };
+      screen.innerHTML = views[model.state]();
+      updateReviewControls();
+      bindScreenActions();
+    }
+    function updateReviewControls() {
+      document.querySelectorAll("[data-state]").forEach((button) => button.setAttribute("aria-pressed", String(button.dataset.state === model.state)));
+      document.getElementById("business-control").value = model.business;
+      document.getElementById("time-control").value = model.time;
+      document.getElementById("viewport-control").value = model.viewport;
+      document.getElementById("motion-control").checked = model.reducedMotion;
+      document.getElementById("offline-control").checked = model.offline;
+      const a = ANNOTATIONS[model.state];
+      ["transition-title","annotation-container","annotation-motion","annotation-state","annotation-feedback","annotation-recovery"].forEach((id, i) => document.getElementById(id).textContent = a[i]);
+    }
+    function bindScreenActions() {
+      const signin = document.getElementById("signin-form");
+      if (signin) signin.addEventListener("submit", (event) => {
+        event.preventDefault(); const input = document.getElementById("email"); const valid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(input.value);
+        document.getElementById("email-error").hidden = valid; input.classList.toggle("invalid", !valid);
+        if (!valid) { input.focus(); announce("Enter a complete email address."); return; }
+        model.email = input.value; setState("code", { message: "Code entry ready. No email was sent in this prototype." });
+      });
+      const code = document.getElementById("code-form");
+      if (code) code.addEventListener("submit", (event) => {
+        event.preventDefault(); const input = document.getElementById("code"); const valid = /^\d{8}$/.test(input.value);
+        document.getElementById("code-error").hidden = valid; input.classList.toggle("invalid", !valid);
+        if (!valid) { input.focus(); announce("Enter all 8 digits."); return; }
+        setState("chooser", { message: "Signed in. Three business memberships found." });
+      });
+      const expire = document.getElementById("expire-code");
+      if (expire) expire.addEventListener("click", () => { const e = document.getElementById("code-error"); e.hidden = false; e.textContent = "That code expired. Request a fresh code and try again."; document.getElementById("code").focus(); announce(e.textContent); });
+      document.querySelectorAll("[data-choose-business]").forEach((button) => button.addEventListener("click", () => setBusiness(button.dataset.chooseBusiness)));
+      const videoForm = document.getElementById("video-form");
+      if (videoForm) videoForm.addEventListener("submit", (event) => {
+        event.preventDefault();
+        if (model.offline) { announce("Offline. Video was not submitted."); showToast("Offline. Your links stay in this form."); return; }
+        const tt = document.getElementById("tiktok-url"), ig = document.getElementById("instagram-url");
+        const valid = [tt.value, ig.value].some((v) => /^https:\/\//i.test(v));
+        document.getElementById("video-error").hidden = valid;
+        if (!valid) { tt.focus(); announce("Add at least one complete video link."); return; }
+        showToast("Video logged in the local simulation."); tt.value = ""; ig.value = "";
+      });
+      const cancel = document.getElementById("cancel-video"); if (cancel) cancel.addEventListener("click", () => { document.getElementById("video-form").reset(); showToast("Draft cleared locally."); });
+      const gateForm = document.getElementById("gate-form");
+      if (gateForm) {
+        ["v1-tt","v1-ig","v2-tt"].forEach((id) => document.getElementById(id).addEventListener("input", (e) => {
+          const reports = model.gateReports[model.business];
+          e.target.removeAttribute("aria-invalid");
+          if (id === "v1-tt") reports.v1.tiktok = e.target.value;
+          if (id === "v1-ig") reports.v1.instagram = e.target.value;
+          if (id === "v2-tt") reports.v2.tiktok = e.target.value;
+        }));
+        gateForm.addEventListener("submit", (event) => {
+          event.preventDefault();
+          if (model.offline) { announce("Offline. Reports remain as a local draft."); showToast("Offline. Nothing was sent."); return; }
+          const reports = model.gateReports[model.business];
+          const values = [reports.v1.tiktok, reports.v1.instagram, reports.v2.tiktok].map(Number);
+          const valid = values.every((n) => n > 0);
+          document.getElementById("gate-error").hidden = valid;
+          if (!valid) {
+            const fields = ["v1-tt", "v1-ig", "v2-tt"].map((id) => document.getElementById(id));
+            fields.forEach((field) => field.toggleAttribute("aria-invalid", Number(field.value) <= 0));
+            fields.find((field) => Number(field.value) <= 0)?.focus();
+            announce("Enter a positive view count for every listed platform.");
+            return;
+          }
+          const qualifying = Math.max(Number(reports.v1.tiktok), Number(reports.v1.instagram)) >= 10000;
+          if (qualifying) { model.unlocked[model.business] = true; model.time = "day6"; setState("unlocked", { message: "Onboarding unlocked automatically. Management notification simulated once." }); }
+          else { model.time = "day6"; setState("dashboard", { message: "All weekly reports saved. Logging is open again." }); showToast("Weekly gate cleared."); }
+        });
+      }
+      const draft = document.getElementById("save-draft"); if (draft) draft.addEventListener("click", () => showToast("Draft kept in this local prototype only."));
+      const retry = document.getElementById("retry-button"); if (retry) retry.addEventListener("click", () => { setState("loading", { message: "Retrying." }); setTimeout(() => setState(model.offline ? "error" : "dashboard", { message: model.offline ? "Still offline." : "Dashboard loaded." }), 650); });
+      const onboarding = document.getElementById("open-onboarding"); if (onboarding) onboarding.addEventListener("click", () => showToast("Production onboarding would open here after approval."));
+    }
+
+    document.getElementById("state-controls").addEventListener("click", (event) => { const state = event.target.dataset.state; if (state) setState(state); });
+    document.getElementById("business-control").addEventListener("change", (e) => setBusiness(e.target.value));
+    document.getElementById("time-control").addEventListener("change", (e) => { model.time = e.target.value; setState(model.time === "after7" ? "gate" : (model.unlocked[model.business] ? "unlocked" : "dashboard")); });
+    document.getElementById("viewport-control").addEventListener("change", (e) => { model.viewport = e.target.value; render(); });
+    document.getElementById("motion-control").addEventListener("change", (e) => { model.reducedMotion = e.target.checked; render(); });
+    document.getElementById("offline-control").addEventListener("change", (e) => { model.offline = e.target.checked; render(); announce(model.offline ? "Offline simulation on." : "Back online."); });
+    document.getElementById("qualifying-action").addEventListener("click", () => { const reports = model.gateReports[model.business]; model.qualifyingPrepared[model.business] = true; reports.v1.tiktok = "10240"; reports.v1.instagram = "640"; reports.v2.tiktok = "3180"; setState("gate", { message: "Qualifying report values prepared. Submit the gate to see automatic onboarding." }); });
+    document.getElementById("deactivate-action").addEventListener("click", () => { model.deactivated[model.business] = true; setState("deactivated", { message: `${currentBusiness().name} membership deactivated. Other memberships remain available.` }); });
+    document.getElementById("reset-action").addEventListener("click", () => { model.state="signin"; model.business="northquest"; model.viewport="desktop"; model.time="day6"; model.reducedMotion=false; model.offline=false; model.qualifyingPrepared={northquest:false,cashdrive:false,aura:false}; model.unlocked={northquest:false,cashdrive:false,aura:false}; model.deactivated={northquest:false,cashdrive:false,aura:false}; model.gateReports={northquest:{v1:{tiktok:"8420",instagram:""},v2:{tiktok:""}},cashdrive:{v1:{tiktok:"8420",instagram:""},v2:{tiktok:""}},aura:{v1:{tiktok:"8420",instagram:""},v2:{tiktok:""}}}; render(); announce("Prototype reset."); });
+    document.getElementById("business-menu-button").addEventListener("click", () => { model.menuOpen = !model.menuOpen; renderBusinessMenu(); if (model.menuOpen) document.querySelector(".business-option")?.focus(); });
+    document.getElementById("business-menu").addEventListener("click", (event) => { const button = event.target.closest("[data-switch-business]"); if (button) setBusiness(button.dataset.switchBusiness); const action = event.target.closest("[data-action]")?.dataset.action; if (action === "chooser") setState("chooser"); });
+    document.body.addEventListener("click", (event) => { const action = event.target.closest("[data-action]")?.dataset.action; if (!action) return; if (action === "signout") setState("signin", { message: "Signed out of the local prototype." }); else setState(action); });
+    document.addEventListener("keydown", (event) => { if (event.key === "Escape" && model.menuOpen) { model.menuOpen = false; renderBusinessMenu(); document.getElementById("business-menu-button").focus(); announce("Business menu closed."); } });
+    document.getElementById("copy-decision").addEventListener("click", async () => {
+      const decision = document.querySelector('input[name="decision"]:checked')?.value;
+      const output = document.getElementById("decision-output");
+      if (!decision) { output.textContent = "Choose approve, revise, or reject first."; return; }
+      const summary = `TDT prototype decision: ${decision.toUpperCase()}\nNotes: ${document.getElementById("decision-notes").value.trim() || "None"}\nPrototype: unified-tdt-creator-ops.html`;
+      try { await navigator.clipboard.writeText(summary); output.textContent = "Local summary copied. It was not submitted anywhere."; }
+      catch { output.textContent = summary; }
+    });
+    render();
+  </script>
+</body>
+</html>
