@@ -27,7 +27,7 @@
 - New creators enter the current business period immediately and owe only videos logged after joining.
 - Yesterday's missed video remains available until 12:00 PM the next day.
 - At midnight after a period ends, required view entry blocks the next normal video submission until all due video/platform views are saved.
-- Period-specific report keys prevent an older report from satisfying a later check.
+- Reports remain tied to their exact video/platform, with idempotent retry behavior; the due query is bounded to the completed date period.
 - Validation, offline retry, duplicate submission, and wrong-business denial preserve data and focus recovery.
 
 ## F08/F09 — Review a 10,000-view video and unlock onboarding

@@ -29,10 +29,11 @@ active business must be one of that person's enabled memberships
 - At midnight after the period ends, new video logging is gated until every required per-video, per-platform view report for that completed period is submitted.
 - A creator owes only videos logged on or after their membership join time.
 - A missed video may be backdated to yesterday until 12:00 PM the next day. It then joins the correct reporting obligation.
-- A due report key is `(business_id, creator_id, reporting_period_id, video_log_id, platform)`.
+- The gate selects only videos inside the completed business date period and on or after the membership join time.
+- A report is tied to the exact video and platform. Production must define idempotent insert/update behavior so retries cannot create ambiguous duplicates.
 - Logging permission is computed and enforced server-side with the insert; hiding a button is not security.
 
-Plain explanation of the old-report defect: today the database can treat a video as permanently reported after any one view entry because reports are not tied to a reporting period. A report submitted for an earlier period could therefore make a later check look complete. Period-specific report keys prevent that.
+Correction to the first audit: an old report cannot clear a different new video because current reports already carry `video_log_id`. The unsupported “old reports satisfy future gates” claim is withdrawn. The actual risks are duplicate rows for the same video/platform and a query that scans every older unreported video rather than explicitly bounding the completed date period.
 
 ## Trial review and onboarding contract
 
