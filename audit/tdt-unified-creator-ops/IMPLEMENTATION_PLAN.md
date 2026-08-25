@@ -1,33 +1,33 @@
 # Implementation plan after prototype approval
 
-Production UI work remains blocked until the prototype is explicitly approved.
+Production UI and deployment remain blocked until the revised prototype is explicitly approved.
 
 ## Dependency order
 
-1. **Restore proofable database truth** — expose Supabase MCP to this task, compare tracked migrations with the live ledger/schema, regenerate the schema snapshot, and add deterministic bootstrap/migration/auth smoke commands. Stop if hashes or environment identity disagree.
-2. **Stabilize identity/membership access** — explicit enabled/deactivated membership state, server-side business selection, cross-tenant denial tests, and immediate chooser routing.
-3. **Introduce shared cycles** — one stored cycle source in Africa/Lagos, cycle-specific report keys, post-join obligation query, atomic logging gate, wrong-business and concurrency tests.
-4. **Automate trial qualification** — fixed 10,000 per-video rule, idempotent trigger/RPC, single notification, audit event, no manual decision path; migrate old `trial_approved` semantics forward.
-5. **Add migration opening balances** — validated August count import with attribution; do not fabricate links/videos.
-6. **Repair weekly Drive collation** — consume cycle-specific reports, designated folders, leases/idempotency/reconciliation, bounded batches.
-7. **Replace monthly Apify job** — no week-one scrape; cumulative 1–14, 1–21, and 1–month-end windows; cost guard and one-business retry isolation; live sandbox spot-check requires explicit approval because it spends credits.
-8. **Build approved creator UI** — absorb the approved prototype into real components; remove every prototype control/mock afterward.
-9. **Build CashDrive inventory and enquiries** — separate bounded flows after tenant/auth/cycle contracts are green.
-10. **Hardening and release proof** — audit log, pagination/load test over 1,000 creators, secret/dependency scans, accessibility, preview deployment, RLS caller tests, rollback/forward-fix runbook. Production deployment requires explicit approval.
+1. **Prove live environment truth** — expose project-scoped Supabase and Vercel MCP tools, compare live schema/migrations/configuration, and add reproducible build/auth/migration evidence.
+2. **Secure personal-Google identity and invitations** — verified Google login, email-bound expiring single-use invites, membership claim transaction, management MFA, revocation, and wrong-email/replay/cross-business tests.
+3. **Create managed business configuration** — period type/anchor/timezone, noon grace, Sheet destination, Apify schedule, notifications, statuses, and safe versioned audit. Keep 10,000 as a protected policy.
+4. **Repair reporting periods and gate** — preserve Aura Monday–Sunday, configure other businesses, remove personal seven-day clocks, add join-time filtering and period-specific reports, and enforce permission atomically server-side.
+5. **Build trial review workflow** — one-video 10,000 detection, idempotent management notification, review queue, proof link, approve/keep-trial decision, onboarding unlock, and immutable audit event.
+6. **Add lifecycle and opening position** — private creator photo, joined/deactivated/reactivated dates and reasons, plus admin-entered August starting count without historical link import.
+7. **Build TDT Applications** — structured fields/private introduction upload, review status, search/filter, export or Sheet collation, retention and access controls.
+8. **Build CashDrive Inventory and Enquiries** — separate structured workspaces using the supplied form fields, tenant RLS, filters, ownership, follow-up, and history.
+9. **Repair automations** — per-business weekly Sheets collation and Apify windows 1–14, 1–21, 1–month-end with ledgers, leases, retries, reconciliation, and cost guards.
+10. **Implement the approved phone-first UI** — absorb approved prototype patterns into real components; remove prototype controls and mocks.
+11. **Harden and prove** — RLS caller matrix, invitation abuse, session/revocation, uploads, rate limits, CSRF/CSP/cookies, secret and dependency scans, accessibility, load tests beyond 1,000 creators, preview deployment and rollback/incident runbooks.
 
-## Test-first proof requirements
+## Build verification result on 2026-08-25
 
-- Unauthenticated, wrong-role, wrong-business, disabled-membership, stale-active-business, and cross-object denial.
-- Join during every day of a cycle; month/year/timezone boundaries; retry and concurrent report/log submissions.
-- Different videos at 6,000 + 6,000 do not qualify; one video at 9,999 does not; one video at 10,000 does; retries notify once.
-- Deactivating CashDrive does not disable NorthQuest/Aura for the same login.
-- Migration import rerun is idempotent and preserves Google Sheet history.
-- Automation crash after external success but before local acknowledgement reconciles without duplicates.
-- Admin list/analytics load at 1,000+ creators remains within a named numeric budget.
+- Locked dependencies installed after replacing a truncated Next.js Windows compiler download.
+- `npm run build` reached the optimized compilation stage.
+- The build could not finish because the existing `next/font` setup downloads IBM Plex font files from Google and `fonts.gstatic.com` timed out/stalled.
+- Result: `UNVERIFIED — external font fetch blocker`. No production source-code build error was reached, but the build is not a pass.
+- Recommended production repair after approval: self-host the approved font files or make the build independent of external font availability, then rerun from a clean checkout.
 
-## Current blockers to production implementation
+## Current blockers
 
-- Explicit UI approval has not yet been given.
-- Supabase live schema/ledger and real-caller RLS cannot be checked because its MCP tools are not exposed in this task.
-- Vercel project linkage/deployment configuration cannot be read through MCP in this task.
-- Apify actor inputs/outputs have not had a real paid test; spending is not authorized.
+- Revised prototype approval has not been given.
+- Supabase live schema/ledger and real-caller RLS remain unavailable in this task.
+- Vercel project configuration remains unavailable in this task.
+- Apify live actor proof would spend credits and is not authorized.
+- Application upload retention and draft retention need explicit product decisions before production persistence.

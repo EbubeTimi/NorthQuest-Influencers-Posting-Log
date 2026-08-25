@@ -1,30 +1,36 @@
-# TDT prototype verification
+# TDT prototype revision 2 verification
 
 ## Outcome
 
-The local, read-only prototype is traversable across every requested pathway. Two defects were found during runtime review and fixed before handoff:
-
-1. Qualification was initially stored globally and leaked across business switches. It is now business-scoped.
-2. Gate validation initially targeted the wrong missing field in one test path. It now marks current invalid fields with `aria-invalid` and focuses the first missing field.
-3. The phone layout initially placed review controls before the product. It now presents the proposed product first and review controls below it.
+The revised read-only prototype matches the user's 2026-08-25 corrections and fixes the supplied phone-layout defect. Production UI and deployment remain untouched.
 
 ## Automated proof
 
-- `node tests/manage-bonus.test.js` — `PASS` (13 existing legacy checks).
-- `node tests/prototype-contract.test.js` — `PASS` (12 prototype contract checks).
-- `git diff --check` — run before commit.
+- `node tests/prototype-contract.test.js` — `PASS` (16 corrected product/UI checks).
+- `node tests/prototype-runtime.test.js` using installed Chrome — `PASS` (12 runtime checks).
+- `node tests/manage-bonus.test.js` — `PASS` (13 existing regression checks).
+- `git diff --check` — required before the revision commit.
 
-## Runtime proof
+## Runtime and visual proof
 
-- Sign-in validation, code expiry, chooser, dashboard, business switch, Escape focus restoration, weekly gate, automatic onboarding, deactivation, offline retry, and validation recovery: `PASS`.
-- Viewports 390×844, 768×900, 1280×900: `PASS`, no horizontal overflow.
-- Reduced motion: `PASS`, transition duration observed as 1ms.
-- Browser console: `PASS`, no warnings or errors.
-- Visual review: desktop automatic-unlock and phone gate states inspected.
+- 390px phone: one readable column; document and device horizontal overflow both `0px`.
+- 768px tablet and 1280px desktop: horizontal overflow `0px`.
+- Assigned membership chooser: NorthQuest and Aura only; CashDrive is not exposed to the creator.
+- Business switch sheet: Escape closes and restores focus.
+- Noon grace, video validation, 10,240 review pending, management approval, onboarding ready, per-business deactivation, and reduced motion: `PASS`.
+- Browser console: no warnings or errors.
+- Screenshots: `revision2-phone-dashboard.png`, `revision2-phone-review-pending.png`, `revision2-phone-management-review.png`, and `revision2-phone-approved.png`.
 
-## Baseline application build
+## Production build verification
 
-`UNVERIFIED`. Two clean `npm ci` attempts stalled while fetching large packages. The npm log shows the `exceljs` tarball took 886,565ms after an `ECONNRESET`; the interrupted install never created `node_modules/.bin/next.cmd`, so `npm run build` could not start. This is recorded as an environment/dependency-install failure, not a Smithstem source failure.
+The earlier dependency failure was diagnosed and repaired locally:
+
+1. The Next.js Windows compiler was truncated at about 24 MB after an interrupted npm download.
+2. A clean workspace-local cache downloaded the complete package at about 136 MB.
+3. `npm run build` then loaded Next.js 14.2.35 and entered optimized production compilation.
+4. The existing `next/font` setup attempted to download IBM Plex files from Google. `fonts.gstatic.com` timed out/stalled, so the build was stopped after an excessive wait.
+
+Result: `UNVERIFIED — external font fetch blocker`. This is not a build pass. No application-source compilation error was reached. A later production change should self-host the approved fonts or otherwise remove external build-time font availability, then rerun from a clean checkout.
 
 ## Flow-by-flow gates
 
@@ -32,10 +38,10 @@ The local, read-only prototype is traversable across every requested pathway. Tw
 | --- | --- | --- |
 | Gate 1 — foundation structure | N/A | Existing application audit, not a new foundation declaration |
 | Gate 2 — foundation execution | UNVERIFIED | Live Supabase MCP tools and real caller identities unavailable |
-| Gate 3 — build evidence | UNVERIFIED | Production dependency install did not complete; prototype tests and runtime proof pass independently |
-| Gate 4 — build-state truth | UNVERIFIED | No project-owned runtime-proof/migration-state command; live migration ledger unavailable |
-| Gate 5 — skill installation | PASS | Both skills are present, version 2.0.1, with every named reference |
+| Gate 3 — build evidence | UNVERIFIED | Prototype proof passes; production build is blocked by Google Fonts |
+| Gate 4 — build-state truth | UNVERIFIED | No project-owned migration/runtime manifest and no live migration ledger |
+| Gate 5 — skill installation | PASS | Both skills are present at version 2.0.1 with named references |
 
 ## Proof boundary
 
-This prototype proves interaction intent only. It does not prove production UI, RLS, persistence, notifications, Google integration, Apify behavior, native feedback, or deployment. Assurance is `self-reviewed, lower assurance` because no independent subagent/reviewer was requested.
+The prototype proves interaction intent only. Google login, invitation security, RLS, writes, notifications, uploads, Sheets, Apify, audit persistence, production performance, and deployment remain unverified. Assurance is `self-reviewed, lower assurance` because no independent subagent/reviewer was authorized.

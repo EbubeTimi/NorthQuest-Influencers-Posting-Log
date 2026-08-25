@@ -1,42 +1,47 @@
 {
-  "generated_at": "2026-08-25T12:32:57+01:00",
-  "repository_revision_audited": "94e8d1aef44a97b873273c0f8b3a667f896b323c",
+  "generated_at": "2026-08-25",
   "branch": "codex/unified-tdt-creator-ops-prototype",
   "artifact": "prototypes/unified-tdt-creator-ops.html",
-  "environment": "local HTTP server at 127.0.0.1; deterministic mock data",
+  "environment": "local HTTP server at 127.0.0.1:4173; installed Chrome in headless mode; deterministic mock data",
   "production_side_effects": false,
-  "checks": {
-    "signin_invalid_email_focus": "PASS",
-    "code_expiry_recovery": "PASS",
-    "business_chooser": "PASS",
-    "header_business_switch_and_escape_focus_restore": "PASS",
-    "shared_cycle_gate": "PASS",
-    "post_join_obligation_copy": "PASS",
-    "automatic_single_video_10000_transition": "PASS",
-    "manual_approval_control_absent": "PASS",
-    "qualification_isolated_per_business": "PASS",
-    "deactivation_isolated_per_business": "PASS",
-    "offline_retry": "PASS",
-    "first_invalid_gate_field_focus_and_aria_invalid": "PASS",
+  "automated_contract_checks": 16,
+  "runtime_checks": {
+    "phone_390_single_readable_column": "PASS",
+    "phone_390_document_overflow_px": 0,
+    "phone_390_device_overflow_px": 0,
+    "assigned_memberships_only": "PASS — NorthQuest and Aura; CashDrive absent",
+    "business_sheet_escape_focus_restore": "PASS",
+    "noon_backdate_grace": "PASS",
+    "video_validation_focus_and_aria_invalid": "PASS",
+    "single_video_10240_creates_review_pending": "PASS",
+    "self_report_does_not_unlock_onboarding": "PASS",
+    "management_approval_unlocks_onboarding": "PASS",
+    "northquest_deactivation_leaves_aura_usable": "PASS",
     "reduced_motion": "PASS",
-    "phone_390_no_horizontal_overflow": "PASS",
-    "tablet_768_no_horizontal_overflow": "PASS",
-    "desktop_1280_no_horizontal_overflow": "PASS",
-    "browser_console_errors": "PASS (none)",
-    "production_endpoint_references": "PASS (none in prototype)"
+    "tablet_768_horizontal_overflow_px": 0,
+    "desktop_1280_horizontal_overflow_px": 0,
+    "browser_console_warnings_or_errors": "PASS — none"
   },
   "visual_review": {
-    "desktop_onboarding_unlocked": "PASS",
-    "phone_weekly_gate": "PASS after product-first responsive reorder"
+    "revision2-phone-dashboard.png": "PASS — full-width stacked form, readable spacing, full business name",
+    "revision2-phone-review-pending.png": "PASS — management approval boundary is explicit",
+    "revision2-phone-management-review.png": "PASS — photo, joined/reported dates, evidence and decision are visible",
+    "revision2-phone-approved.png": "PASS — creator sees onboarding only after approval"
+  },
+  "build_verification": {
+    "dependencies": "PASS after clean compiler download",
+    "next_compiler": "PASS",
+    "npm_run_build": "UNVERIFIED — existing next/font Google-hosted IBM Plex request timed out/stalled at fonts.gstatic.com",
+    "production_source_error_reached": false
   },
   "unverified": [
-    "Native haptics",
-    "Real authentication and email delivery",
-    "Supabase authorization and persistence",
-    "Management notification delivery",
+    "Real Google authentication and invitation claim",
+    "Supabase RLS and persistence",
+    "Management notification delivery and audit persistence",
+    "Private creator/application uploads",
     "Google Sheets and Drive writes",
-    "Apify actor behavior and cost",
-    "Production performance"
+    "Apify actors, outputs, and cost",
+    "Production performance and deployment"
   ],
   "assurance": "self-reviewed, lower assurance"
 }

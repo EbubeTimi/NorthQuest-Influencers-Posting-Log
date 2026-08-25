@@ -1,36 +1,32 @@
 # Authoritative rule conflict audit
 
-Current locked instructions override every historical item below.
+Current instructions from 2026-08-25 override the earlier request and every historical repository decision.
 
-| # | Locked rule | Conflicting or missing repository behavior | Evidence | Required resolution |
-| --- | --- | --- | --- | --- |
-| 1 | One login, separate business memberships | Foundation exists and matches | `business_memberships`, switcher | Preserve and harden |
-| 2 | Choose/switch business after sign-in | Switcher exists only inside authenticated shell; no immediate chooser | `BusinessSwitcher.js`, routing | Add chooser for multi-business creators |
-| 3 | Permanent limited trial; management can deactivate | Trial identity is permanent, but trial roster has no deactivate control; current toggle is active/inactive-oriented | admin trial roster | Add membership-safe trial deactivation/reactivation |
-| 4 | One shared weekly cycle | NorthQuest/CashDrive use calendar blocks; Aura is hard-coded Monday–Sunday | migration `20260818213000`, `lib/domain.js` | Remove tenant-specific anchor branch |
-| 5 | Gate from midnight after day seven | Current client waits until `joinedDaysAgo >= 7`, a personal clock, and relies on UI gating | dashboard lines 420–435 | Gate at shared boundary and enforce server-side |
-| 6 | New joiners owe only post-join videos in current cycle | Personal seven-day exemption delays their first shared-boundary obligation | dashboard `joinedDaysAgo` guard | Filter by membership join time, not account age |
-| 7 | Every video needs a report for that week | Any historical report permanently marks a video “fully reported”; reports have no `cycle_id` | `video_view_reports`, dashboard map | Store cycle-specific reports |
-| 8 | 10,000 on one trial video automatically unlocks onboarding | CashDrive is 5,000; threshold is editable per business; admin must Approve/Dismiss | migrations `20260817203404`, `20260817054329`; admin crossing queue | Fixed 10,000; automatic idempotent transition; notification only |
-| 9 | No manual approval switch | Current admin has Approve and Dismiss buttons and a `trial_approved` state | `approveCrossing`, trial tab | Remove manual qualification decision |
-| 10 | Opening August video count, admin-entered | Migration carries pay/socials/join date and explicitly excludes history; no opening count | migration `20260817112706` | Add opening-balance import, not historical video rows |
-| 11 | Historical links stay in Sheets | Current migration correctly leaves them out but lacks the opening count | same migration | Preserve non-import of links |
-| 12 | Weekly reports auto-collate to designated Sheets folders | Function/folders exist, but schedules inherit conflicting anchors and only include active creators | analytics weekly function/migrations | Align shared cycle and agreed population; keep idempotency |
-| 13 | Apify staged after weeks 2/3/4 | Code explicitly says monthly only; cron runs day 1 next month | analytics monthly function and cron migration | Replace with cumulative staged windows across all businesses |
-| 14 | CashDrive inventory workflow | Entirely absent | repository search | Design/build after creator-core contracts |
-| 15 | CashDrive enquiry-submission workflow | Entirely absent | repository search | Design/build with inventory relation and tenant RLS |
-| 16 | Auditable system | Row timestamps exist, but project bible says no app-level audit log | `PROJECT_BIBLE.md` §8 | Add append-only audit events |
-| 17 | Scale beyond 1,000 creators | Admin/dashboard perform broad client-side fetch/aggregation; no pagination contract | admin/dashboard queries | Paginate, index, batch, server-aggregate |
-| 18 | Secure unified system | Root legacy intake still collects social/email passwords and sends to a visible Apps Script endpoint | root `intake.html`; `SECURITYUPGRADE.md` | Stop password collection; isolate/retire legacy path deliberately |
-| 19 | Repository truth supports safe recovery | `SCHEMA.md` is stale and there are no build-state/evidence manifests or migration replay command | schema/package files | Rebuild live schema via read-only MCP, add verification commands/evidence |
-| 20 | Production UI only after approval | Existing project bible already declares this gate | `PROJECT_BIBLE.md` §7 | Prototype only in this PR; production UI blocked |
+| # | Current locked rule | Conflicting or missing repository behavior | Required resolution |
+| --- | --- | --- | --- |
+| 1 | Personal Google login plus assigned memberships | Email-code login exists; business membership exists, but no secure business invitation claim flow | Add Google login and email-bound, expiring, single-use membership invitations |
+| 2 | Show only assigned businesses | Existing switcher appears after entry and a creator-facing chooser is absent | Route multi-membership creators to a chooser containing enabled memberships only |
+| 3 | Aura alone uses Monday–Sunday | Repository Aura weekday branch is valid in principle; the previous audit incorrectly called it a conflict | Preserve Aura Monday–Sunday and move all business period rules into validated configuration |
+| 4 | New creators join the business's period already in progress | Current client waits for `joinedDaysAgo >= 7`, creating a private grace week | Remove the personal clock; filter obligations by membership join timestamp |
+| 5 | Midnight gate plus next-day noon backdate grace | Gate is client-led and no explicit yesterday-until-noon rule exists | Enforce the gate server-side and add a narrowly scoped backdate deadline |
+| 6 | Every due video/platform needs a period-specific report | Reports have no reporting-period key, so an older report can make a video look permanently complete | Add reporting period to the unique report key and due-report query |
+| 7 | 10,000 on one video creates management review | CashDrive is 5,000; threshold is editable; prior instruction incorrectly removed approval | Protect 10,000 for all businesses; create one review/notification; retain management verification |
+| 8 | Only management approval unlocks onboarding | Existing manual controls are mixed with older qualification states | Replace with explicit `trial → review_pending → onboarding_approved` transitions and audit them |
+| 9 | Apify runs 1–14, 1–21, and 1–month-end across all businesses | Code is monthly-only with a day-one-next-month cron | Replace with three cumulative monthly windows and per-business run isolation |
+| 10 | TDT-wide Applications area | Applicant data exists, but it is not yet the unified administration flow shown in the supplied form | Build a separate applications workspace and structured applicant records/uploads |
+| 11 | CashDrive Inventory and Enquiries areas | Both workflows are absent | Add separate tenant-scoped areas; use the supplied enquiry fields as the starting contract |
+| 12 | Admin sees creator photo, joined/deactivated dates, business records, and actions | Creator history and lifecycle details are incomplete and fragmented | Add auditable lifecycle records and safe private media references |
+| 13 | Opening August count means one starting total | Existing migration excludes history but has no opening total | Import one admin-entered count; keep historical links in Sheets |
+| 14 | Weekly Sheets collation remains | Functions/folders exist but inherit current schedule and population limitations | Align each business's reporting periods and keep idempotency/reconciliation |
+| 15 | Important settings are managed, not scattered constants | Thresholds, anchors, folders, cron behavior, and lists appear in migrations/client logic | Use protected, versioned configuration with validation and audit history |
+| 16 | Secure, auditable, scalable system | No complete application audit log; broad client aggregation; legacy intake collects passwords | Add RLS proof, MFA, audit events, pagination/indexes/jobs, and retire password collection |
+| 17 | Phone-first creator experience | First prototype retained desktop columns at phone width and used technical/verbose copy | Replace with one-column mobile layout, plain dates, short tasks, and optional first-use walkthrough |
+| 18 | Production UI requires explicit approval | Repository and flow rules already require this gate | Continue with read-only prototype only; no production UI or deployment |
 
 ## Historical conflict provenance
 
-- `d14acd9` — “Give Aura its own Monday-Sunday gate…”
-- `b270e50` — “Automate weekly/monthly analytics…”
-- `3d95613` — CashDrive 5,000-view trial threshold.
-- `beb2f78` — live per-business trial threshold.
-- `fcbbc70` — manual trial lifecycle/approval model.
-
-These commits remain valuable history, but their conflicting decisions are superseded.
+- `d14acd9` — Aura Monday–Sunday behavior. Current instruction confirms this Aura-specific rule.
+- `b270e50` — weekly/monthly analytics implementation. Current Apify schedule supersedes its monthly-only behavior.
+- `3d95613` — CashDrive 5,000-view threshold. Superseded by 10,000 for every business.
+- `beb2f78` — editable per-business trial threshold. Superseded by the protected 10,000 policy.
+- `fcbbc70` — older manual lifecycle model. Management verification remains, but its states and audit behavior must be rebuilt around the current rule.

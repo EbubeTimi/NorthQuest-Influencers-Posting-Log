@@ -1,36 +1,36 @@
-# Unified creator-operations prototype brief
+# TDT creator prototype brief — revision 2
 
-Portable writing fallback: `humanizing-writing` is unavailable, so copy is direct, concrete, and audience-appropriate.
+Portable writing fallback: `humanizing-writing` is unavailable, so creator copy uses short, direct language.
 
 ## Compact design brief
 
-Goal: Sign in once, choose a business, work through a trial week, clear the gate, and understand automatic onboarding.
-Human and feel: A non-technical creator should feel oriented, protected, and never trapped.
-Entry and exit: Email-code sign-in → business chooser/dashboard → switcher, sign out, or onboarding.
-System: Standalone read-only web prototype using Smithstem’s Naira Green, gold, quiet depth, and compact mobile-first density.
-Signature: A shared seven-day cycle rail shows exactly when logging is open, gated, or cleared.
-Feedback: 180–240ms state transitions; meaningful success/warning intent annotations; no browser vibration claim.
-Rejecting: Generic metric-card grids and urgency language that pressures creators.
-Variants: Trial/active/deactivated roles; one/multiple businesses; phone/tablet/desktop; reduced motion.
+Goal: Use a personal Google login, open only assigned work, log today's video, enter required views, and continue after management approval.
+Human and feel: A creator using one hand on a phone should understand the next task without learning internal operations language.
+Entry and exit: Business invitation or sign-in → assigned workspace → dashboard → views → management review → onboarding.
+System: Standalone read-only prototype; phone-first one-column layout; system sans type; restrained TDT green; 48px controls.
+Signature: A plain date strip and one “What you need to do” message replace technical cycle explanations.
+Feedback: Immediate inline status, short opacity transitions, focus recovery, and no browser vibration claim.
+Rejecting: Desktop columns squeezed onto phones, ornamental metric cards, technical terminology, and long explanatory paragraphs.
+Variants: Invite/new login, one/multiple memberships, Aura weekday rule, calendar-date businesses, trial/review/approved/deactivated, phone/tablet/desktop.
 
 ## State and transition map
 
-| From | Trigger | Guard/input | To | Container | Feedback | Recovery/exit |
-| --- | --- | --- | --- | --- | --- | --- |
-| Sign-in | Continue | Valid email | Code sent | Page | Inline progress, focus code | Change email |
-| Code sent | Verify | 8 digits | Business chooser | Page | Success announcement | Expired/error → retry |
-| Business chooser | Choose | Enabled membership | Trial dashboard | Page | Selection intent | Sign out |
-| Dashboard | Log video | Gate open + URL | Logged success | Inline form | Success intent | Validation/retry/cancel |
-| Dashboard | Cycle closes | Reports missing | Weekly gate | Page region | Warning intent, live announcement | Complete all due reports |
-| Weekly gate | Save all | Positive values | Logging reopened | Inline → dashboard | Success intent | Offline/error preserves draft |
-| Weekly gate | One video reaches 10,000 | Trial + not previously qualified | Onboarding unlocked | Banner + dashboard state | Success intent | Open onboarding later |
-| Any business | Open switcher | Another enabled membership | Business chooser/switch | Popover desktop, sheet note mobile | Selection intent | Escape restores focus |
-| Trial dashboard | Management deactivates | Membership target | Deactivated | Full-page access state | Warning intent | Switch business/sign out |
-| Deactivated | Switch business | Other enabled membership | Other dashboard | Page | Selection intent | Sign out |
-| Loading | Timeout/unavailable | — | Error/offline | Inline/page | Polite live announcement | Retry/cancel |
-| Any transient state | Background/resume | Local mock state | Same state | No new container | No haptic | Continue |
+| From | Trigger | Guard/input | To | Feedback/recovery |
+| --- | --- | --- | --- | --- |
+| Invitation | Continue with Google | Verified email matches unused invite | Walkthrough/dashboard | Wrong email or expired invite explains recovery |
+| Sign-in | Continue with Google | Verified personal account | Assigned chooser or dashboard | Retry/sign out |
+| Chooser | Select | Enabled assigned membership only | Dashboard | Disabled membership is not selectable |
+| First dashboard | Show me around | — | Three-step walkthrough | Skip or reopen Help |
+| Dashboard | Add video | Today or valid yesterday-before-noon date | Logged | Inline validation, retry, autosave intent |
+| Dashboard | Period closes | Required views missing | Views page | Clear one task and due dates |
+| Views | Save | Every required platform has a non-negative count | Dashboard or review pending | Focus first invalid input; retry preserves entries |
+| Views | One video is at least 10,000 | Trial | Review pending | Notify management once; do not unlock |
+| Management review | Approve | Manager verified real platform result | Onboarding ready | Keep in trial remains available and audited |
+| Any creator page | Switch | Another enabled membership | Other dashboard | Mobile sheet; focus returns on close |
+| Management action | Deactivate membership | Reason confirmed | Inactive page | Other memberships still work |
 
-## N/A states
+## Prototype-only boundary
 
-- Payment, file upload, camera/microphone permission, destructive deletion, and native haptics are outside this prototype.
-- Backend authorization, RLS, email delivery, management notification, Sheets, Apify, and persistence are mocked and explicitly unverified.
+- Google login, invitation claim, drafts, database authorization, notifications, management identity, uploads, Sheets, Apify, and audit persistence are simulated.
+- The visible creator product contains no developer language. Review controls remain outside the proposed phone UI.
+- TDT Applications and the full CashDrive admin dashboard need their own focused prototype after the creator flow is accepted.

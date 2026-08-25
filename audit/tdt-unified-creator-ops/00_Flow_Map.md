@@ -1,74 +1,73 @@
 # Affected flow map
 
-## F01 — Sign in once
+## F01/F02 — Receive an invitation and sign in
 
-- Actor/goal: person reaches their one account.
-- Entry: email-code screen; existing session resumes automatically.
-- Exit: role and memberships load; multi-business creators go to F02.
-- Failure/recovery: invalid or expired code, rate limit, offline, retry, sign out.
-- Permission: Supabase identity only; role comes from server data.
+- Management sends a business-specific, expiring invitation to the creator's personal Gmail address.
+- The creator opens the link and continues with Google. The verified Google email must match the invitation.
+- Claiming a later invitation adds another business membership to the same person/login.
+- Failure states: expired, already used, wrong email, deactivated invite, offline, and retry.
 
-## F02/F03 — Choose and switch business
+## F03/F04 — Choose and switch assigned work
 
-- Actor/goal: creator selects NorthQuest, CashDrive, or Aura membership without another login.
-- Entry: immediately after sign-in when two or more active memberships exist; later from the header switcher.
-- Exit: selected membership becomes active and its scoped dashboard loads.
-- Failure/recovery: membership disabled, network unavailable, stale selection, retry or sign out.
-- Security: target business must be an enabled membership for the caller; never accept a client-supplied tenant alone.
+- A creator with one enabled membership goes directly to that dashboard.
+- A creator with several enabled memberships chooses after sign-in and can switch later.
+- The chooser shows assigned memberships only; it never lists unrelated businesses.
+- Server authorization validates the selected membership on every scoped request.
 
-## F04/F05 — Enter and operate a permanent limited trial account
+## F05 — Learn the dashboard
 
-- Actor/goal: approved applicant starts working without full onboarding.
-- Entry: trial link/sign-in.
-- Exit: trial dashboard, deactivated state, or automatically unlocked onboarding.
-- Preserve: one real login; business-scoped membership; videos remain auditable.
-- Change: management can deactivate a trial membership without deleting identity/history.
+- A short, optional first-use walkthrough points to today's date, the video form, and the views reminder.
+- Creator-facing copy uses plain dates and tasks. It does not explain internal concepts such as shared cycles, tenant isolation, or creator operations.
+- The creator may skip and reopen help later.
 
-## F06/F07 — Log videos and clear the shared weekly gate
+## F06/F07 — Log videos, use the noon grace, and clear views
 
-- Actor/goal: creator logs links during the current shared cycle and, after it closes, reports views for every video they owe.
-- Entry: selected business dashboard.
-- Trigger: midnight after the cycle closes.
-- Exit: all due per-video reports are accepted; logging reopens.
-- Join rule: membership owes only videos logged on/after its join time in the in-progress cycle.
-- Failure/recovery: partial draft survives locally; invalid view is corrected inline; offline and server errors can retry; switching business cannot leak or satisfy another tenant’s gate.
-- Enforcement: the database/API must reject video insertion while the caller’s business membership has unresolved reports; UI gating alone is insufficient.
+- The dashboard emphasizes today's date and one stacked phone-friendly video form.
+- Aura follows Monday–Sunday; other business date blocks come from their configured rules.
+- New creators enter the current business period immediately and owe only videos logged after joining.
+- Yesterday's missed video remains available until 12:00 PM the next day.
+- At midnight after a period ends, required view entry blocks the next normal video submission until all due video/platform views are saved.
+- Period-specific report keys prevent an older report from satisfying a later check.
+- Validation, offline retry, duplicate submission, and wrong-business denial preserve data and focus recovery.
 
-## F08/F09 — Automatic trial transition and onboarding
+## F08/F09 — Review a 10,000-view video and unlock onboarding
 
-- Actor/goal: trial creator unlocks onboarding when one video reaches 10,000 self-reported views.
-- Trigger: accepted view report makes one video’s current report reach at least 10,000.
-- Guard: never sum different videos; there is no manual approval switch.
-- Effects: transition is idempotent, qualifying video is recorded, onboarding unlocks, management receives one notification, and an audit event is written.
-- Exit: creator opens the existing onboarding flow; access can still be deactivated by management.
+- One video at 10,000 self-reported views creates one management notification and review item.
+- The creator sees “Under review” and remains a trial creator.
+- Management sees the creator photo, business, join date, video links, self-reported value, and audit context; management checks the actual platform.
+- Management approval unlocks onboarding. Keeping the creator in trial does not erase the report.
+- Different videos are never summed. Retries never duplicate the notification or decision.
 
-## F10 — Deactivate one business membership
+## F10 — Deactivate access
 
-- Actor/goal: management stops access for one creator/business while preserving their login, other memberships, and history.
-- Entry: creator detail or trial roster.
-- Exit: that membership sees a clear inactive state; other businesses still work.
-- Recovery: management reactivates; audit records actor, reason, time, and membership.
+- Management may deactivate one business membership without deleting the person, other memberships, or history.
+- A whole-person suspension is a separate, higher-impact action.
+- Joined, deactivated, reactivated dates, reason, and acting manager are audited.
 
-## F11 — Existing creator migration
+## F11 — Applications
 
-- Actor/goal: management imports the opening August video count only.
-- Data: count, month (`2026-08` unless the import run explicitly targets another opening month), `admin_entered=true`, entered by/at, creator/business.
-- Non-goal: historical links remain in Google Sheets and are not copied into `video_logs`.
-- Safety: idempotent upsert keyed by creator/business/opening month; import validation and row-level audit.
+- Applicants submit one TDT-wide application, separate from any business membership.
+- Initial fields from the supplied form: personal email, full name, phone, suitable smartphone, basic editing ability, 30-second introduction video, and city.
+- Management reviews structured records in an Applications area rather than relying on Google Forms summary charts.
 
-## F12/F13 — Analytics automations
+## F12/F13 — CashDrive inventory and enquiries
 
-- Weekly: collate accepted self-reports into each business’s designated Drive folder after the shared gate closes.
-- Apify: all businesses; week one no scrape; after week two scrape days 1–14; after week three days 1–21; after week four days 1–month-end.
-- Reliability: idempotency key per business/job/window, leases, retry classes, run ledger, cost guard, duplicate prevention, reconciliation, and alerting.
-- Proof gap: current actors and output fields have never had a paid live spot-check.
+- Inventory is a separate CashDrive administration area for vehicle identity, availability, price, media, publication, and change history.
+- Creators submit enquiries using referrer, buyer name/contact, requested vehicle, inquiry date, source, budget, urgency, lead status, and notes.
+- CashDrive management filters and updates structured enquiry records; every record remains CashDrive-scoped.
 
-## F14/F15 — CashDrive inventory and enquiries
+## F14 — Existing creator opening position
 
-- Inventory: management adds/updates vehicle availability, publication state, price, media references, and audit history.
-- Enquiry: a lead submits interest against a vehicle; CashDrive management sees tenant-scoped status, owner, follow-up, and audit history.
-- Current state: absent from routes, schema, migrations, and tests.
+- Management imports one admin-entered opening August video count per creator/business.
+- This number is a starting total only. Historical video links remain in Google Sheets.
+- Imports are validated, attributable, idempotent, and corrected through audit history rather than deletion.
+
+## F15/F16 — Sheets and Apify automation
+
+- Accepted self-reported views collate to each business's designated Sheet/Drive location.
+- Across every business, Apify runs three cumulative windows: 1–14, 1–21, and 1–month-end.
+- Jobs use configuration, idempotency, leases, bounded retries, reconciliation, cost guards, and one-business failure isolation.
 
 ## Regression impact map
 
-Retest sign-in, callback/verification, onboarding, header/switcher, creator dashboard, admin creators/trial/applicants, RLS helper functions, creator/video/report policies, storage access, Drive functions, cron schedules, notification functions, migration invite redemption, payments/bonus behavior, all three tenants, inactive/trial/active role variants, offline/retry, and mobile/desktop keyboard paths.
+Retest Google sign-in and callback, invitation redemption, existing email-code users/migration, chooser, switcher, creator and trial dashboards, Aura Monday–Sunday boundaries, NorthQuest/CashDrive calendar blocks, join dates, noon grace, midnight gate, period-specific reports, management review/approval, onboarding, deactivation, applicants, private uploads, CashDrive enquiry/inventory, RLS helpers and policies, Sheets, Apify schedules, notifications, payments/bonuses, offline/retry, phone keyboard behavior, and 1,000+ creator administration.

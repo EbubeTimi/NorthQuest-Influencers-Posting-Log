@@ -1,61 +1,67 @@
 # Shared flow contracts
 
-## Identity and tenant contract
+Current instructions from 2026-08-25 override every earlier repository rule.
+
+## Identity, invitation, and membership contract
 
 ```text
-auth_user 1 — 1 profile
-profile 1 — many business_memberships
-business_membership 1 — 0..1 creator identity in that business
-active_business must reference an enabled membership owned by auth_user
+auth_user 1 — 1 person profile
+person profile 1 — many business memberships
+business membership 1 — 0..1 creator record in that business
+active business must be one of that person's enabled memberships
 ```
 
-Tenant rules:
+- Creators sign in with their personal Google account, not a Gmail account created for a brand.
+- Management assigns access through an expiring, single-use business invitation tied to the intended personal email.
+- Opening a NorthQuest invite adds NorthQuest membership. Opening an Aura invite later adds Aura to the same login.
+- After sign-in, the creator sees only businesses assigned to that email. The system never advertises every TDT business.
+- Every creator, video, report, application, notification, enquiry, inventory record, and audit event carries its correct ownership scope.
+- Authorization derives the person from the authenticated caller and validates membership server-side.
+- Management may deactivate one business membership or suspend the whole person. History is retained, and actor, reason, joined date, deactivated date, and reactivation are audited.
+- Cross-business identifiers must not reveal whether another business's record exists.
 
-- Every creator, video, report, opening balance, notification, enquiry, inventory record, and audit event carries `business_id`.
-- Authorization derives `profile_id` from the authenticated caller and validates membership server-side.
-- Deactivation is membership/creator scoped, not identity deletion.
-- Cross-tenant identifiers must return the same denial shape as missing objects where disclosure matters.
+## Creator calendar and reporting contract
 
-## Shared-cycle contract
+- Aura's creator week is Monday through Sunday in `Africa/Lagos`.
+- NorthQuest and CashDrive use their configured calendar-date blocks. The rule is stored as business configuration, not hard-coded into page components.
+- Creators in the same business share that business's current period. Joining does not start a private seven-day clock.
+- A creator who joins on day three starts on day three. A creator who joins on day seven owes only the videos they log on day seven.
+- At midnight after the period ends, new video logging is gated until every required per-video, per-platform view report for that completed period is submitted.
+- A creator owes only videos logged on or after their membership join time.
+- A missed video may be backdated to yesterday until 12:00 PM the next day. It then joins the correct reporting obligation.
+- A due report key is `(business_id, creator_id, reporting_period_id, video_log_id, platform)`.
+- Logging permission is computed and enforced server-side with the insert; hiding a button is not security.
 
-- One platform cycle definition applies to NorthQuest, CashDrive, and Aura; no Aura-specific weekday branch.
-- Production must store an explicit, auditable cycle anchor/timezone rather than infer it differently in clients.
-- A due report key is `(business_id, creator_id, cycle_id, video_log_id, platform)`.
-- A creator owes only videos logged after their membership joined and inside the completed cycle.
-- A prior cycle’s report never satisfies the next cycle.
-- Logging permission is computed server-side and checked atomically with insert.
+Plain explanation of the old-report defect: today the database can treat a video as permanently reported after any one view entry because reports are not tied to a reporting period. A report submitted for an earlier period could therefore make a later check look complete. Period-specific report keys prevent that.
 
-## Trial qualification contract
+## Trial review and onboarding contract
 
-- Constant threshold: 10,000 for all businesses.
-- Qualification is per one video; reports from different videos are never added together.
-- First qualifying transition wins and records `qualifying_video_id` and `qualified_at`.
-- Retrying the same report cannot send a second notification or repeat the transition.
-- Management receives notification and can deactivate/reactivate, but cannot approve, reject, or manually force qualification.
+- The protected threshold is 10,000 views for one video in every business.
+- Views from different videos are never added together.
+- A creator entering 10,000 or more creates one management review item and notification. It does not unlock onboarding.
+- Management checks the real platform performance, then approves onboarding or keeps the creator in trial.
+- Only management approval unlocks onboarding for the creator.
+- Retries cannot create duplicate review items, notifications, approvals, or audit events.
 
-## Migration contract
+## Applications, CashDrive, and migration contract
 
-- Opening count is not a set of fabricated video rows.
-- Historical URLs remain in Google Sheets.
-- Import rows are admin-entered, attributable, idempotent, and reversible by a correcting entry rather than history deletion.
+- Applications are TDT-wide recruitment records, separate from any one business dashboard.
+- CashDrive has separate Inventory and Enquiries areas.
+- Enquiries capture referrer, prospective buyer, contact, requested car, inquiry date, source, budget, urgency, lead status, and notes.
+- Existing creators import one admin-entered opening August video count. This is only a starting total; historical links remain in Google Sheets and are not fabricated as video rows.
 
 ## Automation contract
 
-- Delivery: at-least-once trigger with effectively-once report/run creation.
-- Idempotency: `(business_id, kind, period_start, period_end, attempt_generation)` with a unique active result per window.
-- Retryable: network, rate limit, temporary Drive/Apify/Supabase failure.
-- Terminal: invalid folder, revoked credential, invalid actor response schema after validation.
-- Human review: partial platform results, cost limit reached, inconsistent creator mapping.
-- Reconciliation checks external result IDs before repeating an effect after a crash.
+- Weekly self-reported views collate to the designated Sheet/Drive destination for each business.
+- Apify runs across every business three times per month: days 1–14, days 1–21, and days 1–month-end. There is no week-one scrape.
+- Schedules, destinations, actor configuration, notification recipients, and business settings live in managed configuration with validation and audit history.
+- Delivery is at-least-once with idempotent results, bounded retries, cost guards, run ledgers, and reconciliation before repeating an external effect.
 
-## Audit contract
+## Security, audit, and scale contract
 
-Minimum event fields: `id`, `business_id`, `actor_profile_id` or system actor, `action`, `object_type`, `object_id`, safe before/after summary, `reason`, `occurred_at`, `correlation_id`. Never log passwords, OTPs, tokens, bank numbers, private file URLs, or raw third-party credentials.
-
-## Scale contract (>1,000 creators)
-
-- Paginate admin lists and analytics inputs; no unbounded `.select("*")` for tenant-wide screens.
-- Index cycle/report lookups on business, creator, cycle, video, and status.
-- Batch Drive/Apify work with bounded concurrency and resumable leases.
-- Materialize or incrementally aggregate admin totals; do not recompute every creator/video/report in one browser request.
-- Use database constraints for duplicate prevention and concurrency, not UI state.
+- Management uses MFA; invitations expire and are single-use; sessions and revoked access are checked server-side.
+- Supabase RLS and service boundaries deny unauthenticated, wrong-role, wrong-business, and cross-object access using real caller identities.
+- Uploads use private storage, size/type validation, malware-safe handling, and expiring signed access.
+- Inputs are validated server-side; secrets never reach browser code or logs; rate limits protect sign-in, invitations, reports, applications, and enquiries.
+- Minimum audit fields: business or TDT scope, actor, action, object, safe before/after summary, reason, timestamp, and correlation ID. Never log passwords, OTPs, tokens, bank numbers, or raw credentials.
+- Admin tables paginate and filter server-side; core lookups are indexed; background work is batched and resumable; totals are aggregated outside browsers.
