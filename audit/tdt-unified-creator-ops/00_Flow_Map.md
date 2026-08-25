@@ -18,7 +18,7 @@
 
 - A mandatory first-use spotlight walkthrough highlights controls on the real dashboard. It has no skip action, completes in a few short steps, and can be reopened from Help.
 - Creator-facing copy uses plain dates and tasks. It does not explain internal concepts such as shared cycles, tenant isolation, or creator operations.
-- The creator may skip and reopen help later.
+- The creator completes the first walkthrough and may reopen Help later; there is no skip action.
 
 ## F06/F07 — Log videos, use the noon grace, and clear views
 
