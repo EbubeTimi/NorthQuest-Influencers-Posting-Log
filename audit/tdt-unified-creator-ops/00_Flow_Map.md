@@ -16,19 +16,19 @@
 
 ## F05 — Learn the dashboard
 
-- A short, optional first-use walkthrough points to today's date, the video form, and the views reminder.
+- A mandatory first-use spotlight walkthrough highlights controls on the real dashboard. It has no skip action, completes in a few short steps, and can be reopened from Help.
 - Creator-facing copy uses plain dates and tasks. It does not explain internal concepts such as shared cycles, tenant isolation, or creator operations.
 - The creator may skip and reopen help later.
 
 ## F06/F07 — Log videos, use the noon grace, and clear views
 
-- The dashboard emphasizes today's date and one stacked phone-friendly video form.
+- The dashboard shows a locked Today choice. Yesterday appears only when it was not already logged and the current time is before 12:00 PM.
 - Aura follows Monday–Sunday; other business date blocks come from their configured rules.
 - New creators enter the current business period immediately and owe only videos logged after joining.
 - Yesterday's missed video remains available until 12:00 PM the next day.
 - At midnight after a period ends, required view entry blocks the next normal video submission until all due video/platform views are saved.
 - Reports remain tied to their exact video/platform, with idempotent retry behavior; the due query is bounded to the completed date period.
-- Validation, offline retry, duplicate submission, and wrong-business denial preserve data and focus recovery.
+- A submission is shown as successful only after the backend confirms the durable record. Validation, offline retry, duplicate submission, and wrong-business denial preserve data and focus recovery.
 
 ## F08/F09 — Review a 10,000-view video and unlock onboarding
 
@@ -56,12 +56,6 @@
 - Creators submit enquiries using referrer, buyer name/contact, requested vehicle, inquiry date, source, budget, urgency, lead status, and notes.
 - CashDrive management filters and updates structured enquiry records; every record remains CashDrive-scoped.
 
-## F14 — Existing creator opening position
-
-- Management imports one admin-entered opening August video count per creator/business.
-- This number is a starting total only. Historical video links remain in Google Sheets.
-- Imports are validated, attributable, idempotent, and corrected through audit history rather than deletion.
-
 ## F15/F16 — Sheets and Apify automation
 
 - Accepted self-reported views collate to each business's designated Sheet/Drive location.
@@ -70,4 +64,4 @@
 
 ## Regression impact map
 
-Retest Google sign-in and callback, invitation redemption, existing email-code users/migration, chooser, switcher, creator and trial dashboards, Aura Monday–Sunday boundaries, NorthQuest/CashDrive calendar blocks, join dates, noon grace, midnight gate, period-specific reports, management review/approval, onboarding, deactivation, applicants, private uploads, CashDrive enquiry/inventory, RLS helpers and policies, Sheets, Apify schedules, notifications, payments/bonuses, offline/retry, phone keyboard behavior, and 1,000+ creator administration.
+Retest Google sign-in and callback, invitation redemption, chooser, switcher, mandatory spotlight walkthrough, creator and trial dashboards, Today/Yesterday/noon boundaries, Aura Monday–Sunday boundaries, NorthQuest/CashDrive calendar blocks, join dates, midnight gate, period-specific reports, confirmed persistence, management review/approval, onboarding, deactivation, applicants, private uploads, CashDrive enquiry/inventory, RLS helpers and policies, Sheets, Apify schedules, notifications, payments/bonuses, offline/retry, phone keyboard behavior, and 1,000+ creator administration. There is no creator-data migration path in the September 1 launch.

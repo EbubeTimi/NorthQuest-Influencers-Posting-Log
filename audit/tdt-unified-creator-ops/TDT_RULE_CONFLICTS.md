@@ -16,12 +16,13 @@ Current instructions from 2026-08-25 override the earlier request and every hist
 | 10 | TDT-wide Applications area | Applicant data exists, but it is not yet the unified administration flow shown in the supplied form | Build a separate applications workspace and structured applicant records/uploads |
 | 11 | CashDrive Inventory and Enquiries areas | Both workflows are absent | Add separate tenant-scoped areas; use the supplied enquiry fields as the starting contract |
 | 12 | Admin sees creator photo, joined/deactivated dates, business records, and actions | Creator history and lifecycle details are incomplete and fragmented | Add auditable lifecycle records and safe private media references |
-| 13 | Opening August count means one starting total | Existing migration excludes history but has no opening total | Import one admin-entered count; keep historical links in Sheets |
+| 13 | September 1 is a fresh start; no creator data migration | Earlier scope included an opening August count and migration flow | Remove creator-data migration and opening counts from launch scope; preserve old Sheets as historical reference only |
 | 14 | Weekly Sheets collation remains | Functions/folders exist but inherit current schedule and population limitations | Align each business's reporting periods and keep idempotency/reconciliation |
 | 15 | Important settings are managed, not scattered constants | Thresholds, anchors, folders, cron behavior, and lists appear in migrations/client logic | Use protected, versioned configuration with validation and audit history |
 | 16 | Secure, auditable, scalable system | No complete application audit log; broad client aggregation; legacy intake collects passwords | Add RLS proof, MFA, audit events, pagination/indexes/jobs, and retire password collection |
-| 17 | Phone-first creator experience | First prototype retained desktop columns at phone width and used technical/verbose copy | Replace with one-column mobile layout, plain dates, short tasks, and optional first-use walkthrough |
+| 17 | Phone-first creator experience | Earlier prototype retained desktop columns, verbose copy, a date picker, a separate skippable walkthrough, and recent-video clutter | Use one-column mobile layout, locked Today/conditional Yesterday choices, short copy, no recent-video panel, and a mandatory spotlight walkthrough over the real dashboard |
 | 18 | Production UI requires explicit approval | Repository and flow rules already require this gate | Continue with read-only prototype only; no production UI or deployment |
+| 19 | Show success only after the backend confirms persistence | Legacy intake ignores the upload result; some old paths trust a first response or local state | Require idempotent writes plus read-back/returned-record confirmation before showing success |
 
 ## Historical conflict provenance
 

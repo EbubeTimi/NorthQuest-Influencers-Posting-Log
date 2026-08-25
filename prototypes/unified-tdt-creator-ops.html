@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <link rel="icon" href="data:,">
-  <title>TDT creator prototype — revision 2</title>
+  <title>TDT creator prototype — revision 3</title>
   <style>
     :root {
       --ink:#13221c; --muted:#66736d; --line:#dce2dd; --paper:#fff;
@@ -101,6 +101,17 @@
     .step-number { width:32px; height:32px; border-radius:10px; display:grid; place-items:center; background:var(--green-soft); color:var(--green-dark); font-weight:850; }
     .gate-video { border-top:1px solid var(--line); padding-top:16px; display:grid; gap:13px; }
     .gate-video:first-of-type { border-top:0; padding-top:0; }
+    .day-choice { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
+    .day-choice.one { grid-template-columns:1fr; }
+    .day-option { min-height:50px; border:1px solid #cbd4ce; border-radius:12px; background:#fff; color:var(--ink); font-weight:800; }
+    .day-option.active { background:var(--green-soft); border-color:var(--green); color:var(--green-dark); }
+    .save-confirm { border:1px solid #b9ddcd; border-radius:13px; padding:12px; background:var(--green-soft); color:var(--green-dark); }
+    .gate-day { border:1px solid var(--line); border-radius:14px; padding:14px; display:grid; gap:13px; background:#fff; }
+    .gate-fields { display:grid; gap:12px; }
+    .walkthrough-layer { position:fixed; inset:0; z-index:30; background:rgba(8,20,15,.58); display:grid; align-items:end; padding:14px; }
+    .walkthrough-card { width:min(430px,100%); margin:0 auto; border-radius:18px; padding:17px; background:#fff; box-shadow:0 18px 55px rgba(0,0,0,.3); display:grid; gap:12px; }
+    .walkthrough-count { color:var(--green-dark); font-size:12px; font-weight:850; letter-spacing:.06em; text-transform:uppercase; }
+    .tour-focus { position:relative; z-index:31; box-shadow:0 0 0 4px #fff,0 0 0 8px var(--green); border-radius:15px; }
     .admin-bar { padding:14px 16px; background:#172a23; color:#fff; display:flex; align-items:center; justify-content:space-between; }
     .profile { display:grid; grid-template-columns:54px minmax(0,1fr); gap:12px; align-items:center; }
     .photo { width:54px; height:54px; border-radius:16px; background:#c8e4d7; color:#164d3b; display:grid; place-items:center; font-weight:900; }
@@ -167,7 +178,7 @@
           <button class="state-button" data-state="walkthrough">Walkthrough</button>
           <button class="state-button active" data-state="dashboard">Dashboard</button>
           <button class="state-button" data-state="grace">Noon grace</button>
-          <button class="state-button" data-state="gate">Views needed</button>
+          <button class="state-button" data-state="gate">Log your views</button>
           <button class="state-button" data-state="pending">Under review</button>
           <button class="state-button" data-state="management">Manager review</button>
           <button class="state-button" data-state="approved">Approved</button>
@@ -218,12 +229,13 @@
     const BUSINESSES = {
       northquest:{name:"NorthQuest",initials:"NQ",period:"1–7 August"},
       cashdrive:{name:"CashDrive",initials:"CD",period:"1–7 August"},
-      aura:{name:"Aura",initials:"AU",period:"Monday 10 – Sunday 16 August"}
+      aura:{name:"Aura",initials:"AU",period:"Monday–Sunday"}
     };
-    const freshReports = () => ({video1:{tiktok:"8420",instagram:""},video2:{tiktok:"3180"}});
+    const reportIds = [4,5,6,7].flatMap(day=>["tiktok-v1","instagram-v1","tiktok-v2","instagram-v2"].map(kind=>`d${day}-${kind}`));
+    const freshReports = () => Object.fromEntries(reportIds.map((id,index)=>[id,index===12?"8420":String(300+index*75)]));
     const model = {
       state:"dashboard", business:"northquest", assigned:["northquest","aura"],
-      viewport:"phone", menu:false, offline:false, reducedMotion:false,
+      viewport:"phone", menu:false, offline:false, reducedMotion:false, walkStep:0, selectedDay:"today", saving:false, savedVideo:false,
       status:{northquest:"trial",cashdrive:"trial",aura:"trial"},
       deactivated:{northquest:false,cashdrive:false,aura:false},
       reports:{northquest:freshReports(),cashdrive:freshReports(),aura:freshReports()}
@@ -243,40 +255,31 @@
     }
     function header() {
       return `<header class="app-bar">
-        <div class="brand"><span class="brand-mark">TDT</span><span>Creator</span></div>
+        <div class="brand"><span class="brand-mark">TDT</span></div>
         <button class="workspace-button" id="business-menu-button" aria-expanded="${model.menu}">
           <span class="avatar">${currentBusiness().initials}</span><span>${currentBusiness().name}</span><b aria-hidden="true">⌄</b>
         </button>
       </header>`;
     }
     function shell(content) { return header()+`<div class="screen"><div class="narrow stack">${content}</div></div>`; }
-    function dates() {
-      return `<div class="date-strip" aria-label="August dates">
-        ${[8,9,10,11,12,13,14].map(day=>`<div class="date-pill ${day<13?"done":day===13?"today":""}"><span>Aug</span><strong>${day}</strong></div>`).join("")}
-      </div>`;
-    }
     function renderInvite() {
       return `<div class="screen"><div class="narrow center-state"><div class="narrow">
-        <div class="brand" style="justify-content:center"><span class="brand-mark">TDT</span><span>Creator</span></div>
-        <span class="status approved" style="justify-self:center">NorthQuest invitation</span>
-        <h1>You’ve been invited to NorthQuest.</h1>
-        <p class="muted">Use your personal Google account. This link adds NorthQuest to your TDT login.</p>
+        <div class="brand" style="justify-content:center"><span class="brand-mark">TDT</span></div>
+        <h1>You’ve been invited to your NorthQuest Creator dashboard.</h1>
         <button class="google-button" data-action="walkthrough"><span class="google-g">G</span>Continue with Google</button>
-        <p class="muted" style="font-size:12px">This invitation is for amara@gmail.com and can be used once.</p>
       </div></div></div>`;
     }
     function renderSignin() {
       return `<div class="screen"><div class="narrow center-state"><div class="narrow">
-        <div class="brand" style="justify-content:center"><span class="brand-mark">TDT</span><span>Creator</span></div>
+        <div class="brand" style="justify-content:center"><span class="brand-mark">TDT</span></div>
         <h1>Welcome back.</h1>
-        <p class="muted">Sign in with your personal Google account.</p>
         <button class="google-button" data-action="chooser"><span class="google-g">G</span>Continue with Google</button>
-        <p class="muted" style="font-size:12px">You will only see work that has been assigned to you.</p>
+        <p class="muted" style="font-size:12px">Use your personal account.</p>
       </div></div></div>`;
     }
     function renderChooser() {
       return `<div class="screen"><div class="narrow stack">
-        <div class="brand"><span class="brand-mark">TDT</span><span>Creator</span></div>
+        <div class="brand"><span class="brand-mark">TDT</span></div>
         <div><h1>Where are you posting today?</h1><div class="spacer-8"></div><p class="muted">These are the accounts assigned to you.</p></div>
         <div class="membership-list">
           ${model.assigned.map(slug=>`<button class="membership" data-business="${slug}">
@@ -289,15 +292,7 @@
       </div></div>`;
     }
     function renderWalkthrough() {
-      return shell(`
-        <div><span class="status approved">First time only</span><div class="spacer-8"></div><h1>Three things to know.</h1></div>
-        <div class="panel stack">
-          <div class="walk-step"><span class="step-number">1</span><div><h3>Check today’s date</h3><p class="muted">The dashboard tells you which day you are logging.</p></div></div>
-          <div class="walk-step"><span class="step-number">2</span><div><h3>Add your video links</h3><p class="muted">TikTok, Instagram, or both.</p></div></div>
-          <div class="walk-step"><span class="step-number">3</span><div><h3>Add views when asked</h3><p class="muted">We will pause the form and show exactly what is needed.</p></div></div>
-        </div>
-        <button class="primary" data-action="dashboard">Show my dashboard</button>
-        <button class="text-button" data-action="dashboard">Skip</button>`);
+      return renderDashboard(true,true);
     }
     function reviewNotice() {
       const status=model.status[model.business];
@@ -305,51 +300,55 @@
       if(status==="approved") return `<div class="notice good"><span>✓</span><div><strong>Onboarding is ready.</strong><span>Your video was approved by management.</span></div></div>`;
       return "";
     }
-    function renderDashboard(grace=false) {
+    function dayChoice(grace) {
+      return `<div class="day-choice ${grace?"":"one"}" id="day-choice" aria-label="Choose the day to log">
+        <button class="day-option ${model.selectedDay==="today"?"active":""}" type="button" data-day="today">Today · 25 August</button>
+        ${grace?`<button class="day-option ${model.selectedDay==="yesterday"?"active":""}" type="button" data-day="yesterday">Yesterday · 24 August</button>`:""}
+      </div>`;
+    }
+    function walkthroughOverlay() {
+      const steps=[
+        ["Track your videos","Add a TikTok link, an Instagram link, or both. Then tap Submit video."],
+        ["If you missed yesterday","Yesterday appears here only until 12:00 PM, and only when you did not already log it."],
+        ["At the end of seven days","Video logging pauses until you enter all the views for that period. You cannot skip this step."]
+      ];
+      const [title,copy]=steps[model.walkStep];
+      return `<div class="walkthrough-layer" role="dialog" aria-modal="true" aria-labelledby="walk-title"><div class="walkthrough-card">
+        <span class="walkthrough-count">${model.walkStep+1} of ${steps.length}</span><h2 id="walk-title">${title}</h2><p class="muted">${copy}</p>
+        <button class="primary" id="walk-next">${model.walkStep===steps.length-1?"Got it":"Next"}</button>
+      </div></div>`;
+    }
+    function renderDashboard(grace=false,walkthrough=false) {
       const status=model.status[model.business];
       return shell(`
         <div class="task-head"><div><p class="eyebrow">${currentBusiness().name}</p><h2>Good morning, Amara.</h2></div><span class="status ${status}">${status==="trial"?"Trial":status==="pending"?"Under review":"Approved"}</span></div>
         ${reviewNotice()}
-        <section class="panel stack">
-          <div class="date-header"><div><p class="eyebrow">Today</p><h3>13 August</h3></div><button class="text-button" data-action="walkthrough" style="width:auto;min-height:40px;padding:7px">Help</button></div>
-          ${dates()}
-          <div class="notice ${grace?"warn":"info"}"><span>i</span><div><strong>${grace?"Missed yesterday’s video?":"What you need to do"}</strong><span>${grace?"You can add it until 12:00 PM today.":"Add today’s TikTok or Instagram link."}</span></div></div>
+        <section class="panel stack ${walkthrough&&model.walkStep===1?"tour-focus":""}">
+          <div class="date-header"><div><p class="eyebrow">Today</p><h3>25 August</h3></div><button class="text-button" data-action="walkthrough" style="width:auto;min-height:40px;padding:7px">Help</button></div>
+          ${dayChoice(grace)}
+          ${grace?`<p class="muted" style="font-size:12px">Yesterday is available until 12:00 PM because it has not been logged yet.</p>`:""}
         </section>
-        <section class="panel stack">
-          <div><h3>${grace?"Add yesterday’s video":"Add today’s video"}</h3><p class="muted" style="font-size:13px">${grace?"For 12 August. This closes at noon.":"Add one or both links."}</p></div>
+        <section class="panel stack ${walkthrough&&model.walkStep===0?"tour-focus":""}" id="track-panel">
+          <div><h3>Track your videos</h3><p class="muted" style="font-size:13px">${model.selectedDay==="yesterday"?"For 24 August. Available until 12:00 PM.":"For 25 August."}</p></div>
+          ${model.savedVideo?`<div class="save-confirm" role="status"><strong>Video submitted.</strong><br><span>Saved and confirmed in the prototype backend.</span></div>`:""}
           <form id="video-form" class="stack" novalidate>
-            <div class="field"><label for="video-date">Date</label><input id="video-date" type="date" value="${grace?"2026-08-12":"2026-08-13"}"></div>
             <div class="field"><label for="tiktok-link">TikTok link</label><input id="tiktok-link" inputmode="url" placeholder="https://tiktok.com/..."></div>
             <div class="field"><label for="instagram-link">Instagram link</label><input id="instagram-link" inputmode="url" placeholder="https://instagram.com/..."></div>
             <p id="video-error" class="muted" role="alert" hidden>Please add at least one valid link.</p>
-            <button class="primary" type="submit">${grace?"Add yesterday’s video":"Add video"}</button>
+            <button class="primary" type="submit" ${model.saving?"disabled":""}>${model.saving?"Submitting…":"Submit video"}</button>
           </form>
-          ${!grace?`<button class="text-button" data-action="grace">I missed yesterday’s video</button>`:""}
         </section>
-        <section class="panel stack">
-          <div class="task-head"><h3>Recent videos</h3><span class="status">2</span></div>
-          <div class="video-list">
-            <div class="video-row"><span><strong>12 August</strong><small>TikTok + Instagram</small></span><span class="views">8,420</span></div>
-            <div class="video-row"><span><strong>10 August</strong><small>TikTok</small></span><span class="views">3,180</span></div>
-          </div>
-          <div><div class="task-head"><span class="muted" style="font-size:12px">Best video</span><strong>8,420 / 10,000</strong></div><div class="spacer-8"></div><div class="progress"><span></span></div></div>
-          <p class="muted" style="font-size:12px">One video must reach 10,000 views. Videos are not added together.</p>
-        </section>`);
+        ${walkthrough?walkthroughOverlay():""}`);
     }
     function renderGate() {
       const r=model.reports[model.business];
       return shell(`
-        <div><span class="status trial">Views needed</span><div class="spacer-8"></div><h1>Add views before your next video.</h1><div class="spacer-8"></div><p class="muted">For videos you logged 4–7 August.</p></div>
+        <div><h1>Log your views.</h1><div class="spacer-8"></div><p class="muted">For videos you logged between 4 and 7 August.</p><div class="spacer-8"></div><p class="muted">One video must reach 10,000 views. Videos are not added together.</p></div>
         <div class="notice warn"><span>!</span><div><strong>Your video form is paused.</strong><span>It will reopen after every view below is added.</span></div></div>
-        <button class="secondary" data-action="grace">Add a missed 7 August video before 12:00 PM</button>
         <form id="gate-form" class="panel stack" novalidate>
-          <div class="gate-video"><h3>Video 1 · 7 August</h3>
-            <div class="field"><label for="v1-tiktok">TikTok views</label><input id="v1-tiktok" inputmode="numeric" value="${r.video1.tiktok}"></div>
-            <div class="field"><label for="v1-instagram">Instagram views</label><input id="v1-instagram" inputmode="numeric" value="${r.video1.instagram}"></div>
-          </div>
-          <div class="gate-video"><h3>Video 2 · 5 August</h3>
-            <div class="field"><label for="v2-tiktok">TikTok views</label><input id="v2-tiktok" inputmode="numeric" value="${r.video2.tiktok}"></div>
-          </div>
+          ${[4,5,6,7].map(day=>`<section class="gate-day"><h3>${day} August</h3><div class="gate-fields">
+            ${[["tiktok-v1","TikTok Video 1"],["instagram-v1","Instagram Video 1"],["tiktok-v2","TikTok Video 2"],["instagram-v2","Instagram Video 2"]].map(([kind,label])=>`<div class="field"><label for="d${day}-${kind}">${label}</label><input id="d${day}-${kind}" inputmode="numeric" value="${r[`d${day}-${kind}`]}"></div>`).join("")}
+          </div></section>`).join("")}
           <p id="gate-error" class="muted" role="alert" hidden>Add a view number to every field.</p>
           <button class="primary" type="submit">Save views</button>
         </form>`);
@@ -445,20 +444,25 @@
         const error=document.getElementById("video-error"); error.hidden=valid;
         if(!valid) { fields[0].setAttribute("aria-invalid","true"); fields[0].focus(); return; }
         if(model.offline) { setState("error","You are offline. Nothing was sent."); return; }
-        showToast("Video added"); videoForm.reset();
+        model.saving=true; model.savedVideo=false; render();
+        setTimeout(()=>{ model.saving=false; model.savedVideo=true; render(); showToast("Video saved and confirmed"); },450);
+      });
+      document.querySelectorAll("[data-day]").forEach(button=>button.addEventListener("click",()=>{ model.selectedDay=button.dataset.day; render(); }));
+      document.getElementById("walk-next")?.addEventListener("click",()=>{
+        if(model.walkStep<2) { model.walkStep+=1; render(); }
+        else { model.walkStep=0; model.selectedDay="today"; setState("dashboard","Walkthrough complete."); }
       });
       const gateForm=document.getElementById("gate-form");
       if(gateForm) gateForm.addEventListener("submit",event=>{
         event.preventDefault();
-        const ids=["v1-tiktok","v1-instagram","v2-tiktok"];
-        const fields=ids.map(id=>document.getElementById(id));
+        const fields=reportIds.map(id=>document.getElementById(id));
         fields.forEach(field=>field.removeAttribute("aria-invalid"));
         const missing=fields.find(field=>field.value.trim()===""||Number(field.value)<0||!Number.isFinite(Number(field.value)));
         const error=document.getElementById("gate-error"); error.hidden=!missing;
         if(missing) { missing.setAttribute("aria-invalid","true"); missing.focus(); return; }
-        model.reports[model.business]={video1:{tiktok:fields[0].value,instagram:fields[1].value},video2:{tiktok:fields[2].value}};
+        model.reports[model.business]=Object.fromEntries(fields.map(field=>[field.id,field.value]));
         if(model.offline) { setState("error","You are offline. Your entries remain in this prototype."); return; }
-        if(Math.max(Number(fields[0].value),Number(fields[1].value),Number(fields[2].value))>=10000) {
+        if(Math.max(...fields.map(field=>Number(field.value)))>=10000) {
           model.status[model.business]="pending"; setState("pending","Management review created once.");
         } else setState("dashboard","Views saved. Video logging reopened.");
       });
@@ -476,12 +480,12 @@
     document.getElementById("offline-action").addEventListener("click",event=>{ model.offline=!model.offline; event.currentTarget.textContent=`Offline: ${model.offline?"on":"off"}`; showToast(model.offline?"Offline simulation on":"Back online"); });
     document.getElementById("motion-action").addEventListener("click",event=>{ model.reducedMotion=!model.reducedMotion; event.currentTarget.textContent=`Reduced motion: ${model.reducedMotion?"on":"off"}`; render(); });
     document.getElementById("qualify-action").addEventListener("click",()=>{
-      const r=model.reports[model.business]; r.video1.tiktok="10240"; r.video1.instagram="640"; r.video2.tiktok="3180"; setState("gate","10,240 entered. Save views to create management review.");
+      model.reports[model.business]["d7-tiktok-v1"]="10240"; setState("gate","10,240 entered. Save views to create management review.");
     });
     document.getElementById("approve-action").addEventListener("click",approve);
     document.getElementById("deactivate-action").addEventListener("click",()=>{ model.deactivated.northquest=true; model.business="northquest"; setState("deactivated","NorthQuest membership deactivated; Aura remains active."); });
     document.getElementById("reset-action").addEventListener("click",()=>{
-      model.state="dashboard"; model.business="northquest"; model.assigned=["northquest","aura"]; model.viewport="phone"; model.menu=false; model.offline=false; model.reducedMotion=false;
+      model.state="dashboard"; model.business="northquest"; model.assigned=["northquest","aura"]; model.viewport="phone"; model.menu=false; model.offline=false; model.reducedMotion=false; model.walkStep=0; model.selectedDay="today"; model.saving=false; model.savedVideo=false;
       model.status={northquest:"trial",cashdrive:"trial",aura:"trial"}; model.deactivated={northquest:false,cashdrive:false,aura:false};
       model.reports={northquest:freshReports(),cashdrive:freshReports(),aura:freshReports()}; render(); showToast("Prototype reset");
     });

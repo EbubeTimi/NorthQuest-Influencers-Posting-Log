@@ -29,9 +29,11 @@ active business must be one of that person's enabled memberships
 - At midnight after the period ends, new video logging is gated until every required per-video, per-platform view report for that completed period is submitted.
 - A creator owes only videos logged on or after their membership join time.
 - A missed video may be backdated to yesterday until 12:00 PM the next day. It then joins the correct reporting obligation.
+- The creator cannot choose an arbitrary date. Today is always present; Yesterday appears only when eligible and disappears after noon or once submitted.
 - The gate selects only videos inside the completed business date period and on or after the membership join time.
 - A report is tied to the exact video and platform. Production must define idempotent insert/update behavior so retries cannot create ambiguous duplicates.
 - Logging permission is computed and enforced server-side with the insert; hiding a button is not security.
+- The client shows submission success only after the durable row is confirmed. Retries reuse an idempotency key and cannot create a duplicate video.
 
 Correction to the first audit: an old report cannot clear a different new video because current reports already carry `video_log_id`. The unsupported “old reports satisfy future gates” claim is withdrawn. The actual risks are duplicate rows for the same video/platform and a query that scans every older unreported video rather than explicitly bounding the completed date period.
 
@@ -44,12 +46,12 @@ Correction to the first audit: an old report cannot clear a different new video 
 - Only management approval unlocks onboarding for the creator.
 - Retries cannot create duplicate review items, notifications, approvals, or audit events.
 
-## Applications, CashDrive, and migration contract
+## Applications, CashDrive, and launch-data contract
 
 - Applications are TDT-wide recruitment records, separate from any one business dashboard.
 - CashDrive has separate Inventory and Enquiries areas.
 - Enquiries capture referrer, prospective buyer, contact, requested car, inquiry date, source, budget, urgency, lead status, and notes.
-- Existing creators import one admin-entered opening August video count. This is only a starting total; historical links remain in Google Sheets and are not fabricated as video rows.
+- September 1 starts with an empty operational dataset. No opening August counts, creator rows, old links, passwords, or historical reports are imported. Old Google Sheets remain historical reference only.
 
 ## Automation contract
 

@@ -35,7 +35,7 @@ async function main() {
   }));
   if (!panelsFit) throw new Error("a phone panel is clipped or crushed");
   pass("390px dashboard has one readable column", JSON.stringify(phoneOverflow));
-  await page.screenshot({ path: path.join(evidence, "revision2-phone-dashboard.png"), fullPage: true });
+  await page.screenshot({ path: path.join(evidence, "revision3-phone-dashboard.png"), fullPage: true });
 
   await page.locator('[data-state="chooser"]').click();
   const choices = await page.locator("#app [data-business]").allTextContents();
@@ -53,30 +53,50 @@ async function main() {
   pass("business sheet closes with Escape and restores focus");
 
   await page.locator('[data-state="grace"]').click();
-  await page.getByText("You can add it until 12:00 PM today.").waitFor();
-  pass("noon grace is visible in plain language");
+  await page.getByRole("button", { name: "Yesterday · 24 August" }).waitFor();
+  await page.getByText("Yesterday is available until 12:00 PM").waitFor();
+  pass("eligible Yesterday appears with the noon deadline");
+
+  await page.locator('[data-state="walkthrough"]').click();
+  await page.getByRole("dialog").waitFor();
+  if (await page.getByRole("button", { name: "Skip" }).count()) throw new Error("walkthrough must not be skippable");
+  await page.getByRole("button", { name: "Next" }).click();
+  await page.getByText("If you missed yesterday").waitFor();
+  await page.getByRole("button", { name: "Next" }).click();
+  await page.getByText("At the end of seven days").waitFor();
+  await page.getByRole("button", { name: "Got it" }).click();
+  pass("mandatory spotlight walkthrough completes over the dashboard");
 
   await page.locator('[data-state="dashboard"]').click();
+  if (await page.locator('input[type="date"]').count()) throw new Error("creator can choose an arbitrary date");
+  if (await page.getByText("Recent videos").count()) throw new Error("recent videos should not appear");
   await page.locator("#video-form button[type=submit]").click();
   const invalidFocus = await page.evaluate(() => ({ id: document.activeElement?.id, invalid: document.activeElement?.getAttribute("aria-invalid") }));
   if (invalidFocus.id !== "tiktok-link" || invalidFocus.invalid !== "true") throw new Error(`video validation focus: ${JSON.stringify(invalidFocus)}`);
   pass("video validation focuses the first useful field");
 
+  await page.locator("#tiktok-link").fill("https://tiktok.com/example");
+  await page.locator("#video-form button[type=submit]").click();
+  await page.getByText("Submitting…").waitFor();
+  await page.getByText("Saved and confirmed in the prototype backend.").waitFor();
+  pass("video success appears after simulated persistence confirmation");
+
   await page.locator('[data-state="gate"]').click();
   await page.locator("#qualify-action").evaluate(button => button.click());
+  await page.screenshot({ path: path.join(evidence, "revision3-phone-view-gate.png"), fullPage: true });
   await page.locator("#gate-form button[type=submit]").click();
   await page.getByText("We’ve sent this video for checking.").waitFor();
   await page.getByText(/does not unlock onboarding/i).waitFor();
   pass("10,240 views creates review pending, not onboarding");
-  await page.screenshot({ path: path.join(evidence, "revision2-phone-review-pending.png"), fullPage: true });
+  await page.screenshot({ path: path.join(evidence, "revision3-phone-review-pending.png"), fullPage: true });
 
   await page.locator('[data-state="management"]').click();
   await page.getByText("Self-reported views never approve onboarding by themselves.").waitFor();
-  await page.screenshot({ path: path.join(evidence, "revision2-phone-management-review.png"), fullPage: true });
+  await page.screenshot({ path: path.join(evidence, "revision3-phone-management-review.png"), fullPage: true });
   await page.locator("#manager-approve").click();
   await page.getByText("Management verified your video.").waitFor();
   pass("management approval unlocks creator onboarding");
-  await page.screenshot({ path: path.join(evidence, "revision2-phone-approved.png"), fullPage: true });
+  await page.screenshot({ path: path.join(evidence, "revision3-phone-approved.png"), fullPage: true });
 
   await page.locator("#deactivate-action").evaluate(button => button.click());
   await page.getByText("Your Aura access still works.").waitFor();

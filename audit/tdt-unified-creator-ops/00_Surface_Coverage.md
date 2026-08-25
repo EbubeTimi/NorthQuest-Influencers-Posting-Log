@@ -19,7 +19,7 @@
 | TDT Applications | F11 review applicants | Partial | Requirements only | Separate admin prototype needed |
 | CashDrive Inventory | F12 manage vehicles | No | Requirements only | New |
 | CashDrive Enquiries | F13 manage leads | No | Requirements only | New |
-| opening August count | F14 import starting total | No | Not UI-prototyped | New admin/data flow |
+| fresh September start | Launch data boundary | Earlier migration scope | N/A | No legacy creator data imported |
 | Sheets collation | F15 export reports | Partial | Annotation only | Repair |
 | Apify cumulative runs | F16 analytics | Monthly-only | Annotation only | Replace |
 
@@ -36,4 +36,4 @@
 
 ## Prototype boundary
 
-The revised standalone prototype covers invitation, personal Google sign-in, assigned-business choice/switch, walkthrough, dashboard, date/grace/gate behavior, 10,000 review pending, management approval, onboarding ready, and deactivation. It performs no authentication, writes, notifications, uploads, scraping, deployment, or production navigation.
+The revised standalone prototype covers invitation, personal Google sign-in, assigned-business choice/switch, mandatory spotlight walkthrough, locked Today/eligible Yesterday logging, confirmed-submit feedback, date/grace/gate behavior, date/platform/video view entry, 10,000 review pending, management approval, onboarding ready, and deactivation. It performs no real authentication, writes, notifications, uploads, scraping, deployment, or production navigation.
