@@ -6,8 +6,9 @@ The revised read-only prototype matches the user's latest 2026-08-25 corrections
 
 ## Automated proof
 
+- `npm run test:prototype` from `smithstem/` — `PASS` on 2026-08-26.
 - `node tests/prototype-contract.test.js` — `PASS` (20 corrected product/UI checks).
-- `node tests/prototype-runtime.test.js` using installed Chrome — `PASS` (14 runtime checks).
+- `node tests/prototype-runtime.test.js` using installed Chrome — `PASS` (14 runtime checks). The test now starts and stops its own local server and uses the project-owned `playwright-core` development dependency.
 - `node tests/manage-bonus.test.js` — `PASS` (13 existing regression checks).
 - `git diff --check` — required before the revision commit.
 
@@ -32,7 +33,7 @@ The earlier dependency failure was diagnosed and repaired:
 5. `npm run build` completed compilation, TypeScript, data collection, all nine static pages, and route optimization.
 6. `npm audit --omit=dev --audit-level=high` returned `found 0 vulnerabilities`.
 
-Result: `PASS` for the local production build and current dependency advisory check. Next.js has announced another security release for 2026-08-26, so dependency update/audit/build must run again before launch.
+Result: `PASS` for the 2026-08-26 local production build and current dependency advisory check. `npm audit --omit=dev --audit-level=high` returned `found 0 vulnerabilities` after reaching npm's official advisory service.
 
 ## Flow-by-flow gates
 

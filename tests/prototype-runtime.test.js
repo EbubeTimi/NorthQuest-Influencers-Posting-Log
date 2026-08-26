@@ -1,7 +1,12 @@
+const fs = require("fs");
+const http = require("http");
 const path = require("path");
-const { chromium } = require("playwright");
+const { createRequire } = require("module");
 
-const baseUrl = "http://127.0.0.1:4173/unified-tdt-creator-ops.html";
+const appRequire = createRequire(path.join(__dirname, "..", "smithstem", "package.json"));
+const { chromium } = appRequire("playwright-core");
+
+const prototypeFile = path.join(__dirname, "..", "prototypes", "unified-tdt-creator-ops.html");
 const evidence = path.join(__dirname, "..", "evidence", "flows", "TDT_Prototype");
 const results = [];
 const consoleProblems = [];
@@ -11,18 +16,49 @@ function pass(name, detail = "") {
   console.log("PASS ", name, detail);
 }
 
-async function main() {
-  const browser = await chromium.launch({
-    headless: true,
-    executablePath: "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe"
-  });
-  const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
-  page.on("console", message => {
-    if (["error", "warning"].includes(message.type())) consoleProblems.push(`${message.type()}: ${message.text()}`);
-  });
-  page.on("pageerror", error => consoleProblems.push(`pageerror: ${error.message}`));
+function startPrototypeServer() {
+  return new Promise((resolve, reject) => {
+    const server = http.createServer((request, response) => {
+      if (request.url !== "/unified-tdt-creator-ops.html") {
+        response.writeHead(404, { "Content-Type": "text/plain; charset=utf-8" });
+        response.end("Not found");
+        return;
+      }
 
-  await page.goto(baseUrl, { waitUntil: "networkidle" });
+      response.writeHead(200, {
+        "Content-Type": "text/html; charset=utf-8",
+        "Cache-Control": "no-store"
+      });
+      fs.createReadStream(prototypeFile).pipe(response);
+    });
+
+    server.once("error", reject);
+    server.listen(0, "127.0.0.1", () => {
+      const { port } = server.address();
+      resolve({
+        server,
+        url: `http://127.0.0.1:${port}/unified-tdt-creator-ops.html`
+      });
+    });
+  });
+}
+
+async function main() {
+  const { server, url } = await startPrototypeServer();
+  let browser;
+
+  try {
+    browser = await chromium.launch({
+      headless: true,
+      executablePath: "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe"
+    });
+    const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
+    page.on("console", message => {
+      if (["error", "warning"].includes(message.type())) consoleProblems.push(`${message.type()}: ${message.text()}`);
+    });
+    page.on("pageerror", error => consoleProblems.push(`pageerror: ${error.message}`));
+
+    await page.goto(url, { waitUntil: "networkidle" });
   await page.locator("h2", { hasText: "Good morning, Amara." }).waitFor();
   const phoneOverflow = await page.evaluate(() => ({
     document: document.documentElement.scrollWidth - document.documentElement.clientWidth,
@@ -117,10 +153,13 @@ async function main() {
     pass(`${viewport.width}px viewport has no horizontal overflow`);
   }
 
-  if (consoleProblems.length) throw new Error(`console problems: ${consoleProblems.join(" | ")}`);
-  pass("browser console has no warnings or errors");
-  await browser.close();
-  console.log(`\nAll ${results.length} runtime checks passed`);
+    if (consoleProblems.length) throw new Error(`console problems: ${consoleProblems.join(" | ")}`);
+    pass("browser console has no warnings or errors");
+    console.log(`\nAll ${results.length} runtime checks passed`);
+  } finally {
+    if (browser) await browser.close();
+    await new Promise((resolve, reject) => server.close(error => error ? reject(error) : resolve()));
+  }
 }
 
 main().catch(error => {
