@@ -2,6 +2,13 @@
 
 Current instructions through 2026-08-27 override the earlier request and every historical repository decision.
 
+## Revision 5 trial-flow corrections
+
+- Revision 4 exposed screenshot collection only after weekly qualification; now the dashboard must also expose an anytime “Reached 10,000 views?” submission with recorded video/platform, view count and screenshot together. It remains separate from weekly reports.
+- Weekly entry is grouped by date/video with compact platform fields and supports Video 3 onward. Dashboard navigation must lead into the views form even after Yesterday was selected.
+- Pending loses the tick/Under review badge; approved loses the management explanation and dashboard-return button. The approved dashboard becomes the onboarding entry point.
+- These corrections are authorized for prototype review only. Application form/results, actual onboarding and active-creator dashboard remain separate upcoming flows. The user will provide application-Sheet layout/sorting references.
+
 ## Revision 4 trial-only corrections
 
 - A person cannot hold multiple ongoing trials. Once management passes the TDT trial, future recommended business memberships do not repeat it. Revision 3's multiple trial memberships/switcher are superseded, while active creators may still have assigned memberships in multiple businesses.

@@ -1,6 +1,6 @@
 # Shared flow contracts
 
-Current instructions through 2026-08-27 override every earlier repository rule. Trial-only prototype corrections are applied in revision 4; visual polish is next. This is not production approval.
+Current instructions through 2026-08-27 override every earlier repository rule. Revision 5 adds the latest trial-flow feedback; this is not production approval.
 
 ## Identity, invitation, and membership contract
 
@@ -33,6 +33,7 @@ active business must be one of that person's enabled memberships
 - The creator cannot choose an arbitrary date. Today is always present; Yesterday appears only when eligible and disappears after noon or once submitted.
 - The gate selects only videos inside the completed business date period and on or after the membership join time.
 - A report is tied to the exact video and platform. Production must define idempotent insert/update behavior so retries cannot create ambiguous duplicates.
+- Weekly entry groups date → Video 1, Video 2, Video 3 and onward → logged platforms. Compact side-by-side numeric inputs must remain phone-readable. Dashboard weekly navigation must open the view form regardless of a previously selected Yesterday.
 - Logging permission is computed and enforced server-side with the insert; hiding a button is not security.
 - The client shows submission success only after the durable row is confirmed. Retries reuse an idempotency key and cannot create a duplicate video.
 
@@ -43,12 +44,16 @@ Correction to the first audit: an old report cannot clear a different new video 
 - At most one ongoing trial per person. Passing it is TDT-wide; later management-recommended memberships do not require a repeat trial. This does not grant automatic access or replace business-specific onboarding.
 - The protected threshold is 10,000 views for one video in every business.
 - Views from different videos are never added together.
+- A trial creator can submit a qualifying video at any time, including before the weekly deadline, using a visible dashboard action. Choose a logged video/platform, enter its views (at least 10,000), and attach its screenshot in the same form.
+- This milestone submission is a separate review record, not a weekly view report. It cannot complete or bypass any weekly reporting obligations. A pending review does not block otherwise permitted daily logging.
 - Keep threshold/cumulative explanations out of the creator view-report form.
 - A creator entering 10,000 or more creates one management review item and notification. It does not unlock onboarding.
 - The creator supplies the qualifying video URL and a screenshot. Management sees the same private image and an anchor to that exact URL. The review can wait for evidence after notification.
-- Production image retention/deletion after a decision is UNDECIDED; obtain a retention decision before implementing storage deletion. Revision 4 uses memory-only image previews, not external uploads. The creator's screenshot task disappears after approval; mock manager evidence lasts until reset/reload.
+- Production image retention/deletion after a decision is UNDECIDED; obtain a retention decision before implementing storage deletion. The prototype uses memory-only image previews, not external uploads. The creator's screenshot task disappears after approval; mock manager evidence lasts until reset/reload.
 - Management checks the real platform performance, then approves onboarding or keeps the creator in trial.
 - Only management approval unlocks onboarding for the creator.
+- Pending screen: “Your video is being checked.” Explain briefly that Start onboarding appears on the dashboard after approval; no tick/Under review badge. Approved entry shows “Onboarding is ready.” and Start onboarding only, with no dashboard-return action. Actual onboarding remains a separate flow to design.
+- Record the actual review-submission timestamp. Lock the submitted video/count/image together while sending; late image-decoding results must not attach to a changed selection.
 - Retries cannot create duplicate review items, notifications, approvals, or audit events.
 - Trial deactivation shows only “Your access has been paused.” No alternate-business message, chooser or sign-out action appears on that screen.
 

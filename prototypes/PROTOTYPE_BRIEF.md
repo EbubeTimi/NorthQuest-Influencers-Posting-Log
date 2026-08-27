@@ -1,6 +1,32 @@
-# TDT trial creator prototype brief — revision 4
+# TDT trial creator prototype brief — revision 5
 
-## Latest authorized corrections (supersede revision 3 below)
+## Latest correction pass — 2026-08-27
+
+Goal: Reach weekly reporting and an anytime 10,000-view submission from the trial dashboard.
+Human and feel: Phone-first trial creator; obvious next action, short copy, compact number entry.
+Entry and exit: Dashboard → weekly views OR qualifying video + screenshot → review → onboarding-ready.
+System: Existing isolated HTML, green palette, readable two-column platform inputs within each video/date.
+Signature: A visible “Reached 10,000 views?” action independent of the weekly deadline.
+Feedback: Inline validation, local confirmation, preserved offline drafts; no real upload/notification.
+Rejecting: Hidden screenshot task, milestone submissions clearing weekly obligations, invented empty platform fields.
+Variants: Midweek, overdue week, Videos 1–3+, one platform, pending/correction/approval, phone/desktop.
+
+| From | Trigger / guard | To / container | Recovery and feedback |
+| --- | --- | --- | --- |
+| Dashboard | Log your views; completed reporting week | Weekly form / page; always reset Yesterday selection | Focus heading; back only when all obligations saved |
+| Dashboard or weekly gate | Reached 10,000 views? | Milestone form / page | Select a previously logged video/platform; cancel returns to dashboard/gate |
+| Milestone form | ≥10,000 on one posted link + valid screenshot | Pending review / page | Invalid count/image inline; offline retains draft; does not save weekly views |
+| Weekly form | All actual posted-link counts saved; qualifying count found | Screenshot form / page | Screenshot task also remains visible on dashboard |
+| Pending review | Return to dashboard | Trial logging or due weekly form | Continue normal weekly obligations; no duplicate review |
+| Manager review | Approve screenshot/link | Onboarding-ready / page and next dashboard visit | Only Start onboarding; actual onboarding not implemented |
+
+Review pending copy: “Your video is being checked.” and “After approval, Start onboarding will appear on your dashboard.” No tick or Under review badge on that page. Approved: “Onboarding is ready.” + Start onboarding, no management explanation or dashboard return.
+
+The user will provide application-sheet sorting screenshots. Next review surfaces: TDT application form and application-review results, actual onboarding, active-creator dashboard; build/review separately, not silently added to this trial revision. Production UI approval remains outstanding. Writing uses the portable plain-language fallback because humanizing-writing is not installed.
+
+The historical revision-4 checks below are baseline evidence, not revision-5 proof.
+
+## Preserved revision-4 foundation (historical baseline)
 
 The user's observations are complete. This is permission to revise the prototype, NOT approval for production UI. Visual redesign follows separately.
 

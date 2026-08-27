@@ -1,6 +1,23 @@
 # TDT prototype verification
 
-## Current result — revision 4, 2026-08-27
+## Current result — revision 5, 2026-08-27
+
+Scope: trial prototype only. New dashboard weekly entry and anytime 10,000-view submission; screenshot collected in the same milestone form; compact per-date/video/platform weekly inputs including Video 3; shorter pending/approved pages. Production source, database, uploads, notifications and deployment remain unchanged.
+
+- Automated contract/logic/static checks: PASS, 27 (`node tests/prototype-contract.test.js`). Includes dates/noon/join, sparse fields, single-video threshold, safe link formats, image validation, proof controls locked and count snapshot checks.
+- Existing bonus regression: PASS, 13 (`node tests/manage-bonus.test.js`). `git diff --check`: PASS; Windows line-ending notices are informational.
+- General in-app browser suite `verifyPrototype`: PASS, 62 checks, including a real local synthetic-image chooser, offline retry, management decisions, and responsive overflow at 360/390/768/1280px. Completed before the final proof-control safeguards and moving the weekly action higher on the dashboard; those later changes receive focused rechecks, not a claimed final full rerun.
+- `verifyMilestone`: PASS, 18 checks, including early submission, independent weekly obligation, draft/offline recovery, chosen-video replacement, one mock notification, manager approval and approved-dashboard entry. Final run evidence is saved separately.
+- `verifyProofIsolation`: PASS, 4 final checks. A canceled milestone screenshot cannot attach to a different weekly-qualified video; the correct screenshot task remains reachable from the dashboard.
+- Final real-file recheck: PASS, synthetic raster decoded and previewed; all proof controls were observed disabled during Sending. Recorded in `revision5-upload-lock-proof.json`.
+- Phone screenshots inspected directly: compact colored numeric fields, dashboard milestone action, combined video/views/screenshot form and short pending page. Evidence uses synthetic data only. Native phone behavior and real external-video validity are not claimed.
+- Independent static review identified and verified fixes for mutable proof during submission, late image decoding after a selection change, and shifting reported timestamps. Final new-weekly-review creation also clears unrelated draft proof. All proof state is memory-only.
+- Tooling interruption: a final full-suite rerun lost its browser connection and local preview process; it did not produce a fresh suite result. The preview was restarted and focused final checks resumed. An initial patch-context mismatch was corrected with no partial test edit; new requirement tests failed before implementation as expected.
+- Commands: `revision5-command-transcript.json`. Focused runtime results: `revision5-milestone-proof.json`, `revision5-proof-isolation.json`. Screens: `revision5-phone-*.png`.
+- Final dashboard/weekly-layout recheck at 360/390/768/1280px is recorded in `revision5-final-layout-proof.json`. Source SHA256: `C479E0016FAE406089C6421CFA6B9714813EB4422BA0310593FDA07BEDA81766`.
+- Flow-by-flow/flow-prototype kept this work in the existing branch and prototype file. Plain-language writing fallback used (humanizing-writing unavailable). Production approval remains required. Foundation/database/production-build gates remain UNVERIFIED in this revision; prototype-focused tests/runtime PASS.
+
+## Historical result — revision 4, 2026-08-27
 
 The latest completed observations are applied to the trial-only prototype. Corrected welcome text, no trial chooser/switcher, genuine Yesterday eligibility, sparse posted-link view fields, screenshot evidence, exact submitted-link anchor, TDT-wide trial pass and simplified paused access are present. Actual onboarding, active-creator UI, full admin and visual redesign are not claimed.
 

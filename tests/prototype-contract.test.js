@@ -8,7 +8,12 @@ test("no creator threshold lecture or paused-form banner",()=>assert.doesNotMatc
 test("screenshot step and file input",()=>{assert.match(html,/data-state="evidence"/);assert.match(html,/type="file"/);});
 test("manager has real submitted-link anchor",()=>assert.match(html,/id="open-proof"[^>]*href=/));
 test("paused-access copy",()=>assert.match(html,/Your access has been paused\./));
-test("read-only revision and boundaries explicit",()=>{assert.match(html,/Revision 4/);assert.match(html,/Nothing is sent/);assert.match(html,/Actual onboarding/);});
+test("read-only revision and boundaries explicit",()=>{assert.match(html,/Revision 5/);assert.match(html,/Nothing is sent/);assert.match(html,/Actual onboarding/);});
+test("dashboard has weekly and independent milestone entries",()=>{assert.match(html,/id="weekly-views"/);assert.match(html,/Reached 10,000 views\?/);assert.match(html,/data-action="milestone"/);});
+test("weekly number entry groups by video and platform",()=>{assert.match(html,/class="platform-counts"/);assert.match(html,/id:"v7c"/);});
+test("pending and approved copy is concise",()=>{assert.doesNotMatch(html,/Management verified your video\./);const pending=html.match(/function pending\(\)\{([\s\S]+?)function management/)[1];assert.doesNotMatch(pending,/state-icon|class="status pending"/);const approved=html.match(/function approved\(\)\{([\s\S]+?)function paused/)[1];assert.doesNotMatch(approved,/Back to dashboard/);});
+test("proof controls locked during save or image decode",()=>assert.match(html,/control\.disabled=model\.saving\|\|model\.imageLoading/));
+test("submit snapshots counts and captures reporting time",()=>{assert.match(html,/views:submittedViews/);assert.match(html,/submittedAt:model\.now/);});
 test("no remote writes or persistent browser storage",()=>assert.doesNotMatch(html,/fetch\(|XMLHttpRequest|localStorage|sessionStorage|supabase\.co/));
 const core=html.match(/\/\/ CORE START([\s\S]+?)\/\/ CORE END/);
 test("shared behavior is independently testable",()=>assert.ok(core));

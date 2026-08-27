@@ -1,0 +1,45 @@
+{
+  "generatedAt": "2026-08-27T12:14:11.331Z",
+  "checks": [
+    {
+      "width": 360,
+      "state": "Dashboard",
+      "status": "PASS"
+    },
+    {
+      "width": 360,
+      "state": "Weekly views due",
+      "status": "PASS"
+    },
+    {
+      "width": 390,
+      "state": "Dashboard",
+      "status": "PASS"
+    },
+    {
+      "width": 390,
+      "state": "Weekly views due",
+      "status": "PASS"
+    },
+    {
+      "width": 768,
+      "state": "Dashboard",
+      "status": "PASS"
+    },
+    {
+      "width": 768,
+      "state": "Weekly views due",
+      "status": "PASS"
+    },
+    {
+      "width": 1280,
+      "state": "Dashboard",
+      "status": "PASS"
+    },
+    {
+      "width": 1280,
+      "state": "Weekly views due",
+      "status": "PASS"
+    }
+  ]
+}
