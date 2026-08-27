@@ -2,6 +2,14 @@
 
 Current instructions through 2026-08-27 override the earlier request and every historical repository decision.
 
+## Revision 6 corrections (latest authority)
+
+- Exactly Video 1 and Video 2 per day, each with TikTok/Instagram slots. Every reporting date shows all four boxes, including disabled unlogged slots. This supersedes revision 5's Video 3+ and sparse layout, without requiring reports for unposted videos/platforms. Facebook is not tracked or bonused here.
+- Screenshots are required inside the qualifying-video submission only. Remove the standalone screenshot route and dashboard task; a weekly high count may prefill the combined form, but complete submission is required before management review/notification.
+- Walkthrough step 3 opens the real views panel and highlights it, not Today/Yesterday. The Phone control works at all host-window widths and remains usable during the tour. “Simulate week ending” is clearly a reviewer-only clock control.
+- Sign-in: “Use your personal Google account.” Paused screen: no exclamation icon. Expired link: centred. Management review opens the recorded post, not a creator profile.
+- Trial prototype remains unapproved production UI; active-creator dashboard is next after review.
+
 ## Revision 5 trial-flow corrections
 
 - Revision 4 exposed screenshot collection only after weekly qualification; now the dashboard must also expose an anytime “Reached 10,000 views?” submission with recorded video/platform, view count and screenshot together. It remains separate from weekly reports.

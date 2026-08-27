@@ -1,16 +1,18 @@
 const assert=require("node:assert/strict"), fs=require("node:fs"), path=require("node:path"), vm=require("node:vm");
 const html=fs.readFileSync(path.join(__dirname,"../prototypes/unified-tdt-creator-ops.html"),"utf8");
 let total=0,failures=0;
-function test(name,fn){total++;try{fn();console.log("PASS ",name)}catch(e){failures++;console.error("FAIL ",name,e.message)}}
+function test(name,fn){total++;try{fn();console.log("PASS ",name)}catch(e){failures++;console.error("FAIL ",name,e.message.split("\n")[0])}}
 test("welcome copy replaces invited copy",()=>{assert.match(html,/Welcome to your .* Creator dashboard/);assert.doesNotMatch(html,/You’ve been invited/);});
 test("no trial chooser or business switcher",()=>assert.doesNotMatch(html,/data-state="chooser"|business-menu-button|Choose another account|Aura access still works/));
 test("no creator threshold lecture or paused-form banner",()=>assert.doesNotMatch(html,/One video must reach|Videos are not added together|Your video form is paused|every view below/));
-test("screenshot step and file input",()=>{assert.match(html,/data-state="evidence"/);assert.match(html,/type="file"/);});
+test("one combined submission with no separate screenshot route",()=>{assert.doesNotMatch(html,/data-state="evidence"|data-action="evidence"|Add your screenshot\./);assert.match(html,/type="file"/);});
 test("manager has real submitted-link anchor",()=>assert.match(html,/id="open-proof"[^>]*href=/));
 test("paused-access copy",()=>assert.match(html,/Your access has been paused\./));
-test("read-only revision and boundaries explicit",()=>{assert.match(html,/Revision 5/);assert.match(html,/Nothing is sent/);assert.match(html,/Actual onboarding/);});
+test("read-only revision and boundaries explicit",()=>{assert.match(html,/Revision 6/);assert.match(html,/Nothing is sent/);assert.match(html,/Actual onboarding/);});
 test("dashboard has weekly and independent milestone entries",()=>{assert.match(html,/id="weekly-views"/);assert.match(html,/Reached 10,000 views\?/);assert.match(html,/data-action="milestone"/);});
-test("weekly number entry groups by video and platform",()=>{assert.match(html,/class="platform-counts"/);assert.match(html,/id:"v7c"/);});
+test("exactly two video rows, with all four visible slots",()=>{assert.match(html,/class="platform-counts"/);assert.doesNotMatch(html,/id:"v7c"/);assert.match(html,/No video logged/);});
+test("tour step 3 opens and highlights the actual views form",()=>{assert.match(html,/model\.walkStep===2\?gate\(true\)/);assert.match(html,/#gate-form \.gate-day/);});
+test("personal Google account copy and plain paused screen",()=>{assert.match(html,/Use your personal Google account\./);const paused=html.match(/function paused\(\)\{([\s\S]+?)function loading/)[1];assert.doesNotMatch(paused,/state-icon/);});
 test("pending and approved copy is concise",()=>{assert.doesNotMatch(html,/Management verified your video\./);const pending=html.match(/function pending\(\)\{([\s\S]+?)function management/)[1];assert.doesNotMatch(pending,/state-icon|class="status pending"/);const approved=html.match(/function approved\(\)\{([\s\S]+?)function paused/)[1];assert.doesNotMatch(approved,/Back to dashboard/);});
 test("proof controls locked during save or image decode",()=>assert.match(html,/control\.disabled=model\.saving\|\|model\.imageLoading/));
 test("submit snapshots counts and captures reporting time",()=>{assert.match(html,/views:submittedViews/);assert.match(html,/submittedAt:model\.now/);});
@@ -18,10 +20,13 @@ test("no remote writes or persistent browser storage",()=>assert.doesNotMatch(ht
 const core=html.match(/\/\/ CORE START([\s\S]+?)\/\/ CORE END/);
 test("shared behavior is independently testable",()=>assert.ok(core));
 if(core){
-const ctx=vm.createContext({Intl,Date,URL});vm.runInContext(core[1]+"\nthis.api={POLICY,canLogYesterday,dueEntries,validCount,qualifyingEntry,validVideoUrl,trialAssignment,validImageFile};",ctx);
+const ctx=vm.createContext({Intl,Date,URL});vm.runInContext(core[1]+"\nthis.api={POLICY,canLogYesterday,dueEntries,validCount,qualifyingEntry,validVideoUrl,trialAssignment,validImageFile,reportDays,nextVideoNumber};",ctx);
 const a=ctx.api, joined="2026-08-04T09:00:00+01:00", period={start:"2026-08-01",end:"2026-08-07"};
 const records=[{id:"pre",date:"2026-08-03",loggedAt:"2026-08-03T10:00:00+01:00",number:1,links:{tiktok:"x"}},{id:"a",date:"2026-08-04",loggedAt:"2026-08-04T10:00:00+01:00",number:1,links:{tiktok:"x"}},{id:"b",date:"2026-08-06",loggedAt:"2026-08-06T10:00:00+01:00",number:1,links:{instagram:"y"}},{id:"next",date:"2026-08-08",loggedAt:"2026-08-08T10:00:00+01:00",number:1,links:{tiktok:"z"}}];
 const due=a.dueEntries(records,joined,period);
+test("dates include unposted days but not days before joining",()=>assert.equal(a.reportDays(joined,period).join(','),'2026-08-04,2026-08-05,2026-08-06,2026-08-07'));
+test("no old reporting dates for a first-day creator",()=>assert.equal(a.reportDays('2026-08-08T09:00:00+01:00',period).length,0));
+test("two videos maximum per date",()=>{assert.equal(a.nextVideoNumber([],period.end),1);assert.equal(a.nextVideoNumber([{date:period.end,number:1}],period.end),2);assert.equal(a.nextVideoNumber([{date:period.end,number:1},{date:period.end,number:2}],period.end),null);});
 test("only logged platform links within joined/completed dates",()=>assert.equal(due.map(e=>e.key).join(","),"a:tiktok,b:instagram"));
 test("missed yesterday before noon",()=>assert.equal(a.canLogYesterday("2026-08-08T11:59:59+01:00",joined,records),true));
 test("no Yesterday at noon",()=>assert.equal(a.canLogYesterday("2026-08-08T12:00:00+01:00",joined,records),false));
@@ -35,5 +40,6 @@ test("passed creator skips future trial",()=>assert.equal(a.trialAssignment({tri
 test("unassigned creator can start trial",()=>assert.equal(a.trialAssignment({trialBusiness:null,trialPassed:false},"cashdrive").allowed,true));
 test("platform links validated",()=>{assert.equal(a.validVideoUrl("https://www.tiktok.com/@x/video/1","tiktok"),true);assert.equal(a.validVideoUrl("https://www.instagram.com/reel/a/","instagram"),true);for(const x of ["javascript:alert(1)","https://tiktok.com.evil.test/x","https://tiktok.com/"])assert.equal(a.validVideoUrl(x,"tiktok"),false);});
 test("screenshot format and size constrained",()=>{assert.equal(a.validImageFile({type:"image/png",size:42}),true);assert.equal(a.validImageFile({type:"image/svg+xml",size:42}),false);assert.equal(a.validImageFile({type:"image/png",size:6*1024*1024}),false);});
+test("TikTok profile is not a video; recognised share links accepted",()=>{assert.equal(a.validVideoUrl('https://www.tiktok.com/@creator','tiktok'),false);assert.equal(a.validVideoUrl('https://www.tiktok.com/login','tiktok'),false);assert.equal(a.validVideoUrl('https://vm.tiktok.com/DEMO123/','tiktok'),true);});
 }
 console.log((total-failures)+"/"+total+" checks passed");if(failures)process.exit(1);

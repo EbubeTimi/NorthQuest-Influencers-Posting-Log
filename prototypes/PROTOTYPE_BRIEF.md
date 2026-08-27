@@ -1,6 +1,32 @@
-# TDT trial creator prototype brief — revision 5
+# TDT trial creator prototype brief — revision 6
 
-## Latest correction pass — 2026-08-27
+## Current correction pass — supersedes historical revision 5 below
+
+Goal: Complete the phone-first trial walkthrough, weekly four-slot reporting, and a single qualifying-video submission.
+Human and feel: Creator and manager on phones; short words, visible next action, readable 16px inputs.
+Entry and exit: Tour → actual weekly form; dashboard → video/count/screenshot together → review → onboarding-ready.
+System: Same isolated HTML and green/cream palette; Phone width applies at every host window width.
+Signature: Each date always shows Video 1 and Video 2 × TikTok and Instagram; unlogged slots stay visible but disabled.
+Feedback: Correct spotlight and scroll; review controls remain reachable; image/count locked during send.
+Rejecting: Video 3, Facebook entry/bonuses, standalone screenshot tasks, fabricated reports for empty slots.
+Variants: Missing day/platform/video; weekly vs anytime submission; correction/resend; 360/390px phones and narrow browser panes.
+
+| From | Action / guard | Destination / container | Recovery |
+| --- | --- | --- | --- |
+| Tour step 2 | Next | Actual weekly form, first day's four-slot panel highlighted | Guide stays visible; no data change |
+| Weekly form | Save real logged-link counts | Dashboard; qualifying count may prefill combined submission | Empty slots never require numbers; no separate screenshot task |
+| Dashboard | Submit for review | One form: logged video/platform, ≥10,000 views, screenshot | Cancel/offline preserve local draft; same form handles correction |
+| Complete submission | Valid proof | Manager queue and pending page | No review/notification before full submission; no weekly gate bypass |
+| Manager | Keep in trial / approve | Same submission form / onboarding-ready | Screenshot and exact post URL always available for sent review |
+| Reviewer | Phone / Tablet / Desktop | Resized preview at any host width | Available even during the walkthrough; active mode indicated |
+
+Exactly two video slots per day; the prototype rejects a third video. Every date from joining (or the period start, whichever is later) through the reporting-period end shows four boxes. Only actually logged links are editable/required. “No video logged” is not a zero-view report. This changes the old sparse-layout decision without creating new reporting obligations.
+
+Sign-in says “Use your personal Google account.” Access remains planned as a manager-issued email-bound invitation followed by enabled membership checks; prototype Google/auth/permissions are mocks. Paused page has no exclamation mark; expired-link message is centred. Screenshots only belong to the 10,000-view submission. Weekly saves do not independently create proof tasks or management reviews. Management opens the recorded post URL, not a profile; sample URLs remain labelled as examples.
+
+Production remains unchanged and unapproved. Next: review this revision, then active-creator dashboard. Application and actual onboarding flows remain separate. Both flow skills are used; plain-language writing fallback applies.
+
+## Historical revision-5 correction pass — 2026-08-27
 
 Goal: Reach weekly reporting and an anytime 10,000-view submission from the trial dashboard.
 Human and feel: Phone-first trial creator; obvious next action, short copy, compact number entry.

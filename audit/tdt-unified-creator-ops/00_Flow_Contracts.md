@@ -1,6 +1,6 @@
 # Shared flow contracts
 
-Current instructions through 2026-08-27 override every earlier repository rule. Revision 5 adds the latest trial-flow feedback; this is not production approval.
+Current instructions through 2026-08-27 override every earlier repository rule. Revision 6 adds the latest trial-flow feedback; this is not production approval.
 
 ## Identity, invitation, and membership contract
 
@@ -28,12 +28,12 @@ active business must be one of that person's enabled memberships
 - A creator who joins on day three starts on day three. A creator who joins on day seven owes only the videos they log on day seven.
 - At midnight after the period ends, new video logging is gated until every required per-video, per-platform view report for that completed period is submitted.
 - A creator owes only videos logged on or after their membership join time.
-- View fields are generated only for actual logged video/platform links. Missing days and platforms never posted to require no entry. A posted link requires a valid whole-number count, including zero. The visible date range comes from that creator's due records.
+- Every reporting date on/after joining has four visible slots: Video 1 TikTok/Instagram and Video 2 TikTok/Instagram. Unlogged slots show “No video logged” and are disabled; they do not create reporting obligations or zero-view records. Actual logged links require whole-number views including zero. The date range is the shared period bounded by joining.
 - A missed video may be backdated to yesterday until 12:00 PM the next day. It then joins the correct reporting obligation.
 - The creator cannot choose an arbitrary date. Today is always present; Yesterday appears only when eligible and disappears after noon or once submitted.
 - The gate selects only videos inside the completed business date period and on or after the membership join time.
 - A report is tied to the exact video and platform. Production must define idempotent insert/update behavior so retries cannot create ambiguous duplicates.
-- Weekly entry groups date → Video 1, Video 2, Video 3 and onward → logged platforms. Compact side-by-side numeric inputs must remain phone-readable. Dashboard weekly navigation must open the view form regardless of a previously selected Yesterday.
+- Exactly two video slots per day, on TikTok and Instagram. No Video 3 and no Facebook tracking or bonuses. Compact side-by-side numeric inputs must remain phone-readable. Dashboard weekly navigation must open the view form regardless of a previously selected Yesterday.
 - Logging permission is computed and enforced server-side with the insert; hiding a button is not security.
 - The client shows submission success only after the durable row is confirmed. Retries reuse an idempotency key and cannot create a duplicate video.
 
@@ -47,8 +47,8 @@ Correction to the first audit: an old report cannot clear a different new video 
 - A trial creator can submit a qualifying video at any time, including before the weekly deadline, using a visible dashboard action. Choose a logged video/platform, enter its views (at least 10,000), and attach its screenshot in the same form.
 - This milestone submission is a separate review record, not a weekly view report. It cannot complete or bypass any weekly reporting obligations. A pending review does not block otherwise permitted daily logging.
 - Keep threshold/cumulative explanations out of the creator view-report form.
-- A creator entering 10,000 or more creates one management review item and notification. It does not unlock onboarding.
-- The creator supplies the qualifying video URL and a screenshot. Management sees the same private image and an anchor to that exact URL. The review can wait for evidence after notification.
+- Only a complete qualifying submission (recorded video/platform, ≥10,000 views, screenshot) creates the management review item/notification. Weekly counts alone do not create a separate screenshot task or review. A high weekly count may prefill the same combined submission form for the creator.
+- The creator selects their recorded qualifying video and supplies its view count and screenshot in one form. Management sees that private screenshot and an anchor to the exact post URL, not a profile URL. There is no separate add-screenshot route; correction/resubmission uses this same complete form.
 - Production image retention/deletion after a decision is UNDECIDED; obtain a retention decision before implementing storage deletion. The prototype uses memory-only image previews, not external uploads. The creator's screenshot task disappears after approval; mock manager evidence lasts until reset/reload.
 - Management checks the real platform performance, then approves onboarding or keeps the creator in trial.
 - Only management approval unlocks onboarding for the creator.

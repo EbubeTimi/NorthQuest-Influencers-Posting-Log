@@ -1,6 +1,16 @@
 # TDT prototype verification
 
-## Current result — revision 5, 2026-08-27
+## Functional baseline — revision 6, 2026-08-27
+
+Trial-only corrections: correct tour spotlight on the weekly form, Phone control at every host width, exactly two videos × two platforms per date, visible unused boxes without obligations, and one combined qualifying-video/count/screenshot submission. No separate screenshot task; weekly saves alone do not send a management review.
+
+- Contract checks: 33/33 PASS. Existing bonus regression: 13/13 PASS.
+- In-app browser: 60/60 PASS across walkthrough (9), weekly (14), milestone (13), and screens (24). Results are in `revision6-*-proof.json`.
+- Phone screenshots inspected: walkthrough, weekly reporting, submission, and management. Additional pending, approved, dashboard and expired states captured. Synthetic data only.
+- Final review is self-review, lower assurance: an earlier independent review identified fixes, but its final follow-up failed because of a usage limit. No final independent sign-off is claimed.
+- This is a functional prototype baseline, not a production build, security audit, real authentication/upload test, or production approval.
+
+## Historical result — revision 5, 2026-08-27
 
 Scope: trial prototype only. New dashboard weekly entry and anytime 10,000-view submission; screenshot collected in the same milestone form; compact per-date/video/platform weekly inputs including Video 3; shorter pending/approved pages. Production source, database, uploads, notifications and deployment remain unchanged.
 

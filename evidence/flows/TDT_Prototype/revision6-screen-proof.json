@@ -1,0 +1,98 @@
+[
+  {
+    "name": "sign-in says personal Google account",
+    "status": "PASS"
+  },
+  {
+    "name": "paused page has no icon or alternate action",
+    "status": "PASS"
+  },
+  {
+    "name": "expired message is centred",
+    "status": "PASS"
+  },
+  {
+    "name": "reduced motion applied",
+    "status": "PASS"
+  },
+  {
+    "name": "360px Dashboard fits phone preview",
+    "status": "PASS"
+  },
+  {
+    "name": "360px Weekly views due fits phone preview",
+    "status": "PASS"
+  },
+  {
+    "name": "360px 10,000-view submission fits phone preview",
+    "status": "PASS"
+  },
+  {
+    "name": "360px Manager review fits phone preview",
+    "status": "PASS"
+  },
+  {
+    "name": "360px Expired link fits phone preview",
+    "status": "PASS"
+  },
+  {
+    "name": "390px Dashboard fits phone preview",
+    "status": "PASS"
+  },
+  {
+    "name": "390px Weekly views due fits phone preview",
+    "status": "PASS"
+  },
+  {
+    "name": "390px 10,000-view submission fits phone preview",
+    "status": "PASS"
+  },
+  {
+    "name": "390px Manager review fits phone preview",
+    "status": "PASS"
+  },
+  {
+    "name": "390px Expired link fits phone preview",
+    "status": "PASS"
+  },
+  {
+    "name": "840px Dashboard fits phone preview",
+    "status": "PASS"
+  },
+  {
+    "name": "840px Weekly views due fits phone preview",
+    "status": "PASS"
+  },
+  {
+    "name": "840px 10,000-view submission fits phone preview",
+    "status": "PASS"
+  },
+  {
+    "name": "840px Manager review fits phone preview",
+    "status": "PASS"
+  },
+  {
+    "name": "840px Expired link fits phone preview",
+    "status": "PASS"
+  },
+  {
+    "name": "1280px Dashboard fits phone preview",
+    "status": "PASS"
+  },
+  {
+    "name": "1280px Weekly views due fits phone preview",
+    "status": "PASS"
+  },
+  {
+    "name": "1280px 10,000-view submission fits phone preview",
+    "status": "PASS"
+  },
+  {
+    "name": "1280px Manager review fits phone preview",
+    "status": "PASS"
+  },
+  {
+    "name": "1280px Expired link fits phone preview",
+    "status": "PASS"
+  }
+]

@@ -1,0 +1,38 @@
+[
+  {
+    "name": "tour starts on the video form",
+    "status": "PASS"
+  },
+  {
+    "name": "second step highlights Today and Yesterday",
+    "status": "PASS"
+  },
+  {
+    "name": "third step opens the real weekly form and highlights its first day",
+    "status": "PASS"
+  },
+  {
+    "name": "Desktop control works during the tour",
+    "status": "PASS"
+  },
+  {
+    "name": "Phone control works below the old 980px breakpoint",
+    "status": "PASS"
+  },
+  {
+    "name": "Phone mode is announced",
+    "status": "PASS"
+  },
+  {
+    "name": "highlight is not hidden by the guide",
+    "status": "PASS"
+  },
+  {
+    "name": "first-use tour has a no-reports spotlight and keeps guide inside phone",
+    "status": "PASS"
+  },
+  {
+    "name": "first-use guide does not invent posted videos",
+    "status": "PASS"
+  }
+]
