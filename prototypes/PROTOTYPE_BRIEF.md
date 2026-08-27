@@ -1,6 +1,25 @@
-# TDT trial creator prototype brief — revision 6
+# TDT trial creator prototype brief — revision 7
 
-## Current correction pass — supersedes historical revision 5 below
+## Current visual refinement — TypeUI-guided, 2026-08-27
+
+Goal: Refine the already-reviewed trial flow, without restarting discovery or changing product rules.
+Human and feel: Phone-first creators and management; quiet utility, clear hierarchy, compact forms.
+Entry and exit: Same revision-6 entry, guards, recovery, review, and onboarding-ready boundary below.
+System: Project-local TypeUI fundamentals; system font, 28/20/18/16/14px roles, 400–600 weights, forest-green primary action, neutral borders, 8/12px radii.
+Signature: Daily form first; two soft platform colours within four visible weekly boxes per date.
+Feedback: Clear focus, pressed day state, native form semantics, unchanged simulated saves/errors/uploads.
+Rejecting: Decorative statistics, large marketing typography, fake Google icon, new business rules, production implementation.
+Variants: 320/360/390px phones, wider host panes, all existing functional states and mandatory tour.
+
+TypeUI account access was verified. Its design calls returned setup guidance rather than usable designs. The installed six-file `typeui-fundamentals` package was read directly and applied; this is NOT claimed to be a remotely generated TypeUI design. Source: bergside/typeui at `2a977f1f6616ae8a5ea84a478ca35601c67f4322`, installed project-locally with no app dependencies.
+
+User requirements take priority over generic guidelines: compact 8px heading-to-support gaps and 1.2 heading line-height support phone readability; the first-use tour remains mandatory; the prototype keeps memory-only drafts and explicitly mocked authentication/uploads. No optional skip, persistence, or production capability was introduced.
+
+Button contracts: native default/hover/active/focus/disabled styling applies throughout; Google and submit controls use the existing loading model and disable during pending work; save/send outcomes use the existing status toast and destination; validation/offline states keep a retry path; day and preview toggles expose `aria-pressed`. Existing action/guard/recovery map below is unchanged. No new workflow is added.
+
+Production remains untouched and unapproved. Applications, full onboarding, and the active-creator dashboard remain separate future flows. Revision 6 is preserved in commit `bbcd2b8` before this visual pass.
+
+## Preserved functional baseline — revision 6
 
 Goal: Complete the phone-first trial walkthrough, weekly four-slot reporting, and a single qualifying-video submission.
 Human and feel: Creator and manager on phones; short words, visible next action, readable 16px inputs.

@@ -1,0 +1,54 @@
+[
+  {
+    "name": "choose a logged video first",
+    "status": "PASS"
+  },
+  {
+    "name": "below-10000 claim refused",
+    "status": "PASS"
+  },
+  {
+    "name": "screenshot required for review",
+    "status": "PASS"
+  },
+  {
+    "name": "image decoded and shown",
+    "status": "PASS"
+  },
+  {
+    "name": "retry retains screenshot and count",
+    "status": "PASS"
+  },
+  {
+    "name": "proof fields are locked while sending",
+    "status": "PASS"
+  },
+  {
+    "name": "one complete submission creates one review",
+    "status": "PASS"
+  },
+  {
+    "name": "early submission does not complete weekly reports",
+    "status": "PASS"
+  },
+  {
+    "name": "manager gets exact recorded post URL",
+    "status": "PASS"
+  },
+  {
+    "name": "manager sees submitted screenshot",
+    "status": "PASS"
+  },
+  {
+    "name": "reported date stays on actual submission date",
+    "status": "PASS"
+  },
+  {
+    "name": "correction uses the same combined form",
+    "status": "PASS"
+  },
+  {
+    "name": "approved dashboard has only Start onboarding",
+    "status": "PASS"
+  }
+]

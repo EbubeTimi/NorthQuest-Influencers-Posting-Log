@@ -2,7 +2,7 @@ const fs=require("node:fs"),http=require("node:http"),path=require("node:path"),
 const project=path.join(__dirname,".."),evidence=path.join(project,"evidence/flows/TDT_Prototype");
 function helpers(page){
   const checks=[],check=(name,value=true)=>{assert.ok(value,name);checks.push({name,status:"PASS"});};
-  return {checks,check,click:name=>page.getByRole("button",{name,exact:true}).click(),heading:name=>page.getByRole("heading",{name,exact:true}).waitFor({state:"visible"}),
+  return {checks,check,click:async name=>{await page.getByRole("button",{name,exact:true}).click();await page.domSnapshot?.();},heading:name=>page.getByRole("heading",{name,exact:true}).waitFor({state:"visible"}),
     details:async()=>{const d=page.locator("details").filter({has:page.getByText("Viewport and conditions",{exact:true})});if(await d.getAttribute("open")===null)await page.getByText("Viewport and conditions",{exact:true}).click();}};
 }
 async function verifyWalkthrough(page,{viewport=async()=>{},capture=async()=>{}}={}){
@@ -20,7 +20,7 @@ async function verifyWalkthrough(page,{viewport=async()=>{},capture=async()=>{}}
   await viewport({width:390,height:844});
   check("highlight is not hidden by the guide",await page.evaluate(()=>{const target=document.querySelector(".tour-focus").getBoundingClientRect(),card=document.querySelector(".walkthrough-card").getBoundingClientRect();return target.top>=0&&target.bottom<=card.top+1;}));
   await capture("walkthrough-views");await click("Got it");await heading("Good morning, Amara.");
-  await click("First visit");await click("Help");await click("Next");await click("Next");
+  await click("First visit");await click("Help");await page.getByRole("dialog",{name:"Track your videos",exact:true}).waitFor({state:"visible"});await click("Next");await page.getByRole("dialog",{name:"If you missed yesterday",exact:true}).waitFor({state:"visible"});await click("Next");await page.getByRole("dialog",{name:"Log your views",exact:true}).waitFor({state:"visible"});
   check("first-use tour has a no-reports spotlight and keeps guide inside phone",await page.evaluate(()=>{const app=document.querySelector("#app").getBoundingClientRect(),card=document.querySelector(".walkthrough-card").getBoundingClientRect();return Boolean(document.querySelector(".tour-focus"))&&card.left>=app.left-1&&card.right<=app.right+1;}));
   check("first-use guide does not invent posted videos",await page.locator("#gate-form [data-report]").count()===0);
   await click("Got it");await heading("Good morning, Amara.");return checks;
@@ -115,9 +115,9 @@ async function main(){
   try{
     browser=await chromium.launch({headless:true,channel:"chrome"});const page=await browser.newPage(),errors=[];
     page.on("pageerror",e=>errors.push(e.message));await page.goto("http://127.0.0.1:"+server.address().port+"/prototype");
-    const options={viewport:size=>page.setViewportSize(size),capture:name=>page.screenshot({path:path.join(evidence,"revision6-phone-"+name+".png"),fullPage:false}),file:path.join(evidence,"revision3-phone-dashboard.png")};
+    const options={viewport:size=>page.setViewportSize(size),capture:name=>page.screenshot({path:path.join(evidence,"revision7-phone-"+name+".png"),fullPage:false}),file:path.join(evidence,"revision3-phone-dashboard.png")};
     const checks=[];for(const verify of [verifyWalkthrough,verifyWeekly,verifyMilestone,verifyScreens])checks.push(...await verify(page,options));
-    assert.equal(errors.length,0,errors.join("\n"));fs.writeFileSync(path.join(evidence,"revision6-runtime-proof.json"),JSON.stringify({generatedAt:new Date().toISOString(),checks,errors},null,2));
+    assert.equal(errors.length,0,errors.join("\n"));fs.writeFileSync(path.join(evidence,"revision7-runtime-proof.json"),JSON.stringify({generatedAt:new Date().toISOString(),checks,errors},null,2));
     for(const check of checks)console.log("PASS ",check.name);console.log(checks.length+" browser checks passed");
   }finally{if(browser)await browser.close();await new Promise(resolve=>server.close(resolve));}
 }

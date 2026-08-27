@@ -1,0 +1,179 @@
+[
+  {
+    "name": "320px Invitation: no horizontal overflow",
+    "status": "PASS"
+  },
+  {
+    "name": "320px Invitation: touch controls at least 44px and inside frame",
+    "status": "PASS"
+  },
+  {
+    "name": "320px Invitation: logical heading levels",
+    "status": "PASS"
+  },
+  {
+    "name": "320px Invitation: readable editable inputs",
+    "status": "PASS"
+  },
+  {
+    "name": "320px Dashboard: no horizontal overflow",
+    "status": "PASS"
+  },
+  {
+    "name": "320px Dashboard: touch controls at least 44px and inside frame",
+    "status": "PASS"
+  },
+  {
+    "name": "320px Dashboard: logical heading levels",
+    "status": "PASS"
+  },
+  {
+    "name": "320px Dashboard: readable editable inputs",
+    "status": "PASS"
+  },
+  {
+    "name": "320px Weekly views due: no horizontal overflow",
+    "status": "PASS"
+  },
+  {
+    "name": "320px Weekly views due: touch controls at least 44px and inside frame",
+    "status": "PASS"
+  },
+  {
+    "name": "320px Weekly views due: logical heading levels",
+    "status": "PASS"
+  },
+  {
+    "name": "320px Weekly views due: readable editable inputs",
+    "status": "PASS"
+  },
+  {
+    "name": "320px 10,000-view submission: no horizontal overflow",
+    "status": "PASS"
+  },
+  {
+    "name": "320px 10,000-view submission: touch controls at least 44px and inside frame",
+    "status": "PASS"
+  },
+  {
+    "name": "320px 10,000-view submission: logical heading levels",
+    "status": "PASS"
+  },
+  {
+    "name": "320px 10,000-view submission: readable editable inputs",
+    "status": "PASS"
+  },
+  {
+    "name": "320px Manager review: no horizontal overflow",
+    "status": "PASS"
+  },
+  {
+    "name": "320px Manager review: touch controls at least 44px and inside frame",
+    "status": "PASS"
+  },
+  {
+    "name": "320px Manager review: logical heading levels",
+    "status": "PASS"
+  },
+  {
+    "name": "320px Manager review: readable editable inputs",
+    "status": "PASS"
+  },
+  {
+    "name": "320px Under review: no horizontal overflow",
+    "status": "PASS"
+  },
+  {
+    "name": "320px Under review: touch controls at least 44px and inside frame",
+    "status": "PASS"
+  },
+  {
+    "name": "320px Under review: logical heading levels",
+    "status": "PASS"
+  },
+  {
+    "name": "320px Under review: readable editable inputs",
+    "status": "PASS"
+  },
+  {
+    "name": "320px Approved: no horizontal overflow",
+    "status": "PASS"
+  },
+  {
+    "name": "320px Approved: touch controls at least 44px and inside frame",
+    "status": "PASS"
+  },
+  {
+    "name": "320px Approved: logical heading levels",
+    "status": "PASS"
+  },
+  {
+    "name": "320px Approved: readable editable inputs",
+    "status": "PASS"
+  },
+  {
+    "name": "320px Expired link: no horizontal overflow",
+    "status": "PASS"
+  },
+  {
+    "name": "320px Expired link: touch controls at least 44px and inside frame",
+    "status": "PASS"
+  },
+  {
+    "name": "320px Expired link: logical heading levels",
+    "status": "PASS"
+  },
+  {
+    "name": "320px Expired link: readable editable inputs",
+    "status": "PASS"
+  },
+  {
+    "name": "daily form precedes milestone action",
+    "status": "PASS"
+  },
+  {
+    "name": "one main action on daily dashboard",
+    "status": "PASS"
+  },
+  {
+    "name": "phone heading stays restrained",
+    "status": "PASS"
+  },
+  {
+    "name": "selected day is announced",
+    "status": "PASS"
+  },
+  {
+    "name": "focused input has a visible ring of at least 2px",
+    "status": "PASS"
+  },
+  {
+    "name": "Tab advances from TikTok to Instagram",
+    "status": "UNVERIFIED",
+    "observed": "tiktok-link"
+  },
+  {
+    "name": "--ink against white meets 4.5:1 contrast",
+    "status": "PASS"
+  },
+  {
+    "name": "--muted against white meets 4.5:1 contrast",
+    "status": "PASS"
+  },
+  {
+    "name": "--green against white meets 4.5:1 contrast",
+    "status": "PASS"
+  },
+  {
+    "name": "--green-dark against white meets 4.5:1 contrast",
+    "status": "PASS"
+  },
+  {
+    "name": "--control-border against white meets 3:1 contrast",
+    "status": "PASS"
+  },
+  {
+    "name": "desktop mode uses available width without overflow",
+    "status": "PASS"
+  }
+]

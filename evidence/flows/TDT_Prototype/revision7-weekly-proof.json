@@ -1,0 +1,58 @@
+[
+  {
+    "name": "dashboard views button opens form, not yesterday logging",
+    "status": "PASS"
+  },
+  {
+    "name": "all four dates since joining appear",
+    "status": "PASS"
+  },
+  {
+    "name": "each date has four boxes",
+    "status": "PASS"
+  },
+  {
+    "name": "six logged links required; ten unposted slots disabled",
+    "status": "PASS"
+  },
+  {
+    "name": "no Video 3",
+    "status": "PASS"
+  },
+  {
+    "name": "blank actual views focus the missing entry",
+    "status": "PASS"
+  },
+  {
+    "name": "weekly high count returns to dashboard without a screenshot task",
+    "status": "PASS"
+  },
+  {
+    "name": "weekly counts alone create no manager review",
+    "status": "PASS"
+  },
+  {
+    "name": "weekly qualification prefills the combined form",
+    "status": "PASS"
+  },
+  {
+    "name": "combined form requires screenshot",
+    "status": "PASS"
+  },
+  {
+    "name": "two saved videos remove a third submission option",
+    "status": "PASS"
+  },
+  {
+    "name": "daily completion is clear",
+    "status": "PASS"
+  },
+  {
+    "name": "Yesterday hidden when logged",
+    "status": "PASS"
+  },
+  {
+    "name": "Yesterday hidden after noon",
+    "status": "PASS"
+  }
+]

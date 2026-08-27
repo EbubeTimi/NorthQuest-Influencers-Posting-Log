@@ -8,7 +8,7 @@ test("no creator threshold lecture or paused-form banner",()=>assert.doesNotMatc
 test("one combined submission with no separate screenshot route",()=>{assert.doesNotMatch(html,/data-state="evidence"|data-action="evidence"|Add your screenshot\./);assert.match(html,/type="file"/);});
 test("manager has real submitted-link anchor",()=>assert.match(html,/id="open-proof"[^>]*href=/));
 test("paused-access copy",()=>assert.match(html,/Your access has been paused\./));
-test("read-only revision and boundaries explicit",()=>{assert.match(html,/Revision 6/);assert.match(html,/Nothing is sent/);assert.match(html,/Actual onboarding/);});
+test("read-only revision and boundaries explicit",()=>{assert.match(html,/Revision 7/);assert.match(html,/Nothing is sent/);assert.match(html,/Actual onboarding/);});
 test("dashboard has weekly and independent milestone entries",()=>{assert.match(html,/id="weekly-views"/);assert.match(html,/Reached 10,000 views\?/);assert.match(html,/data-action="milestone"/);});
 test("exactly two video rows, with all four visible slots",()=>{assert.match(html,/class="platform-counts"/);assert.doesNotMatch(html,/id:"v7c"/);assert.match(html,/No video logged/);});
 test("tour step 3 opens and highlights the actual views form",()=>{assert.match(html,/model\.walkStep===2\?gate\(true\)/);assert.match(html,/#gate-form \.gate-day/);});

@@ -1,5 +1,22 @@
 # TDT prototype verification
 
+## Current result — revision 7, 2026-08-27
+
+TypeUI-guided visual refinement of the existing trial prototype, not production implementation. Daily logging comes first; lighter system typography, quieter TDT wordmark, compact platform-coloured weekly boxes, clear 44px+ controls, stronger borders/focus, and simpler review/submission surfaces. Product rules from revision 6 are preserved.
+
+- Final contract/logic checks: 33/33 PASS. Existing bonus checks: 13/13 PASS. `git diff --check`: PASS.
+- Final browser reruns: 60/60 PASS across walkthrough (9), weekly (14), milestone/upload/review (13), screens (24), saved separately as `revision7-*-proof.json`. Captured console warnings/errors on the final session: none.
+- Design checks: 43 PASS, 1 UNVERIFIED in `revision7-design-proof.json`. Includes 320px reflow, touch targets, logical headings, 16px editable inputs, daily-form hierarchy, selected-day semantics, visible focus, token contrast, and actual desktop mode.
+- Keyboard limitation: the in-app automation's Tab commands did not advance from the focused TikTok input to Instagram. Native DOM controls are present and a focus ring is observed, but full keyboard traversal needs manual verification. No complete accessibility certification is claimed.
+- Directly inspected phone captures: dashboard, weekly view form, 320px weekly layout, walkthrough spotlight, invitation, submission, pending, and management. Synthetic image only; screenshot upload uses a local test image, not a real creator's data. `revision7-phone-*.png` includes extra states and the desktop capture.
+- Failures handled: preview connection refused because the server had stopped; restarted as a hidden background process. The initial restart did not persist. A transient success toast intercepted fast walkthrough taps; made non-interactive and hidden during tours. Delayed scrolling could race the next tap; positioning is now synchronous. Visual-test `parseFloat` was unavailable in the browser read scope and was replaced with supported numeric conversion. A combined final rerun timed out and reset its test session; recovered and reran each phase separately, all successfully.
+- TypeUI MCP account access worked, but design calls returned setup guidance, not generated designs. Applied the downloaded six-file fundamentals package directly. Package provenance and rule exceptions are in `prototypes/PROTOTYPE_BRIEF.md`.
+- Final HTML SHA256: `A5D39CB554CFEF1F1CD4FBDF3BD4B172C8F04F1D1DE785B6600DDF1E3AC6043E`.
+- Self-reviewed, lower assurance; no new independent review. Flow-by-flow preserved the verified baseline before visual edits; flow-prototype kept all changes in the isolated mock and retained the explicit approval boundary. Plain-language writing fallback used.
+- Production build/security/database/auth/upload/integration gates are NOT reverified here. No production code or dependencies changed, no database write, no real notification, no actual onboarding, and no production deployment. The remaining keyboard check does not prevent a phone-first prototype review, but must be resolved before production accessibility sign-off.
+
+Run the preview from the repository with `python -m http.server 4173 --bind 127.0.0.1 --directory prototypes`, then open `http://127.0.0.1:4173/unified-tdt-creator-ops.html`. Browser test modules export phase functions for the browser skill's page/viewport handles; use `tests/prototype-design.test.js` for the additional design checks. Preview is temporary/local and depends on its server process staying alive.
+
 ## Functional baseline — revision 6, 2026-08-27
 
 Trial-only corrections: correct tour spotlight on the weekly form, Phone control at every host width, exactly two videos × two platforms per date, visible unused boxes without obligations, and one combined qualifying-video/count/screenshot submission. No separate screenshot task; weekly saves alone do not send a management review.

@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <link rel="icon" href="data:,">
-  <title>TDT trial prototype — revision 6</title>
+  <title>TDT trial prototype — revision 7</title>
   <style>
     :root {
       --ink:#13221c; --muted:#66736d; --line:#dce2dd; --paper:#fff;
@@ -206,13 +206,135 @@
     body.touring .review { position:relative;z-index:34; }
     body.touring .screen { padding-bottom:calc(50vh + 32px); }
 
+    /* Revision 7: phone-first utility UI, guided by TypeUI fundamentals.
+       Compact heading/support gaps intentionally preserve the user's short-form UX. */
+    :root {
+      --ink:#182b25; --muted:#596860; --line:#dfe5e1; --paper:#fff;
+      --wash:#eef1ef; --green:#116149; --green-dark:#0b4937; --green-soft:#edf5f0;
+      --red:#a12f2c; --radius:12px; --shadow:0 4px 24px #173d2910; --motion:150ms;
+      --control-border:#78877e;
+    }
+    html { font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif; font-size:16px; line-height:1.5; }
+    button,a,input,select,textarea { -webkit-tap-highlight-color:transparent; }
+    button,a { touch-action:manipulation; }
+    button { transition:background-color var(--motion) ease-out,border-color var(--motion) ease-out; }
+    button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,a:focus-visible,summary:focus-visible {
+      outline:3px solid var(--green); outline-offset:3px; box-shadow:0 0 0 3px #fff;
+    }
+    button:disabled { opacity:1; cursor:not-allowed; background:#edf0ed; border-color:#9aa69e; color:#56655c; }
+    button:active:not(:disabled) { border-color:var(--green-dark); }
+    .primary:hover:not(:disabled),.primary:active:not(:disabled) { background:var(--green-dark); }
+    .secondary:hover:not(:disabled),.google-button:hover:not(:disabled),.text-button:hover:not(:disabled) { background:#f0f4f1; }
+    .prototype-note { padding:8px 16px; background:#e2e8e3; color:#344d40; font-size:12px; }
+    .device { border-radius:16px; }
+    .app-bar { min-height:64px; padding:16px 20px; }
+    .brand { font-weight:700; }
+    .brand-mark { width:auto; height:auto; background:none; color:var(--ink); border-radius:0; font-size:22px; letter-spacing:-1px; font-weight:700; line-height:1; }
+    .business-label { font-size:14px; font-weight:500; color:var(--muted); }
+    .screen,.preview-phone .screen { padding:28px 20px 40px; background:#fff; }
+    .narrow { max-width:480px; }
+    h1,.preview-phone h1 { font-size:28px; line-height:1.2; letter-spacing:-.035em; font-weight:600; text-wrap:balance; }
+    h2 { font-size:24px; line-height:1.25; font-weight:600; }
+    h3 { font-size:18px; line-height:1.35; font-weight:600; letter-spacing:-.015em; }
+    .small,.field small,.proof-image figcaption { font-size:14px; }
+    .eyebrow { font-size:12px; font-weight:600; letter-spacing:.08em; }
+    .stack { gap:24px; }
+    .panel { padding:20px; border-radius:12px; }
+    .primary,.secondary,.text-button,.google-button { min-height:48px; padding:11px 16px; border-radius:8px; font-size:16px; line-height:1.5; font-weight:600; }
+    .secondary,.google-button { border-color:var(--control-border); }
+    .text-button { font-size:14px; min-height:44px; }
+    .google-button { font-weight:500; }
+    .field { gap:8px; }
+    .field label { color:var(--ink); font-size:14px; font-weight:500; }
+    .field input,.field select,.field textarea { min-height:48px; border-color:var(--control-border); border-radius:8px; padding:11px 12px; font-size:16px; line-height:1.5; }
+    .field input::placeholder { color:#66756b; opacity:1; }
+    .field input[readonly] { color:#596860; background:#f6f8f6; }
+    .field select { appearance:none; padding-right:36px; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%23445449' stroke-width='1.5'%3E%3Cpath d='m4 6 4 4 4-4'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 12px center; }
+    .field input[type=file] { padding:8px; font-size:14px; }
+    input[type=file]::file-selector-button { min-height:36px; border:0; border-radius:4px; padding:8px 12px; margin-right:8px; background:#edf3ef; color:var(--ink); font:inherit; }
+    .task-head { align-items:center; }
+    .task-head h1 { font-size:26px; }
+    .status { font-size:12px; font-weight:500; padding:4px 10px; min-height:28px; }
+    .status.trial { color:#536057; background:#f0f3ef; border:1px solid #dfe5e1; }
+    #day-panel { border:0; padding:0; gap:12px; }
+    #day-panel .eyebrow { display:none; }
+    #day-panel h2 { font-size:16px; font-weight:500; letter-spacing:0; }
+    .date-header { align-items:center; }
+    .help-button { padding:8px 0 8px 12px; min-width:44px; }
+    .day-choice { background:#f3f6f3; border-radius:10px; padding:4px; gap:8px; }
+    .day-option { min-height:48px; border-radius:7px; border:1px solid transparent; background:transparent; font-size:14px; font-weight:500; padding:8px 4px; }
+    .day-option.active { background:#fff; border-color:var(--green); color:var(--green-dark); box-shadow:0 1px 2px #15372510; font-weight:600; }
+    .day-choice.one { background:none; padding:0; }
+    .day-choice.one .day-option { text-align:left; padding-left:12px; }
+    #track-panel { gap:20px; }
+    #track-panel h2 { font-size:20px; }
+    #track-panel .muted { margin-top:4px; }
+    #video-form { gap:20px; }
+    .weekly-action { margin-top:-8px; }
+    .weekly-action p { text-align:center; }
+    .milestone-card { border:0; border-top:1px solid var(--line); border-radius:0; padding:24px 0 0; background:#fff; }
+    .milestone-card h2 { font-size:18px; }
+    .milestone-card .secondary { margin-top:8px; }
+    .compact-action { gap:8px; }
+    #proof-form { padding:0; border:0; border-radius:0; }
+    .gate-day { padding:16px; gap:16px; border-radius:12px; }
+    .gate-day h2 { font-size:18px; }
+    .gate-fields { gap:16px; }
+    .count-video h3 { font-size:14px; font-weight:500; color:var(--muted); letter-spacing:0; }
+    .count-field { padding:8px; gap:8px; border-radius:8px; background:#edf5f0; }
+    .count-field.instagram { background:#f7f2e9; }
+    .count-field input { height:44px; min-height:44px; padding:8px; border-radius:6px; }
+    .count-field:has(input:disabled) { padding:8px 4px; }
+    .count-field:has(input:disabled) label { padding-left:4px; }
+    .count-field input:disabled { padding:8px 2px; font-size:14px; text-align:center; background:transparent; color:#596860; border:1px dashed #9ca89f; }
+    .notice { border-radius:8px; padding:16px; font-size:14px; }
+    .save-confirm { border-radius:8px; padding:12px; font-size:14px; }
+    .center-state { min-height:580px; }
+    .center-state .narrow { gap:24px; }
+    .center-state .brand { margin-bottom:8px; }
+    .center-state h1 { max-width:360px; margin-inline:auto; }
+    .center-state p { max-width:340px; margin-inline:auto; }
+    .center-state .panel { border:0; background:#f4f7f4; font-size:14px; }
+    .admin-bar { background:#fff; color:var(--ink); border-bottom:1px solid var(--line); min-height:64px; padding:16px 20px; font-size:14px; }
+    .profile h2 { font-size:18px; }
+    .profile p { font-size:14px; }
+    .photo { border-radius:50%; background:#edf3ee; font-weight:600; }
+    .facts { gap:16px; }
+    .fact { border-radius:0; padding:0; background:none; }
+    .fact small { font-size:14px; }
+    .fact strong { font-size:16px; font-weight:600; }
+    .proof-image img { border-radius:8px; }
+    .button-row.two { grid-template-columns:1fr; gap:12px; }
+    .walkthrough-card { border-radius:12px; padding:16px; gap:12px; }
+    .walkthrough-card h2 { font-size:20px; }
+    .walkthrough-count { font-weight:600; }
+    .tour-focus { border-radius:12px; background:#fff; }
+    .review { background:#f8faf8; border-radius:12px; padding:16px; }
+    .review p { font-size:14px; }
+    .review summary { font-size:14px; font-weight:600; min-height:44px; padding-block:10px; }
+    .state-grid,.review-row,.decision-row { gap:8px; }
+    .state-button,.review-button,.review select,.review textarea { min-height:44px; font-size:14px; border-radius:6px; border-color:var(--control-border); }
+    .decision-row label { min-height:44px; font-size:14px; }
+    .state-button:hover:not(.active),.review-button:hover:not([aria-pressed="true"]) { background:#edf3ee; }
+    .toast { border-radius:8px; font-size:14px; pointer-events:none; }
+    body.touring .toast { visibility:hidden; }
+    @media(max-width:520px) { .device { border-radius:0; } }
+    @media(max-width:359px) {
+      .screen,.preview-phone .screen { padding-inline:16px; }
+      .panel { padding:16px; }
+      .gate-day { padding:12px; }
+      .platform-counts { gap:8px; }
+      h1,.preview-phone h1 { font-size:26px; }
+      .task-head h1 { font-size:24px; }
+    }
+
   </style>
 </head>
 <body>
-  <div class="prototype-note">Revision 6 · Read-only trial prototype · Nothing is sent, approved, uploaded, or saved to production</div>
+  <div class="prototype-note">Revision 7 · Read-only trial prototype · Nothing is sent, approved, uploaded, or saved to production</div>
   <div class="workspace preview-phone" id="workspace">
     <aside class="review" aria-label="Prototype review controls">
-      <h2>Review controls · revision 6</h2>
+      <h2>Review controls · revision 7</h2>
       <p>These controls are for reviewing the flow. Creators will not see them.</p>
       <details open>
         <summary>Creator and manager states</summary>
@@ -357,12 +479,13 @@
       if(state==="milestone"&&model.review)state=model.review.status==="approved"?"approved":model.review.status==="sent"?"pending":"milestone";
       if(state==="walkthrough"){model.walkStep=0;model.helpReturn=gated()?"gate":"dashboard";}
       model.state=state;render();
-      requestAnimationFrame(()=>{if(model.state==="walkthrough"){positionTour();return;}const el=app.querySelector("h1,h2");if(el){el.setAttribute("tabindex","-1");el.focus({preventScroll:true});}app.scrollIntoView({block:"start",behavior:"instant"});});
+      if(model.state==="walkthrough")positionTour();
+      else {const el=app.querySelector("h1,h2");if(el){el.setAttribute("tabindex","-1");el.focus({preventScroll:true});}app.scrollIntoView({block:"start",behavior:"instant"});}
       if(message)showToast(message);
     }
     function header(){return '<header class="app-bar"><div class="brand"><span class="brand-mark">TDT</span></div><span class="business-label">'+business()+'</span></header>';}
     function shell(html){return header()+'<div class="screen"><div class="narrow stack">'+html+'</div></div>';}
-    function google(mode){return '<button class="google-button" data-google="'+mode+'"><span class="google-g" aria-hidden="true">G</span>Continue with Google</button>';}
+    function google(mode){return '<button class="google-button" data-google="'+mode+'">Continue with Google</button>';}
     function welcome(signin=false){return '<div class="screen"><div class="narrow center-state"><div class="narrow"><div class="brand" style="justify-content:center"><span class="brand-mark">TDT</span></div><h1>'+(signin?'Welcome back.':'Welcome to your '+business()+' Creator dashboard.')+'</h1>'+google(signin?"signin":"invite")+(signin?'<p class="muted small">Use your personal Google account.</p>':"")+'</div></div></div>';}
     function notice(){
       const r=model.review;if(!r)return "";
@@ -370,18 +493,18 @@
       if(r.status==="sent")return '<div class="notice info"><div><strong>Your video is being checked.</strong><button class="text-button" data-action="pending">View submission</button></div></div>';
       return '<div class="notice info"><div><strong>Please check your submission.</strong><button class="text-button" data-action="milestone">Update submission</button></div></div>';
     }
-    function milestoneAction(){return model.review?notice():'<section class="panel compact-action milestone-card"><h3>Reached 10,000 views?</h3><p class="muted small">Send your video and screenshot for review.</p><button class="secondary" data-action="milestone">Submit for review</button></section>';}
+    function milestoneAction(){return model.review?notice():'<section class="panel compact-action milestone-card"><h2>Reached 10,000 views?</h2><p class="muted small">Send your video and screenshot for review.</p><button class="secondary" data-action="milestone">Submit for review</button></section>';}
     function weeklyAction(){return localDate(model.now)>model.period.end?'<button class="secondary" id="weekly-views">Log your views</button>':'<p class="muted small">Weekly views open '+dayName(new Date(Date.parse(model.period.end+'T12:00:00Z')+86400000).toISOString().slice(0,10))+'.</p>';}
     function dayChoice(){
       const yes=eligible();if(!yes&&model.selectedDay==="yesterday")model.selectedDay="today";
-      return '<div class="day-choice '+(yes?"":"one")+'" aria-label="Choose the day to log"><button class="day-option '+(model.selectedDay==="today"?"active":"")+'" type="button" data-day="today">Today · '+dayName(localDate(model.now))+'</button>'+
-        (yes?'<button class="day-option '+(model.selectedDay==="yesterday"?"active":"")+'" type="button" data-day="yesterday">Yesterday · '+dayName(previousDate(model.now))+'</button>':"")+'</div>';
+      return '<div class="day-choice '+(yes?"":"one")+'" aria-label="Choose the day to log"><button class="day-option '+(model.selectedDay==="today"?"active":"")+'" aria-pressed="'+(model.selectedDay==="today")+'" type="button" data-day="today">Today · '+dayName(localDate(model.now))+'</button>'+
+        (yes?'<button class="day-option '+(model.selectedDay==="yesterday"?"active":"")+'" aria-pressed="'+(model.selectedDay==="yesterday")+'" type="button" data-day="yesterday">Yesterday · '+dayName(previousDate(model.now))+'</button>':"")+'</div>';
     }
     function videoForm(){
       const day=model.selectedDay==="yesterday"?previousDate(model.now):localDate(model.now);
       const number=nextVideoNumber(model.videos,day);
-      if(number===null)return '<section class="panel stack" id="track-panel"><h3>Both videos are logged.</h3><p class="muted small">For '+dayName(day)+'.</p></section>';
-      return '<section class="panel stack" id="track-panel"><div><h3>Track your videos</h3><p class="muted small">Video '+number+' · '+dayName(day)+'.</p></div>'+
+      if(number===null)return '<section class="panel stack" id="track-panel"><h2>Both videos are logged.</h2><p class="muted small">For '+dayName(day)+'.</p></section>';
+      return '<section class="panel stack" id="track-panel"><div><h2>Track your videos</h2><p class="muted small">Video '+number+' · '+dayName(day)+'.</p></div>'+
         (model.savedVideo?'<div class="save-confirm" role="status"><strong>Video submitted.</strong></div>':"")+
         '<form id="video-form" class="stack" novalidate>'+["tiktok","instagram"].map(p=>'<div class="field"><label for="'+p+'-link">'+platformName(p)+' link</label><input id="'+p+'-link" type="url" inputmode="url" value="'+esc(model.draft[p])+'" placeholder="https://'+p+'.com/..." '+(model.saving?"disabled":"")+'></div>').join("")+
         '<p id="video-error" class="error-text" role="alert" '+(model.videoError?"":"hidden")+'>'+esc(model.videoError)+'</p><button class="primary" type="submit" '+(model.saving?"disabled":"")+'>'+(model.saving?"Submitting…":"Submit video")+'</button></form></section>';
@@ -391,8 +514,8 @@
       const [title,copy]=steps[model.walkStep];
       return '<div class="walkthrough-layer" role="dialog" aria-modal="true" aria-labelledby="walk-title"><div class="walkthrough-card"><span class="walkthrough-count">'+(model.walkStep+1)+' of 3</span><h2 id="walk-title">'+title+'</h2><p class="muted">'+copy+'</p><button class="primary" id="walk-next">'+(model.walkStep===2?"Got it":"Next")+'</button></div></div>';
     }
-    function dashboard(tour=false){return shell('<div class="task-head"><div><p class="eyebrow">'+business()+'</p><h2>Good morning, Amara.</h2></div><span class="status '+model.status+'">'+(model.status==="trial"?"Trial":model.status==="pending"?"Under review":"Approved")+'</span></div>'+weeklyAction()+milestoneAction()+
-      '<section class="panel stack" id="day-panel"><div class="date-header"><div><p class="eyebrow">Today</p><h3>'+dayName(localDate(model.now))+'</h3></div><button class="text-button help-button" data-action="walkthrough">Help</button></div>'+dayChoice()+(eligible()?'<p class="muted small">Yesterday is available until 12:00 PM.</p>':"")+'</section>'+videoForm()+(tour?walkthrough():""));}
+    function dashboard(tour=false){return shell('<div class="task-head"><h1>Good morning, Amara.</h1><span class="status '+model.status+'">'+(model.status==="trial"?"Trial":model.status==="pending"?"Under review":"Approved")+'</span></div>'+
+      '<section class="panel stack" id="day-panel"><div class="date-header"><h2>'+dayName(localDate(model.now))+'</h2><button class="text-button help-button" data-action="walkthrough">Help</button></div>'+dayChoice()+(eligible()?'<p class="muted small">Yesterday is available until 12:00 PM.</p>':"")+'</section>'+videoForm()+'<div class="weekly-action">'+weeklyAction()+'</div>'+milestoneAction()+(tour?walkthrough():""));}
     function dateSentence(list){
       const days=[...new Set(list.map(e=>e.date))];
       return !days.length?"No views to report.":days.length===1?"For videos you logged on "+dayName(days[0])+".":"For videos you logged between "+dayName(days[0])+" and "+dayName(days[days.length-1])+".";
@@ -405,7 +528,7 @@
         if(model.selectedDay==="yesterday")return shell(html+videoForm()+'<button class="text-button" id="return-views">Back to views</button>');
       }
       if(!days.length)return shell(html+'<button class="primary" data-action="dashboard">Continue</button>');
-      return shell(html+'<form id="gate-form" class="stack" novalidate>'+days.map(day=>'<section class="gate-day"><h3>'+dayName(day)+'</h3><div class="gate-fields">'+[1,2].map(number=>'<div class="count-video"><h4>Video '+number+'</h4><div class="platform-counts">'+['tiktok','instagram'].map(platform=>{const entry=due.find(e=>e.date===day&&e.number===number&&e.platform===platform),id=entry?.key||day+':'+number+':'+platform;return '<div class="field count-field '+platform+'"><label for="'+id+'">'+platformName(platform)+'</label><input id="'+id+'" aria-label="'+platformName(platform)+' Video '+number+'" '+(entry?'data-report="'+entry.key+'"':'disabled placeholder="No video logged"')+' type="text" inputmode="numeric" pattern="[0-9]*" value="'+esc(entry?model.reports[entry.key]??'':'')+'" '+(model.saving?'disabled':'')+'></div>';}).join('')+'</div></div>').join('')+'</div></section>').join('')+
+      return shell(html+'<form id="gate-form" class="stack" novalidate>'+days.map(day=>'<section class="gate-day"><h2>'+dayName(day)+'</h2><div class="gate-fields">'+[1,2].map(number=>'<div class="count-video"><h3>Video '+number+'</h3><div class="platform-counts">'+['tiktok','instagram'].map(platform=>{const entry=due.find(e=>e.date===day&&e.number===number&&e.platform===platform),id=entry?.key||day+':'+number+':'+platform;return '<div class="field count-field '+platform+'"><label for="'+id+'">'+platformName(platform)+'</label><input id="'+id+'" aria-label="'+platformName(platform)+' Video '+number+'" '+(entry?'data-report="'+entry.key+'"':'disabled placeholder="No video logged"')+' type="text" inputmode="numeric" pattern="[0-9]*" value="'+esc(entry?model.reports[entry.key]??'':'')+'" '+(model.saving?'disabled':'')+'></div>';}).join('')+'</div></div>').join('')+'</div></section>').join('')+
         '<p id="gate-error" class="error-text" role="alert" '+(model.gateError?"":"hidden")+'>'+esc(model.gateError)+'</p><button class="primary" type="submit" '+(model.saving?"disabled":"")+'>'+(model.saving?"Saving…":"Save views")+'</button></form>'+(!gated()?'<button class="text-button" data-action="dashboard">Back to dashboard</button>':'')+milestoneAction());
     }
     function imagePreview(){return model.image?'<figure class="proof-image"><img id="proof-preview" src="'+esc(model.image.url)+'" alt="Screenshot of the submitted video views"><figcaption>'+esc(model.image.demo?"Demo screenshot — not real creator evidence":model.image.name)+'</figcaption></figure>':"";}
@@ -427,7 +550,7 @@
     }
     function management(){
       const r=model.review;if(!r)return '<div class="admin-bar"><strong>TDT Management</strong></div><div class="screen"><h1>No reviews waiting.</h1></div>';
-      return '<div class="admin-bar"><strong>TDT Management</strong><span class="status pending">'+(r.status==="sent"?"1 review":r.status==="approved"?"Reviewed":"Awaiting proof")+'</span></div><div class="screen"><div class="narrow stack"><div><p class="eyebrow">Onboarding review</p><h1>Check Amara’s video.</h1></div><section class="panel stack"><div class="profile"><div class="photo" role="img" aria-label="Profile photo placeholder">AO</div><div><h3>Amara Okafor</h3><p class="muted">'+business()+' · Trial creator</p></div></div>'+
+      return '<div class="admin-bar"><strong>TDT Management</strong><span class="status pending">'+(r.status==="sent"?"1 review":r.status==="approved"?"Reviewed":"Awaiting proof")+'</span></div><div class="screen"><div class="narrow stack"><div><p class="eyebrow">Onboarding review</p><h1>Check Amara’s video.</h1></div><section class="panel stack"><div class="profile"><div class="photo" role="img" aria-label="Profile photo placeholder">AO</div><div><h2>Amara Okafor</h2><p class="muted">'+business()+' · Trial creator</p></div></div>'+
         '<div class="facts"><div class="fact"><small>Joined</small><strong>'+dayName(localDate(model.joined))+'</strong></div><div class="fact"><small>Reported</small><strong>'+dayName(localDate(r.submittedAt||model.now))+'</strong></div><div class="fact"><small>'+platformName(r.platform)+'</small><strong>'+Number(r.views).toLocaleString("en-GB")+'</strong></div><div class="fact"><small>Status</small><strong>'+(r.status==="approved"?"Approved":r.status==="sent"?"Needs review":"Awaiting proof")+'</strong></div></div>'+
         (validVideoUrl(r.url,r.platform)?'<a class="secondary proof-link" id="open-proof" href="'+esc(r.url)+'" target="_blank" rel="noopener noreferrer">Open '+platformName(r.platform)+' video</a>':'<p class="error-text">A valid video link is required.</p>')+
         (model.image?imagePreview():'<p class="muted">Screenshot not submitted yet.</p>')+'<p class="muted small">Check the screenshot and the actual video before deciding.</p>'+
@@ -445,7 +568,7 @@
       app.innerHTML=(views[model.state]||dashboard)();
       app.querySelectorAll('#proof-form input,#proof-form select,#proof-form button').forEach(control=>control.disabled=model.saving||model.imageLoading);
       document.querySelectorAll("[data-state]").forEach(b=>b.classList.toggle("active",b.dataset.state===model.state));
-      document.getElementById("review-context").textContent="Revision 6 · Demo time: "+dayName(localDate(model.now))+" 2026, "+(Number(model.now.slice(11,13))<12?"10:00 AM":"12:00 PM")+" Lagos. Google sign-in, saves, notifications and uploads are simulated. Screenshots stay in this tab until reset/reload. Seed video URLs are examples; management opens the selected post link, not a profile.";
+      document.getElementById("review-context").textContent="Revision 7 · Demo time: "+dayName(localDate(model.now))+" 2026, "+(Number(model.now.slice(11,13))<12?"10:00 AM":"12:00 PM")+" Lagos. Google sign-in, saves, notifications and uploads are simulated. Screenshots stay in this tab until reset/reload. Seed video URLs are examples; management opens the selected post link, not a profile.";
       document.getElementById("review-transition").textContent="Current: "+model.state+" · Mock review notifications: "+model.notifications+". Production screenshot retention is not decided.";
       document.getElementById("offline-action").textContent="Offline: "+(model.offline?"on":"off");
       document.getElementById("motion-action").textContent="Reduced motion: "+(model.reducedMotion?"on":"off");bind();
@@ -455,7 +578,8 @@
         const target=app.querySelector(model.walkStep===0?'#track-panel':model.walkStep===1?'#day-panel':'#gate-form .gate-day')||app.querySelector('.screen .narrow');
         target?.classList.add('tour-focus');
         app.querySelectorAll('.app-bar,.screen').forEach(e=>e.inert=true);
-        requestAnimationFrame(positionTour);
+        // Place the guide before accepting another tap, without a delayed scroll race.
+        positionTour();
       }
     }
     function positionTour(){
@@ -590,7 +714,7 @@
     document.getElementById("copy-decision").addEventListener("click",async()=>{
       const decision=document.querySelector('input[name="decision"]:checked')?.value,output=document.getElementById("decision-output");
       if(!decision){output.textContent="Choose approve, revise, or reject.";return;}
-      const text="TDT trial prototype revision 6: "+decision.toUpperCase()+"\nNotes: "+document.getElementById("decision-notes").value.trim();
+      const text="TDT trial prototype revision 7: "+decision.toUpperCase()+"\nNotes: "+document.getElementById("decision-notes").value.trim();
       try{await navigator.clipboard.writeText(text);output.textContent="Decision copied. Share it in this task; this control does not approve production.";}catch{output.textContent=text;}
     });
     render();
