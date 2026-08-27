@@ -1,37 +1,45 @@
-# TDT creator prototype brief — revision 3
+# TDT trial creator prototype brief — revision 4
 
-Portable writing fallback: `humanizing-writing` is unavailable, so creator copy uses short, direct language.
+## Latest authorized corrections (supersede revision 3 below)
 
-## Compact design brief
+The user's observations are complete. This is permission to revise the prototype, NOT approval for production UI. Visual redesign follows separately.
 
-Goal: Use a personal Google login, open only assigned work, log today's video, enter required views, and continue after management approval.
-Human and feel: A creator using one hand on a phone should understand the next task without learning internal operations language.
-Entry and exit: Business invitation or sign-in → assigned workspace → dashboard → views → management review → onboarding.
-System: Standalone read-only prototype; phone-first one-column layout; system sans type; restrained TDT green; 48px controls.
-Signature: A locked Today/conditional Yesterday control and a mandatory spotlight walkthrough replace technical cycle explanations.
-Feedback: Immediate inline status, short opacity transitions, focus recovery, and no browser vibration claim.
-Rejecting: Desktop columns squeezed onto phones, ornamental metric cards, technical terminology, and long explanatory paragraphs.
-Variants: Invite/new login, one/multiple memberships, Aura weekday rule, calendar-date businesses, trial/review/approved/deactivated, phone/tablet/desktop.
+Goal: One assigned trial → daily links → views on actual posts → screenshot proof → management approval → onboarding-ready.
+Human and feel: Phone-first, one clear task, no technical rule lectures or discouraging totals.
+Entry and exit: Welcome / Google sign-in directly into the assigned trial; no chooser or switching.
+System: Reuse the existing single HTML, one-column layout, type and green palette.
+Signature: Today and genuinely eligible Yesterday, derived from mock time and submitted records.
+Feedback: Inline saving, preserved drafts, focused errors, reduced motion; no real uploads or notifications.
+Rejecting: Repeated trials across businesses, fabricated view fields, public screenshots, or fake completed onboarding.
+Variants: Missing day/platform, noon/join boundaries, screenshot validation/retry, approval and paused access.
 
-## State and transition map
+- Invitation: “Welcome to your NorthQuest Creator dashboard.” TDT only; Continue with Google; no invented recipient or invitation/one-use copy.
+- One ongoing trial per person. Passing it is TDT-wide; later recommended memberships do not require another trial or grant automatic access.
+- Yesterday exists only if missed, before 12:00 PM Africa/Lagos, and not before joining. Success requires mock confirmation; no duplicate clicks.
+- Views are required only for recorded video/platform pairs in the completed shared period after joining. Unposted days and unused platforms create no fields. Zero remains valid for a posted link.
+- Date text derives from actual due records. Remove the creator-facing 10,000 lecture and old paused-form banner, but preserve the individual-video threshold and manager approval internally.
+- Add image proof and qualifying video URL; show the same screenshot and exact submitted link to management. Image previews are local memory only, PNG/JPEG/WebP up to 5 MB, cleared on reset/reload. Production deletion/retention is undecided, not silently chosen.
+- Paused screen: “Your access has been paused.” No other business, account choice or sign-out button.
+- First use is the normal empty logging form. No totals/recent videos.
+- Actual onboarding, active creator dashboard and full management dashboard remain explicitly outside this revision.
 
-| From | Trigger | Guard/input | To | Feedback/recovery |
-| --- | --- | --- | --- | --- |
-| Invitation | Continue with Google | Verified email matches unused invite | Walkthrough/dashboard | Wrong email or expired invite explains recovery |
-| Sign-in | Continue with Google | Verified personal account | Assigned chooser or dashboard | Retry/sign out |
-| Chooser | Select | Enabled assigned membership only | Dashboard | Disabled membership is not selectable |
-| First dashboard | Continue | First visit | Three-step spotlight walkthrough over the dashboard | Cannot skip; may reopen Help |
-| Dashboard | Submit video | Today or eligible Yesterday; at least one valid link | Confirmed logged record | Show saving state; success only after mock backend confirmation |
-| Dashboard | Period closes | Required views missing | Views page | Clear one task and due dates |
-| Views | Save | Every required platform has a non-negative count | Dashboard or review pending | Focus first invalid input; retry preserves entries |
-| Views | One video is at least 10,000 | Trial | Review pending | Notify management once; do not unlock |
-| Management review | Approve | Manager verified real platform result | Onboarding ready | Keep in trial remains available and audited |
-| Any creator page | Switch | Another enabled membership | Other dashboard | Mobile sheet; focus returns on close |
-| Management action | Deactivate membership | Reason confirmed | Inactive page | Other memberships still work |
+### Revised transition map
 
-## Prototype-only boundary
+| From | Trigger | To | Recovery |
+| --- | --- | --- | --- |
+| Welcome/sign-in | Mock Google success | Mandatory help / assigned dashboard | Loading/error/retry |
+| Dashboard | Eligible day + valid links | Confirmed saved record | Draft preserved; duplicate prevention |
+| Dashboard | Due reports | Views for actual posts | Eligible previous-day catch-up adds its own obligation |
+| Views | All actual entries saved | Dashboard / screenshot task | Invalid count focused; offline draft retained |
+| Screenshot | Valid image + exact video link | Under review | Preview, replace, remove and retry |
+| Management | Verify proof and approve | Onboarding-ready; TDT trial passed | Keep in trial; one mock notification |
+| Any creator route | Deactivate | Access paused | No alternate business route |
 
-- Google login, invitation claim, drafts, database authorization, notifications, management identity, uploads, Sheets, Apify, and audit persistence are simulated.
-- The persistence confirmation is also simulated and is labelled as prototype confirmation; it specifies the production requirement but does not claim a real database write.
-- The visible creator product contains no developer language. Review controls remain outside the proposed phone UI.
-- TDT Applications and the full CashDrive admin dashboard need their own focused prototype after the creator flow is accepted.
+## Proof and scope
+
+- 22 contract/logic checks and 54 in-app-browser checks passed for revision 4, plus 13 existing bonus regression checks.
+- Screenshots and the dated result are in evidence/flows/TDT_Prototype/revision4-*.
+- Revision 3's brief is retained in Git history (02b12b0), not repeated here as conflicting current instructions.
+- All Google login, uploads, saves, manager identity, notifications and approval effects are simulated. Browser image previews and link hrefs are real local interactions; external social-video validity is not verified.
+- Prototype is NOT production-ready implementation. No backend changes, production deployment or actual onboarding were performed.
+- Review assurance: self-reviewed, lower assurance. Full visual design refinement follows this functional correction pass.

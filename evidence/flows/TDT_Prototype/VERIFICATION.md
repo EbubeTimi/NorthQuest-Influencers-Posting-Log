@@ -1,4 +1,21 @@
-# TDT prototype revision 3 verification
+# TDT prototype verification
+
+## Current result — revision 4, 2026-08-27
+
+The latest completed observations are applied to the trial-only prototype. Corrected welcome text, no trial chooser/switcher, genuine Yesterday eligibility, sparse posted-link view fields, screenshot evidence, exact submitted-link anchor, TDT-wide trial pass and simplified paused access are present. Actual onboarding, active-creator UI, full admin and visual redesign are not claimed.
+
+- Automated logic/content: `node tests/prototype-contract.test.js` — PASS, 22 checks.
+- Existing regression: `node tests/manage-bonus.test.js` — PASS, 13 checks.
+- Browser runtime: project-owned `verifyPrototype` from `tests/prototype-runtime.test.js`, executed through the browser skill in the in-app browser — PASS, 54 checks. The independently runnable CLI entry is retained for repeat verification; the CLI runner itself was not rerun this turn.
+- Browser errors/warnings: none. Widths: 360, 390, 768 and 1280 pixels; tested core states had no horizontal overflow.
+- Real local image chooser, decoding and preview: PASS using a synthetic revision-3 dashboard screenshot, not private creator data. The same preview and exact entered href reached management. The external sample video was not opened or claimed real.
+- Offline evidence retry retained screenshot/link; one mock notification; Keep in trial correction and approval transition passed.
+- Fresh results: `revision4-runtime-proof.json`; screenshots: `revision4-phone-{welcome,dashboard,views,screenshot,management,approved,paused}.png`.
+- Resolved tooling failures: an initial edit helper timeout, rejected patch shape, and test module-loading issue. The longer browser suite completed successfully; its stored result was recovered and inspected after a delayed tool response.
+- No production application source, dependencies or database changes in this revision. No fresh production-build/security claim: August 26 results below are historical and unchanged.
+- Foundation execution/build-state/database gates remain UNVERIFIED for production; this is not a production completion claim. Prototype tests/runtime PASS. Approval for production UI is still required. Review is self-reviewed, lower assurance.
+
+## Historical revision 3 verification
 
 ## Outcome
 

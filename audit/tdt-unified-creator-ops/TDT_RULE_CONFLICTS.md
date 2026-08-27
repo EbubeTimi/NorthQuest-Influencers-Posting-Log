@@ -1,6 +1,15 @@
 # Authoritative rule conflict audit
 
-Current instructions from 2026-08-25 override the earlier request and every historical repository decision.
+Current instructions through 2026-08-27 override the earlier request and every historical repository decision.
+
+## Revision 4 trial-only corrections
+
+- A person cannot hold multiple ongoing trials. Once management passes the TDT trial, future recommended business memberships do not repeat it. Revision 3's multiple trial memberships/switcher are superseded, while active creators may still have assigned memberships in multiple businesses.
+- Invitation copy is “Welcome to your NorthQuest Creator dashboard.” It replaces “You’ve been invited to…”. Branding stays TDT; no invented recipient, one-use message or personal-account explanation on that page.
+- Only actually logged platform links require views; the old fixed sixteen-field grid and creator threshold lecture are removed. Missing dates/platforms create no obligation.
+- Qualifying video proof now includes a local screenshot preview and the exact submitted video link. Production retention remains undecided; no automatic deletion policy is assumed.
+- Trial paused access has no alternate business/switch/sign-out exit. First use is the regular empty logging form.
+- User observations are complete and authorized for prototype adjustment, not production UI. These corrections are applied in revision 4. UI/UX refinement is next; do not restart discovery or request the same observations again.
 
 | # | Current locked rule | Conflicting or missing repository behavior | Required resolution |
 | --- | --- | --- | --- |

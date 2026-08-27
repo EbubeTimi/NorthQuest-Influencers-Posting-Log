@@ -1,6 +1,6 @@
 # Shared flow contracts
 
-Current instructions from 2026-08-25 override every earlier repository rule.
+Current instructions through 2026-08-27 override every earlier repository rule. Trial-only prototype corrections are applied in revision 4; visual polish is next. This is not production approval.
 
 ## Identity, invitation, and membership contract
 
@@ -14,7 +14,7 @@ active business must be one of that person's enabled memberships
 - Creators sign in with their personal Google account, not a Gmail account created for a brand.
 - Management assigns access through an expiring, single-use business invitation tied to the intended personal email.
 - Opening a NorthQuest invite adds NorthQuest membership. Opening an Aura invite later adds Aura to the same login.
-- After sign-in, the creator sees only businesses assigned to that email. The system never advertises every TDT business.
+- A trial creator has exactly one assigned trial business and goes directly to its dashboard; no trial chooser or switcher. After passing the TDT trial, active creators may have multiple assigned memberships. The system never advertises every TDT business or grants one automatically.
 - Every creator, video, report, application, notification, enquiry, inventory record, and audit event carries its correct ownership scope.
 - Authorization derives the person from the authenticated caller and validates membership server-side.
 - Management may deactivate one business membership or suspend the whole person. History is retained, and actor, reason, joined date, deactivated date, and reactivation are audited.
@@ -28,6 +28,7 @@ active business must be one of that person's enabled memberships
 - A creator who joins on day three starts on day three. A creator who joins on day seven owes only the videos they log on day seven.
 - At midnight after the period ends, new video logging is gated until every required per-video, per-platform view report for that completed period is submitted.
 - A creator owes only videos logged on or after their membership join time.
+- View fields are generated only for actual logged video/platform links. Missing days and platforms never posted to require no entry. A posted link requires a valid whole-number count, including zero. The visible date range comes from that creator's due records.
 - A missed video may be backdated to yesterday until 12:00 PM the next day. It then joins the correct reporting obligation.
 - The creator cannot choose an arbitrary date. Today is always present; Yesterday appears only when eligible and disappears after noon or once submitted.
 - The gate selects only videos inside the completed business date period and on or after the membership join time.
@@ -39,12 +40,17 @@ Correction to the first audit: an old report cannot clear a different new video 
 
 ## Trial review and onboarding contract
 
+- At most one ongoing trial per person. Passing it is TDT-wide; later management-recommended memberships do not require a repeat trial. This does not grant automatic access or replace business-specific onboarding.
 - The protected threshold is 10,000 views for one video in every business.
 - Views from different videos are never added together.
+- Keep threshold/cumulative explanations out of the creator view-report form.
 - A creator entering 10,000 or more creates one management review item and notification. It does not unlock onboarding.
+- The creator supplies the qualifying video URL and a screenshot. Management sees the same private image and an anchor to that exact URL. The review can wait for evidence after notification.
+- Production image retention/deletion after a decision is UNDECIDED; obtain a retention decision before implementing storage deletion. Revision 4 uses memory-only image previews, not external uploads. The creator's screenshot task disappears after approval; mock manager evidence lasts until reset/reload.
 - Management checks the real platform performance, then approves onboarding or keeps the creator in trial.
 - Only management approval unlocks onboarding for the creator.
 - Retries cannot create duplicate review items, notifications, approvals, or audit events.
+- Trial deactivation shows only “Your access has been paused.” No alternate-business message, chooser or sign-out action appears on that screen.
 
 ## Applications, CashDrive, and launch-data contract
 

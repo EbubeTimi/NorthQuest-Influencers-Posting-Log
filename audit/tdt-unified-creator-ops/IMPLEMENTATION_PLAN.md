@@ -2,6 +2,12 @@
 
 Production UI and deployment remain blocked until the revised prototype is explicitly approved.
 
+## Current handoff — 2026-08-27
+
+The user's trial-flow observations are complete and applied to prototype revision 4. Next: review the adjusted prototype, then refine its visual UI/UX using the user's selected skill/references. Do not ask the user to repeat observations or restart the audit. Revision 4 is trial-only and stops at onboarding-ready, not actual onboarding or an active-creator/admin dashboard.
+
+Identity planning must now enforce one ongoing trial per person and a TDT-wide passed-trial result. Later business memberships are management-assigned without repeat trials. Add private screenshot proof to management review; production retention still needs a decision. All earlier per-business repeated-trial UI assumptions are superseded.
+
 ## Dependency order
 
 1. **Prove live environment truth** — expose project-scoped Supabase and Vercel MCP tools, compare live schema, migration ledger, and configuration, and add reproducible build/auth/schema evidence.

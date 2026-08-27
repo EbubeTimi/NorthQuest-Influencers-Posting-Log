@@ -1,0 +1,230 @@
+{
+  "generatedAt": "2026-08-27T10:47:55.990Z",
+  "method": "Project-owned verifyPrototype suite executed through the in-app browser skill",
+  "prototype": "revision 4",
+  "checks": [
+    {
+      "name": "welcome: exact copy, TDT only, no personal account explanation",
+      "status": "PASS"
+    },
+    {
+      "name": "trial: no chooser or switcher",
+      "status": "PASS"
+    },
+    {
+      "name": "mandatory walkthrough retains keyboard focus",
+      "status": "PASS"
+    },
+    {
+      "name": "Google mock enters the single assigned dashboard",
+      "status": "PASS"
+    },
+    {
+      "name": "Yesterday visible when missed before noon",
+      "status": "PASS"
+    },
+    {
+      "name": "Yesterday absent when already logged",
+      "status": "PASS"
+    },
+    {
+      "name": "Yesterday absent at noon",
+      "status": "PASS"
+    },
+    {
+      "name": "first use is the logging form without a forced empty screen",
+      "status": "PASS"
+    },
+    {
+      "name": "first-day join cannot backdate before joining",
+      "status": "PASS"
+    },
+    {
+      "name": "empty video submission focuses useful input",
+      "status": "PASS"
+    },
+    {
+      "name": "yesterday submission adds only its posted platform",
+      "status": "PASS"
+    },
+    {
+      "name": "unposted day and missing Instagram pair are absent",
+      "status": "PASS"
+    },
+    {
+      "name": "zero views accepted, reports reopen Today",
+      "status": "PASS"
+    },
+    {
+      "name": "Yesterday hides after successful missed-day save",
+      "status": "PASS"
+    },
+    {
+      "name": "sparse gate contains six actual links, not a sixteen-field grid",
+      "status": "PASS"
+    },
+    {
+      "name": "no threshold lecture or paused-form banner",
+      "status": "PASS"
+    },
+    {
+      "name": "only an actual posted video requires a missing view value",
+      "status": "PASS"
+    },
+    {
+      "name": "individual qualification asks for screenshot, not onboarding",
+      "status": "PASS"
+    },
+    {
+      "name": "screenshot is required",
+      "status": "PASS"
+    },
+    {
+      "name": "chosen local raster file decodes and previews",
+      "status": "PASS"
+    },
+    {
+      "name": "offline retry preserves screenshot and link",
+      "status": "PASS"
+    },
+    {
+      "name": "one review notification after retry",
+      "status": "PASS"
+    },
+    {
+      "name": "manager opens the exact submitted URL",
+      "status": "PASS"
+    },
+    {
+      "name": "manager sees the submitted screenshot",
+      "status": "PASS"
+    },
+    {
+      "name": "keep-in-trial offers proof correction",
+      "status": "PASS"
+    },
+    {
+      "name": "only management approval unlocks onboarding-ready",
+      "status": "PASS"
+    },
+    {
+      "name": "actual onboarding remains explicitly out of scope",
+      "status": "PASS"
+    },
+    {
+      "name": "trial pass is TDT-wide without automatic additional memberships",
+      "status": "PASS"
+    },
+    {
+      "name": "paused state contains no other-business or sign-out escape",
+      "status": "PASS"
+    },
+    {
+      "name": "Expired link is reachable",
+      "status": "PASS"
+    },
+    {
+      "name": "Wrong Google account is reachable",
+      "status": "PASS"
+    },
+    {
+      "name": "Error is reachable",
+      "status": "PASS"
+    },
+    {
+      "name": "Sign in is reachable",
+      "status": "PASS"
+    },
+    {
+      "name": "reduced-motion setting is applied",
+      "status": "PASS"
+    },
+    {
+      "name": "360px Dashboard no horizontal overflow",
+      "status": "PASS"
+    },
+    {
+      "name": "360px Log your views no horizontal overflow",
+      "status": "PASS"
+    },
+    {
+      "name": "360px Add screenshot no horizontal overflow",
+      "status": "PASS"
+    },
+    {
+      "name": "360px Manager review no horizontal overflow",
+      "status": "PASS"
+    },
+    {
+      "name": "360px Deactivated no horizontal overflow",
+      "status": "PASS"
+    },
+    {
+      "name": "390px Dashboard no horizontal overflow",
+      "status": "PASS"
+    },
+    {
+      "name": "390px Log your views no horizontal overflow",
+      "status": "PASS"
+    },
+    {
+      "name": "390px Add screenshot no horizontal overflow",
+      "status": "PASS"
+    },
+    {
+      "name": "390px Manager review no horizontal overflow",
+      "status": "PASS"
+    },
+    {
+      "name": "390px Deactivated no horizontal overflow",
+      "status": "PASS"
+    },
+    {
+      "name": "768px Dashboard no horizontal overflow",
+      "status": "PASS"
+    },
+    {
+      "name": "768px Log your views no horizontal overflow",
+      "status": "PASS"
+    },
+    {
+      "name": "768px Add screenshot no horizontal overflow",
+      "status": "PASS"
+    },
+    {
+      "name": "768px Manager review no horizontal overflow",
+      "status": "PASS"
+    },
+    {
+      "name": "768px Deactivated no horizontal overflow",
+      "status": "PASS"
+    },
+    {
+      "name": "1280px Dashboard no horizontal overflow",
+      "status": "PASS"
+    },
+    {
+      "name": "1280px Log your views no horizontal overflow",
+      "status": "PASS"
+    },
+    {
+      "name": "1280px Add screenshot no horizontal overflow",
+      "status": "PASS"
+    },
+    {
+      "name": "1280px Manager review no horizontal overflow",
+      "status": "PASS"
+    },
+    {
+      "name": "1280px Deactivated no horizontal overflow",
+      "status": "PASS"
+    }
+  ],
+  "consoleProblems": [],
+  "limits": [
+    "All authentication, data persistence, notifications and upload effects are local mocks",
+    "No physical phone or native app verification",
+    "No actual external social-video existence verified",
+    "Screenshot retention in production is not decided"
+  ]
+}

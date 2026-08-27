@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <link rel="icon" href="data:,">
-  <title>TDT creator prototype — revision 3</title>
+  <title>TDT trial prototype — revision 4</title>
   <style>
     :root {
       --ink:#13221c; --muted:#66736d; --line:#dce2dd; --paper:#fff;
@@ -161,31 +161,53 @@
       *,*::before,*::after { scroll-behavior:auto !important; animation-duration:1ms !important; transition-duration:1ms !important; }
     }
     body.reduce-motion *,body.reduce-motion *::before,body.reduce-motion *::after { animation-duration:1ms !important; transition-duration:1ms !important; }
+
+    .business-label { font-size:14px;font-weight:700; }
+    .small { font-size:13px; }
+    .help-button { width:auto;min-height:44px;padding:8px; }
+    .error-text { color:var(--red);line-height:1.45;font-size:14px; }
+    .proof-link { display:flex;align-items:center;justify-content:center;text-align:center;text-decoration:none; }
+    .proof-image { margin:0;display:grid;gap:8px;min-width:0; }
+    .proof-image img { display:block;width:100%;max-height:360px;object-fit:contain;background:#eef1ed;border:1px solid var(--line);border-radius:12px; }
+    .proof-image figcaption { font-size:12px;color:var(--muted);overflow-wrap:anywhere; }
+    input[type=file] { font-size:13px; }
+    button:disabled { cursor:wait;opacity:.65; }
+    a:focus-visible { outline:3px solid var(--green);outline-offset:3px; }
+    h1[tabindex="-1"]:focus,h2[tabindex="-1"]:focus { outline:none; }
+    .walkthrough-card { position:relative;z-index:33;max-height:45vh;overflow:auto; }
+    .tour-focus { z-index:31;pointer-events:none; }
+    .walkthrough-layer { z-index:32;background:transparent; }
+    #app:has(.walkthrough-layer)::after { content:"";position:fixed;inset:0;z-index:30;background:rgba(8,20,15,.58); }
+
   </style>
 </head>
 <body>
-  <div class="prototype-note">Read-only prototype · Nothing is sent, approved, uploaded, or saved to production</div>
+  <div class="prototype-note">Revision 4 · Read-only trial prototype · Nothing is sent, approved, uploaded, or saved to production</div>
   <div class="workspace preview-phone" id="workspace">
     <aside class="review" aria-label="Prototype review controls">
-      <h2>Review controls</h2>
+      <h2>Review controls · revision 4</h2>
       <p>These controls are for reviewing the flow. Creators will not see them.</p>
       <details open>
         <summary>Creator and manager states</summary>
         <div class="state-grid" id="state-grid">
           <button class="state-button" data-state="invite">Invitation</button>
           <button class="state-button" data-state="signin">Sign in</button>
-          <button class="state-button" data-state="chooser">Choose work</button>
           <button class="state-button" data-state="walkthrough">Walkthrough</button>
           <button class="state-button active" data-state="dashboard">Dashboard</button>
-          <button class="state-button" data-state="grace">Noon grace</button>
+          <button class="state-button" data-state="grace">Yesterday missed</button>
+          <button class="state-button" data-state="logged">Yesterday logged</button>
+          <button class="state-button" data-state="after-noon">After noon</button>
           <button class="state-button" data-state="gate">Log your views</button>
+          <button class="state-button" data-state="evidence">Add screenshot</button>
           <button class="state-button" data-state="pending">Under review</button>
           <button class="state-button" data-state="management">Manager review</button>
           <button class="state-button" data-state="approved">Approved</button>
           <button class="state-button" data-state="deactivated">Deactivated</button>
           <button class="state-button" data-state="loading">Loading</button>
-          <button class="state-button" data-state="empty">Empty</button>
+          <button class="state-button" data-state="empty">First visit</button>
           <button class="state-button" data-state="error">Error</button>
+          <button class="state-button" data-state="expired">Expired link</button>
+          <button class="state-button" data-state="wrong-email">Wrong Google account</button>
         </div>
       </details>
       <details>
@@ -197,12 +219,13 @@
           <button class="review-button" id="offline-action">Offline: off</button>
           <button class="review-button" id="motion-action">Reduced motion: off</button>
           <button class="review-button" id="qualify-action">Enter 10,240 views</button>
+          <button class="review-button" id="sample-image-action">Use demo screenshot</button>
         </div>
       </details>
       <details>
         <summary>Management actions</summary>
         <div class="review-row">
-          <button class="review-button" id="approve-action">Approve onboarding</button>
+          <button class="review-button" id="approve-action">Open management review</button>
           <button class="review-button" id="deactivate-action">Deactivate NorthQuest</button>
           <button class="review-button" id="reset-action">Reset prototype</button>
         </div>
@@ -218,7 +241,7 @@
         <button class="review-button" id="copy-decision">Copy decision</button>
         <p id="decision-output" aria-live="polite"></p>
       </details>
-      <p><strong>Not in this prototype:</strong> the full TDT Applications area and CashDrive Inventory/Enquiries admin screens. They will be separate, focused flows.</p>
+      <p id="review-context"></p><p id="review-transition" aria-live="polite"></p><p>Reduced motion removes animation. No native haptics. One trial per person; passing it removes the need for another business trial.</p><p><strong>Not in this prototype:</strong> Actual onboarding, active-creator and full management dashboards, TDT Applications and CashDrive Inventory/Enquiries. They are later flows.</p>
     </aside>
     <main class="stage">
       <div class="device" id="app" aria-live="polite"></div>
@@ -226,278 +249,286 @@
   </div>
   <div id="toast" class="toast" role="status" hidden></div>
   <script>
-    const BUSINESSES = {
-      northquest:{name:"NorthQuest",initials:"NQ",period:"1–7 August"},
-      cashdrive:{name:"CashDrive",initials:"CD",period:"1–7 August"},
-      aura:{name:"Aura",initials:"AU",period:"Monday–Sunday"}
-    };
-    const reportIds = [4,5,6,7].flatMap(day=>["tiktok-v1","instagram-v1","tiktok-v2","instagram-v2"].map(kind=>`d${day}-${kind}`));
-    const freshReports = () => Object.fromEntries(reportIds.map((id,index)=>[id,index===12?"8420":String(300+index*75)]));
-    const model = {
-      state:"dashboard", business:"northquest", assigned:["northquest","aura"],
-      viewport:"phone", menu:false, offline:false, reducedMotion:false, walkStep:0, selectedDay:"today", saving:false, savedVideo:false,
-      status:{northquest:"trial",cashdrive:"trial",aura:"trial"},
-      deactivated:{northquest:false,cashdrive:false,aura:false},
-      reports:{northquest:freshReports(),cashdrive:freshReports(),aura:freshReports()}
-    };
-    const app = document.getElementById("app");
-    const workspace = document.getElementById("workspace");
-    const toast = document.getElementById("toast");
-    let toastTimer;
-    const currentBusiness = () => BUSINESSES[model.business];
-    function showToast(message) {
-      clearTimeout(toastTimer); toast.textContent=message; toast.hidden=false;
-      toastTimer=setTimeout(()=>toast.hidden=true,2200);
+    // CORE START
+    const POLICY=Object.freeze({threshold:10000,maxImageBytes:5*1024*1024,timeZone:"Africa/Lagos"});
+    function localDate(instant){
+      const p=new Intl.DateTimeFormat("en-GB",{timeZone:POLICY.timeZone,year:"numeric",month:"2-digit",day:"2-digit"}).formatToParts(new Date(instant));
+      return ["year","month","day"].map(t=>p.find(x=>x.type===t).value).join("-");
     }
-    function setState(state,message) {
-      model.state=state; model.menu=false; render();
-      if(message) showToast(message);
+    function previousDate(now){return new Date(Date.parse(localDate(now)+"T12:00:00Z")-86400000).toISOString().slice(0,10);}
+    function canLogYesterday(now,joined,videos){
+      const hour=Number(new Intl.DateTimeFormat("en-GB",{timeZone:POLICY.timeZone,hour:"2-digit",hourCycle:"h23"}).format(new Date(now))),day=previousDate(now);
+      return hour<12 && day>=localDate(joined) && !videos.some(v=>v.date===day);
     }
-    function header() {
-      return `<header class="app-bar">
-        <div class="brand"><span class="brand-mark">TDT</span></div>
-        <button class="workspace-button" id="business-menu-button" aria-expanded="${model.menu}">
-          <span class="avatar">${currentBusiness().initials}</span><span>${currentBusiness().name}</span><b aria-hidden="true">⌄</b>
-        </button>
-      </header>`;
+    function dueEntries(videos,joined,period){
+      return videos.filter(v=>v.date>=period.start&&v.date<=period.end&&v.date>=localDate(joined)&&Date.parse(v.loggedAt)>=Date.parse(joined))
+        .sort((a,b)=>a.date.localeCompare(b.date)||a.number-b.number)
+        .flatMap(v=>Object.entries(v.links).filter(([,url])=>Boolean(url)).map(([platform,url])=>({key:v.id+":"+platform,id:v.id,date:v.date,number:v.number,platform,url})));
     }
-    function shell(content) { return header()+`<div class="screen"><div class="narrow stack">${content}</div></div>`; }
-    function renderInvite() {
-      return `<div class="screen"><div class="narrow center-state"><div class="narrow">
-        <div class="brand" style="justify-content:center"><span class="brand-mark">TDT</span></div>
-        <h1>You’ve been invited to your NorthQuest Creator dashboard.</h1>
-        <button class="google-button" data-action="walkthrough"><span class="google-g">G</span>Continue with Google</button>
-      </div></div></div>`;
+    function validCount(value){return /^\d+$/.test(String(value).trim())&&Number.isSafeInteger(Number(value));}
+    function qualifyingEntry(entries,reports){return entries.find(e=>validCount(reports[e.key])&&Number(reports[e.key])>=POLICY.threshold)||null;}
+    function validVideoUrl(value,platform){
+      try{const u=new URL(value),host=u.hostname.toLowerCase();
+        if(u.protocol!=="https:"||u.username||u.password||u.port)return false;
+        if(platform==="tiktok")return /(^|\.)tiktok\.com$/.test(host)&&u.pathname!=="/";
+        return /(^|\.)instagram\.com$/.test(host)&&/^\/(reel|reels|p|tv)\/[^/]+/.test(u.pathname);
+      }catch{return false;}
     }
-    function renderSignin() {
-      return `<div class="screen"><div class="narrow center-state"><div class="narrow">
-        <div class="brand" style="justify-content:center"><span class="brand-mark">TDT</span></div>
-        <h1>Welcome back.</h1>
-        <button class="google-button" data-action="chooser"><span class="google-g">G</span>Continue with Google</button>
-        <p class="muted" style="font-size:12px">Use your personal account.</p>
-      </div></div></div>`;
+    function validImageFile(file){return Boolean(file&&["image/png","image/jpeg","image/webp"].includes(file.type)&&file.size>0&&file.size<=POLICY.maxImageBytes);}
+    function trialAssignment(person,business){
+      if(person.trialPassed)return {allowed:false,reason:"already-passed"};
+      if(person.trialBusiness)return {allowed:false,reason:"trial-already-assigned"};
+      return {allowed:true,business};
     }
-    function renderChooser() {
-      return `<div class="screen"><div class="narrow stack">
-        <div class="brand"><span class="brand-mark">TDT</span></div>
-        <div><h1>Where are you posting today?</h1><div class="spacer-8"></div><p class="muted">These are the accounts assigned to you.</p></div>
-        <div class="membership-list">
-          ${model.assigned.map(slug=>`<button class="membership" data-business="${slug}">
-            <span class="avatar">${BUSINESSES[slug].initials}</span>
-            <span style="flex:1"><strong>${BUSINESSES[slug].name}</strong><small>${model.deactivated[slug]?"Access paused":"Open dashboard"}</small></span>
-            <span aria-hidden="true">›</span>
-          </button>`).join("")}
-        </div>
-        <button class="text-button" data-action="signin">Sign out</button>
-      </div></div>`;
-    }
-    function renderWalkthrough() {
-      return renderDashboard(true,true);
-    }
-    function reviewNotice() {
-      const status=model.status[model.business];
-      if(status==="pending") return `<div class="notice info"><span>●</span><div><strong>Your video is being checked.</strong><span>Management will approve onboarding after verifying the views.</span></div></div>`;
-      if(status==="approved") return `<div class="notice good"><span>✓</span><div><strong>Onboarding is ready.</strong><span>Your video was approved by management.</span></div></div>`;
-      return "";
-    }
-    function dayChoice(grace) {
-      return `<div class="day-choice ${grace?"":"one"}" id="day-choice" aria-label="Choose the day to log">
-        <button class="day-option ${model.selectedDay==="today"?"active":""}" type="button" data-day="today">Today · 25 August</button>
-        ${grace?`<button class="day-option ${model.selectedDay==="yesterday"?"active":""}" type="button" data-day="yesterday">Yesterday · 24 August</button>`:""}
-      </div>`;
-    }
-    function walkthroughOverlay() {
-      const steps=[
-        ["Track your videos","Add a TikTok link, an Instagram link, or both. Then tap Submit video."],
-        ["If you missed yesterday","Yesterday appears here only until 12:00 PM, and only when you did not already log it."],
-        ["At the end of seven days","Video logging pauses until you enter all the views for that period. You cannot skip this step."]
+    // CORE END
+    const BUSINESSES={northquest:{name:"NorthQuest"},cashdrive:{name:"CashDrive"},aura:{name:"Aura"}};
+    const platformName=p=>p==="tiktok"?"TikTok":"Instagram";
+    const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+    const dayName=d=>new Intl.DateTimeFormat("en-GB",{day:"numeric",month:"long",timeZone:"UTC"}).format(new Date(d+"T12:00:00Z"));
+    function baseVideos(seventh=false){
+      const list=[
+        {id:"v4",date:"2026-08-04",loggedAt:"2026-08-04T10:00:00+01:00",number:1,links:{tiktok:"https://www.tiktok.com/@sample/video/1234567890123456781",instagram:"https://www.instagram.com/reel/DEMO4/"}},
+        {id:"v6",date:"2026-08-06",loggedAt:"2026-08-06T10:00:00+01:00",number:1,links:{instagram:"https://www.instagram.com/reel/DEMO6/"}}
       ];
+      if(seventh)list.push(
+        {id:"v7a",date:"2026-08-07",loggedAt:"2026-08-07T10:00:00+01:00",number:1,links:{tiktok:"https://www.tiktok.com/@sample/video/1234567890123456782"}},
+        {id:"v7b",date:"2026-08-07",loggedAt:"2026-08-07T16:00:00+01:00",number:2,links:{tiktok:"https://www.tiktok.com/@sample/video/1234567890123456783",instagram:"https://www.instagram.com/reel/DEMO7/"}});
+      return list;
+    }
+    function initialModel(){
+      const m={state:"invite",trialBusiness:"northquest",trialPassed:false,status:"trial",deactivated:false,
+        joined:"2026-08-04T09:00:00+01:00",now:"2026-08-08T10:00:00+01:00",period:{start:"2026-08-01",end:"2026-08-07"},
+        videos:baseVideos(),reports:{},savedReports:{},draft:{tiktok:"",instagram:""},selectedDay:"today",
+        viewport:"phone",offline:false,reducedMotion:false,walkStep:0,walkComplete:false,saving:false,savedVideo:false,
+        review:null,notifications:0,image:null,imageError:"",videoError:"",gateError:"",proofError:"",returnTo:"dashboard",helpReturn:"dashboard",operation:0};
+      for(const e of dueEntries(m.videos,m.joined,m.period))m.reports[e.key]=m.savedReports[e.key]="700";
+      return m;
+    }
+    let model=initialModel(),toastTimer;
+    const app=document.getElementById("app"),workspace=document.getElementById("workspace"),toast=document.getElementById("toast");
+    const business=()=>BUSINESSES[model.trialBusiness].name;
+    const entries=()=>dueEntries(model.videos,model.joined,model.period);
+    const gated=()=>localDate(model.now)>model.period.end&&entries().some(e=>!validCount(model.savedReports[e.key]));
+    const eligible=()=>canLogYesterday(model.now,model.joined,model.videos);
+    function showToast(text){clearTimeout(toastTimer);toast.textContent=text;toast.hidden=false;toastTimer=setTimeout(()=>toast.hidden=true,2400);}
+    function setState(state,message){
+      model.operation++;model.saving=false;
+      if(model.deactivated&&state!=="management")state="deactivated";
+      if(state==="dashboard"&&gated())state="gate";
+      if(state==="walkthrough"){model.walkStep=0;model.helpReturn=gated()?"gate":"dashboard";}
+      model.state=state;render();
+      requestAnimationFrame(()=>{const el=app.querySelector('[role="dialog"] button')||app.querySelector("h1,h2");if(el){if(el.tagName!=="BUTTON")el.setAttribute("tabindex","-1");el.focus({preventScroll:true});}app.scrollIntoView({block:"start",behavior:"instant"});});
+      if(message)showToast(message);
+    }
+    function header(){return '<header class="app-bar"><div class="brand"><span class="brand-mark">TDT</span></div><span class="business-label">'+business()+'</span></header>';}
+    function shell(html){return header()+'<div class="screen"><div class="narrow stack">'+html+'</div></div>';}
+    function google(mode){return '<button class="google-button" data-google="'+mode+'"><span class="google-g" aria-hidden="true">G</span>Continue with Google</button>';}
+    function welcome(signin=false){return '<div class="screen"><div class="narrow center-state"><div class="narrow"><div class="brand" style="justify-content:center"><span class="brand-mark">TDT</span></div><h1>'+(signin?'Welcome back.':'Welcome to your '+business()+' Creator dashboard.')+'</h1>'+google(signin?"signin":"invite")+(signin?'<p class="muted small">Use your personal account.</p>':"")+'</div></div></div>';}
+    function notice(){
+      const r=model.review;if(!r)return "";
+      if(r.status==="approved")return '<div class="notice good"><div><strong>Onboarding is ready.</strong><button class="text-button" data-action="approved">Continue</button></div></div>';
+      if(r.status==="sent")return '<div class="notice info"><div><strong>Your video is being checked.</strong><button class="text-button" data-action="pending">View submission</button></div></div>';
+      return '<div class="notice info"><div><strong>'+(r.status==="needs-update"?'Please check your proof.':'Add a screenshot of your views.')+'</strong><button class="text-button" data-action="evidence">Add screenshot</button></div></div>';
+    }
+    function dayChoice(){
+      const yes=eligible();if(!yes&&model.selectedDay==="yesterday")model.selectedDay="today";
+      return '<div class="day-choice '+(yes?"":"one")+'" aria-label="Choose the day to log"><button class="day-option '+(model.selectedDay==="today"?"active":"")+'" type="button" data-day="today">Today · '+dayName(localDate(model.now))+'</button>'+
+        (yes?'<button class="day-option '+(model.selectedDay==="yesterday"?"active":"")+'" type="button" data-day="yesterday">Yesterday · '+dayName(previousDate(model.now))+'</button>':"")+'</div>';
+    }
+    function videoForm(){
+      const day=model.selectedDay==="yesterday"?previousDate(model.now):localDate(model.now);
+      return '<section class="panel stack" id="track-panel"><div><h3>Track your videos</h3><p class="muted small">For '+dayName(day)+'.</p></div>'+
+        (model.savedVideo?'<div class="save-confirm" role="status"><strong>Video submitted.</strong></div>':"")+
+        '<form id="video-form" class="stack" novalidate>'+["tiktok","instagram"].map(p=>'<div class="field"><label for="'+p+'-link">'+platformName(p)+' link</label><input id="'+p+'-link" type="url" inputmode="url" value="'+esc(model.draft[p])+'" placeholder="https://'+p+'.com/..." '+(model.saving?"disabled":"")+'></div>').join("")+
+        '<p id="video-error" class="error-text" role="alert" '+(model.videoError?"":"hidden")+'>'+esc(model.videoError)+'</p><button class="primary" type="submit" '+(model.saving?"disabled":"")+'>'+(model.saving?"Submitting…":"Submit video")+'</button></form></section>';
+    }
+    function walkthrough(){
+      const steps=[["Track your videos","Add a TikTok link, an Instagram link, or both. Then tap Submit video."],["If you missed yesterday","Yesterday appears only when you missed it, until 12:00 PM the next day."],["Log your views","After seven days, enter the views for the videos you logged before adding today’s videos. Days or platforms you did not post on need nothing."]];
       const [title,copy]=steps[model.walkStep];
-      return `<div class="walkthrough-layer" role="dialog" aria-modal="true" aria-labelledby="walk-title"><div class="walkthrough-card">
-        <span class="walkthrough-count">${model.walkStep+1} of ${steps.length}</span><h2 id="walk-title">${title}</h2><p class="muted">${copy}</p>
-        <button class="primary" id="walk-next">${model.walkStep===steps.length-1?"Got it":"Next"}</button>
-      </div></div>`;
+      return '<div class="walkthrough-layer" role="dialog" aria-modal="true" aria-labelledby="walk-title"><div class="walkthrough-card"><span class="walkthrough-count">'+(model.walkStep+1)+' of 3</span><h2 id="walk-title">'+title+'</h2><p class="muted">'+copy+'</p><button class="primary" id="walk-next">'+(model.walkStep===2?"Got it":"Next")+'</button></div></div>';
     }
-    function renderDashboard(grace=false,walkthrough=false) {
-      const status=model.status[model.business];
-      return shell(`
-        <div class="task-head"><div><p class="eyebrow">${currentBusiness().name}</p><h2>Good morning, Amara.</h2></div><span class="status ${status}">${status==="trial"?"Trial":status==="pending"?"Under review":"Approved"}</span></div>
-        ${reviewNotice()}
-        <section class="panel stack ${walkthrough&&model.walkStep===1?"tour-focus":""}">
-          <div class="date-header"><div><p class="eyebrow">Today</p><h3>25 August</h3></div><button class="text-button" data-action="walkthrough" style="width:auto;min-height:40px;padding:7px">Help</button></div>
-          ${dayChoice(grace)}
-          ${grace?`<p class="muted" style="font-size:12px">Yesterday is available until 12:00 PM because it has not been logged yet.</p>`:""}
-        </section>
-        <section class="panel stack ${walkthrough&&model.walkStep===0?"tour-focus":""}" id="track-panel">
-          <div><h3>Track your videos</h3><p class="muted" style="font-size:13px">${model.selectedDay==="yesterday"?"For 24 August. Available until 12:00 PM.":"For 25 August."}</p></div>
-          ${model.savedVideo?`<div class="save-confirm" role="status"><strong>Video submitted.</strong><br><span>Saved and confirmed in the prototype backend.</span></div>`:""}
-          <form id="video-form" class="stack" novalidate>
-            <div class="field"><label for="tiktok-link">TikTok link</label><input id="tiktok-link" inputmode="url" placeholder="https://tiktok.com/..."></div>
-            <div class="field"><label for="instagram-link">Instagram link</label><input id="instagram-link" inputmode="url" placeholder="https://instagram.com/..."></div>
-            <p id="video-error" class="muted" role="alert" hidden>Please add at least one valid link.</p>
-            <button class="primary" type="submit" ${model.saving?"disabled":""}>${model.saving?"Submitting…":"Submit video"}</button>
-          </form>
-        </section>
-        ${walkthrough?walkthroughOverlay():""}`);
+    function dashboard(tour=false){return shell('<div class="task-head"><div><p class="eyebrow">'+business()+'</p><h2>Good morning, Amara.</h2></div><span class="status '+model.status+'">'+(model.status==="trial"?"Trial":model.status==="pending"?"Under review":"Approved")+'</span></div>'+notice()+
+      '<section class="panel stack" id="day-panel"><div class="date-header"><div><p class="eyebrow">Today</p><h3>'+dayName(localDate(model.now))+'</h3></div><button class="text-button help-button" data-action="walkthrough">Help</button></div>'+dayChoice()+(eligible()?'<p class="muted small">Yesterday is available until 12:00 PM.</p>':"")+'</section>'+videoForm()+(tour?walkthrough():""));}
+    function dateSentence(list){
+      const days=[...new Set(list.map(e=>e.date))];
+      return !days.length?"No views to report.":days.length===1?"For videos you logged on "+dayName(days[0])+".":"For videos you logged between "+dayName(days[0])+" and "+dayName(days[days.length-1])+".";
     }
-    function renderGate() {
-      const r=model.reports[model.business];
-      return shell(`
-        <div><h1>Log your views.</h1><div class="spacer-8"></div><p class="muted">For videos you logged between 4 and 7 August.</p><div class="spacer-8"></div><p class="muted">One video must reach 10,000 views. Videos are not added together.</p></div>
-        <div class="notice warn"><span>!</span><div><strong>Your video form is paused.</strong><span>It will reopen after every view below is added.</span></div></div>
-        <form id="gate-form" class="panel stack" novalidate>
-          ${[4,5,6,7].map(day=>`<section class="gate-day"><h3>${day} August</h3><div class="gate-fields">
-            ${[["tiktok-v1","TikTok Video 1"],["instagram-v1","Instagram Video 1"],["tiktok-v2","TikTok Video 2"],["instagram-v2","Instagram Video 2"]].map(([kind,label])=>`<div class="field"><label for="d${day}-${kind}">${label}</label><input id="d${day}-${kind}" inputmode="numeric" value="${r[`d${day}-${kind}`]}"></div>`).join("")}
-          </div></section>`).join("")}
-          <p id="gate-error" class="muted" role="alert" hidden>Add a view number to every field.</p>
-          <button class="primary" type="submit">Save views</button>
-        </form>`);
+    function gate(){
+      const due=entries(),days=[...new Set(due.map(e=>e.date))];
+      let html='<div><h1>Log your views.</h1><div class="spacer-8"></div><p class="muted">'+dateSentence(due)+'</p></div>';
+      if(eligible()){
+        html+='<section class="panel stack">'+dayChoice()+'<p class="muted small">Yesterday is available until 12:00 PM.</p></section>';
+        if(model.selectedDay==="yesterday")return shell(html+videoForm()+'<button class="text-button" id="return-views">Back to views</button>');
+      }
+      if(!due.length)return shell(html+'<button class="primary" data-action="dashboard">Continue</button>');
+      return shell(html+'<form id="gate-form" class="stack" novalidate>'+days.map(day=>'<section class="gate-day"><h3>'+dayName(day)+'</h3><div class="gate-fields">'+due.filter(e=>e.date===day).map(e=>'<div class="field"><label for="'+e.key+'">'+platformName(e.platform)+' Video '+e.number+'</label><input id="'+e.key+'" data-report="'+e.key+'" type="text" inputmode="numeric" pattern="[0-9]*" value="'+esc(model.reports[e.key]??"")+'" '+(model.saving?"disabled":"")+'></div>').join("")+'</div></section>').join("")+
+        '<p id="gate-error" class="error-text" role="alert" '+(model.gateError?"":"hidden")+'>'+esc(model.gateError)+'</p><button class="primary" type="submit" '+(model.saving?"disabled":"")+'>'+(model.saving?"Saving…":"Save views")+'</button></form>');
     }
-    function renderPending() {
-      return shell(`<div class="center-state"><div class="narrow">
-        <div class="state-icon">✓</div><span class="status pending" style="justify-self:center">Under review</span>
-        <h1>We’ve sent this video for checking.</h1>
-        <p class="muted">You reported 10,240 TikTok views. This does not unlock onboarding until management checks and approves the real video.</p>
-        <div class="panel"><div class="video-row"><span><strong>Video 1 · 7 August</strong><small>TikTok</small></span><span class="views">10,240</span></div></div>
-        <button class="primary" data-action="dashboard">Back to dashboard</button>
-      </div></div>`);
+    function imagePreview(){return model.image?'<figure class="proof-image"><img id="proof-preview" src="'+esc(model.image.url)+'" alt="Screenshot of the submitted video views"><figcaption>'+esc(model.image.demo?"Demo screenshot — not real creator evidence":model.image.name)+'</figcaption></figure>':"";}
+    function evidence(){
+      const r=model.review;if(!r)return shell('<h1>No screenshot requested.</h1><button class="primary" data-action="dashboard">Back to dashboard</button>');
+      if(r.status==="approved")return approved();
+      if(r.status==="sent")return pending();
+      return shell('<div><h1>Add your screenshot.</h1><div class="spacer-8"></div><p class="muted">Show the views for '+platformName(r.platform)+' Video '+r.number+' · '+dayName(r.date)+'.</p></div>'+
+        (r.status==="needs-update"?'<div class="notice info">Please check your screenshot and video link, then send them again.</div>':"")+
+        '<form id="proof-form" class="panel stack" novalidate><div class="field"><label for="proof-link">Video link</label><input id="proof-link" type="url" value="'+esc(r.url)+'"></div><div class="field"><label for="proof-file">Screenshot</label><input id="proof-file" type="file" accept="image/png,image/jpeg,image/webp" aria-describedby="proof-file-help"><small id="proof-file-help">PNG, JPG or WebP · up to 5 MB</small></div>'+imagePreview()+
+        (model.image?'<button class="text-button" type="button" id="remove-image">Remove screenshot</button>':"")+
+        '<p id="proof-error" class="error-text" role="alert" '+(model.proofError||model.imageError?"":"hidden")+'>'+esc(model.imageError||model.proofError)+'</p><button class="primary" type="submit" '+(model.saving?"disabled":"")+'>'+(model.saving?"Sending…":"Send for review")+'</button></form><button class="text-button" data-action="dashboard">Back to dashboard</button>');
     }
-    function renderManagement() {
-      return `<div class="admin-bar"><strong>TDT Management</strong><span class="status pending">1 review</span></div>
-      <div class="screen"><div class="narrow stack">
-        <div><p class="eyebrow">Onboarding review</p><h1>Check Amara’s video.</h1><div class="spacer-8"></div><p class="muted">Self-reported views never approve onboarding by themselves.</p></div>
-        <section class="panel stack">
-          <div class="profile"><div class="photo" role="img" aria-label="Amara's profile photo placeholder">AO</div><div><h3>Amara Okafor</h3><p class="muted">NorthQuest · Trial creator</p></div></div>
-          <div class="facts">
-            <div class="fact"><small>Joined</small><strong>4 Aug 2026</strong></div>
-            <div class="fact"><small>Reported</small><strong>13 Aug 2026</strong></div>
-            <div class="fact"><small>TikTok</small><strong>10,240</strong></div>
-            <div class="fact"><small>Status</small><strong>Needs review</strong></div>
-          </div>
-          <button class="secondary" id="open-proof">Open TikTok video</button>
-          <div class="notice info"><span>i</span><div><strong>Before approving</strong><span>Open the video and confirm the current public view count.</span></div></div>
-          <div class="button-row two"><button class="primary" id="manager-approve">Approve onboarding</button><button class="secondary" id="keep-trial">Keep in trial</button></div>
-          <p class="muted" style="font-size:12px">The decision, manager, time, reason, and creator record will be audited in production.</p>
-        </section>
-      </div></div>`;
+    function pending(){
+      const r=model.review;if(!r||r.status!=="sent")return evidence();
+      return shell('<div class="center-state"><div class="narrow"><div class="state-icon">✓</div><span class="status pending">Under review</span><h1>Your video is being checked.</h1><p class="muted">We’ll let you know when it has been reviewed.</p><div class="panel"><strong>'+platformName(r.platform)+' Video '+r.number+' · '+dayName(r.date)+'</strong><p class="muted small">Screenshot received.</p></div><button class="primary" data-action="dashboard">Back to dashboard</button></div></div>');
     }
-    function renderApproved() {
-      return shell(`<div class="center-state"><div class="narrow">
-        <div class="state-icon">✓</div><span class="status approved" style="justify-self:center">Approved</span>
-        <h1>Onboarding is ready.</h1>
-        <p class="muted">Management verified your video. You can continue your NorthQuest setup.</p>
-        <button class="primary" id="open-onboarding">Start onboarding</button>
-        <button class="text-button" data-action="dashboard">Back to dashboard</button>
-      </div></div>`);
+    function management(){
+      const r=model.review;if(!r)return '<div class="admin-bar"><strong>TDT Management</strong></div><div class="screen"><h1>No reviews waiting.</h1></div>';
+      return '<div class="admin-bar"><strong>TDT Management</strong><span class="status pending">'+(r.status==="sent"?"1 review":r.status==="approved"?"Reviewed":"Awaiting proof")+'</span></div><div class="screen"><div class="narrow stack"><div><p class="eyebrow">Onboarding review</p><h1>Check Amara’s video.</h1></div><section class="panel stack"><div class="profile"><div class="photo" role="img" aria-label="Profile photo placeholder">AO</div><div><h3>Amara Okafor</h3><p class="muted">'+business()+' · Trial creator</p></div></div>'+
+        '<div class="facts"><div class="fact"><small>Joined</small><strong>'+dayName(localDate(model.joined))+'</strong></div><div class="fact"><small>Reported</small><strong>'+dayName(localDate(model.now))+'</strong></div><div class="fact"><small>'+platformName(r.platform)+'</small><strong>'+Number(r.views).toLocaleString("en-GB")+'</strong></div><div class="fact"><small>Status</small><strong>'+(r.status==="approved"?"Approved":r.status==="sent"?"Needs review":"Awaiting proof")+'</strong></div></div>'+
+        (validVideoUrl(r.url,r.platform)?'<a class="secondary proof-link" id="open-proof" href="'+esc(r.url)+'" target="_blank" rel="noopener noreferrer">Open '+platformName(r.platform)+' video</a>':'<p class="error-text">A valid video link is required.</p>')+
+        (model.image?imagePreview():'<p class="muted">Screenshot not submitted yet.</p>')+'<p class="muted small">Check the screenshot and the actual video before deciding.</p>'+
+        (r.status==="sent"&&model.image?'<div class="button-row two"><button class="primary" id="manager-approve">Approve onboarding</button><button class="secondary" id="keep-trial">Keep in trial</button></div>':r.status==="approved"?'<div class="notice good">Trial passed across TDT. Further memberships still require management assignment.</div>':"")+'</section></div></div>';
     }
-    function renderDeactivated() {
-      return shell(`<div class="center-state"><div class="narrow">
-        <div class="state-icon" style="background:var(--red-soft);color:var(--red)">!</div>
-        <h1>NorthQuest access is paused.</h1>
-        <p class="muted">Your records are safe. Your Aura access still works.</p>
-        <button class="primary" data-action="chooser">Choose another account</button>
-        <button class="text-button" data-action="signin">Sign out</button>
-      </div></div>`);
+    function approved(){return shell('<div class="center-state"><div class="narrow"><div class="state-icon">✓</div><span class="status approved">Approved</span><h1>Onboarding is ready.</h1><p class="muted">Management verified your video.</p><button class="primary" id="open-onboarding">Start onboarding</button><button class="text-button" data-action="dashboard">Back to dashboard</button><p id="onboarding-boundary" class="muted small" hidden>Actual onboarding is the next prototype phase. It is not included in this revision.</p></div></div>');}
+    function paused(){return '<div class="screen"><div class="narrow center-state"><div class="narrow"><div class="brand" style="justify-content:center"><span class="brand-mark">TDT</span></div><div class="state-icon">!</div><h1>Your access has been paused.</h1></div></div></div>';}
+    function loading(){return '<div class="screen"><div class="narrow center-state"><div class="narrow"><div class="spinner"></div><h2>Loading your dashboard…</h2></div></div></div>';}
+    function errorPage(){return shell('<div class="center-state"><div class="narrow"><h1>'+(model.offline?'You’re offline.':'Something went wrong.')+'</h1><p class="muted">Your entries are still here. '+(model.offline?'Reconnect and try again.':'Please try again.')+'</p><button class="primary" id="retry-action">Try again</button><button class="text-button" id="back-error">Back</button></div></div>');}
+    function render(){
+      workspace.className="workspace preview-"+model.viewport;document.body.classList.toggle("reduce-motion",model.reducedMotion);
+      const views={invite:()=>welcome(),signin:()=>welcome(true),dashboard,walkthrough:()=>dashboard(true),gate,evidence,pending,management,approved,deactivated:paused,loading,error:errorPage,
+        expired:()=>shell('<h1>This link has expired.</h1><p class="muted">Ask management for a new link.</p>'),
+        "wrong-email":()=>shell('<h1>This account does not have access.</h1><p class="muted">Check with management which Google account to use.</p><button class="primary" data-action="signin">Back to sign in</button>')};
+      app.innerHTML=(views[model.state]||dashboard)();
+      document.querySelectorAll("[data-state]").forEach(b=>b.classList.toggle("active",b.dataset.state===model.state));
+      document.getElementById("review-context").textContent="Revision 4 · Demo time: "+dayName(localDate(model.now))+" 2026, "+(Number(model.now.slice(11,13))<12?"10:00 AM":"12:00 PM")+" Lagos. Google sign-in, saves, notifications and uploads are simulated. Screenshots stay in this tab until reset/reload. Seed video URLs are examples; a link you enter is used exactly.";
+      document.getElementById("review-transition").textContent="Current: "+model.state+" · Mock review notifications: "+model.notifications+". Production screenshot retention is not decided.";
+      document.getElementById("offline-action").textContent="Offline: "+(model.offline?"on":"off");
+      document.getElementById("motion-action").textContent="Reduced motion: "+(model.reducedMotion?"on":"off");bind();
+      if(model.state==="walkthrough"){
+        app.querySelectorAll("header,section,.task-head").forEach(e=>e.inert=true);
+        app.querySelector(model.walkStep===0?"#track-panel":"#day-panel")?.classList.add("tour-focus");
+        document.getElementById("walk-next")?.focus({preventScroll:true});
+      }
     }
-    function renderLoading() { return `<div class="screen"><div class="center-state"><div class="narrow"><div class="spinner"></div><h2>Loading your dashboard…</h2><p class="muted">Checking your access.</p></div></div></div>`; }
-    function renderEmpty() { return shell(`<div class="center-state"><div class="narrow"><div class="state-icon">+</div><h1>No videos yet.</h1><p class="muted">Add today’s video when it is ready.</p><button class="primary" data-action="dashboard">Add my first video</button></div></div>`); }
-    function renderError() { return `<div class="screen"><div class="center-state"><div class="narrow"><div class="state-icon" style="background:var(--red-soft);color:var(--red)">!</div><h1>We couldn’t load your dashboard.</h1><p class="muted">${model.offline?"You appear to be offline. Reconnect and try again.":"Please try again. Your saved work has not been changed."}</p><button class="primary" id="retry-action">Try again</button><button class="text-button" data-action="chooser">Back</button></div></div></div>`; }
-    function menu() {
-      if(!model.menu) return "";
-      return `<div class="sheet-backdrop" id="sheet-backdrop"><div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title">
-        <div class="sheet-head"><h3 id="sheet-title">Switch account</h3><button class="icon-button" id="close-menu" aria-label="Close">×</button></div>
-        <div class="membership-list">${model.assigned.map(slug=>`<button class="membership" data-business="${slug}"><span class="avatar">${BUSINESSES[slug].initials}</span><span style="flex:1"><strong>${BUSINESSES[slug].name}</strong><small>${model.deactivated[slug]?"Access paused":slug===model.business?"Current":"Open dashboard"}</small></span></button>`).join("")}</div>
-      </div></div>`;
+    function offline(returnTo){model.returnTo=returnTo;setState("error");}
+    function commit(returnTo,done){
+      if(model.saving)return;if(model.offline){offline(returnTo);return;}
+      model.saving=true;const op=++model.operation;render();
+      setTimeout(()=>{if(op!==model.operation||model.deactivated)return;model.saving=false;if(model.offline){offline(returnTo);return;}done();},450);
     }
-    const views = {
-      invite:renderInvite,signin:renderSignin,chooser:renderChooser,walkthrough:renderWalkthrough,
-      dashboard:()=>renderDashboard(false),grace:()=>renderDashboard(true),gate:renderGate,pending:renderPending,
-      management:renderManagement,approved:renderApproved,deactivated:renderDeactivated,
-      loading:renderLoading,empty:renderEmpty,error:renderError
-    };
-    function render() {
-      workspace.className=`workspace preview-${model.viewport}`;
-      document.body.classList.toggle("reduce-motion",model.reducedMotion);
-      app.innerHTML=(views[model.state]||renderDashboard)()+menu();
-      document.querySelectorAll(".state-button").forEach(button=>button.classList.toggle("active",button.dataset.state===model.state));
-      bind();
+    function createReview(entry){
+      if(!entry||model.trialPassed||model.review)return;
+      model.review={...entry,views:model.savedReports[entry.key],status:"draft"};model.notifications++;
     }
-    function bind() {
-      document.querySelectorAll("[data-action]").forEach(button=>button.addEventListener("click",()=>setState(button.dataset.action)));
-      document.querySelectorAll("[data-business]").forEach(button=>button.addEventListener("click",()=>{
-        const slug=button.dataset.business;
-        if(model.deactivated[slug]) { model.business=slug; setState("deactivated"); return; }
-        model.business=slug; setState("dashboard",`${BUSINESSES[slug].name} opened`);
+    function clearImage(){if(model.image?.url.startsWith("blob:"))URL.revokeObjectURL(model.image.url);model.image=null;}
+    async function selectImage(file){
+      model.imageError="";
+      if(!validImageFile(file)){model.imageError="Choose a PNG, JPG or WebP image up to 5 MB.";render();document.getElementById("proof-file")?.focus();return;}
+      const url=URL.createObjectURL(file),op=model.operation;
+      try{
+        const image=new Image();image.src=url;await image.decode();
+        if(!image.naturalWidth||!image.naturalHeight||image.naturalWidth*image.naturalHeight>40000000)throw new Error("image dimensions");
+        if(op!==model.operation){URL.revokeObjectURL(url);return;}
+        clearImage();model.image={url,name:file.name,demo:false};model.proofError="";render();
+      }catch{URL.revokeObjectURL(url);if(op===model.operation){model.imageError="We couldn’t read that image. Please choose another.";render();document.getElementById("proof-file")?.focus();}}
+    }
+    function demoImage(){
+      clearImage();const c=document.createElement("canvas");c.width=540;c.height=360;const x=c.getContext("2d");
+      x.fillStyle="#edf5ef";x.fillRect(0,0,540,360);x.fillStyle="#174936";x.font="bold 28px sans-serif";x.fillText("DEMO SCREENSHOT",30,65);x.font="22px sans-serif";x.fillText("TikTok · Video views",30,135);x.font="bold 56px sans-serif";x.fillText("10,240",30,220);x.font="18px sans-serif";x.fillText("Synthetic data — no real creator",30,295);
+      model.image={url:c.toDataURL("image/png"),name:"demo-views.png",demo:true};
+    }
+    function approve(){
+      if(model.deactivated||!model.review||model.review.status!=="sent"||!model.image){showToast("Review the submitted link, screenshot and access status first.");return;}
+      model.review.status="approved";model.trialPassed=true;model.status="approved";setState("approved","Approval recorded in this prototype.");
+    }
+    function bind(){
+      app.querySelectorAll("[data-action]").forEach(b=>b.addEventListener("click",()=>setState(b.dataset.action)));
+      app.querySelectorAll("[data-google]").forEach(b=>b.addEventListener("click",()=>{
+        const target=b.dataset.google==="invite"?"walkthrough":model.walkComplete?"dashboard":"walkthrough";
+        if(model.offline){offline(b.dataset.google==="invite"?"invite":"signin");return;}
+        setState("loading");const op=model.operation;setTimeout(()=>{if(op===model.operation)setState(model.deactivated?"deactivated":target);},450);
       }));
-      const menuButton=document.getElementById("business-menu-button");
-      if(menuButton) menuButton.addEventListener("click",()=>{ model.menu=true; render(); setTimeout(()=>document.getElementById("close-menu")?.focus(),0); });
-      const close=document.getElementById("close-menu");
-      if(close) close.addEventListener("click",closeMenu);
-      const backdrop=document.getElementById("sheet-backdrop");
-      if(backdrop) backdrop.addEventListener("click",event=>{ if(event.target===backdrop) closeMenu(); });
-      const videoForm=document.getElementById("video-form");
-      if(videoForm) videoForm.addEventListener("submit",event=>{
-        event.preventDefault();
-        const fields=[document.getElementById("tiktok-link"),document.getElementById("instagram-link")];
-        fields.forEach(field=>field.removeAttribute("aria-invalid"));
-        const valid=fields.some(field=>/^https?:\/\//i.test(field.value.trim()));
-        const error=document.getElementById("video-error"); error.hidden=valid;
-        if(!valid) { fields[0].setAttribute("aria-invalid","true"); fields[0].focus(); return; }
-        if(model.offline) { setState("error","You are offline. Nothing was sent."); return; }
-        model.saving=true; model.savedVideo=false; render();
-        setTimeout(()=>{ model.saving=false; model.savedVideo=true; render(); showToast("Video saved and confirmed"); },450);
+      app.querySelectorAll("[data-day]").forEach(b=>b.addEventListener("click",()=>{
+        if(b.dataset.day==="yesterday"&&!eligible()){showToast("Yesterday is no longer available.");render();return;}
+        model.selectedDay=b.dataset.day;model.savedVideo=false;render();
+      }));
+      for(const p of ["tiktok","instagram"])document.getElementById(p+"-link")?.addEventListener("input",e=>model.draft[p]=e.target.value);
+      document.getElementById("video-form")?.addEventListener("submit",e=>{
+        e.preventDefault();if(model.saving)return;
+        const supplied=Object.entries(model.draft).filter(([,url])=>url.trim()),bad=supplied.find(([p,url])=>!validVideoUrl(url.trim(),p));
+        if(!supplied.length||bad){
+          model.videoError=bad?"Enter a valid "+platformName(bad[0])+" video link.":"Add a TikTok link, an Instagram link, or both.";render();
+          const field=document.getElementById((bad?.[0]||"tiktok")+"-link");field.setAttribute("aria-invalid","true");field.focus();return;
+        }
+        if(model.selectedDay==="yesterday"&&!eligible()){model.selectedDay="today";render();showToast("Yesterday is no longer available.");return;}
+        if(model.selectedDay==="today"&&gated()){setState("gate");return;}
+        const day=model.selectedDay==="yesterday"?previousDate(model.now):localDate(model.now),links=Object.fromEntries(supplied.map(([p,url])=>[p,url.trim()]));
+        if(model.videos.some(v=>Object.entries(links).some(([p,url])=>v.links[p]===url))){model.videoError="This video link has already been submitted.";render();return;}
+        model.videoError="";commit(model.state,()=>{
+          model.videos.push({id:"new"+model.videos.length,date:day,loggedAt:model.now,number:model.videos.filter(v=>v.date===day).length+1,links});
+          model.draft={tiktok:"",instagram:""};model.savedVideo=true;model.selectedDay="today";setState("dashboard","Video submitted.");
+        });
       });
-      document.querySelectorAll("[data-day]").forEach(button=>button.addEventListener("click",()=>{ model.selectedDay=button.dataset.day; render(); }));
-      document.getElementById("walk-next")?.addEventListener("click",()=>{
-        if(model.walkStep<2) { model.walkStep+=1; render(); }
-        else { model.walkStep=0; model.selectedDay="today"; setState("dashboard","Walkthrough complete."); }
+      document.getElementById("walk-next")?.addEventListener("click",()=>{if(model.walkStep<2){model.walkStep++;render();}else{model.walkComplete=true;setState(model.helpReturn,"You’re ready.");}});
+      document.getElementById("return-views")?.addEventListener("click",()=>{model.selectedDay="today";render();});
+      app.querySelectorAll("[data-report]").forEach(input=>input.addEventListener("input",()=>model.reports[input.dataset.report]=input.value));
+      document.getElementById("gate-form")?.addEventListener("submit",e=>{
+        e.preventDefault();if(model.saving)return;
+        const due=entries(),missing=due.find(entry=>!validCount(model.reports[entry.key]));
+        if(missing){model.gateError="Enter a whole-number view count for this posted video.";render();const field=document.getElementById(missing.key);field.setAttribute("aria-invalid","true");field.focus();return;}
+        model.gateError="";commit("gate",()=>{for(const entry of due)model.savedReports[entry.key]=model.reports[entry.key];createReview(qualifyingEntry(due,model.savedReports));setState(model.review&&["draft","needs-update"].includes(model.review.status)?"evidence":"dashboard","Views saved.");});
       });
-      const gateForm=document.getElementById("gate-form");
-      if(gateForm) gateForm.addEventListener("submit",event=>{
-        event.preventDefault();
-        const fields=reportIds.map(id=>document.getElementById(id));
-        fields.forEach(field=>field.removeAttribute("aria-invalid"));
-        const missing=fields.find(field=>field.value.trim()===""||Number(field.value)<0||!Number.isFinite(Number(field.value)));
-        const error=document.getElementById("gate-error"); error.hidden=!missing;
-        if(missing) { missing.setAttribute("aria-invalid","true"); missing.focus(); return; }
-        model.reports[model.business]=Object.fromEntries(fields.map(field=>[field.id,field.value]));
-        if(model.offline) { setState("error","You are offline. Your entries remain in this prototype."); return; }
-        if(Math.max(...fields.map(field=>Number(field.value)))>=10000) {
-          model.status[model.business]="pending"; setState("pending","Management review created once.");
-        } else setState("dashboard","Views saved. Video logging reopened.");
+      document.getElementById("proof-link")?.addEventListener("input",e=>model.review.url=e.target.value);
+      document.getElementById("proof-file")?.addEventListener("change",e=>{if(e.target.files[0])selectImage(e.target.files[0]);});
+      document.getElementById("remove-image")?.addEventListener("click",()=>{clearImage();render();document.getElementById("proof-file")?.focus();});
+      document.getElementById("proof-form")?.addEventListener("submit",e=>{
+        e.preventDefault();if(model.saving)return;
+        if(!validVideoUrl(model.review.url,model.review.platform)){model.proofError="Enter the link to this "+platformName(model.review.platform)+" video.";render();document.getElementById("proof-link").focus();return;}
+        if(!model.image){model.proofError="Add a screenshot of your video views.";render();document.getElementById("proof-file").focus();return;}
+        model.proofError="";commit("evidence",()=>{model.review.status="sent";model.status="pending";setState("pending","Sent for review.");});
       });
       document.getElementById("manager-approve")?.addEventListener("click",approve);
-      document.getElementById("keep-trial")?.addEventListener("click",()=>{ model.status[model.business]="trial"; setState("dashboard","Creator remains in trial."); });
-      document.getElementById("open-proof")?.addEventListener("click",()=>showToast("Prototype only: the public TikTok video would open."));
-      document.getElementById("open-onboarding")?.addEventListener("click",()=>showToast("Production onboarding would open here."));
-      document.getElementById("retry-action")?.addEventListener("click",()=>model.offline?showToast("Still offline"):setState("dashboard","Dashboard loaded."));
+      document.getElementById("keep-trial")?.addEventListener("click",()=>{model.review.status="needs-update";model.status="trial";setState("evidence","Creator remains in trial; proof update requested.");});
+      document.getElementById("open-onboarding")?.addEventListener("click",()=>document.getElementById("onboarding-boundary").hidden=false);
+      document.getElementById("retry-action")?.addEventListener("click",()=>model.offline?showToast("Reconnect before trying again."):setState(model.returnTo));
+      document.getElementById("back-error")?.addEventListener("click",()=>setState(model.returnTo));
     }
-    function closeMenu() { model.menu=false; render(); setTimeout(()=>document.getElementById("business-menu-button")?.focus(),0); }
-    function approve() { model.status[model.business]="approved"; setState("approved","Onboarding approved and audit event simulated."); }
-    document.addEventListener("keydown",event=>{ if(event.key==="Escape"&&model.menu) closeMenu(); });
-    document.querySelectorAll(".state-button").forEach(button=>button.addEventListener("click",()=>setState(button.dataset.state)));
-    document.querySelectorAll("[data-viewport]").forEach(button=>button.addEventListener("click",()=>{ model.viewport=button.dataset.viewport; render(); }));
-    document.getElementById("offline-action").addEventListener("click",event=>{ model.offline=!model.offline; event.currentTarget.textContent=`Offline: ${model.offline?"on":"off"}`; showToast(model.offline?"Offline simulation on":"Back online"); });
-    document.getElementById("motion-action").addEventListener("click",event=>{ model.reducedMotion=!model.reducedMotion; event.currentTarget.textContent=`Reduced motion: ${model.reducedMotion?"on":"off"}`; render(); });
-    document.getElementById("qualify-action").addEventListener("click",()=>{
-      model.reports[model.business]["d7-tiktok-v1"]="10240"; setState("gate","10,240 entered. Save views to create management review.");
-    });
-    document.getElementById("approve-action").addEventListener("click",approve);
-    document.getElementById("deactivate-action").addEventListener("click",()=>{ model.deactivated.northquest=true; model.business="northquest"; setState("deactivated","NorthQuest membership deactivated; Aura remains active."); });
-    document.getElementById("reset-action").addEventListener("click",()=>{
-      model.state="dashboard"; model.business="northquest"; model.assigned=["northquest","aura"]; model.viewport="phone"; model.menu=false; model.offline=false; model.reducedMotion=false; model.walkStep=0; model.selectedDay="today"; model.saving=false; model.savedVideo=false;
-      model.status={northquest:"trial",cashdrive:"trial",aura:"trial"}; model.deactivated={northquest:false,cashdrive:false,aura:false};
-      model.reports={northquest:freshReports(),cashdrive:freshReports(),aura:freshReports()}; render(); showToast("Prototype reset");
-    });
+    function prepareReview(){
+      model.videos=baseVideos(true);model.reports={};model.savedReports={};
+      for(const e of entries())model.reports[e.key]=model.savedReports[e.key]=e.key==="v7a:tiktok"?"10240":"700";
+      createReview(qualifyingEntry(entries(),model.savedReports));
+    }
+    function scenario(name){
+      if(["management","pending","evidence"].includes(name)&&model.review){setState(name);return;}
+      const viewport=model.viewport,motion=model.reducedMotion,op=model.operation+1;
+      clearImage();model=initialModel();model.viewport=viewport;model.reducedMotion=motion;model.operation=op;
+      if(["gate","evidence","pending","management","approved"].includes(name)){model.videos=baseVideos(true);model.reports={};model.savedReports={};}
+      if(["evidence","pending","management","approved"].includes(name))prepareReview();
+      if(["pending","management","approved"].includes(name)){demoImage();model.review.status="sent";model.status="pending";}
+      if(name==="approved"){model.review.status="approved";model.trialPassed=true;model.status="approved";}
+      if(name==="deactivated")model.deactivated=true;
+      if(name==="logged"){model.videos=baseVideos(true);for(const e of entries())model.reports[e.key]=model.savedReports[e.key]="700";name="dashboard";}
+      if(name==="after-noon"){model.now="2026-08-08T12:00:00+01:00";name="dashboard";}
+      if(name==="grace")name="dashboard";
+      if(name==="empty"){model.videos=[];model.reports={};model.savedReports={};model.joined="2026-08-08T09:00:00+01:00";name="dashboard";}
+      setState(name);
+    }
+    document.addEventListener("keydown",e=>{if(model.state==="walkthrough"&&["Tab","Escape"].includes(e.key)){e.preventDefault();document.getElementById("walk-next")?.focus();}});
+    document.querySelectorAll("[data-state]").forEach(b=>b.addEventListener("click",()=>scenario(b.dataset.state)));
+    document.querySelectorAll("[data-viewport]").forEach(b=>b.addEventListener("click",()=>{model.viewport=b.dataset.viewport;render();}));
+    document.getElementById("offline-action").addEventListener("click",()=>{model.offline=!model.offline;render();});
+    document.getElementById("motion-action").addEventListener("click",()=>{model.reducedMotion=!model.reducedMotion;render();});
+    document.getElementById("qualify-action").addEventListener("click",()=>{scenario("gate");for(const e of entries())model.reports[e.key]=e.key==="v7a:tiktok"?"10240":"700";render();showToast("Demo counts entered. Save views to continue.");});
+    document.getElementById("sample-image-action").addEventListener("click",()=>{if(!model.review)prepareReview();demoImage();setState("evidence","Demo screenshot added locally.");});
+    document.getElementById("approve-action").addEventListener("click",()=>{if(!model.review)scenario("management");else setState("management");});
+    document.getElementById("deactivate-action").addEventListener("click",()=>{model.deactivated=true;setState("deactivated");});
+    document.getElementById("reset-action").addEventListener("click",()=>scenario("invite"));
     document.getElementById("copy-decision").addEventListener("click",async()=>{
-      const decision=document.querySelector('input[name="decision"]:checked')?.value;
-      const output=document.getElementById("decision-output");
-      if(!decision) { output.textContent="Choose approve, revise, or reject."; return; }
-      const text=`TDT prototype revision: ${decision.toUpperCase()}\nNotes: ${document.getElementById("decision-notes").value.trim()||"None"}`;
-      try { await navigator.clipboard.writeText(text); output.textContent="Decision copied."; }
-      catch { output.textContent=text; }
+      const decision=document.querySelector('input[name="decision"]:checked')?.value,output=document.getElementById("decision-output");
+      if(!decision){output.textContent="Choose approve, revise, or reject.";return;}
+      const text="TDT trial prototype revision 4: "+decision.toUpperCase()+"\nNotes: "+document.getElementById("decision-notes").value.trim();
+      try{await navigator.clipboard.writeText(text);output.textContent="Decision copied. Share it in this task; this control does not approve production.";}catch{output.textContent=text;}
     });
     render();
+
   </script>
 </body>
 </html>

@@ -1,38 +1,34 @@
-const fs = require("fs");
-const path = require("path");
-
-const file = path.join(__dirname, "..", "prototypes", "unified-tdt-creator-ops.html");
-const html = fs.readFileSync(file, "utf8");
-let failures = 0;
-
-function check(name, condition) {
-  if (condition) console.log("PASS ", name);
-  else { failures += 1; console.error("FAIL ", name); }
+const assert=require("node:assert/strict"), fs=require("node:fs"), path=require("node:path"), vm=require("node:vm");
+const html=fs.readFileSync(path.join(__dirname,"../prototypes/unified-tdt-creator-ops.html"),"utf8");
+let total=0,failures=0;
+function test(name,fn){total++;try{fn();console.log("PASS ",name)}catch(e){failures++;console.error("FAIL ",name,e.message)}}
+test("welcome copy replaces invited copy",()=>{assert.match(html,/Welcome to your .* Creator dashboard/);assert.doesNotMatch(html,/You’ve been invited/);});
+test("no trial chooser or business switcher",()=>assert.doesNotMatch(html,/data-state="chooser"|business-menu-button|Choose another account|Aura access still works/));
+test("no creator threshold lecture or paused-form banner",()=>assert.doesNotMatch(html,/One video must reach|Videos are not added together|Your video form is paused|every view below/));
+test("screenshot step and file input",()=>{assert.match(html,/data-state="evidence"/);assert.match(html,/type="file"/);});
+test("manager has real submitted-link anchor",()=>assert.match(html,/id="open-proof"[^>]*href=/));
+test("paused-access copy",()=>assert.match(html,/Your access has been paused\./));
+test("read-only revision and boundaries explicit",()=>{assert.match(html,/Revision 4/);assert.match(html,/Nothing is sent/);assert.match(html,/Actual onboarding/);});
+test("no remote writes or persistent browser storage",()=>assert.doesNotMatch(html,/fetch\(|XMLHttpRequest|localStorage|sessionStorage|supabase\.co/));
+const core=html.match(/\/\/ CORE START([\s\S]+?)\/\/ CORE END/);
+test("shared behavior is independently testable",()=>assert.ok(core));
+if(core){
+const ctx=vm.createContext({Intl,Date,URL});vm.runInContext(core[1]+"\nthis.api={POLICY,canLogYesterday,dueEntries,validCount,qualifyingEntry,validVideoUrl,trialAssignment,validImageFile};",ctx);
+const a=ctx.api, joined="2026-08-04T09:00:00+01:00", period={start:"2026-08-01",end:"2026-08-07"};
+const records=[{id:"pre",date:"2026-08-03",loggedAt:"2026-08-03T10:00:00+01:00",number:1,links:{tiktok:"x"}},{id:"a",date:"2026-08-04",loggedAt:"2026-08-04T10:00:00+01:00",number:1,links:{tiktok:"x"}},{id:"b",date:"2026-08-06",loggedAt:"2026-08-06T10:00:00+01:00",number:1,links:{instagram:"y"}},{id:"next",date:"2026-08-08",loggedAt:"2026-08-08T10:00:00+01:00",number:1,links:{tiktok:"z"}}];
+const due=a.dueEntries(records,joined,period);
+test("only logged platform links within joined/completed dates",()=>assert.equal(due.map(e=>e.key).join(","),"a:tiktok,b:instagram"));
+test("missed yesterday before noon",()=>assert.equal(a.canLogYesterday("2026-08-08T11:59:59+01:00",joined,records),true));
+test("no Yesterday at noon",()=>assert.equal(a.canLogYesterday("2026-08-08T12:00:00+01:00",joined,records),false));
+test("no Yesterday when already logged",()=>assert.equal(a.canLogYesterday("2026-08-07T10:00:00+01:00",joined,records),false));
+test("no Yesterday before join date",()=>assert.equal(a.canLogYesterday("2026-08-08T10:00:00+01:00","2026-08-08T09:00:00+01:00",[]),false));
+test("zero valid; blank negative decimal and exponent invalid",()=>{assert.equal(a.validCount("0"),true);for(const x of ["","-1","1.2","1e4","Infinity"])assert.equal(a.validCount(x),false);});
+test("separate videos cannot accumulate",()=>assert.equal(a.qualifyingEntry(due,{"a:tiktok":"6000","b:instagram":"5000"}),null));
+test("single-video protected 10,000 threshold",()=>{assert.equal(a.POLICY.threshold,10000);assert.equal(a.qualifyingEntry(due,{"a:tiktok":"10000"}).key,"a:tiktok");});
+test("second concurrent trial refused",()=>assert.equal(a.trialAssignment({trialBusiness:"northquest",trialPassed:false},"aura").allowed,false));
+test("passed creator skips future trial",()=>assert.equal(a.trialAssignment({trialBusiness:null,trialPassed:true},"aura").reason,"already-passed"));
+test("unassigned creator can start trial",()=>assert.equal(a.trialAssignment({trialBusiness:null,trialPassed:false},"cashdrive").allowed,true));
+test("platform links validated",()=>{assert.equal(a.validVideoUrl("https://www.tiktok.com/@x/video/1","tiktok"),true);assert.equal(a.validVideoUrl("https://www.instagram.com/reel/a/","instagram"),true);for(const x of ["javascript:alert(1)","https://tiktok.com.evil.test/x","https://tiktok.com/"])assert.equal(a.validVideoUrl(x,"tiktok"),false);});
+test("screenshot format and size constrained",()=>{assert.equal(a.validImageFile({type:"image/png",size:42}),true);assert.equal(a.validImageFile({type:"image/svg+xml",size:42}),false);assert.equal(a.validImageFile({type:"image/png",size:6*1024*1024}),false);});
 }
-
-check("prototype is explicitly read-only", /Read-only prototype/.test(html) && /Nothing is sent/.test(html));
-check("sign-in uses short TDT and Google copy", /Welcome back\./.test(html) && /Continue with Google/.test(html) && /Use your personal account\./.test(html));
-check("chooser contains assigned work only", /accounts assigned to you/.test(html) && /assigned:\["northquest","aura"\]/.test(html));
-check("generic invitation does not invent an email or redemption state", /invited to your NorthQuest Creator dashboard/.test(html) && !/amara@gmail\.com|used once|NorthQuest invitation/.test(html));
-check("phone-first layout is one column by default", /grid-template-columns:minmax\(0,1fr\)/.test(html) && /order:-1/.test(html));
-check("dates are locked to Today and eligible Yesterday", /Today · 25 August/.test(html) && /Yesterday · 24 August/.test(html) && !/type="date"/.test(html));
-check("yesterday grace ends at noon", /only until 12:00 PM/.test(html) && /only when you did not already log it/.test(html));
-check("dashboard uses requested plain task and has no recent-video clutter", /Track your videos/.test(html) && /Submit video/.test(html) && !/Recent videos|I missed yesterday/.test(html));
-check("walkthrough is a non-skippable spotlight over the dashboard", /walkthrough-layer/.test(html) && /aria-modal="true"/.test(html) && !/>Skip</.test(html));
-check("success waits for simulated backend confirmation", /model\.saving=true/.test(html) && /Saved and confirmed in the prototype backend/.test(html));
-check("weekly gate uses date and platform-video fields", /Log your views\./.test(html) && /between 4 and 7 August/.test(html) && ["TikTok Video 1","Instagram Video 1","TikTok Video 2","Instagram Video 2"].every(label=>html.includes(label)));
-check("one video must reach protected 10,000", /One video must reach 10,000 views/.test(html) && /Videos are not added together/.test(html));
-check("10,000 creates review instead of automatic unlock", /Management review created once/.test(html) && /does not unlock/i.test(html));
-check("management approval unlocks onboarding", /Approve onboarding/.test(html) && /Management verified your video/.test(html));
-check("deactivation preserves another membership", /Aura access still works/.test(html));
-check("all required states are deterministic", ["invite","signin","chooser","walkthrough","dashboard","grace","gate","pending","management","approved","deactivated","loading","empty","error"].every(state=>html.includes(`data-state="${state}"`)));
-check("accessibility and reduced motion exist", /aria-live="polite"/.test(html) && /prefers-reduced-motion/.test(html) && /aria-modal="true"/.test(html));
-check("prototype contains no production endpoints", !/zuuhlowjqniadtcpdypv|mcp\.vercel|script\.google\.com|api\.apify\.com/.test(html));
-check("qualification and deactivation are business-scoped", /status:\{northquest:/.test(html) && /deactivated:\{northquest:/.test(html));
-check("review controls are separate from creator UI", /Creators will not see them/.test(html));
-
-if (failures) {
-  console.error(`\n${failures} prototype contract check(s) failed`);
-  process.exit(1);
-}
-console.log("\nAll prototype contract checks passed");
+console.log((total-failures)+"/"+total+" checks passed");if(failures)process.exit(1);
