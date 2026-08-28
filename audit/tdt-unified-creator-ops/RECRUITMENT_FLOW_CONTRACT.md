@@ -1,5 +1,28 @@
 # GrowthCooks recruitment flow contract
 
+## Recruitment accepted for now; next-phase review — August 28
+
+Approval: user said the recruitment flow is fine for now and to move on; History/audit trail is explicitly retained. Final colour/UI polish is deferred. This is flow acceptance, not production implementation, deployment, backend security or storage approval. Completed small adjustment: named business heading sits below the back icon (320/390px checked).
+
+Goal: Carry the same accepted person through invitation, trial setup, qualifying proof, review and brand onboarding.
+Human and feel: Creator and agency manager on phones, one clear next task, same known compact UI.
+Entry and exit: Review-only next-phase shortcut → CashDrive recipient invitation → setup/trial → verification → brand onboarding → membership-ready boundary.
+System: Existing isolated recruitment HTML; vertical business/back heading, otherwise no new visual system.
+Signature: The same recipient/business is retained across both roles, with History available to the manager.
+Feedback: Existing inline validation/save/retry and reduced-motion rules; no native haptics or actual external writes.
+Rejecting: Restarting Applications, presenting a mock upload as storage, deleting evidence on first playback, or treating a prototype membership as production access.
+Variants: Phone width, failed evidence save, correction/resubmission, mandatory management check, brand setup validation and completion.
+
+| Entry | Action / guard | Result / recovery |
+| --- | --- | --- |
+| Review controls only | Next: trial & onboarding (example) | Explicit demo reset; prepare one named CashDrive trial through existing core guards; show recipient invitation |
+| Recipient | Google mock + valid profile | Mandatory walkthrough then trial dashboard; same original person |
+| Trial dashboard | Log video, choose exact link, count + screenshot | Local evidence snapshot; failed save retains input; weekly reporting remains separate |
+| Manager | Request correction or verify checked link/image | Correction retains history; verification enables onboarding, not immediate membership |
+| Creator then manager | Brand setup submitted, then checked | One active membership in local store; real active dashboard remains separate prototype |
+
+Storage decision is pending. Google Drive is feasible via an authenticated, private, resumable integration; private Supabase Storage is recommended for app-native access controls. Neither is connected to this prototype. Intro-video retention may be temporary after a recorded final review; duration and deletion/recovery rules require agreement. This is distinct from retained trial-proof/bonus screenshots. No files or records are deleted now.
+
 ## Revision 6 — simpler outcomes, clear people and form identity
 
 Goal: Review a person, contact them inside their assigned business, and find the outcome without extra stages.

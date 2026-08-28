@@ -1,8 +1,8 @@
 # GrowthCooks recruitment prototype verification — August 28, 2026
 
-**Historical revision-1 evidence below.** Current proof and limitations are in [REVISION_6.md](REVISION_6.md); [REVISION_5.md](REVISION_5.md) preserves the preceding revision. Do not treat older runners' labels or full-flow results as fresh verification of the revised UI. The current Browser runner is `tests/recruitment-simplify-runtime.test.js`; earlier stage labels, names and Settings tabs intentionally differ.
+**Historical revision-1 evidence below.** Current proof and limitations are in [REVISION_7.md](REVISION_7.md); [REVISION_6.md](REVISION_6.md) preserves the preceding revision. Current Browser runners are `tests/recruitment-onboarding-runtime.test.js` and `tests/recruitment-simplify-runtime.test.js`. Earlier stage labels, names and Settings tabs intentionally differ.
 
-Approval status: awaiting user review. Production implementation, data migration and deployment are not approved by this report.
+Approval status: recruitment flow accepted for now; final visual polish deferred. Trial-to-onboarding is the next review. Production implementation, storage-provider selection, data migration and deployment are not approved by this report.
 
 ## Reproduce
 

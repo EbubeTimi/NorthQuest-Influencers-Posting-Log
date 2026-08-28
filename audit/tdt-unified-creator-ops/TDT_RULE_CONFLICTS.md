@@ -1,5 +1,13 @@
 # Authoritative rule conflict audit
 
+## Recruitment revision 7 — acceptance and temporary-media boundary
+
+- User accepted the recruitment flow for now, not production implementation/deployment. Final visual polish remains deferred; History is explicitly wanted for audit. Business titles move below Back.
+- Introduction videos may be temporary; viewing once is not a reliable deletion trigger. Provider, retention interval, recovery and deletion authority remain undecided. Do not delete anything or apply this temporary-introduction rule to trial/bonus evidence.
+- Earlier “storage is not built” language applies to the new prototype integration, not the entire repository. Legacy `applicant-videos` uploads, signed playback and a Drive/Sheets copy function exist. Live access/policies have not been verified in this turn.
+- The tracked bucket caps uploads at 100 MiB, whereas the recruitment prototype/spec says 1 GB. Tracked upload/read policies are broader than the intended agency isolation, and the legacy sync also writes Sheets. These are implementation blockers, not permission to change live storage or the source Sheet. See `RECRUITMENT_STORAGE_ASSESSMENT.md`.
+- Explicit next-phase review remains the existing one-person trial → qualifying link/screenshot → management verification → brand setup → local membership. It does not restore the superseded automatic self-report onboarding rule.
+
 ## Recruitment revision 6 — current operator corrections
 
 - Five visible stage choices replace the larger state filter: Contacted (including awaiting response/accepted consent), Cannot be reached, Unresponsive, Declined, Trial started. All stages also includes not-yet-contacted people without inventing a Contacted event. Evidence, corrections, onboarding and membership guards are still separate internal states.
