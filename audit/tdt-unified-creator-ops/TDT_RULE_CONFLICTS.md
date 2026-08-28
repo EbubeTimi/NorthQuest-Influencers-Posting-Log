@@ -1,5 +1,28 @@
 # Authoritative rule conflict audit
 
+## Recruitment revision 3 — distribution, not one combined workplace
+
+Latest operator feedback replaces the revision-2 agency-wide mixed-stage inbox. Applicants handles the first video-based accept/reject decision. Acceptance assigns exactly one brand and removes the case from pending distribution; subsequent outreach, trial and onboarding work is inside that business's Pipeline. Rejected records stay separate. Accepted distribution history groups by brand rather than mixing active business work. A trial start cannot silently change the brand chosen at vibe check.
+
+Normal management pages show only name, email, WhatsApp, location and the current task. Introduction video is shown for vibe check, not every later stage; preliminary screening answers remain preserved but hidden from ordinary review. Compact phone rows replace oversized cards; remove repeated agency subtitle and search. All four named operators retain agency admin access; spelling Uyi remains authoritative.
+
+Earlier attachment observations add a UGC-No early finish (later answers/video not required), distinct receipt wording, and requested production draft autosave. Local in-tab draft simulation must not be represented as server persistence or refresh recovery. Editable, versioned outreach/invitation messages are scoped per business, not only editable in WhatsApp after leaving the product.
+
+## Recruitment revision 2 — latest operator corrections
+
+The August 28 live review overrides earlier prototype defaults: Uyi (not Oyi), required State and all other questions except final message, empty email with placeholder, WhatsApp `+` plus 13 digits, editable screening questions and brands, video-first applicant review, conditional rejection/decline reasons, and WhatsApp invitation → trial setup instead of an admin creator-portal button. Coach and trial-brief URL are not trial-start requirements. Stored answers and prior stage decisions remain immutable.
+
+Trial bonus conflicts found by read-only inspection:
+
+- `smithstem/PROJECT_BIBLE.md` historical "trial creators earn nothing" is superseded for bonuses only; trial base pay is not decided by this correction.
+- `20260814060000_effective_dated_bonus_tiers.sql` has the newer NorthQuest 100k+ schedule. Legacy Downloads intake/index and Untitled document use different amounts and a 50k start. No old amount is silently adopted as current production truth.
+- `20260817115546_cashdrive_default_base_pay_and_tiers.sql` copied NorthQuest rates as an assumption. `20260817120322_add_business_bonus_enabled_toggle.sql` disabled CashDrive and removed those tiers. Current instruction enables CashDrive trial bonuses from 100k, but does not confirm payout amounts.
+- Aura's bonus-disabled rule remains correct. Facebook is not part of claims.
+- Existing dashboard trial early-return hides bonuses; claim validation accepts any positive number; link choice favours TikTok even when the selected link is Instagram. These conflict with trial access, 100k minimum and exact platform evidence.
+- Existing bonus database constraint allows link OR screenshot; latest evidence flow needs both. Video-log-only uniqueness conflicts with independent TikTok/Instagram claims; key must include the actual platform content link. Growth/revision rules and current payout schedules still need confirmation before money implementation.
+
+Prototype revision 2 queues independent bonus claims without amounts, approval, payment, onboarding changes or weekly-gate bypass. Production remains untouched.
+
 Current instructions through 2026-08-28 override the earlier request and every historical repository decision.
 
 ## Recruitment addition — 28 August 2026 (current authority)

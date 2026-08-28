@@ -2,6 +2,8 @@
 
 ## Current prototype authority — 28 August 2026
 
+Recruitment revision 3 supersedes the combined inbox: Applicants does first-stage video review and distributes accepted people to one business's Pipeline. Rejected records are separate. Later work never duplicates the identity or reassigns the trial brand. Uyi is the correct admin spelling. Business-specific WhatsApp templates are editable, versioned mock settings. UGC No ends before later questions/video; full applications require every shown question except the final message. Drafts recover within the open prototype tab only; durable autosave remains future implementation. Evidence: `../evidence/flows/Recruitment_Prototype/REVISION_3.md`.
+
 The historical implementation description below is not a current product contract or security proof. Current decisions live in `../audit/tdt-unified-creator-ops/00_Flow_Contracts.md` and `RECRUITMENT_FLOW_CONTRACT.md`. Trial revision 7 visuals were approved; active creator and GrowthCooks recruitment prototypes are separate unapproved additions. Reuse the approved phone-first system-font/green/neutral style. Production UI and deployment remain gated.
 
 GrowthCooks Marketing Agency is the operational agency workspace; TDT is the parent organization, without an asserted legal subsidiary classification. Canonical brand: Aura. Personal Google login and assigned memberships replace older OTP/public-join assumptions. The recruitment funnel uses immutable applications, separate screening/outreach, one trial per person, one-video link + ≥10,000 screenshot, authorized management verification, retained evidence and an idempotent brand onboarding case. Onboarding completion is not a statement that contracts, bank or employment work is complete.

@@ -2,6 +2,10 @@
 
 ## Current review position — August 28, 2026
 
+Recruitment is now revision 3, following the latest operator review: **Applicants is a compact distribution queue**, not the whole operations workspace. Review the introduction once; accept into one business or reject into a separate list. The existing person continues in that business's **Pipeline**, with only the current task visible. Brand-specific outreach and invitation templates are editable in Settings. UGC No has an early ending; full applications mention WhatsApp follow-up. Phone rows use 16px names, 14px metadata and minimum 44px controls. The duplicate agency subtitle and search are removed.
+
+Use the same `recruitment.html` URL. See `../evidence/flows/Recruitment_Prototype/REVISION_3.md` for fresh proof and limits. This recruitment revision still needs the user's review; it is not production approval. The prior trial approval below remains unchanged.
+
 The user approved the trial revision-7 visual design with “yes i am happy lets move.” This does not grant production implementation or deployment approval. Its separate keyboard-only check remains unverified.
 
 The new GrowthCooks recruitment approval flow is `recruitment.html`, in this same local prototype host. It covers Application → Vibe Check → Outreach → Trial Evidence → Brand Onboarding and needs its own review. See `../audit/tdt-unified-creator-ops/RECRUITMENT_FLOW_CONTRACT.md` for authority, state transitions, mock boundaries and pending choices, and `../evidence/flows/Recruitment_Prototype/VERIFICATION.md` for test evidence. The trial page remains unchanged. The active-dashboard draft is preserved, not restarted, and awaits its remaining browser review after this recruitment slice.

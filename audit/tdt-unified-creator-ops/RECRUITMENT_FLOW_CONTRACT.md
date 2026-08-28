@@ -1,5 +1,55 @@
 # GrowthCooks recruitment flow contract
 
+## Revision 3 — distribution-first review, August 28
+
+Authority: latest user message plus pasted operator observations (05846ac2 attachment). New corrections override the revision-2 combined inbox. The earlier observations within the attachment remain context; no conflicting historical instruction grants production authority.
+
+Goal: Review incoming applicants once, then continue accepted cases inside exactly one assigned business.
+Human and feel: Agency operators on phones; compact, familiar lists, one task per page.
+Entry and exit: Applicants → pending vibe check → reject into Rejected OR accept into selected business Pipeline → next applicant / business work.
+System: Same standalone approval prototype, system font and forest green; h1 22px, row title 16px, metadata 14px, 44px minimum touch controls. No repeated agency subtitle or search box.
+Signature: Accepting distributes the existing person record to one business; it never copies a person or keeps them in the pending queue.
+Feedback: Short status text/chips, confirmed-save message, 150ms entrance with reduced-motion override, focus on destination heading; no browser haptics.
+Rejecting: Large decorative applicant cards, one agency-wide screen carrying every stage, preliminary-answer dumps, reassigning a brand at trial start.
+Variants: Empty/rejected/accepted distribution lists; separate brand pipelines; wrong agency/brand denial; failed-save retry and retained drafts; phone and desktop; expired invitation stays a review-only recovery example.
+
+| From | Action / guard | To / recovery |
+| --- | --- | --- |
+| Applicants, pending | Open row | Video + name/email/WhatsApp/location + vibe decision; Back returns to same list |
+| Vibe check | Accept with valid brand/tier | Same record moves into that brand's outreach; confirmation offers next applicant or open business pipeline |
+| Vibe check | Reject with required reason | Rejected list, no outreach or trial; preserve decision and original record |
+| Accepted distribution summary | Choose brand | Only that brand's Pipeline; no mixed-business post-review list |
+| Business Pipeline | Open current stage/person | Only current stage task plus compact contact details; no introduction video or screening-answer dump |
+| Outreach | WhatsApp draft / record outcome | Editable per-brand message template; accepted trial opens setup; decline reason only when declined |
+| Trial setup | Start trial | Brand/tier are fixed from the accepted recommendation; bound WhatsApp invitation, no second assignment |
+| Any manager detail | Back / Applicants / Pipeline | Restore correct area, business and list filter without resetting records |
+
+Application observations retained: production should autosave verified-user drafts and survive reconnect/reload with versioned consent/retention controls. This prototype only autosaves in the open tab; it must never claim durable or cross-device recovery. UGC-comfort No should finish after required earlier answers, record a distinct early-finish outcome, require no later questions/video, and show "Thank you for applying." Full submission says "If shortlisted, we will contact you on WhatsApp." Neither outcome sends a message. Preliminary answers remain stored for audit but are not shown in normal management review.
+
+Editable outreach/invitation templates belong to settings, with per-business scope, supported tokens, version/audit history and snapshots on generated messages. Opening a WhatsApp composer is shown as a local simulation; no live messages leave the approval prototype. Source Forms/Sheets remain untouched.
+
+Verification: 31 current browser assertions and 43 current recruitment core checks passed; 33 unchanged trial checks also passed. Independent review found four issues, now fixed and rechecked: cross-business template drafts, invitation template context, early/full replay, and UGC-No failure recovery. Detailed proof and unverified downstream paths: `../../evidence/flows/Recruitment_Prototype/REVISION_3.md`.
+
+The older revision sections below are preserved as provenance only. Where they mention a combined inbox, original-answer review, Oyi, trial coach/brief, broad international phone lengths, or no UGC early exit, revision 3 and revision 2 above override them.
+
+## Revision 2 — operator review, August 28, 2026
+
+Current feedback supersedes revision 1 wherever inconsistent. Same isolated branch and draft PR; production UI, live data, real messaging and deployment remain blocked.
+
+- Every application answer is required except the last optional questions/message field. Email starts empty with a placeholder. City and State are separate. WhatsApp is `+` plus exactly thirteen digits (14 characters after harmless spacing is removed), with country-code hint and counter. This is the user's constrained length policy, not a universal international-phone standard.
+- Agency admins: Ella, Daniel, **Uyi**, Smith. Show all applicants first. Uploaded introduction video is prominent before vibe check. WhatsApp contact is a link. In the preview uploads stay in the open tab; planned production storage is private, validated, agency-scoped media with authorised access. Retention policy and real storage are not approved or verified.
+- Application form editor changes screening labels/options and adds required choice questions; identity, age and introduction fields remain required. New brand names do not grant access or invent bonus rates. Submissions snapshot form version, questions and original answers. Settings edits are scoped to agency admins, recorded, and prospective. All configuration is memory-only in the prototype.
+- Accepting a vibe check exposes brand/tier, not rejection reason. Rejecting exposes reason, not brand/tier. Outreach is via WhatsApp; only creator-declined exposes a decline reason. Irrelevant reasons must not enter saved state or events. Contact attempts remain append-only; failed saves retain entries.
+- Starting a trial keeps brand, tier, content type and dates, but removes coach and trial-brief URL. It prepares an email-bound invitation and WhatsApp draft. Manager product UI must not impersonate a creator. Separate review controls preview the recipient and return to the manager's saved place.
+- Recipient: Google invitation acceptance → at least one public TikTok/Instagram profile → dashboard walkthrough → daily logging, weekly views, and 10k evidence. This trial setup is distinct from brand onboarding after verified success. No passwords, bank details or contract collection during trial setup. Real Google identity, delivery and secure invitation tokens are mocked.
+- Trial reporting retains two video slots/day on TikTok and Instagram. Today is locked; Yesterday appears only when entirely missed, after joining and before noon. Actual posted platform links alone need views, with all four boxes visible on each due date. Each report is tied to its own period/video/platform. Trial setup date determines joining; no pre-join obligations. Prototype periods are September-1 anchored for NorthQuest/CashDrive and Monday-August-31 anchored for Aura. Production calendar configuration remains unverified.
+- Trial creators can claim bonuses from 100k on NorthQuest and CashDrive; Aura has none. A claim references an exact platform/video, views and screenshot. Bonus review does not approve a trial or satisfy weekly reporting. No money is calculated or paid. Existing CashDrive amounts were explicitly an assumption later removed; confirm current schedules before production payouts. Evidence remains available for review, with no automatic deletion.
+- Navigation must preserve applicant, filter and form drafts. Only explicit reset/reload clears the tab's mock state. Phone layout, focus, reduced motion, validation, retries and conditional branches require verification. Browser refresh persistence, real authentication, durable storage and real notifications are not claimed.
+
+TypeUI fundamentals guide phone-first spacing, native controls, clear actions and conditional sections. Keep the approved trial's green/neutral visual language; no production UI changes.
+
+Required verification: application and form configuration; video-first vibe check and all outreach outcomes; invitation/wrong account/expiry; trial setup; max-two logging and Yesterday/noon; weekly gate; separate 10k and 100k evidence; return/retry; phone/tablet/desktop, keyboard/focus and reduced motion. Actual results belong in the evidence addendum.
+
 Authority: August 28, 2026 handoff and detailed inspected-artifact specification supplied by the user. Both read in full. Existing shared contracts continue except the explicit conflicts registered in `TDT_RULE_CONFLICTS.md`. No source Form/Sheet, live schema, membership or data is changed by this work.
 
 ## Prototype design brief
