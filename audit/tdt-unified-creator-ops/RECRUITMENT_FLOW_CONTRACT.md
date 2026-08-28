@@ -1,5 +1,9 @@
 # GrowthCooks recruitment flow contract
 
+## Storage selection — subsequent August 28 instruction
+
+Google Drive is now the approved provider for temporary introduction videos. A new private owner-only folder was created and metadata-verified; the previous source folder/Forms/Sheets are untouched. This is not website upload integration: app-owned authorization and non-production persistence/playback testing remain required. Automatic deletion is disabled pending retention/recovery agreement, and qualification/bonus evidence is excluded. See `RECRUITMENT_STORAGE_ASSESSMENT.md`. User wants remaining flows first, final UI/UX passes afterward; functional verification and deployment approval remain mandatory.
+
 ## Recruitment accepted for now; next-phase review — August 28
 
 Approval: user said the recruitment flow is fine for now and to move on; History/audit trail is explicitly retained. Final colour/UI polish is deferred. This is flow acceptance, not production implementation, deployment, backend security or storage approval. Completed small adjustment: named business heading sits below the back icon (320/390px checked).

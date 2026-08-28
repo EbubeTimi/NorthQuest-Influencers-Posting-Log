@@ -1,5 +1,12 @@
 # Authoritative rule conflict audit
 
+## Latest storage decision — Google Drive selected
+
+- User explicitly selected Google Drive; supersedes provider-pending and the private-Supabase recommendation, but does not authorize deployment or real-data deletion.
+- Private destination folder is created and owner-only access verified. The Drive connector authorization does not authorize Smithstem's website runtime. Do not mark uploads complete based on folder creation.
+- No retention duration is approved. Keep automatic cleanup off; do not conflate temporary introductions with retained trial/bonus evidence. History stays.
+- UI/UX polish is deferred until remaining flows are complete, not permission to skip working-flow checks or ship unreviewed production UI.
+
 ## Recruitment revision 7 — acceptance and temporary-media boundary
 
 - User accepted the recruitment flow for now, not production implementation/deployment. Final visual polish remains deferred; History is explicitly wanted for audit. Business titles move below Back.
