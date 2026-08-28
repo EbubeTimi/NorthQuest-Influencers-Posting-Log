@@ -1,0 +1,150 @@
+{
+  "revision": 5,
+  "checkedAt": "2026-08-28T15:56:32.996Z",
+  "runner": "tests/recruitment-contact-runtime.test.js",
+  "browser": "in-app Browser via Browser skill",
+  "checks": [
+    {
+      "name": "Settings contains no messaging controls",
+      "status": "PASS"
+    },
+    {
+      "name": "Settings appears once with an icon back action",
+      "status": "PASS"
+    },
+    {
+      "name": "required 30-second upload question visible in form editor",
+      "status": "PASS"
+    },
+    {
+      "name": "nested panels are borderless",
+      "status": "PASS"
+    },
+    {
+      "name": "question editing still saves",
+      "status": "PASS"
+    },
+    {
+      "name": "business has name search and counted stages",
+      "status": "PASS"
+    },
+    {
+      "name": "stage selector is narrower than content",
+      "status": "PASS"
+    },
+    {
+      "name": "no other-business search result",
+      "status": "PASS"
+    },
+    {
+      "name": "person opens composer not Settings",
+      "status": "PASS"
+    },
+    {
+      "name": "message has correct person operator business and paragraphs",
+      "status": "PASS"
+    },
+    {
+      "name": "WhatsApp link has recipient number and prepared message",
+      "status": "PASS"
+    },
+    {
+      "name": "prototype does not send live WhatsApp",
+      "status": "PASS"
+    },
+    {
+      "name": "name and stage survive returning",
+      "status": "PASS"
+    },
+    {
+      "name": "person message draft survives back",
+      "status": "PASS"
+    },
+    {
+      "name": "failed default save retains text",
+      "status": "PASS"
+    },
+    {
+      "name": "default saved within contact page",
+      "status": "PASS"
+    },
+    {
+      "name": "another operator gets own sender and draft",
+      "status": "PASS"
+    },
+    {
+      "name": "counts update after outcome",
+      "status": "PASS"
+    },
+    {
+      "name": "settings exit restores business filters",
+      "status": "PASS"
+    },
+    {
+      "name": "CashDrive default never overwrote NorthQuest",
+      "status": "PASS"
+    },
+    {
+      "name": "invitation now uses automatic stage-specific message",
+      "status": "PASS"
+    },
+    {
+      "name": "invitation default requires no type selector",
+      "status": "PASS"
+    },
+    {
+      "name": "recipient remains assigned to NorthQuest",
+      "status": "PASS"
+    },
+    {
+      "name": "return keeps invitation draft and business",
+      "status": "PASS"
+    },
+    {
+      "name": "applicant sees actual required introduction upload",
+      "status": "PASS"
+    },
+    {
+      "name": "submitted example filename is attached to this applicant review",
+      "status": "PASS"
+    },
+    {
+      "name": "different agency sees no applicant records",
+      "status": "PASS"
+    },
+    {
+      "name": "pipeline fits 320",
+      "status": "PASS"
+    },
+    {
+      "name": "icon back returns to index 320",
+      "status": "PASS"
+    },
+    {
+      "name": "pipeline fits 390",
+      "status": "PASS"
+    },
+    {
+      "name": "icon back returns to index 390",
+      "status": "PASS"
+    },
+    {
+      "name": "pipeline fits 768",
+      "status": "PASS"
+    },
+    {
+      "name": "icon back returns to index 768",
+      "status": "PASS"
+    },
+    {
+      "name": "back icon touch target stays 44px",
+      "status": "PASS"
+    }
+  ],
+  "unverified": [
+    "Native keyboard activation: locator press did not activate new back or existing Applicants buttons; click proof is not keyboard proof.",
+    "Actual native video selection, decode/playback and server upload. Example metadata only was used.",
+    "Real Google login, WhatsApp delivery, persistent storage, production tenant isolation and launch readiness.",
+    "Full revised trial logging through evidence, onboarding and active dashboard browser end-to-end."
+  ]
+}

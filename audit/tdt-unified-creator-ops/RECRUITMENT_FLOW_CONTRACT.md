@@ -1,5 +1,27 @@
 # GrowthCooks recruitment flow contract
 
+## Revision 5 — task-local contact, quiet navigation and visible uploads
+
+Goal: Find an accepted person inside their business, contact them without visiting Settings, and make the application/video journey clear.
+Human and feel: Agency operator on a phone; compact controls, fewer boxes, clear next action.
+Entry and exit: Business list → name/stage filter → person → WhatsApp draft → same person/list. Settings → application/brands only → previous workspace.
+System: Existing approval-only HTML, system font/green tokens; unbordered secondary actions, 44px accessible icon-only back buttons, compact stage selector.
+Signature: Messages belong to the named person/business; the application editor explicitly shows the fixed required 30-second video question.
+Feedback: Status labels plus colour, counted stage choices, retained name/filter/drafts and immediate back; existing reduced motion, no haptics.
+Rejecting: Message editing in global Settings, cross-business name results/counts, card-in-card outlines, calling a local object URL permanent storage, or using a back icon to sign someone out.
+Variants: Zero results, stage count changes, wrong agency/brand, sender changes, template save failure/retry, long names/messages, phone/keyboard.
+
+| Flow | Action | Result / recovery |
+| --- | --- | --- |
+| Named business | Search name / choose counted stage | Only authorised records from that business; back from person preserves name and stage |
+| Person outreach/invitation | Contact on WhatsApp | Correct recipient, current operator name, business and readable paragraphs; local composer simulation only |
+| Same contact page | Edit business default message | Collapsed inline editor for current stage/business; no Settings redirect or cross-business template selector |
+| Settings | Edit application | Existing editable questions plus visible fixed required video question and optional final message; no WhatsApp section |
+| Completed application | Submit video with answers | In-tab File/object URL attached to that applicant and shown in their vibe review; no upload to a real server |
+| Settings/business/detail | Door-arrow back button | Accessible Back label, returns within app, never signs out or deletes drafts |
+
+Name search is newly authorised within business Pipelines only; the prior no-search rule still applies to Applicants distribution. Stage counts are business totals independent of the name query. Planned production files belong in private, authorised media storage linked to the application; storage, scanning, retention and playback must be implemented/verified after approval. Source Forms/Sheets remain untouched. Trial duration is still unconfirmed.
+
 ## Revision 4 — settings and business context
 
 Goal: Configure distinct questions/options, open one business's accepted people, and prepare that person's trial invitation without reselecting the business.

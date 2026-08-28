@@ -1,5 +1,14 @@
 # Authoritative rule conflict audit
 
+## Recruitment revision 5 — latest task-placement corrections
+
+- Global Settings WhatsApp templates and Outreach/Invitation tabs are superseded. Messages belong inside the selected person's assigned-business Pipeline; current stage chooses the message type. A collapsed editor changes only that business/stage default. Drafts are scoped to current operator, person and type.
+- Prior removal of search still applies to Applicants distribution, but the user now explicitly requests **name search within each business Pipeline**. Stage counts show business totals independent of the name query. No cross-business results or unauthorized counts.
+- Wide back controls are replaced with door-arrow icons with accessible Back labels. These return within the workspace, never sign out; Settings has one heading and returns to the prior context.
+- The 30-second introduction upload was already on the final application step but absent from the editor. The editor now shows that fixed required question and the optional final message. UGC-No early completion remains the separately authorized exception.
+- Video location is explicit: this prototype keeps a File/object URL in the open tab and shows it on that applicant's vibe-review page. Planned private permanent storage, authorized playback, validation/scanning and retention are not implemented by this revision. No real upload claim or source Form/Sheet edit.
+- Reduce nested boxes and bordered secondary actions, preserving visible input boundaries, text status labels, focus styling and 44px controls. Trial duration remains provisional and unrelated to weekly reporting.
+
 ## Recruitment revision 4 — latest operator corrections
 
 - Pipeline's Business dropdown is replaced with an explicit business index and named business-only pages. Accepted summaries open the same scoped lists. Returning from a creator preview preserves that business and applicant.

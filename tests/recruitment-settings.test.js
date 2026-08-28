@@ -1,7 +1,7 @@
 const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
 const html=fs.readFileSync(require('node:path').join(__dirname,'../prototypes/recruitment.html'),'utf8');
 assert.match(html,/data-option-index/,'each answer option has its own field');
-assert.match(html,/role="tablist"/,'message types are accessible tabs');
+assert.match(html,/id="business-message-default"/,'message defaults remain inside the person contact page');
 const ctx=vm.createContext({Date,Intl,URL});
 vm.runInContext(html.match(/\/\/ RECRUITMENT CORE START([\s\S]*?)\/\/ RECRUITMENT CORE END/)[1]+';this.api={trialDates,invitationUrl,createStore,updateForm};',ctx);
 const a=ctx.api;let total=0;function test(name,fn){fn();console.log('PASS '+name);total++;}
