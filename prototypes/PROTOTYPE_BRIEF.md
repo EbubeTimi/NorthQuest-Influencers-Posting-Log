@@ -2,6 +2,8 @@
 
 ## Current review position — August 28, 2026
 
+Recruitment revision 4 is now the current review: separate option fields and visible Add question, Outreach/Invitation tabs, a Pipeline business index leading to named business-only lists, clearer WhatsApp actions, and automatic start/date derivation. The invitation link contains the assigned business and recipient token. Trial duration remains unconfirmed: the old seven-elapsed-day example is explicitly provisional, separate from weekly views. See `../evidence/flows/Recruitment_Prototype/REVISION_4.md`. The next review is the connected trial → evidence verification → brand onboarding → active-dashboard handoff, not a restart of Applications.
+
 Recruitment is now revision 3, following the latest operator review: **Applicants is a compact distribution queue**, not the whole operations workspace. Review the introduction once; accept into one business or reject into a separate list. The existing person continues in that business's **Pipeline**, with only the current task visible. Brand-specific outreach and invitation templates are editable in Settings. UGC No has an early ending; full applications mention WhatsApp follow-up. Phone rows use 16px names, 14px metadata and minimum 44px controls. The duplicate agency subtitle and search are removed.
 
 Use the same `recruitment.html` URL. See `../evidence/flows/Recruitment_Prototype/REVISION_3.md` for fresh proof and limits. This recruitment revision still needs the user's review; it is not production approval. The prior trial approval below remains unchanged.

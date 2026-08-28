@@ -1,5 +1,13 @@
 # Authoritative rule conflict audit
 
+## Recruitment revision 4 — latest operator corrections
+
+- Pipeline's Business dropdown is replaced with an explicit business index and named business-only pages. Accepted summaries open the same scoped lists. Returning from a creator preview preserves that business and applicant.
+- Newline-delimited choice text is replaced with separately labelled option fields. Multiline text remains one option. The UGC branch retains exactly Yes/No because those answers control early completion; other choices and question wording remain editable. Original submissions retain their snapshots.
+- WhatsApp message type is two tabs, not a dropdown. Recipient-specific action says Text [name] on WhatsApp; live sending remains mocked.
+- Trial start becomes the current Lagos date; end derives automatically. No source authorizes a fixed duration. Seven elapsed days is only the old prototype example, clearly marked pending user confirmation, not the weekly reporting rule. Recipient link includes the assigned business, not a reusable unbound brand URL.
+- Switching the preview clock to an ISO timestamp exposed UTC/Lagos disagreement in evidence and bonus validation around midnight. Both now use the same Lagos day; new failing-first regressions pass.
+
 ## Recruitment revision 3 — distribution, not one combined workplace
 
 Latest operator feedback replaces the revision-2 agency-wide mixed-stage inbox. Applicants handles the first video-based accept/reject decision. Acceptance assigns exactly one brand and removes the case from pending distribution; subsequent outreach, trial and onboarding work is inside that business's Pipeline. Rejected records stay separate. Accepted distribution history groups by brand rather than mixing active business work. A trial start cannot silently change the brand chosen at vibe check.

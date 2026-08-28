@@ -1,6 +1,6 @@
 # GrowthCooks recruitment prototype verification — August 28, 2026
 
-**Historical revision-1 evidence below.** The current revision-3 proof and limitations are in [REVISION_3.md](REVISION_3.md). Do not treat this older runner's labels or full-flow results as a fresh verification of the revised recruitment UI.
+**Historical revision-1 evidence below.** Current proof and limitations are in [REVISION_4.md](REVISION_4.md); [REVISION_3.md](REVISION_3.md) preserves the preceding revision. Do not treat this older runner's labels or full-flow results as fresh verification of the revised UI.
 
 Approval status: awaiting user review. Production implementation, data migration and deployment are not approved by this report.
 

@@ -1,5 +1,27 @@
 # GrowthCooks recruitment flow contract
 
+## Revision 4 — settings and business context
+
+Goal: Configure distinct questions/options, open one business's accepted people, and prepare that person's trial invitation without reselecting the business.
+Human and feel: Phone-first agency operator; compact sections and clear context.
+Entry and exit: Settings → edit/save/retry; Applicants Accepted or Pipeline index → named business → outreach → automatic trial setup → named invitation.
+System: Existing revision-3 standalone HTML and compact green/neutral styling, 44px controls, 16px form text.
+Signature: Each answer option is its own field; changing a line break never creates another option. Outreach/Invitation are two small tabs.
+Feedback: Preserve drafts, focus new fields/tabs, existing 150ms page transition and reduced-motion override; no haptics.
+Rejecting: Business dropdown inside a named business, newline parsing as option structure, manually entered start date, reusable unbound brand invitations.
+Variants: Empty business, rejection/decline reasons, tab keyboard switching, option validation/retry, offline, midnight/month boundaries and wrong recipient.
+
+| Entry | Action | Result / recovery |
+| --- | --- | --- |
+| Application settings | Add question / add or remove option | Independent labelled fields; preserve other drafts; required UGC Yes/No options cannot be removed |
+| WhatsApp settings | Outreach / Invitation tab | Correct business/type draft; arrow keys and visible selected state; save version remains scoped |
+| Accepted summary / Pipeline index | Open a business | Named business page with only its people/statuses, no business selector; Back to pipelines returns to index |
+| Outreach | Text applicant on WhatsApp | Existing local message preview; opening it does not record a sent message |
+| Trial setup | Start trial | Start date from current preview clock in Africa/Lagos; automatic end date from a duration policy, not the weekly reporting clock |
+| Prepared invitation | View message/link | Assigned business in link path, same recipient-bound token; no global public trial link or production delivery |
+
+Trial duration needs user confirmation. The old prototype used September 6 → 13 (seven elapsed days); retain this as an explicitly labelled review-only example pending the answer. It must not become production policy. Preview clock starts at the current date/time on reset and can be advanced with existing test controls. Start and end are read-only in the product form. All real account, message and persistence behavior remains mocked.
+
 ## Revision 3 — distribution-first review, August 28
 
 Authority: latest user message plus pasted operator observations (05846ac2 attachment). New corrections override the revision-2 combined inbox. The earlier observations within the attachment remain context; no conflicting historical instruction grants production authority.

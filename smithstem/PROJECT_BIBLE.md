@@ -2,6 +2,8 @@
 
 ## Current prototype authority — 28 August 2026
 
+Recruitment revision 4 refines Settings into separate option fields and Outreach/Invitation tabs. Pipeline starts at a business index; opening a business removes the business switcher and scopes its list. Automatic trial dates use the preview clock in Africa/Lagos, and invitations include the assigned business plus recipient-bound token. Trial length is NOT confirmed: the prior seven-elapsed-day example remains review-only. Evidence/bonus date checks now consistently use Lagos at midnight. See `../evidence/flows/Recruitment_Prototype/REVISION_4.md`.
+
 Recruitment revision 3 supersedes the combined inbox: Applicants does first-stage video review and distributes accepted people to one business's Pipeline. Rejected records are separate. Later work never duplicates the identity or reassigns the trial brand. Uyi is the correct admin spelling. Business-specific WhatsApp templates are editable, versioned mock settings. UGC No ends before later questions/video; full applications require every shown question except the final message. Drafts recover within the open prototype tab only; durable autosave remains future implementation. Evidence: `../evidence/flows/Recruitment_Prototype/REVISION_3.md`.
 
 The historical implementation description below is not a current product contract or security proof. Current decisions live in `../audit/tdt-unified-creator-ops/00_Flow_Contracts.md` and `RECRUITMENT_FLOW_CONTRACT.md`. Trial revision 7 visuals were approved; active creator and GrowthCooks recruitment prototypes are separate unapproved additions. Reuse the approved phone-first system-font/green/neutral style. Production UI and deployment remain gated.
