@@ -2,7 +2,13 @@
 
 Production UI and deployment remain blocked until the revised prototype is explicitly approved.
 
-## Current handoff — 2026-08-27
+## Current handoff — 2026-08-28
+
+Trial revision 7 visual design is approved. The active-dashboard draft and its 26 passing core checks are preserved but not yet fully browser-reviewed. The newer August 28 recruitment handoff now takes priority: extend the same approval prototype through Application → Vibe Check → Outreach → Trial Evidence → Brand Onboarding. Read `RECRUITMENT_FLOW_CONTRACT.md` and the latest conflict-register section before work. This is prototype scope only; no production UI, source Form/Sheet edits, production data change or deployment is authorized.
+
+Use GrowthCooks Marketing Agency for the operational workspace; Aura spelling is canonical. One video link plus ≥10,000 screenshot requires management verification, already confirmed by the user's later feedback. Verified evidence is immutable. The 526-record import is a new planning scope, not permission to execute migration. Owner-only sensitive controls and exact onboarding checklist remain assumptions for review.
+
+## Historical handoff — 2026-08-27
 
 The latest trial-flow observations are applied in prototype revision 6: tour step 3 opens/highlights the actual weekly form; Phone works at all pane widths and during the tour; every date has Video 1/2 × TikTok/Instagram (unlogged slots visible but disabled); no third daily video; one combined 10,000-view form includes screenshot, with no separate screenshot task; corrected Google-account, paused and expired copy. Do not ask the user to repeat observations or restart the audit. This revision is trial-only and stops at onboarding-ready, not actual onboarding or an active-creator/admin dashboard.
 
@@ -35,7 +41,7 @@ Identity planning must now enforce one ongoing trial per person and a TDT-wide p
 
 ## Current blockers
 
-- Revised prototype approval has not been given.
+- Trial revision 7 visual approval is recorded; recruitment and active-dashboard prototype approval, production implementation authority and launch approval remain outstanding.
 - Supabase and Vercel read access now pass. Real caller-role tests and any database repair remain unperformed.
 - `public._nq_scrape_jobs` has RLS disabled and is a critical launch blocker; function grants also require an explicit caller review.
 - The live migration ledger and repository migration folder have live-only, local-only, and timestamp-divergent entries. Recover canonical history before any schema change or clean-bootstrap claim.

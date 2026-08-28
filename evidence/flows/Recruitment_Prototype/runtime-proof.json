@@ -1,0 +1,183 @@
+{
+  "checkedAt": "2026-08-28T12:01:29.286Z",
+  "source": "tests/recruitment-runtime.test.js",
+  "url": "http://127.0.0.1:4173/recruitment.html",
+  "scope": "In-app browser; deterministic example records; no real backend",
+  "checks": [
+    {
+      "name": "missing required application fields are rejected",
+      "status": "PASS"
+    },
+    {
+      "name": "all eight content questions are present",
+      "status": "PASS"
+    },
+    {
+      "name": "introduction step has immutable-answer preview",
+      "status": "PASS"
+    },
+    {
+      "name": "offline submission creates no application row",
+      "status": "PASS"
+    },
+    {
+      "name": "one confirmed submission adds one shared record",
+      "status": "PASS"
+    },
+    {
+      "name": "new application opens in management vibe check",
+      "status": "PASS"
+    },
+    {
+      "name": "count opens its filtered records",
+      "status": "PASS"
+    },
+    {
+      "name": "screening acceptance opens outreach, not an automatic trial",
+      "status": "PASS"
+    },
+    {
+      "name": "below-threshold evidence is rejected",
+      "status": "PASS"
+    },
+    {
+      "name": "proof submission does not unlock onboarding",
+      "status": "PASS"
+    },
+    {
+      "name": "manager sees exact submitted post",
+      "status": "PASS"
+    },
+    {
+      "name": "verification requires explicit check",
+      "status": "PASS"
+    },
+    {
+      "name": "success creates onboarding but no active membership",
+      "status": "PASS"
+    },
+    {
+      "name": "completed brand onboarding creates exactly one membership",
+      "status": "PASS"
+    },
+    {
+      "name": "creator sees only the activated brand",
+      "status": "PASS"
+    },
+    {
+      "name": "Other rejection reason requires note",
+      "status": "PASS"
+    },
+    {
+      "name": "rejection does not open outreach",
+      "status": "PASS"
+    },
+    {
+      "name": "decline cannot start a trial",
+      "status": "PASS"
+    },
+    {
+      "name": "brand cannot see a merely assigned trial",
+      "status": "PASS"
+    },
+    {
+      "name": "shared brand view excludes original answers and internal timeline",
+      "status": "PASS"
+    },
+    {
+      "name": "other agency has no GrowthCooks records",
+      "status": "PASS"
+    },
+    {
+      "name": "ending trial records failed outcome",
+      "status": "PASS"
+    },
+    {
+      "name": "no horizontal overflow at 320",
+      "status": "PASS"
+    },
+    {
+      "name": "readable controls at 320",
+      "status": "PASS"
+    },
+    {
+      "name": "no horizontal overflow at 390",
+      "status": "PASS"
+    },
+    {
+      "name": "readable controls at 390",
+      "status": "PASS"
+    },
+    {
+      "name": "no horizontal overflow at 768",
+      "status": "PASS"
+    },
+    {
+      "name": "readable controls at 768",
+      "status": "PASS"
+    },
+    {
+      "name": "no horizontal overflow at 1280",
+      "status": "PASS"
+    },
+    {
+      "name": "readable controls at 1280",
+      "status": "PASS"
+    },
+    {
+      "name": "reduced-motion control applies",
+      "status": "PASS"
+    },
+    {
+      "name": "page transition focuses heading",
+      "status": "PASS"
+    },
+    {
+      "name": "failed evidence save retains input and does not enter review",
+      "status": "PASS"
+    },
+    {
+      "name": "correction requires a reason",
+      "status": "PASS"
+    },
+    {
+      "name": "creator sees the correction message",
+      "status": "PASS"
+    },
+    {
+      "name": "evidence form fits 320",
+      "status": "PASS"
+    },
+    {
+      "name": "evidence numeric input remains 16px at 320",
+      "status": "PASS"
+    },
+    {
+      "name": "evidence form fits 390",
+      "status": "PASS"
+    },
+    {
+      "name": "evidence numeric input remains 16px at 390",
+      "status": "PASS"
+    },
+    {
+      "name": "resubmission preserves two evidence images",
+      "status": "PASS"
+    },
+    {
+      "name": "onboarding cancellation requires a reason",
+      "status": "PASS"
+    },
+    {
+      "name": "cancelled onboarding creates no membership",
+      "status": "PASS"
+    }
+  ],
+  "unverified": [
+    "Real Google sign-in and email-bound invitations",
+    "Real file upload, private storage and scanning",
+    "Database authorization, concurrency and persistence",
+    "Full keyboard-only and screen-reader traversal",
+    "Physical phones and load beyond 1,000 creators"
+  ]
+}

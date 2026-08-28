@@ -1,8 +1,33 @@
 # Authoritative rule conflict audit
 
-Current instructions through 2026-08-27 override the earlier request and every historical repository decision.
+Current instructions through 2026-08-28 override the earlier request and every historical repository decision.
 
-## Revision 6 corrections (latest authority)
+## Recruitment addition — 28 August 2026 (current authority)
+
+The two recruitment handoff documents supplied on August 28 were read in full. Their live-source counts are reported inspection evidence, not a fresh database or spreadsheet inspection in this task. The source Form and Sheets remain untouched.
+
+| Conflict / gap | Current resolution | Implementation boundary |
+| --- | --- | --- |
+| Earliest automatic self-report onboarding vs evidence review | Already superseded by Smith's later explicit instruction and current contracts: one recorded video/platform link + claimed count ≥10,000 + screenshot, then authorized management verification. Never sum videos. | No further clarification needed to prototype the already-confirmed manual transition. Real verification remains unimplemented. |
+| Screenshot could disappear after approval / retention undecided | Retain the verified evidence and decision as an immutable snapshot. Corrections append a new version, never replace the reviewed original. | No production deletion; full retention duration/access policy still needs approval. |
+| TDT-wide unassigned applicants visible to any administrator | GrowthCooks Marketing Agency is the operational agency workspace; applications and assets are agency-scoped before brand recommendation. | Replace nullable-business-as-global-visibility design through future reviewed migrations; do not patch production now. |
+| TDT parent vs unconfirmed subsidiary claim; Aura/Ora variants | TDT parent, GrowthCooks operational workspace, configurable organization link without a legal classification; canonical Aura. NorthQuest/CashDrive retain current spelling. | No invented subsidiary, CTT relationship, legal party or contract. |
+| One applicant row and mixed status/reason | Immutable submission plus distinct ScreeningDecision, OutreachCase/ContactAttempt, Trial, Evidence, Decision and OnboardingCase. Rejected-by-team differs from creator-declined. | Reuse identity/membership/video concepts; no second person table per stage. |
+| Current form has seven basic questions and weak validation | Preserve all newer intake questions with stable IDs, required core responses, age confirmation, raw and normalized WhatsApp, introduction upload. | Four brief-comfort choice labels are not transcribed in the supplied spec; prototype wording is provisional. No source form changes. |
+| Old approval immediately sends a trial link | Screening acceptance first recommends brand/tier; outreach records consent/outcome; start a configured trial only after acceptance. | No emails, WhatsApp sends or invitation grants in prototype. |
+| Old active-onboarding collects bank/contract/platform passwords | Brand onboarding is an explicit case; creator tasks and management completion precede active membership. Contracts/bank/employment are separate, not silently completed. | Never collect passwords. Sample checklist is a proposed launch handoff, not a real legal agreement. |
+| Blanket no-migration launch vs new 526-application migration plan | New handoff authorizes planning a separate, rehearsable recruitment import. It does not authorize executing an import or changing production. Old video counts/links/credentials still excluded. | Reconcile all 526 records and aggregates only after frozen export, mapping review and approval. No importer execution now. |
+| Single admin role vs agency/brand/creator scopes | Daniel/Ella/Oyi/Smith daily GrowthCooks operations; Smith owner-only destructive/administrator/export controls are a recommended boundary, not confirmed policy. | Demonstrate only simulated roles. No real grants; owner boundary confirmation required before production. |
+| Existing reusable public trial links vs screened named trial | Email-bound invitation, accepted outreach, one concurrent trial/person, agency-brand engagement and required trial fields. Passing remains TDT-wide. | No repeat trial for a passed creator; subsequent brand onboarding requires explicit assignment. |
+| Prototype approval vs launch readiness | Trial revision 7 design approved by “yes i am happy lets move”; recruitment and active-dashboard drafts not approved. September 1, 2026 remains target. | No production UI or deployment authorized by this prototype work; real end-to-end tests still required. |
+
+Repository seams inspected: `app/apply/page.js`, `app/admin/page.js`, `app/onboarding/page.js`, `app/auth/callback/page.js`, recruitment migrations `20260817204900` / `20260818231500`, `PROJECT_BIBLE.md`, and the existing shared contracts. Historical flow-map wording that a high weekly self-report alone creates review is also superseded: a complete link/count/screenshot submission is required.
+
+## Active-dashboard inspection — work preserved
+
+The uncommitted active dashboard draft is preserved while recruitment takes priority. Its core tests passed 26 checks; browser/independent review was unfinished at handoff. Existing production code still has a join-relative gate, missing active gate rendering, 11:30 PM posting rollover, positive-only view checks and Facebook fields. Do not copy these into recruitment or imply production repair.
+
+## Revision 6 corrections (historical authority)
 
 - Exactly Video 1 and Video 2 per day, each with TikTok/Instagram slots. Every reporting date shows all four boxes, including disabled unlogged slots. This supersedes revision 5's Video 3+ and sparse layout, without requiring reports for unposted videos/platforms. Facebook is not tracked or bonused here.
 - Screenshots are required inside the qualifying-video submission only. Remove the standalone screenshot route and dashboard task; a weekly high count may prefill the combined form, but complete submission is required before management review/notification.

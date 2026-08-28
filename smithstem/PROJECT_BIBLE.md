@@ -1,5 +1,13 @@
 # Smithstem — Project Bible
 
+## Current prototype authority — 28 August 2026
+
+The historical implementation description below is not a current product contract or security proof. Current decisions live in `../audit/tdt-unified-creator-ops/00_Flow_Contracts.md` and `RECRUITMENT_FLOW_CONTRACT.md`. Trial revision 7 visuals were approved; active creator and GrowthCooks recruitment prototypes are separate unapproved additions. Reuse the approved phone-first system-font/green/neutral style. Production UI and deployment remain gated.
+
+GrowthCooks Marketing Agency is the operational agency workspace; TDT is the parent organization, without an asserted legal subsidiary classification. Canonical brand: Aura. Personal Google login and assigned memberships replace older OTP/public-join assumptions. The recruitment funnel uses immutable applications, separate screening/outreach, one trial per person, one-video link + ≥10,000 screenshot, authorized management verification, retained evidence and an idempotent brand onboarding case. Onboarding completion is not a statement that contracts, bank or employment work is complete.
+
+September 1, 2026 is the target. A legacy recruitment import is only planned; no production or source-sheet mutation is authorized. Older source code and the claims below must be checked against current contracts before reuse.
+
 This document exists so that anyone — a new engineer, a business partner, Smith
 herself six months from now — can read it start to finish and understand the
 whole system: what it is, why it's built the way it is, and where the real

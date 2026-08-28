@@ -1,5 +1,13 @@
 # TDT trial creator prototype brief — revision 7
 
+## Current review position — August 28, 2026
+
+The user approved the trial revision-7 visual design with “yes i am happy lets move.” This does not grant production implementation or deployment approval. Its separate keyboard-only check remains unverified.
+
+The new GrowthCooks recruitment approval flow is `recruitment.html`, in this same local prototype host. It covers Application → Vibe Check → Outreach → Trial Evidence → Brand Onboarding and needs its own review. See `../audit/tdt-unified-creator-ops/RECRUITMENT_FLOW_CONTRACT.md` for authority, state transitions, mock boundaries and pending choices, and `../evidence/flows/Recruitment_Prototype/VERIFICATION.md` for test evidence. The trial page remains unchanged. The active-dashboard draft is preserved, not restarted, and awaits its remaining browser review after this recruitment slice.
+
+The sections below preserve the prior trial revision history; their old “next” steps are superseded by this current review position.
+
 ## Current visual refinement — TypeUI-guided, 2026-08-27
 
 Goal: Refine the already-reviewed trial flow, without restarting discovery or changing product rules.

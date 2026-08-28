@@ -1,5 +1,7 @@
 # Affected flow map
 
+August 28 authority: recruitment expands F11 into R01–R06 in `RECRUITMENT_FLOW_CONTRACT.md`. Applications are agency-scoped in GrowthCooks Marketing Agency. Trial revision 7 visuals are approved; the new recruitment flow is not. Existing daily logging/weekly rules remain in force.
+
 ## F01/F02 — Receive an invitation and sign in
 
 - Management sends a business-specific, expiring invitation to the creator's personal Gmail address.
@@ -32,8 +34,8 @@
 
 ## F08/F09 — Review a 10,000-view video and unlock onboarding
 
-- One video at 10,000 self-reported views creates one management notification and review item.
-- The creator sees “Under review” and remains a trial creator.
+- A complete submission for one eligible recorded video/platform, claimed views ≥10,000 and screenshot creates one management notification and review item. A high weekly report alone does not.
+- The creator sees “Your video is being checked.” and remains a trial creator.
 - Management sees the creator photo, business, join date, video links, self-reported value, and audit context; management checks the actual platform.
 - Management approval unlocks onboarding. Keeping the creator in trial does not erase the report.
 - Different videos are never summed. Retries never duplicate the notification or decision.
@@ -46,9 +48,9 @@
 
 ## F11 — Applications
 
-- Applicants submit one TDT-wide application, separate from any business membership.
-- Initial fields from the supplied form: personal email, full name, phone, suitable smartphone, basic editing ability, 30-second introduction video, and city.
-- Management reviews structured records in an Applications area rather than relying on Google Forms summary charts.
+- Applicants submit an agency-scoped GrowthCooks application, separate from brand membership, using stable field IDs and all questions in the August 28 source specification.
+- Management reviews immutable answers, records vibe check, recommendation and outreach independently, then starts the configured trial after creator acceptance.
+- Verified evidence creates brand onboarding exactly once; completed onboarding connects to the existing creator membership model. Details, states, recovery and provenance are in `RECRUITMENT_FLOW_CONTRACT.md`.
 
 ## F12/F13 — CashDrive inventory and enquiries
 

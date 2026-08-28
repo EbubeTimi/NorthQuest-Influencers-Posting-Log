@@ -1,6 +1,6 @@
 # Shared flow contracts
 
-Current instructions through 2026-08-27 override every earlier repository rule. Revision 6 adds the latest trial-flow feedback; this is not production approval.
+Current instructions through 2026-08-28 override every earlier repository rule. Trial revision 7 visual design is approved; recruitment and active-dashboard additions still require their own prototype approval. This is not production approval.
 
 ## Identity, invitation, and membership contract
 
@@ -49,7 +49,7 @@ Correction to the first audit: an old report cannot clear a different new video 
 - Keep threshold/cumulative explanations out of the creator view-report form.
 - Only a complete qualifying submission (recorded video/platform, ≥10,000 views, screenshot) creates the management review item/notification. Weekly counts alone do not create a separate screenshot task or review. A high weekly count may prefill the same combined submission form for the creator.
 - The creator selects their recorded qualifying video and supplies its view count and screenshot in one form. Management sees that private screenshot and an anchor to the exact post URL, not a profile URL. There is no separate add-screenshot route; correction/resubmission uses this same complete form.
-- Production image retention/deletion after a decision is UNDECIDED; obtain a retention decision before implementing storage deletion. The prototype uses memory-only image previews, not external uploads. The creator's screenshot task disappears after approval; mock manager evidence lasts until reset/reload.
+- August 28 update: verified link/platform/count/image/submitter/time and management decision are retained as an immutable evidence snapshot. Corrections append new evidence and events. The creator's screenshot task disappears after approval, not management's evidence. Production retention duration remains undecided; no storage deletion is authorized. Prototype previews remain memory-only until reset/reload.
 - Management checks the real platform performance, then approves onboarding or keeps the creator in trial.
 - Only management approval unlocks onboarding for the creator.
 - Pending screen: “Your video is being checked.” Explain briefly that Start onboarding appears on the dashboard after approval; no tick/Under review badge. Approved entry shows “Onboarding is ready.” and Start onboarding only, with no dashboard-return action. Actual onboarding remains a separate flow to design.
@@ -59,10 +59,22 @@ Correction to the first audit: an old report cannot clear a different new video 
 
 ## Applications, CashDrive, and launch-data contract
 
-- Applications are TDT-wide recruitment records, separate from any one business dashboard.
+- Applications belong to the GrowthCooks Marketing Agency recruitment workspace, separate from a brand dashboard. TDT remains parent organization without an asserted legal subsidiary classification. Applications are agency-scoped until invitation acceptance links the same person to platform identity.
 - CashDrive has separate Inventory and Enquiries areas.
 - Enquiries capture referrer, prospective buyer, contact, requested car, inquiry date, source, budget, urgency, lead status, and notes.
-- September 1 starts with an empty operational dataset. No opening August counts, creator rows, old links, passwords, or historical reports are imported. Old Google Sheets remain historical reference only.
+- September 1, 2026 is the launch target, not proof of readiness. No old creator rows, opening video counts, old video links, passwords or reports are imported. August 28 adds a separate planned 526-application recruitment migration; it requires mapping/cutover approval and rehearsal before any import. Source Forms and Sheets remain read-only.
+
+## Recruitment funnel contract — 28 August 2026
+
+See `RECRUITMENT_FLOW_CONTRACT.md` for the complete affected flow and source mapping. It extends this platform, not a second recruitment application.
+
+- Stable agency-scoped applicant identity; immutable original submission/answers/files. Management decisions never overwrite intake.
+- Screening is Pending review → Accepted for outreach or Rejected by team. Acceptance records reviewer/time, recommended brand/tier and note. Team-rejection reasons are separate from creator-decline reasons.
+- Outreach starts only after accepted screening; append-only contact attempts record actor/time/channel/result. Cannot be reached differs from no response. Creator accepted trial is required before starting a trial.
+- Trials require agency, engaged brand, person, tier, content type, start/due dates, brief and coach. One ongoing trial per person; passed creators skip a repeat trial, not brand-specific onboarding.
+- A complete single-video ≥10,000 evidence submission enters awaiting verification. Only authorized verification produces Trial successful and one idempotent brand onboarding case; weekly reports do not bypass this.
+- Onboarding states: Invited, In progress, Awaiting creator, Awaiting management, Completed, Cancelled. Completion creates one assigned active brand membership. Contracts/bank/employment work is not implied complete.
+- Management counts open filtered views over shared records. Agency/brand/creator visibility is explicit; owner cross-tenant access and exports are audited. No full-database export or bulk delete is offered in this prototype.
 
 ## Automation contract
 

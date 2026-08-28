@@ -1,0 +1,60 @@
+PASS raw WhatsApp preserves formatting; normalized number is explicit international
+PASS application requires core fields and intro video
+PASS application replay is one original snapshot
+PASS duplicate identity is flagged, not silently merged
+PASS agency and brand readers cannot see unassigned outsider
+PASS outreach cannot precede accepted screening
+PASS Other rejection requires a note and does not overwrite answers
+PASS creator decline is separate from team rejection
+PASS trial requires creator acceptance and all assignment fields
+PASS trial uses the original person and agency
+PASS cannot create a second trial or bypass with different agency
+PASS brand recommendation/assignment alone never grants visibility
+PASS duplicate trial blocked before and after reviewed identity link
+PASS three-record duplicate chain cannot create a new identity
+PASS evidence needs single qualifying link, screenshot and >=10000
+PASS other creator cannot submit or verify
+PASS high count alone does not unlock onboarding
+PASS verification requires explicit checked-link-and-image confirmation
+PASS verified success creates onboarding exactly once and preserves evidence
+PASS correction preserves previous snapshot and accepts a new version
+PASS only completed creator tasks and management confirmation create membership
+PASS cancellation cannot grant membership
+PASS audit events have scope, actor, time and frozen changes
+PASS no external mutation or persistence in prototype
+24/24 recruitment checks passed
+PASS  welcome copy replaces invited copy
+PASS  no trial chooser or business switcher
+PASS  no creator threshold lecture or paused-form banner
+PASS  one combined submission with no separate screenshot route
+PASS  manager has real submitted-link anchor
+PASS  paused-access copy
+PASS  read-only revision and boundaries explicit
+PASS  dashboard has weekly and independent milestone entries
+PASS  exactly two video rows, with all four visible slots
+PASS  tour step 3 opens and highlights the actual views form
+PASS  personal Google account copy and plain paused screen
+PASS  pending and approved copy is concise
+PASS  proof controls locked during save or image decode
+PASS  submit snapshots counts and captures reporting time
+PASS  no remote writes or persistent browser storage
+PASS  shared behavior is independently testable
+PASS  dates include unposted days but not days before joining
+PASS  no old reporting dates for a first-day creator
+PASS  two videos maximum per date
+PASS  only logged platform links within joined/completed dates
+PASS  missed yesterday before noon
+PASS  no Yesterday at noon
+PASS  no Yesterday when already logged
+PASS  no Yesterday before join date
+PASS  zero valid; blank negative decimal and exponent invalid
+PASS  separate videos cannot accumulate
+PASS  single-video protected 10,000 threshold
+PASS  second concurrent trial refused
+PASS  passed creator skips future trial
+PASS  unassigned creator can start trial
+PASS  platform links validated
+PASS  screenshot format and size constrained
+PASS  TikTok profile is not a video; recognised share links accepted
+33/33 checks passed
+PASS complete inline script syntax
