@@ -1,5 +1,28 @@
 # GrowthCooks recruitment flow contract
 
+## Revision 6 — simpler outcomes, clear people and form identity
+
+Goal: Review a person, contact them inside their assigned business, and find the outcome without extra stages.
+Human and feel: Phone-first agency operator/applicant; calm vertical identity block, compact actions, clear required fields.
+Entry and exit: Applicants review → accepted business → contact/outcome → business list or trial setup; Declined is distinct from Rejected.
+System: Existing isolated HTML and green/system-font tokens, 44px targets; person below back icon, brand above name in Pipeline.
+Signature: Exactly five stage filters; a decline visibly arrives in its own queue with reason/recorder; brand renaming changes display name, not identity or history.
+Feedback: Existing 150ms/reduced-motion transitions; in-tab automatic draft feedback, save confirmations and retained failed drafts; no haptics.
+Rejecting: Example as a surname, repeated navigation titles, misleading Trial accepted stage, scheduled trial end, irreversible activation from a status label, or a claim of real autosave/upload.
+Variants: Not yet contacted (All stages, no extra badge), declined/rejected/accepted, optional fields, renamed brand collisions, wrong role/agency, save failure, narrow phone.
+
+| From | Action | Guard/result | Recovery |
+| --- | --- | --- | --- |
+| Person review | Save accept/reject | Existing valid brand/tier or rejection reason; same record moves | Failure keeps decision; back restores queue |
+| Assigned person | Outcome then Text on WhatsApp | Correct person/operator/brand message; mock composer only | Back keeps draft; opening is not recording contact |
+| Contact outcome | Save Declined | Reason required; list + confirmation; Applicants Declined shows reason and recorder | Can revisit same business; never team Rejected |
+| Contact outcome | Save creator acceptance | Internal consent retained, filter label Contacted; trial setup next | Start trial is explicit, never inferred from contact |
+| Trial setup | Start trial | Current Lagos start, no scheduled trial end; one-trial/verification guards remain | Invitation expiry is separately a seven-day review mock, not trial termination |
+| Settings Brands | Rename + Save | Unique display name, agency admin, stable internal key and unchanged history/links/policies | Validation/failure keeps draft; no member reassignment |
+| Application | Type/change required answer | Required asterisk by label; automatic in-tab draft, no real network save | Navigation retains answers; refresh/reset loses demo data |
+
+Five filters: Contacted, Cannot be reached, Unresponsive, Declined, Trial started (plus All stages). Later evidence/onboarding state remains inside the person's workflow, not additional recruitment stages. The latest no-end-until-fired request supersedes provisional trial duration for new trials; scheduled dates remain supported only for old test records, not newly generated UI cases. No new firing/termination permission is introduced. Permanent uploads and authenticated durable autosave remain planned, not implemented. Required video remains on the final full-application step; the prior UGC-No exception is unchanged.
+
 ## Revision 5 — task-local contact, quiet navigation and visible uploads
 
 Goal: Find an accepted person inside their business, contact them without visiting Settings, and make the application/video journey clear.

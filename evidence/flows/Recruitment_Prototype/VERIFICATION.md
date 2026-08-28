@@ -1,6 +1,6 @@
 # GrowthCooks recruitment prototype verification — August 28, 2026
 
-**Historical revision-1 evidence below.** Current proof and limitations are in [REVISION_5.md](REVISION_5.md); [REVISION_4.md](REVISION_4.md) preserves the preceding revision. Do not treat older runners' labels or full-flow results as fresh verification of the revised UI. The current Browser runner is `tests/recruitment-contact-runtime.test.js`; revision-4 Settings tabs are intentionally no longer present.
+**Historical revision-1 evidence below.** Current proof and limitations are in [REVISION_6.md](REVISION_6.md); [REVISION_5.md](REVISION_5.md) preserves the preceding revision. Do not treat older runners' labels or full-flow results as fresh verification of the revised UI. The current Browser runner is `tests/recruitment-simplify-runtime.test.js`; earlier stage labels, names and Settings tabs intentionally differ.
 
 Approval status: awaiting user review. Production implementation, data migration and deployment are not approved by this report.
 

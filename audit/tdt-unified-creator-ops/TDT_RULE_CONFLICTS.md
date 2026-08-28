@@ -1,5 +1,14 @@
 # Authoritative rule conflict audit
 
+## Recruitment revision 6 — current operator corrections
+
+- Five visible stage choices replace the larger state filter: Contacted (including awaiting response/accepted consent), Cannot be reached, Unresponsive, Declined, Trial started. All stages also includes not-yet-contacted people without inventing a Contacted event. Evidence, corrections, onboarding and membership guards are still separate internal states.
+- Declined applicants have their own Applicants queue, reason and recorder; they remain findable by their assigned business but leave Accepted summaries. They never become Rejected by management. Recontact may update the current outcome without deleting prior contact history.
+- New trials have no scheduled end date; remove routine End trial UI. This supersedes the previously unconfirmed seven-elapsed-day trial example. Existing dated test cases remain compatible. The mock invitation still has a separate expiry; no automatic firing or production termination mechanism is introduced.
+- Brand names become editable display labels; stable keys, invitation paths, assignments, bonus/reporting policies and immutable past records are not renamed or migrated. Rename is agency-admin scoped, audited in local settings history and collision checked.
+- Fictional examples now use realistic surnames, person details sit below Back, and Pipeline brand precedes the name. Contact action follows Outcome; Save replaces long decision captions. Redundant visible Applicants/Pipeline headings are removed, with accessible headings retained.
+- Application shows GrowthCooks Marketing Agency / Creator application and required marks by labels. In-tab autosave already exists and remains local; durable authenticated autosave and private media storage are not built or claimed. UGC-No early completion remains the earlier explicit exception to the full form.
+
 ## Recruitment revision 5 — latest task-placement corrections
 
 - Global Settings WhatsApp templates and Outreach/Invitation tabs are superseded. Messages belong inside the selected person's assigned-business Pipeline; current stage chooses the message type. A collapsed editor changes only that business/stage default. Drafts are scoped to current operator, person and type.
