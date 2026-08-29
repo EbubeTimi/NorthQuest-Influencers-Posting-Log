@@ -71,7 +71,11 @@ See `RECRUITMENT_FLOW_CONTRACT.md` for the complete affected flow and source map
 - Stable agency-scoped applicant identity; immutable original submission/answers/files. Management decisions never overwrite intake.
 - Screening is Pending review → Accepted for outreach or Rejected by team. Acceptance records reviewer/time, recommended brand/tier and note. Team-rejection reasons are separate from creator-decline reasons.
 - Outreach starts only after accepted screening; append-only contact attempts record actor/time/channel/result. Cannot be reached differs from no response. Creator accepted trial is required before starting a trial.
-- Trials require agency, engaged brand, person, tier, content type, start/due dates, brief and coach. One ongoing trial per person; passed creators skip a repeat trial, not brand-specific onboarding.
+- Trials require agency, engaged brand, person, tier, content type and the actual
+  start date in Lagos time. New trials have no scheduled end date, coach field
+  or trial-brief URL in the product. Operational coaching remains a WhatsApp
+  team responsibility. One ongoing trial is allowed per person; passed creators
+  skip a repeat trial, not brand-specific onboarding.
 - A complete single-video ≥10,000 evidence submission enters awaiting verification. Only authorized verification produces Trial successful and one idempotent brand onboarding case; weekly reports do not bypass this.
 - Onboarding states: Invited, In progress, Awaiting creator, Awaiting management, Completed, Cancelled. Completion creates one assigned active brand membership. Contracts/bank/employment work is not implied complete.
 - Management counts open filtered views over shared records. Agency/brand/creator visibility is explicit; owner cross-tenant access and exports are audited. No full-database export or bulk delete is offered in this prototype.

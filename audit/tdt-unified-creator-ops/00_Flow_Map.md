@@ -2,6 +2,47 @@
 
 August 28 authority: recruitment expands F11 into R01–R06 in `RECRUITMENT_FLOW_CONTRACT.md`. Applications are agency-scoped in GrowthCooks Marketing Agency. Trial revision 7 visuals are approved; the new recruitment flow is not. Existing daily logging/weekly rules remain in force.
 
+## Delivery sequence and current status
+
+This is the dependency order, not a collection of separate applications. Each
+person and decision continues into the next phase using the same identity and
+audit history.
+
+| Order | Flow | Current status | Completion boundary |
+| --- | --- | --- | --- |
+| 0 | Platform security and configuration | Branch fix verified; live RLS and Vercel variables pending | Backup, live RLS verification, four Vercel variables, advisor clear |
+| 1 | Application → vibe check → business distribution → outreach | Prototype accepted for now; final visual pass deferred | Durable agency-scoped intake, private introduction video, audit history |
+| 2 | Trial invitation → logging → weekly views → 10k evidence → review | Revision 7 prototype approved | Real invitation/auth, persistent evidence, management decision |
+| 3 | Brand onboarding | Next prototype | Creator tasks, management check, one idempotent active membership |
+| 4 | Active creator dashboard and business switching | Existing draft preserved; not approved | Daily/weekly/bonus/payment flows and membership isolation |
+| 5 | Unified management dashboard | Not yet prototyped as one complete flow | Businesses, creators, access, evidence, onboarding, lifecycle and audit |
+| 6 | CashDrive enquiries | Source fields inspected; not yet prototyped | Creator submission, management stages, CashDrive-only access and history |
+| 7 | CashDrive inventory | Not yet prototyped | Vehicle/media/status records linked safely to enquiries and content |
+| 8 | Sheets and Apify operations | Historical code conflicts with current rules | Weekly Sheets plus cumulative 1–14, 1–21 and month-end jobs |
+| 9 | End-to-end staging, scale and security | Local checks only | Real role isolation, uploads, retries, 1,000+ creator performance |
+| 10 | Final TypeUI/UI–UX pass and production approval | Deferred by user until flows are complete | Phone-first visual approval, then separate implementation/deploy approval |
+
+### Connected hand-offs
+
+```text
+Application
+  → management vibe check
+  → assigned business pipeline
+  → WhatsApp outreach and creator acceptance
+  → one TDT trial
+  → exact video + 10,000 views + screenshot
+  → management verification
+  → brand onboarding
+  → active business membership
+  → active creator dashboard
+  → weekly Sheets / scheduled Apify operations
+```
+
+CashDrive adds two sibling operational areas after membership: Inventory holds
+the cars the business can offer; Enquiries holds buyer leads submitted by
+creators and linked to the relevant creator and, when known, vehicle. Neither
+area changes trial qualification or weekly reporting.
+
 ## F01/F02 — Receive an invitation and sign in
 
 - Management sends a business-specific, expiring invitation to the creator's personal Gmail address.
