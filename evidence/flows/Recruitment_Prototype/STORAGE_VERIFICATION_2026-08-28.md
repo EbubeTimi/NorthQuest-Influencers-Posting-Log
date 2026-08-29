@@ -22,6 +22,14 @@
 - Fresh verification after that correction: static security checks 7/7, isolated database runtime checks 1/1, and the full Next.js production build passed.
 - This is strong local migration evidence, but it is not a hosted Supabase preview proof. Provider-dashboard sign-in is still required to create or select a hosted staging branch, confirm Vercel secret names, apply the migration there, and rerun Supabase advisors.
 
+#### Hosted-provider follow-up — 29 August 2026
+
+- Vercel and Supabase dashboard authentication succeeded through the user-approved ChatGPT identity flow. No secret value was opened or copied.
+- The Vercel Smithstem environment-variable route is authenticated, but its variable list did not render reliably through the controlled browser. The presence of `CRON_SECRET` and `SUPABASE_SERVICE_ROLE_KEY` therefore remains unverified rather than guessed.
+- The Supabase Smithstem production project is healthy on the Free plan. The dashboard independently confirms the live critical advisor finding: RLS is disabled on `public._nq_scrape_jobs`.
+- The project has no database branches and no backups. Supabase's preview-branch dialog requires an upgrade to Pro and states that branch compute is billed at $0.01344 per hour for as long as the branch exists, excluding applicable taxes.
+- No plan upgrade, paid branch, backup, production migration, production permission change or deployment was performed. Hosted staging cannot proceed without explicit spending approval; the free local isolated database proof remains the safe completed substitute.
+
 ### Latest Step 1 result — 28 August, after 22:23 Lagos
 
 - **29 August, post-restart live proof:** Supabase MCP loaded 9 callable tools. Read-only `list_tables` and `list_migrations` calls succeeded against the project-scoped connection, returning the Smithstem schema and migration ledger. Vercel MCP remains available. The three requested connections are now accessible: GitHub and Google were proved earlier, and Vercel plus Supabase are now proved live. This completes the connection-access portion of Step 1 without changing data.
