@@ -64,19 +64,26 @@ export async function GET(request) {
   // Vercel signs cron invocations. Reject anything else so this can't be used
   // as a free ping endpoint by strangers.
   const secret = process.env.CRON_SECRET;
-  if (secret) {
-    const auth = request.headers.get("authorization");
-    if (auth !== `Bearer ${secret}`) {
-      return Response.json({ ok: false, error: "unauthorized" }, { status: 401 });
-    }
+  if (!secret) {
+    return Response.json({ ok: false, error: "cron_not_configured" }, { status: 503 });
+  }
+
+  const auth = request.headers.get("authorization");
+  if (auth !== `Bearer ${secret}`) {
+    return Response.json({ ok: false, error: "unauthorized" }, { status: 401 });
+  }
+
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!serviceRoleKey) {
+    return Response.json({ ok: false, error: "service_role_not_configured" }, { status: 503 });
   }
 
   const recovery = await checkAndRecoverFromPause().catch((e) => ({ checked: true, error: e.message }));
 
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL || "https://zuuhlowjqniadtcpdypv.supabase.co",
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
-      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp1dWhsb3dqcW5pYWR0Y3BkeXB2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU3Nzc4MTUsImV4cCI6MjEwMTM1MzgxNX0.jVwib7vyA0rL-Ra7BfIOG97b6zOSkNzk4MaJjux0_uo"
+    serviceRoleKey,
+    { auth: { persistSession: false, autoRefreshToken: false } }
   );
 
   // ping_external also records the run in system_heartbeat, so this defence is

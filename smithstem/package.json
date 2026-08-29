@@ -9,7 +9,8 @@
     "test:prototype:contract": "node ../tests/prototype-contract.test.js",
     "test:prototype:runtime": "node ../tests/prototype-runtime.test.js",
     "test:prototype": "npm run test:prototype:contract && npm run test:prototype:runtime",
-    "test:bonus": "node ../tests/manage-bonus.test.js"
+    "test:bonus": "node ../tests/manage-bonus.test.js",
+    "test:security": "node --test ../tests/supabase-security-hardening.test.js"
   },
   "dependencies": {
     "@ibm/plex-sans": "^1.1.0",
