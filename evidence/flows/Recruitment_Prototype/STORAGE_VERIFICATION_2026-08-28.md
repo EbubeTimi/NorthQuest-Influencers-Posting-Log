@@ -30,6 +30,14 @@
 - The project has no database branches and no backups. Supabase's preview-branch dialog requires an upgrade to Pro and states that branch compute is billed at $0.01344 per hour for as long as the branch exists, excluding applicable taxes.
 - No plan upgrade, paid branch, backup, production migration, production permission change or deployment was performed. Hosted staging cannot proceed without explicit spending approval; the free local isolated database proof remains the safe completed substitute.
 
+#### Vercel configuration follow-up — 29 August 2026
+
+- The user verified through the Smithstem project settings that the project currently has no environment variables configured. This resolves the earlier dashboard uncertainty: the required variables are absent, not merely hidden from the controlled browser.
+- The branch now removes the compiled Supabase project URL and legacy anon-key fallback. A deployment without explicit database configuration therefore fails closed instead of silently connecting to the repository's historical project.
+- The browser client prefers Supabase's current `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` and temporarily accepts the legacy `NEXT_PUBLIC_SUPABASE_ANON_KEY`. The server keepalive prefers `SUPABASE_SECRET_KEY` and temporarily accepts `SUPABASE_SERVICE_ROLE_KEY`.
+- Required Vercel project variables are now documented as `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY` and `CRON_SECRET`. Secret values must be entered privately in Vercel and never pasted into chat or committed.
+- Fresh verification passed: eight static security checks, one isolated database runtime check, and the full Next.js production build. No Vercel variable, deployment or Supabase production setting changed in this step.
+
 ### Latest Step 1 result — 28 August, after 22:23 Lagos
 
 - **29 August, post-restart live proof:** Supabase MCP loaded 9 callable tools. Read-only `list_tables` and `list_migrations` calls succeeded against the project-scoped connection, returning the Smithstem schema and migration ledger. Vercel MCP remains available. The three requested connections are now accessible: GitHub and Google were proved earlier, and Vercel plus Supabase are now proved live. This completes the connection-access portion of Step 1 without changing data.

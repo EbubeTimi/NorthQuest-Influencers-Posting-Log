@@ -12,6 +12,7 @@ const migrationPath = path.join(
   "20260829010000_harden_public_scrape_jobs_and_routines.sql",
 );
 const keepalivePath = path.join(__dirname, "..", "smithstem", "app", "api", "keepalive", "route.js");
+const browserClientPath = path.join(__dirname, "..", "smithstem", "lib", "supabaseClient.js");
 const legacyJoinPath = path.join(
   __dirname,
   "..",
@@ -25,6 +26,7 @@ const legacyJoinPath = path.join(
 
 const sql = fs.readFileSync(migrationPath, "utf8").toLowerCase();
 const keepalive = fs.readFileSync(keepalivePath, "utf8");
+const browserClient = fs.readFileSync(browserClientPath, "utf8");
 const legacyJoin = fs.readFileSync(legacyJoinPath, "utf8");
 
 test("scrape-job tables are denied to app-facing roles", () => {
@@ -40,11 +42,21 @@ test("scrape-job tables are denied to app-facing roles", () => {
 
 test("keepalive route fails closed and uses only the server-side service role", () => {
   assert.match(keepalive, /if \(!secret\)/);
+  assert.match(keepalive, /SUPABASE_SECRET_KEY/);
   assert.match(keepalive, /SUPABASE_SERVICE_ROLE_KEY/);
   assert.doesNotMatch(keepalive, /NEXT_PUBLIC_SUPABASE_ANON_KEY/);
   assert.ok(sql.includes("revoke all on function public.ping_external() from public, anon, authenticated"));
   assert.ok(sql.includes("grant execute on function public.ping_external() to service_role"));
   assert.ok(sql.includes("alter function public.ping() security invoker"));
+});
+
+test("browser database configuration has no compiled project fallback", () => {
+  assert.match(browserClient, /NEXT_PUBLIC_SUPABASE_URL/);
+  assert.match(browserClient, /NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY/);
+  assert.match(browserClient, /NEXT_PUBLIC_SUPABASE_ANON_KEY/);
+  assert.match(browserClient, /backendConfigured = Boolean/);
+  assert.doesNotMatch(browserClient, /zuuhlowjqniadtcpdypv/);
+  assert.doesNotMatch(browserClient, /eyJhbGciOiJIUzI1Ni/);
 });
 
 test("fresh-start product disables legacy migration-roster RPCs", () => {

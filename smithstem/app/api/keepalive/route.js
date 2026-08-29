@@ -73,16 +73,23 @@ export async function GET(request) {
     return Response.json({ ok: false, error: "unauthorized" }, { status: 401 });
   }
 
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!serviceRoleKey) {
-    return Response.json({ ok: false, error: "service_role_not_configured" }, { status: 503 });
+  const serverSecret =
+    process.env.SUPABASE_SECRET_KEY ||
+    process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!serverSecret) {
+    return Response.json({ ok: false, error: "supabase_server_secret_not_configured" }, { status: 503 });
+  }
+
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  if (!supabaseUrl) {
+    return Response.json({ ok: false, error: "supabase_url_not_configured" }, { status: 503 });
   }
 
   const recovery = await checkAndRecoverFromPause().catch((e) => ({ checked: true, error: e.message }));
 
   const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL || "https://zuuhlowjqniadtcpdypv.supabase.co",
-    serviceRoleKey,
+    supabaseUrl,
+    serverSecret,
     { auth: { persistSession: false, autoRefreshToken: false } }
   );
 
