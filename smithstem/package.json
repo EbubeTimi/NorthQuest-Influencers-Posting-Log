@@ -10,7 +10,9 @@
     "test:prototype:runtime": "node ../tests/prototype-runtime.test.js",
     "test:prototype": "npm run test:prototype:contract && npm run test:prototype:runtime",
     "test:bonus": "node ../tests/manage-bonus.test.js",
-    "test:security": "node --test ../tests/supabase-security-hardening.test.js"
+    "test:security:static": "node --test ../tests/supabase-security-hardening.test.js",
+    "test:security:runtime": "node --test ../tests/supabase-security-migration-runtime.test.mjs",
+    "test:security": "npm run test:security:static && npm run test:security:runtime"
   },
   "dependencies": {
     "@ibm/plex-sans": "^1.1.0",
@@ -23,6 +25,7 @@
     "react-dom": "^19.2.0"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.5.8",
     "autoprefixer": "^10.4.19",
     "playwright-core": "^1.62.1",
     "postcss": "^8.4.38",

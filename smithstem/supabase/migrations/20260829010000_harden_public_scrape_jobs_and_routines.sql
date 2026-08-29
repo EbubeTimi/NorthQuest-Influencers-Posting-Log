@@ -20,7 +20,7 @@ begin
   loop
     if to_regclass(format('public.%I', protected_table)) is not null then
       execute format('alter table public.%I enable row level security', protected_table);
-      execute format('revoke all privileges on table public.%I from anon, authenticated', protected_table);
+      execute format('revoke all privileges on table public.%I from public, anon, authenticated', protected_table);
       execute format('grant all privileges on table public.%I to service_role', protected_table);
     end if;
   end loop;

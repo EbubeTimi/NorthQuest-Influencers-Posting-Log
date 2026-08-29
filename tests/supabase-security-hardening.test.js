@@ -33,7 +33,7 @@ test("scrape-job tables are denied to app-facing roles", () => {
   }
   assert.match(sql, /enable row level security/);
   assert.match(sql, /revoke all privileges on table/);
-  assert.match(sql, /from anon, authenticated/);
+  assert.match(sql, /from public, anon, authenticated/);
   assert.match(sql, /grant all privileges on table/);
   assert.match(sql, /to service_role/);
 });

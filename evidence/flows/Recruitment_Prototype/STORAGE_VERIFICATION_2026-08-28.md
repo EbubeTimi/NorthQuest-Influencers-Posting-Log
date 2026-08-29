@@ -13,6 +13,15 @@
 - An independent code review found no remaining blocker or major defect in this patch. It did identify two required pre-production proofs: confirm the two Vercel environment-variable names exist, and replay the migration in an isolated Supabase environment before applying it live.
 - No Supabase migration was applied, no production data or permissions were changed, and no deployment was triggered.
 
+#### Isolated migration runtime proof — 29 August 2026
+
+- The hardening migration was executed twice against a fresh disposable PostgreSQL-compatible database created only for this test. Both executions completed, proving the migration is replay-safe for the modeled schema.
+- Real database roles proved that `anon` and `authenticated` cannot read the three scrape queues or `app_settings`, while `service_role` retains read/write access.
+- Runtime calls proved anonymous heartbeat and legacy migration RPC access is denied, authenticated onboarding RPC access remains available, `ping()` runs with caller privileges, and revoking direct trigger-function access does not stop the database trigger.
+- The runtime test also exposed and corrected one defense-in-depth gap: protected table privileges are now revoked from `PUBLIC` as well as `anon` and `authenticated`.
+- Fresh verification after that correction: static security checks 7/7, isolated database runtime checks 1/1, and the full Next.js production build passed.
+- This is strong local migration evidence, but it is not a hosted Supabase preview proof. Provider-dashboard sign-in is still required to create or select a hosted staging branch, confirm Vercel secret names, apply the migration there, and rerun Supabase advisors.
+
 ### Latest Step 1 result — 28 August, after 22:23 Lagos
 
 - **29 August, post-restart live proof:** Supabase MCP loaded 9 callable tools. Read-only `list_tables` and `list_migrations` calls succeeded against the project-scoped connection, returning the Smithstem schema and migration ledger. Vercel MCP remains available. The three requested connections are now accessible: GitHub and Google were proved earlier, and Vercel plus Supabase are now proved live. This completes the connection-access portion of Step 1 without changing data.
