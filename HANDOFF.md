@@ -1,6 +1,6 @@
 # Handoff — state of play
 
-Last updated: 30 August 2026.
+Last updated: 30 August 2026 (second update, end of session).
 
 Update this file at the end of any session that changes the answers below.
 It is the only durable memory across sessions; chat transcripts are not.
@@ -97,6 +97,49 @@ By that standard, as of this writing:
 
 If the environment now allows `smithstem.vercel.app`, driving one real
 journey end to end is the highest-value thing available.
+
+---
+
+## Environment and tooling — read this first in a new session
+
+The cloud environment's network allowlist was widened on 30 Aug. Sessions
+started after that can reach:
+
+```
+smithstem.vercel.app      ebubetimi.github.io
+mcp.typeui.sh             api.apify.com
+*.frame.claudeusercontent.com   *.frame.staging.claudeusercontent.com
+```
+
+Two things follow from that, both learned the hard way:
+
+- **`WebFetch` is still blocked for these hosts; `curl` is not.** WebFetch runs
+  its own separate check. To read the live app, use
+  `curl -s https://smithstem.vercel.app/<path>` and parse it. Do not conclude
+  the site is unreachable because WebFetch refused.
+- **TypeUI needs a one-time `/mcp` sign-in** in an interactive session. It is
+  configured in `.mcp.json` but will not connect until that happens.
+
+**Check the repo picker before typing.** It must read
+`NorthQuest-Influencers-Posting-Log` on branch `main`. A session opened
+against a different repository will read that repository's handoff instead —
+this happened once already and cost an hour.
+
+---
+
+## First verified live finding
+
+`/apply` was read from production on 30 Aug and matches the real Google Form:
+"Creator Application", the ₦1,000,000 headline, five requirements, both yes/no
+questions, required video upload, city. Correct.
+
+**But the page renders "Smithstem" at the top.** That is the internal umbrella
+name on a public applicant-facing form. Per the Codex branch it should read
+GrowthCooks Marketing Agency, or nothing at all. Not yet fixed.
+
+This is the first page ever actually driven rather than inferred from code.
+Every other screen in this repo is still unverified. Sweeping them the same
+way is the cheapest high-value work available.
 
 ---
 
