@@ -54,7 +54,7 @@ export default function OnboardingPage() {
         if (res.error) throw res.error;
         biz = res.data;
       }
-      if (!biz) throw new Error("That business could not be found — message Smith and she'll sort it out.");
+      if (!biz) throw new Error("That business could not be found — message Smith and he'll sort it out.");
       setBusiness(biz);
 
       const { data: cr, error: crErr } = await withTimeout(supabase.from("creators").select("id, bank_name, status").eq("profile_id", data.user.id).eq("business_id", businessId).maybeSingle());
@@ -183,7 +183,7 @@ export default function OnboardingPage() {
         <main className="mx-auto max-w-md px-4 py-10 text-center">
           <h1 className="font-display text-title font-semibold">Almost there</h1>
           <p className="mt-2 text-base text-muted">
-            {business.name} doesn't have a contract set up yet. Message Smith and she'll get you sorted.
+            {business.name} doesn't have a contract set up yet. Message Smith and he'll get you sorted.
           </p>
           <a
             href={`https://wa.me/2349076217386?text=${encodeURIComponent(`Hi Smith, I'm trying to join ${business.name} on Smithstem but there's no contract set up yet.`)}`}

@@ -794,7 +794,7 @@ export default function AdminDashboard() {
       </main>
     );
   }
-  if (!profile) return <LoadingScreen label="Loading your dashboard…" />;
+  if (!profile) return <LoadingScreen label="Loading the admin console…" />;
   const trialThreshold = business?.trial_view_threshold || 10000;
   const crossingCandidates = trialVideos.filter((v) => (viewReportsByVideo[v.id] || 0) >= trialThreshold);
   const trialRoster = creators.filter((c) => c.status === "trial" || c.status === "trial_approved");

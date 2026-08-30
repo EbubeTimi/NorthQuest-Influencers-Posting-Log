@@ -117,8 +117,16 @@ Two things follow from that, both learned the hard way:
   its own separate check. To read the live app, use
   `curl -s https://smithstem.vercel.app/<path>` and parse it. Do not conclude
   the site is unreachable because WebFetch refused.
-- **TypeUI needs a one-time `/mcp` sign-in** in an interactive session. It is
-  configured in `.mcp.json` but will not connect until that happens.
+- **TypeUI is blocked by one missing host, not by sign-in.** Allowlisting
+  `mcp.typeui.sh` was not enough. Its OAuth registration step calls
+  `dhyysypqeofcpwolhwdm.supabase.co` — TypeUI's own auth backend — and the
+  proxy answers 403 CONNECT to that host, so registration fails before any
+  sign-in prompt appears. Confirmed twice: the MCP connect error names the
+  host, and `curl "$HTTPS_PROXY/__agentproxy/status"` lists the rejections.
+  **Add `dhyysypqeofcpwolhwdm.supabase.co` to the environment allowlist.**
+  (That is the same ref that showed up in the Lexnova repo — it is TypeUI's
+  backend, not a foreign project's.) Until it is added, no amount of `/mcp`
+  in any session will connect TypeUI.
 
 **Check the repo picker before typing.** It must read
 `NorthQuest-Influencers-Posting-Log` on branch `main`. A session opened
@@ -127,19 +135,44 @@ this happened once already and cost an hour.
 
 ---
 
-## First verified live finding
+## Live sweep — what production actually renders
 
-`/apply` was read from production on 30 Aug and matches the real Google Form:
-"Creator Application", the ₦1,000,000 headline, five requirements, both yes/no
-questions, required video upload, city. Correct.
+Nine routes were fetched from `smithstem.vercel.app` on 30 Aug and their
+rendered text read. All nine returned HTTP 200. This is the first evidence in
+this project that is runtime rather than inferred from code.
 
-**But the page renders "Smithstem" at the top.** That is the internal umbrella
-name on a public applicant-facing form. Per the Codex branch it should read
-GrowthCooks Marketing Agency, or nothing at all. Not yet fixed.
+| Route | Renders | Verdict |
+|---|---|---|
+| `/` | email capture, "8-digit code" | correct |
+| `/apply` | Creator Application, ₦1,000,000, 5 requirements, both yes/no, video upload, city | matches the real Google Form |
+| `/verify` | code entry, spam-folder hint, expiry countdown, WhatsApp fallback | correct |
+| `/onboarding` | "Setting things up…" | loading shell only; needs a signed-in run |
+| `/dashboard` | "Loading your dashboard…" | loading shell only; needs a signed-in run |
+| `/admin` | loading shell | loading shell only; needs a signed-in run |
+| `/trial/{northquest,cashdrive,aura}` | "Checking this link…" | loading shell only; needs a real trial slug |
 
-This is the first page ever actually driven rather than inferred from code.
-Every other screen in this repo is still unverified. Sweeping them the same
-way is the cheapest high-value work available.
+Six of the nine only prove the shell renders. Driving them needs a session,
+which needs an email round-trip — that is the next rung, not a code read.
+
+**Confirmed good:** "Message Smith" is a genuine `wa.me` click-to-chat link on
+every dead end (`wa.me/2349076217386`), which is exactly the WhatsApp
+behaviour Smith asked for. It appears on `/verify`, `/onboarding`,
+`/dashboard`, `/trial/[slug]`, `/apply/[slug]` and both join pages.
+
+**Still open — "Smithstem" on public pages.** `/apply` and `/trial/[slug]`
+both render the internal umbrella name to outsiders; the trial pages render it
+twice (layout title plus an `<h1>` in the page itself, `app/trial/[slug]/page.js:84`
+and `app/apply/[slug]/page.js:86`). Per the Codex branch this should read
+GrowthCooks Marketing Agency, or nothing. **Not fixed — it is one of the four
+branch disagreements, so it needs Smith's call first.**
+
+**Fixed in this sweep:**
+- `/onboarding` told creators "message Smith and *she'll* sort it out" in two
+  places. Smith is he/him. Corrected.
+- `/admin` used the creator dashboard's loading label. Now says admin console.
+
+**Noted, not changed:** the support WhatsApp number is a literal repeated in
+five files. Worth one shared constant before it drifts.
 
 ---
 
