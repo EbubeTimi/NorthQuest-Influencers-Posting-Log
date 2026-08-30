@@ -1,0 +1,45 @@
+{
+  "generatedAt": "2026-08-27T22:02:24.594Z",
+  "commands": [
+    {
+      "command": "node tests/prototype-contract.test.js",
+      "chunk_id": "133f38",
+      "wall_time_seconds": 0.6682687,
+      "exit_code": 0,
+      "original_token_count": 401,
+      "output": "PASS  welcome copy replaces invited copy\nPASS  no trial chooser or business switcher\nPASS  no creator threshold lecture or paused-form banner\nPASS  one combined submission with no separate screenshot route\nPASS  manager has real submitted-link anchor\nPASS  paused-access copy\nPASS  read-only revision and boundaries explicit\nPASS  dashboard has weekly and independent milestone entries\nPASS  exactly two video rows, with all four visible slots\nPASS  tour step 3 opens and highlights the actual views form\nPASS  personal Google account copy and plain paused screen\nPASS  pending and approved copy is concise\nPASS  proof controls locked during save or image decode\nPASS  submit snapshots counts and captures reporting time\nPASS  no remote writes or persistent browser storage\nPASS  shared behavior is independently testable\nPASS  dates include unposted days but not days before joining\nPASS  no old reporting dates for a first-day creator\nPASS  two videos maximum per date\nPASS  only logged platform links within joined/completed dates\nPASS  missed yesterday before noon\nPASS  no Yesterday at noon\nPASS  no Yesterday when already logged\nPASS  no Yesterday before join date\nPASS  zero valid; blank negative decimal and exponent invalid\nPASS  separate videos cannot accumulate\nPASS  single-video protected 10,000 threshold\nPASS  second concurrent trial refused\nPASS  passed creator skips future trial\nPASS  unassigned creator can start trial\nPASS  platform links validated\nPASS  screenshot format and size constrained\nPASS  TikTok profile is not a video; recognised share links accepted\n33/33 checks passed\n"
+    },
+    {
+      "command": "node tests/manage-bonus.test.js",
+      "chunk_id": "8e4d66",
+      "wall_time_seconds": 0.7341198,
+      "exit_code": 0,
+      "original_token_count": 136,
+      "output": "PASS  defaults to the current month\nPASS  offers July and the current month\nPASS  current month shows no bonus for Ada\nPASS  July shows the July bonus total\nPASS  July offers a delete option per bonus\nPASS  the middle option is labelled with its own value\nPASS  writes to July, not the current month\nPASS  removes only the middle entry\nPASS  adds into the selected month\nPASS  ignores an out-of-range delete\nPASS  clear all empties the list\nPASS  header names the selected month\nPASS  header reverts for the current month\n\nAll checks passed\n"
+    },
+    {
+      "command": "git diff --check",
+      "chunk_id": "24149a",
+      "wall_time_seconds": 0.4680106,
+      "exit_code": 0,
+      "original_token_count": 160,
+      "output": "warning: in the working copy of 'evidence/flows/TDT_Prototype/VERIFICATION.md', LF will be replaced by CRLF the next time Git touches it\nwarning: in the working copy of 'prototypes/PROTOTYPE_BRIEF.md', LF will be replaced by CRLF the next time Git touches it\nwarning: in the working copy of 'prototypes/unified-tdt-creator-ops.html', LF will be replaced by CRLF the next time Git touches it\nwarning: in the working copy of 'tests/prototype-contract.test.js', LF will be replaced by CRLF the next time Git touches it\nwarning: in the working copy of 'tests/prototype-runtime.test.js', LF will be replaced by CRLF the next time Git touches it\n"
+    },
+    {
+      "command": "git diff --numstat",
+      "chunk_id": "f84dd5",
+      "wall_time_seconds": 0.4817867,
+      "exit_code": 0,
+      "original_token_count": 212,
+      "output": "warning: in the working copy of 'evidence/flows/TDT_Prototype/VERIFICATION.md', LF will be replaced by CRLF the next time Git touches it\nwarning: in the working copy of 'prototypes/PROTOTYPE_BRIEF.md', LF will be replaced by CRLF the next time Git touches it\nwarning: in the working copy of 'prototypes/unified-tdt-creator-ops.html', LF will be replaced by CRLF the next time Git touches it\nwarning: in the working copy of 'tests/prototype-contract.test.js', LF will be replaced by CRLF the next time Git touches it\nwarning: in the working copy of 'tests/prototype-runtime.test.js', LF will be replaced by CRLF the next time Git touches it\n17\t0\tevidence/flows/TDT_Prototype/VERIFICATION.md\n21\t2\tprototypes/PROTOTYPE_BRIEF.md\n141\t17\tprototypes/unified-tdt-creator-ops.html\n1\t1\ttests/prototype-contract.test.js\n2\t2\ttests/prototype-runtime.test.js\n"
+    },
+    {
+      "command": "git branch --show-current",
+      "chunk_id": "1bb7e6",
+      "wall_time_seconds": 0.4099295,
+      "exit_code": 0,
+      "original_token_count": 10,
+      "output": "codex/unified-tdt-creator-ops-prototype\n"
+    }
+  ]
+}

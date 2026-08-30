@@ -1,0 +1,21 @@
+{
+  "generatedAt": "2026-08-27T12:11:33.837Z",
+  "checks": [
+    {
+      "name": "unfinished milestone image cannot attach to another weekly-qualified video",
+      "status": "PASS"
+    },
+    {
+      "name": "weekly proof refers to the correct other video",
+      "status": "PASS"
+    },
+    {
+      "name": "weekly screenshot task is reachable from dashboard",
+      "status": "PASS"
+    },
+    {
+      "name": "dashboard screenshot action opens the correct proof form",
+      "status": "PASS"
+    }
+  ]
+}

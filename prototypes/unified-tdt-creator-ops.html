@@ -1,0 +1,724 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <link rel="icon" href="data:,">
+  <title>TDT trial prototype — revision 7</title>
+  <style>
+    :root {
+      --ink:#13221c; --muted:#66736d; --line:#dce2dd; --paper:#fff;
+      --wash:#f4f6f2; --green:#087a57; --green-dark:#075e45; --green-soft:#e8f5ef;
+      --amber:#9a6511; --amber-soft:#fff5dc; --red:#a53a35; --red-soft:#fff0ee;
+      --blue:#225d91; --blue-soft:#edf5fc; --shadow:0 12px 35px rgba(25,45,36,.08);
+      --radius:18px; --motion:180ms;
+    }
+    * { box-sizing:border-box; }
+    html { background:var(--wash); color:var(--ink); font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif; }
+    body { margin:0; min-width:0; overflow-x:hidden; }
+    button,input,select,textarea { font:inherit; }
+    button { cursor:pointer; }
+    button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible {
+      outline:3px solid rgba(8,122,87,.25); outline-offset:2px;
+    }
+    .prototype-note { padding:9px 16px; background:#102b22; color:#fff; text-align:center; font-size:12px; line-height:1.4; }
+    .workspace { width:min(1280px,100%); margin:0 auto; padding:16px; display:grid; grid-template-columns:minmax(0,1fr); gap:16px; }
+    .workspace > * { min-width:0; }
+    .stage { order:-1; width:100%; min-width:0; }
+    .device { width:100%; min-width:0; margin:0 auto; background:var(--paper); border:1px solid var(--line); border-radius:24px; box-shadow:var(--shadow); overflow:hidden; }
+    .review { min-width:0; background:#e9eee9; border:1px solid #d4ddd6; border-radius:20px; padding:15px; color:#24352d; }
+    .review h2 { margin:0; font-size:16px; }
+    .review p { color:#5c6963; font-size:12px; line-height:1.5; }
+    .review details { border-top:1px solid #ccd6ce; padding:12px 0; }
+    .review summary { font-weight:750; font-size:13px; cursor:pointer; }
+    .state-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:7px; margin-top:10px; }
+    .state-button,.review-button,.review select,.review textarea { width:100%; min-height:42px; border:1px solid #bdc9c0; border-radius:11px; background:#fff; color:#24352d; padding:8px 10px; text-align:left; font-size:12px; }
+    .state-button.active { background:#143f31; border-color:#143f31; color:#fff; }
+    .review-row { display:grid; grid-template-columns:1fr 1fr; gap:7px; margin-top:8px; }
+    .review textarea { resize:vertical; min-height:78px; margin-top:8px; }
+    .decision-row { display:grid; gap:7px; margin-top:8px; }
+    .decision-row label { display:flex; gap:8px; align-items:center; padding:9px; border-radius:10px; background:#fff; font-size:12px; }
+    .app-bar { min-height:64px; padding:12px 16px; border-bottom:1px solid var(--line); display:flex; align-items:center; justify-content:space-between; gap:12px; background:#fff; position:sticky; top:0; z-index:4; }
+    .brand { display:flex; align-items:center; gap:9px; font-weight:850; letter-spacing:-.02em; }
+    .brand-mark { width:34px; height:34px; border-radius:10px; background:var(--green); color:#fff; display:grid; place-items:center; font-size:13px; }
+    .workspace-button { min-height:42px; max-width:190px; border:1px solid var(--line); border-radius:12px; background:#fff; color:var(--ink); padding:8px 11px; display:flex; align-items:center; gap:8px; }
+    .workspace-button span { overflow:hidden; white-space:nowrap; text-overflow:ellipsis; font-weight:700; }
+    .avatar { width:28px; height:28px; flex:0 0 auto; display:grid; place-items:center; border-radius:50%; color:#fff; background:#234d3d; font-size:11px; }
+    .screen { min-height:700px; padding:22px 16px 36px; background:#fbfcfa; }
+    .narrow { width:min(520px,100%); margin:0 auto; }
+    h1,h2,h3,p { overflow-wrap:anywhere; }
+    h1 { margin:0; font-size:clamp(26px,8vw,38px); line-height:1.08; letter-spacing:-.035em; }
+    h2 { margin:0; font-size:24px; line-height:1.18; letter-spacing:-.025em; }
+    h3 { margin:0; font-size:17px; line-height:1.25; }
+    p { margin:0; }
+    .muted { color:var(--muted); line-height:1.5; }
+    .eyebrow { color:var(--green-dark); font-size:12px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; }
+    .stack { display:grid; gap:16px; }
+    .spacer-8 { height:8px; }
+    .spacer-16 { height:16px; }
+    .panel { min-width:0; border:1px solid var(--line); border-radius:var(--radius); padding:16px; background:#fff; }
+    .primary,.secondary,.text-button,.google-button { width:100%; min-height:50px; border-radius:13px; padding:12px 16px; font-weight:800; }
+    .primary { border:1px solid var(--green); background:var(--green); color:#fff; }
+    .primary:hover { background:var(--green-dark); }
+    .secondary { border:1px solid #bcc8c0; background:#fff; color:var(--ink); }
+    .text-button { border:0; background:transparent; color:var(--green-dark); }
+    .google-button { border:1px solid #cfd7d1; background:#fff; color:#26342e; display:flex; align-items:center; justify-content:center; gap:10px; }
+    .google-g { width:23px; height:23px; display:grid; place-items:center; border-radius:50%; border:1px solid #dce1dd; color:#3577d4; font-weight:900; }
+    .field { display:grid; gap:7px; min-width:0; }
+    .field label { font-size:13px; font-weight:750; color:#34443d; }
+    .field input,.field select,.field textarea { width:100%; min-width:0; min-height:50px; border:1px solid #cbd4ce; border-radius:12px; background:#fff; padding:11px 12px; color:var(--ink); }
+    .field input[aria-invalid="true"] { border-color:var(--red); background:var(--red-soft); }
+    .field small { color:var(--muted); line-height:1.4; }
+    .notice { border-radius:14px; padding:13px 14px; display:flex; align-items:flex-start; gap:10px; line-height:1.4; }
+    .notice strong { display:block; margin-bottom:2px; }
+    .notice.info { background:var(--blue-soft); color:#244d72; }
+    .notice.warn { background:var(--amber-soft); color:#6f4b12; }
+    .notice.good { background:var(--green-soft); color:#07593f; }
+    .notice.bad { background:var(--red-soft); color:#7e302c; }
+    .date-header { display:flex; align-items:end; justify-content:space-between; gap:12px; }
+    .date-strip { display:flex; gap:8px; overflow-x:auto; padding:2px 1px 7px; scrollbar-width:thin; }
+    .date-pill { flex:0 0 48px; min-height:58px; border-radius:13px; background:#edf0ed; display:grid; place-items:center; align-content:center; color:#59665f; font-size:11px; }
+    .date-pill strong { color:inherit; font-size:17px; }
+    .date-pill.today { background:var(--green); color:#fff; }
+    .date-pill.done { background:var(--green-soft); color:#17664d; }
+    .status { display:inline-flex; align-items:center; min-height:28px; border-radius:999px; padding:5px 9px; background:#edf1ee; color:#526058; font-size:11px; font-weight:800; }
+    .status.trial { background:var(--amber-soft); color:#735012; }
+    .status.pending { background:var(--blue-soft); color:#28577e; }
+    .status.approved { background:var(--green-soft); color:#096044; }
+    .task-head { display:flex; justify-content:space-between; gap:12px; align-items:flex-start; }
+    .video-list { display:grid; }
+    .video-row { min-width:0; padding:13px 0; border-top:1px solid #e7ebe8; display:flex; justify-content:space-between; gap:12px; align-items:center; }
+    .video-row:first-child { border-top:0; }
+    .video-row small { display:block; color:var(--muted); margin-top:3px; }
+    .video-row .views { font-weight:850; white-space:nowrap; color:var(--green-dark); }
+    .progress { height:9px; border-radius:999px; background:#e8ece9; overflow:hidden; }
+    .progress span { display:block; width:84%; height:100%; background:var(--amber); }
+    .membership-list { display:grid; gap:10px; }
+    .membership { width:100%; min-height:76px; border:1px solid var(--line); border-radius:15px; background:#fff; padding:13px; display:flex; align-items:center; justify-content:space-between; gap:12px; text-align:left; }
+    .membership strong,.membership small { display:block; }
+    .membership small { margin-top:4px; color:var(--muted); }
+    .walk-step { display:grid; grid-template-columns:34px minmax(0,1fr); gap:11px; align-items:start; }
+    .step-number { width:32px; height:32px; border-radius:10px; display:grid; place-items:center; background:var(--green-soft); color:var(--green-dark); font-weight:850; }
+    .gate-video { border-top:1px solid var(--line); padding-top:16px; display:grid; gap:13px; }
+    .gate-video:first-of-type { border-top:0; padding-top:0; }
+    .day-choice { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
+    .day-choice.one { grid-template-columns:1fr; }
+    .day-option { min-height:50px; border:1px solid #cbd4ce; border-radius:12px; background:#fff; color:var(--ink); font-weight:800; }
+    .day-option.active { background:var(--green-soft); border-color:var(--green); color:var(--green-dark); }
+    .save-confirm { border:1px solid #b9ddcd; border-radius:13px; padding:12px; background:var(--green-soft); color:var(--green-dark); }
+    .gate-day { border:1px solid var(--line); border-radius:14px; padding:14px; display:grid; gap:13px; background:#fff; }
+    .gate-fields { display:grid; gap:12px; }
+    .platform-counts { display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px; }
+    .count-video { display:grid;gap:8px; }
+    .count-video h4 { margin:0;font-size:13px;color:var(--muted); }
+    .count-field { padding:8px;border-radius:10px;background:#eaf4ef;gap:5px; }
+    .count-field.instagram { background:#f7f1e6; }
+    .count-field input { min-height:44px;padding:8px 9px;border-radius:8px;font-size:16px;font-variant-numeric:tabular-nums; }
+    .milestone-card { border-color:#b9d9c9;background:#f0f8f3; }
+    .compact-action { display:grid;gap:8px; }
+    .walkthrough-layer { position:fixed; inset:0; z-index:30; background:rgba(8,20,15,.58); display:grid; align-items:end; padding:14px; }
+    .walkthrough-card { width:min(430px,100%); margin:0 auto; border-radius:18px; padding:17px; background:#fff; box-shadow:0 18px 55px rgba(0,0,0,.3); display:grid; gap:12px; }
+    .walkthrough-count { color:var(--green-dark); font-size:12px; font-weight:850; letter-spacing:.06em; text-transform:uppercase; }
+    .tour-focus { position:relative; z-index:31; box-shadow:0 0 0 4px #fff,0 0 0 8px var(--green); border-radius:15px; }
+    .admin-bar { padding:14px 16px; background:#172a23; color:#fff; display:flex; align-items:center; justify-content:space-between; }
+    .profile { display:grid; grid-template-columns:54px minmax(0,1fr); gap:12px; align-items:center; }
+    .photo { width:54px; height:54px; border-radius:16px; background:#c8e4d7; color:#164d3b; display:grid; place-items:center; font-weight:900; }
+    .facts { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+    .fact { min-width:0; padding:12px; border-radius:12px; background:#f3f5f3; }
+    .fact small,.fact strong { display:block; }
+    .fact small { color:var(--muted); margin-bottom:4px; }
+    .button-row { display:grid; gap:9px; }
+    .center-state { min-height:610px; display:grid; place-items:center; text-align:center; }
+    .center-state .narrow { display:grid; gap:15px; }
+    .state-icon { width:58px; height:58px; margin:0 auto; border-radius:18px; display:grid; place-items:center; background:var(--green-soft); color:var(--green-dark); font-size:24px; font-weight:900; }
+    .spinner { width:34px; height:34px; margin:0 auto; border:4px solid #dae2dd; border-top-color:var(--green); border-radius:50%; animation:spin .8s linear infinite; }
+    .sheet-backdrop { position:fixed; inset:0; z-index:20; background:rgba(10,24,18,.44); display:grid; align-items:end; padding:12px; }
+    .sheet { width:min(520px,100%); margin:0 auto; border-radius:20px 20px 14px 14px; padding:16px; background:#fff; box-shadow:0 18px 50px rgba(0,0,0,.24); }
+    .sheet-head { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:12px; }
+    .icon-button { width:44px; height:44px; border:0; border-radius:12px; background:#eef1ef; font-size:20px; }
+    .toast { position:fixed; left:50%; bottom:18px; transform:translateX(-50%); z-index:40; width:min(350px,calc(100% - 28px)); padding:12px 14px; border-radius:12px; color:#fff; background:#1f342b; box-shadow:var(--shadow); text-align:center; font-size:13px; }
+    [hidden] { display:none !important; }
+    @keyframes spin { to { transform:rotate(360deg); } }
+    @media (min-width:760px) {
+      .screen { padding:32px; }
+      .facts { grid-template-columns:repeat(4,1fr); }
+      .button-row.two { grid-template-columns:1fr 1fr; }
+    }
+    @media (min-width:980px) {
+      .workspace { grid-template-columns:300px minmax(0,1fr); align-items:start; padding:24px; }
+      .stage { order:0; }
+      .review { position:sticky; top:16px; max-height:calc(100vh - 32px); overflow:auto; }
+      .device { max-width:820px; }
+      .screen { min-height:760px; }
+      .workspace.preview-phone .device { max-width:390px; }
+      .workspace.preview-tablet .device { max-width:768px; }
+      .workspace.preview-desktop .device { max-width:900px; }
+    }
+    @media (max-width:520px) {
+      .workspace { padding:0; gap:10px; }
+      .device { border-radius:0; border-left:0; border-right:0; box-shadow:none; }
+      .screen { padding:20px 14px 32px; }
+      .review { margin:0 10px 12px; }
+      .prototype-note { font-size:11px; }
+      h1 { font-size:30px; }
+      .facts { grid-template-columns:1fr 1fr; }
+      .workspace-button { max-width:200px; }
+    }
+    @media (prefers-reduced-motion:reduce) {
+      :root { --motion:1ms; }
+      *,*::before,*::after { scroll-behavior:auto !important; animation-duration:1ms !important; transition-duration:1ms !important; }
+    }
+    body.reduce-motion *,body.reduce-motion *::before,body.reduce-motion *::after { animation-duration:1ms !important; transition-duration:1ms !important; }
+
+    .business-label { font-size:14px;font-weight:700; }
+    .small { font-size:13px; }
+    .help-button { width:auto;min-height:44px;padding:8px; }
+    .error-text { color:var(--red);line-height:1.45;font-size:14px; }
+    .proof-link { display:flex;align-items:center;justify-content:center;text-align:center;text-decoration:none; }
+    .proof-image { margin:0;display:grid;gap:8px;min-width:0; }
+    .proof-image img { display:block;width:100%;max-height:360px;object-fit:contain;background:#eef1ed;border:1px solid var(--line);border-radius:12px; }
+    .proof-image figcaption { font-size:12px;color:var(--muted);overflow-wrap:anywhere; }
+    input[type=file] { font-size:13px; }
+    button:disabled { cursor:wait;opacity:.65; }
+    a:focus-visible { outline:3px solid var(--green);outline-offset:3px; }
+    h1[tabindex="-1"]:focus,h2[tabindex="-1"]:focus { outline:none; }
+    .walkthrough-card { position:relative;z-index:33;max-height:45vh;overflow:auto; }
+    .tour-focus { z-index:31;pointer-events:none; }
+    .walkthrough-layer { z-index:32;background:transparent; }
+    #app:has(.walkthrough-layer)::after { content:"";position:fixed;inset:0;z-index:30;background:rgba(8,20,15,.58); }
+
+    .device { position:relative; }
+    .workspace.preview-phone .device { max-width:390px; }
+    .workspace.preview-tablet .device { max-width:768px; }
+    .workspace.preview-desktop .device { max-width:900px; }
+    .preview-phone .screen { padding:20px 14px 32px; }
+    .preview-phone h1 { font-size:28px; }
+    .preview-phone .facts { grid-template-columns:repeat(2,minmax(0,1fr)); }
+    .field input,.field select { font-size:16px; }
+    .count-field input:disabled { opacity:1;color:#606a64;background:#f5f6f3;border-style:dashed;font-size:12px; }
+    .review-button[aria-pressed="true"] { background:#143f31;color:#fff; }
+    #app:has(.walkthrough-layer)::after { position:absolute; }
+    .walkthrough-layer { inset:auto;bottom:10px;left:var(--tour-left,0px);width:var(--tour-width,100%);padding:10px;display:block;pointer-events:none; }
+    .walkthrough-card { width:100%;max-height:38vh;pointer-events:auto;padding:14px;gap:9px; }
+    .walkthrough-card h2 { font-size:22px; }
+    .walkthrough-card p { font-size:14px; }
+    .walkthrough-card .primary { min-height:44px;padding:9px 14px; }
+    body.touring .review { position:relative;z-index:34; }
+    body.touring .screen { padding-bottom:calc(50vh + 32px); }
+
+    /* Revision 7: phone-first utility UI, guided by TypeUI fundamentals.
+       Compact heading/support gaps intentionally preserve the user's short-form UX. */
+    :root {
+      --ink:#182b25; --muted:#596860; --line:#dfe5e1; --paper:#fff;
+      --wash:#eef1ef; --green:#116149; --green-dark:#0b4937; --green-soft:#edf5f0;
+      --red:#a12f2c; --radius:12px; --shadow:0 4px 24px #173d2910; --motion:150ms;
+      --control-border:#78877e;
+    }
+    html { font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif; font-size:16px; line-height:1.5; }
+    button,a,input,select,textarea { -webkit-tap-highlight-color:transparent; }
+    button,a { touch-action:manipulation; }
+    button { transition:background-color var(--motion) ease-out,border-color var(--motion) ease-out; }
+    button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,a:focus-visible,summary:focus-visible {
+      outline:3px solid var(--green); outline-offset:3px; box-shadow:0 0 0 3px #fff;
+    }
+    button:disabled { opacity:1; cursor:not-allowed; background:#edf0ed; border-color:#9aa69e; color:#56655c; }
+    button:active:not(:disabled) { border-color:var(--green-dark); }
+    .primary:hover:not(:disabled),.primary:active:not(:disabled) { background:var(--green-dark); }
+    .secondary:hover:not(:disabled),.google-button:hover:not(:disabled),.text-button:hover:not(:disabled) { background:#f0f4f1; }
+    .prototype-note { padding:8px 16px; background:#e2e8e3; color:#344d40; font-size:12px; }
+    .device { border-radius:16px; }
+    .app-bar { min-height:64px; padding:16px 20px; }
+    .brand { font-weight:700; }
+    .brand-mark { width:auto; height:auto; background:none; color:var(--ink); border-radius:0; font-size:22px; letter-spacing:-1px; font-weight:700; line-height:1; }
+    .business-label { font-size:14px; font-weight:500; color:var(--muted); }
+    .screen,.preview-phone .screen { padding:28px 20px 40px; background:#fff; }
+    .narrow { max-width:480px; }
+    h1,.preview-phone h1 { font-size:28px; line-height:1.2; letter-spacing:-.035em; font-weight:600; text-wrap:balance; }
+    h2 { font-size:24px; line-height:1.25; font-weight:600; }
+    h3 { font-size:18px; line-height:1.35; font-weight:600; letter-spacing:-.015em; }
+    .small,.field small,.proof-image figcaption { font-size:14px; }
+    .eyebrow { font-size:12px; font-weight:600; letter-spacing:.08em; }
+    .stack { gap:24px; }
+    .panel { padding:20px; border-radius:12px; }
+    .primary,.secondary,.text-button,.google-button { min-height:48px; padding:11px 16px; border-radius:8px; font-size:16px; line-height:1.5; font-weight:600; }
+    .secondary,.google-button { border-color:var(--control-border); }
+    .text-button { font-size:14px; min-height:44px; }
+    .google-button { font-weight:500; }
+    .field { gap:8px; }
+    .field label { color:var(--ink); font-size:14px; font-weight:500; }
+    .field input,.field select,.field textarea { min-height:48px; border-color:var(--control-border); border-radius:8px; padding:11px 12px; font-size:16px; line-height:1.5; }
+    .field input::placeholder { color:#66756b; opacity:1; }
+    .field input[readonly] { color:#596860; background:#f6f8f6; }
+    .field select { appearance:none; padding-right:36px; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%23445449' stroke-width='1.5'%3E%3Cpath d='m4 6 4 4 4-4'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 12px center; }
+    .field input[type=file] { padding:8px; font-size:14px; }
+    input[type=file]::file-selector-button { min-height:36px; border:0; border-radius:4px; padding:8px 12px; margin-right:8px; background:#edf3ef; color:var(--ink); font:inherit; }
+    .task-head { align-items:center; }
+    .task-head h1 { font-size:26px; }
+    .status { font-size:12px; font-weight:500; padding:4px 10px; min-height:28px; }
+    .status.trial { color:#536057; background:#f0f3ef; border:1px solid #dfe5e1; }
+    #day-panel { border:0; padding:0; gap:12px; }
+    #day-panel .eyebrow { display:none; }
+    #day-panel h2 { font-size:16px; font-weight:500; letter-spacing:0; }
+    .date-header { align-items:center; }
+    .help-button { padding:8px 0 8px 12px; min-width:44px; }
+    .day-choice { background:#f3f6f3; border-radius:10px; padding:4px; gap:8px; }
+    .day-option { min-height:48px; border-radius:7px; border:1px solid transparent; background:transparent; font-size:14px; font-weight:500; padding:8px 4px; }
+    .day-option.active { background:#fff; border-color:var(--green); color:var(--green-dark); box-shadow:0 1px 2px #15372510; font-weight:600; }
+    .day-choice.one { background:none; padding:0; }
+    .day-choice.one .day-option { text-align:left; padding-left:12px; }
+    #track-panel { gap:20px; }
+    #track-panel h2 { font-size:20px; }
+    #track-panel .muted { margin-top:4px; }
+    #video-form { gap:20px; }
+    .weekly-action { margin-top:-8px; }
+    .weekly-action p { text-align:center; }
+    .milestone-card { border:0; border-top:1px solid var(--line); border-radius:0; padding:24px 0 0; background:#fff; }
+    .milestone-card h2 { font-size:18px; }
+    .milestone-card .secondary { margin-top:8px; }
+    .compact-action { gap:8px; }
+    #proof-form { padding:0; border:0; border-radius:0; }
+    .gate-day { padding:16px; gap:16px; border-radius:12px; }
+    .gate-day h2 { font-size:18px; }
+    .gate-fields { gap:16px; }
+    .count-video h3 { font-size:14px; font-weight:500; color:var(--muted); letter-spacing:0; }
+    .count-field { padding:8px; gap:8px; border-radius:8px; background:#edf5f0; }
+    .count-field.instagram { background:#f7f2e9; }
+    .count-field input { height:44px; min-height:44px; padding:8px; border-radius:6px; }
+    .count-field:has(input:disabled) { padding:8px 4px; }
+    .count-field:has(input:disabled) label { padding-left:4px; }
+    .count-field input:disabled { padding:8px 2px; font-size:14px; text-align:center; background:transparent; color:#596860; border:1px dashed #9ca89f; }
+    .notice { border-radius:8px; padding:16px; font-size:14px; }
+    .save-confirm { border-radius:8px; padding:12px; font-size:14px; }
+    .center-state { min-height:580px; }
+    .center-state .narrow { gap:24px; }
+    .center-state .brand { margin-bottom:8px; }
+    .center-state h1 { max-width:360px; margin-inline:auto; }
+    .center-state p { max-width:340px; margin-inline:auto; }
+    .center-state .panel { border:0; background:#f4f7f4; font-size:14px; }
+    .admin-bar { background:#fff; color:var(--ink); border-bottom:1px solid var(--line); min-height:64px; padding:16px 20px; font-size:14px; }
+    .profile h2 { font-size:18px; }
+    .profile p { font-size:14px; }
+    .photo { border-radius:50%; background:#edf3ee; font-weight:600; }
+    .facts { gap:16px; }
+    .fact { border-radius:0; padding:0; background:none; }
+    .fact small { font-size:14px; }
+    .fact strong { font-size:16px; font-weight:600; }
+    .proof-image img { border-radius:8px; }
+    .button-row.two { grid-template-columns:1fr; gap:12px; }
+    .walkthrough-card { border-radius:12px; padding:16px; gap:12px; }
+    .walkthrough-card h2 { font-size:20px; }
+    .walkthrough-count { font-weight:600; }
+    .tour-focus { border-radius:12px; background:#fff; }
+    .review { background:#f8faf8; border-radius:12px; padding:16px; }
+    .review p { font-size:14px; }
+    .review summary { font-size:14px; font-weight:600; min-height:44px; padding-block:10px; }
+    .state-grid,.review-row,.decision-row { gap:8px; }
+    .state-button,.review-button,.review select,.review textarea { min-height:44px; font-size:14px; border-radius:6px; border-color:var(--control-border); }
+    .decision-row label { min-height:44px; font-size:14px; }
+    .state-button:hover:not(.active),.review-button:hover:not([aria-pressed="true"]) { background:#edf3ee; }
+    .toast { border-radius:8px; font-size:14px; pointer-events:none; }
+    body.touring .toast { visibility:hidden; }
+    @media(max-width:520px) { .device { border-radius:0; } }
+    @media(max-width:359px) {
+      .screen,.preview-phone .screen { padding-inline:16px; }
+      .panel { padding:16px; }
+      .gate-day { padding:12px; }
+      .platform-counts { gap:8px; }
+      h1,.preview-phone h1 { font-size:26px; }
+      .task-head h1 { font-size:24px; }
+    }
+
+  </style>
+</head>
+<body>
+  <div class="prototype-note">Revision 7 · Read-only trial prototype · Nothing is sent, approved, uploaded, or saved to production</div>
+  <div class="workspace preview-phone" id="workspace">
+    <aside class="review" aria-label="Prototype review controls">
+      <h2>Review controls · revision 7</h2>
+      <p>These controls are for reviewing the flow. Creators will not see them.</p>
+      <details open>
+        <summary>Creator and manager states</summary>
+        <div class="state-grid" id="state-grid">
+          <button class="state-button" data-state="invite">Invitation</button>
+          <button class="state-button" data-state="signin">Sign in</button>
+          <button class="state-button" data-state="walkthrough">Walkthrough</button>
+          <button class="state-button active" data-state="dashboard">Dashboard</button>
+          <button class="state-button" data-state="grace">Yesterday missed</button>
+          <button class="state-button" data-state="logged">Yesterday logged</button>
+          <button class="state-button" data-state="after-noon">After noon</button>
+          <button class="state-button" data-state="gate">Weekly views due</button>
+          <button class="state-button" data-state="midweek">Midweek dashboard</button>
+          <button class="state-button" data-state="weekend">Simulate week ending</button>
+          <button class="state-button" data-state="milestone">10,000-view submission</button>
+          <button class="state-button" data-state="pending">Under review</button>
+          <button class="state-button" data-state="management">Manager review</button>
+          <button class="state-button" data-state="approved">Approved</button>
+          <button class="state-button" data-state="deactivated">Deactivated</button>
+          <button class="state-button" data-state="loading">Loading</button>
+          <button class="state-button" data-state="empty">First visit</button>
+          <button class="state-button" data-state="error">Error</button>
+          <button class="state-button" data-state="expired">Expired link</button>
+          <button class="state-button" data-state="wrong-email">Wrong Google account</button>
+        </div>
+      </details>
+      <details>
+        <summary>Viewport and conditions</summary>
+        <div class="review-row">
+          <button class="review-button" data-viewport="phone">Phone</button>
+          <button class="review-button" data-viewport="tablet">Tablet</button>
+          <button class="review-button" data-viewport="desktop">Desktop</button>
+          <button class="review-button" id="offline-action">Offline: off</button>
+          <button class="review-button" id="motion-action">Reduced motion: off</button>
+          <button class="review-button" id="qualify-action">Enter 10,240 views</button>
+          <button class="review-button" id="sample-image-action">Use demo screenshot</button>
+        </div>
+      </details>
+      <details>
+        <summary>Management actions</summary>
+        <div class="review-row">
+          <button class="review-button" id="approve-action">Open management review</button>
+          <button class="review-button" id="deactivate-action">Deactivate NorthQuest</button>
+          <button class="review-button" id="reset-action">Reset prototype</button>
+        </div>
+      </details>
+      <details open>
+        <summary>Decision</summary>
+        <div class="decision-row">
+          <label><input type="radio" name="decision" value="approve"> Approve revision</label>
+          <label><input type="radio" name="decision" value="revise"> Request changes</label>
+          <label><input type="radio" name="decision" value="reject"> Reject direction</label>
+        </div>
+        <textarea id="decision-notes" aria-label="Review notes" placeholder="What should change?"></textarea>
+        <button class="review-button" id="copy-decision">Copy decision</button>
+        <p id="decision-output" aria-live="polite"></p>
+      </details>
+      <p id="review-context"></p><p id="review-transition" aria-live="polite"></p><p>Reduced motion removes animation. No native haptics. One trial per person; passing it removes the need for another business trial.</p><p><strong>Not in this prototype:</strong> Actual onboarding, active-creator and full management dashboards, TDT Applications and CashDrive Inventory/Enquiries. They are later flows.</p>
+      <p id="preview-size" role="status"></p><p>“Simulate week ending” moves only the demo clock to 8 August to test weekly reporting. Creators never see these controls.</p>
+    </aside>
+    <main class="stage">
+      <div class="device" id="app" aria-live="polite"></div>
+    </main>
+  </div>
+  <div id="toast" class="toast" role="status" hidden></div>
+  <script>
+    // CORE START
+    const POLICY=Object.freeze({threshold:10000,maxImageBytes:5*1024*1024,timeZone:"Africa/Lagos"});
+    function localDate(instant){
+      const p=new Intl.DateTimeFormat("en-GB",{timeZone:POLICY.timeZone,year:"numeric",month:"2-digit",day:"2-digit"}).formatToParts(new Date(instant));
+      return ["year","month","day"].map(t=>p.find(x=>x.type===t).value).join("-");
+    }
+    function previousDate(now){return new Date(Date.parse(localDate(now)+"T12:00:00Z")-86400000).toISOString().slice(0,10);}
+    function canLogYesterday(now,joined,videos){
+      const hour=Number(new Intl.DateTimeFormat("en-GB",{timeZone:POLICY.timeZone,hour:"2-digit",hourCycle:"h23"}).format(new Date(now))),day=previousDate(now);
+      return hour<12 && day>=localDate(joined) && !videos.some(v=>v.date===day);
+    }
+    function dueEntries(videos,joined,period){
+      return videos.filter(v=>v.date>=period.start&&v.date<=period.end&&v.date>=localDate(joined)&&Date.parse(v.loggedAt)>=Date.parse(joined))
+        .sort((a,b)=>a.date.localeCompare(b.date)||a.number-b.number)
+        .flatMap(v=>Object.entries(v.links).filter(([,url])=>Boolean(url)).map(([platform,url])=>({key:v.id+":"+platform,id:v.id,date:v.date,number:v.number,platform,url})));
+    }
+    function reportDays(joined,period){
+      const days=[],start=localDate(joined)>period.start?localDate(joined):period.start;
+      for(let date=start;date<=period.end;date=new Date(Date.parse(date+"T12:00:00Z")+86400000).toISOString().slice(0,10))days.push(date);
+      return days;
+    }
+    function nextVideoNumber(videos,date){return [1,2].find(number=>!videos.some(v=>v.date===date&&v.number===number))??null;}
+    function validCount(value){return /^\d+$/.test(String(value).trim())&&Number.isSafeInteger(Number(value));}
+    function qualifyingEntry(entries,reports){return entries.find(e=>validCount(reports[e.key])&&Number(reports[e.key])>=POLICY.threshold)||null;}
+    function validVideoUrl(value,platform){
+      try{const u=new URL(value),host=u.hostname.toLowerCase();
+        if(u.protocol!=="https:"||u.username||u.password||u.port)return false;
+        if(platform==="tiktok")return (["tiktok.com","www.tiktok.com"].includes(host)&&(/^\/@[^/]+\/video\/\d+\/?$/.test(u.pathname)||/^\/t\/[a-zA-Z0-9]+\/?$/.test(u.pathname)))||(["vm.tiktok.com","vt.tiktok.com"].includes(host)&&/^\/[a-zA-Z0-9]+\/?$/.test(u.pathname));
+        return /(^|\.)instagram\.com$/.test(host)&&/^\/(reel|reels|p|tv)\/[^/]+/.test(u.pathname);
+      }catch{return false;}
+    }
+    function validImageFile(file){return Boolean(file&&["image/png","image/jpeg","image/webp"].includes(file.type)&&file.size>0&&file.size<=POLICY.maxImageBytes);}
+    function trialAssignment(person,business){
+      if(person.trialPassed)return {allowed:false,reason:"already-passed"};
+      if(person.trialBusiness)return {allowed:false,reason:"trial-already-assigned"};
+      return {allowed:true,business};
+    }
+    // CORE END
+    const BUSINESSES={northquest:{name:"NorthQuest"},cashdrive:{name:"CashDrive"},aura:{name:"Aura"}};
+    const platformName=p=>p==="tiktok"?"TikTok":"Instagram";
+    const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+    const dayName=d=>new Intl.DateTimeFormat("en-GB",{day:"numeric",month:"long",timeZone:"UTC"}).format(new Date(d+"T12:00:00Z"));
+    function baseVideos(seventh=false){
+      const list=[
+        {id:"v4",date:"2026-08-04",loggedAt:"2026-08-04T10:00:00+01:00",number:1,links:{tiktok:"https://www.tiktok.com/@sample/video/1234567890123456781",instagram:"https://www.instagram.com/reel/DEMO4/"}},
+        {id:"v6",date:"2026-08-06",loggedAt:"2026-08-06T10:00:00+01:00",number:1,links:{instagram:"https://www.instagram.com/reel/DEMO6/"}}
+      ];
+      if(seventh)list.push(
+        {id:"v7a",date:"2026-08-07",loggedAt:"2026-08-07T10:00:00+01:00",number:1,links:{tiktok:"https://www.tiktok.com/@sample/video/1234567890123456782"}},
+        {id:"v7b",date:"2026-08-07",loggedAt:"2026-08-07T16:00:00+01:00",number:2,links:{tiktok:"https://www.tiktok.com/@sample/video/1234567890123456783",instagram:"https://www.instagram.com/reel/DEMO7/"}});
+      return list;
+    }
+    function initialModel(){
+      const m={state:"invite",trialBusiness:"northquest",trialPassed:false,status:"trial",deactivated:false,
+        joined:"2026-08-04T09:00:00+01:00",now:"2026-08-08T10:00:00+01:00",period:{start:"2026-08-01",end:"2026-08-07"},
+        videos:baseVideos(),reports:{},savedReports:{},draft:{tiktok:"",instagram:""},selectedDay:"today",
+        viewport:"phone",offline:false,reducedMotion:false,walkStep:0,walkComplete:false,saving:false,savedVideo:false,
+        review:null,milestone:{key:"",views:""},notifications:0,image:null,imageLoading:false,imageError:"",videoError:"",gateError:"",proofError:"",returnTo:"dashboard",helpReturn:"dashboard",operation:0};
+      for(const e of dueEntries(m.videos,m.joined,m.period))m.reports[e.key]=m.savedReports[e.key]="700";
+      return m;
+    }
+    let model=initialModel(),toastTimer;
+    const app=document.getElementById("app"),workspace=document.getElementById("workspace"),toast=document.getElementById("toast");
+    const business=()=>BUSINESSES[model.trialBusiness].name;
+    const entries=()=>dueEntries(model.videos,model.joined,model.period);
+    const milestoneEntries=()=>dueEntries(model.videos,model.joined,{start:localDate(model.joined),end:localDate(model.now)});
+    const gated=()=>localDate(model.now)>model.period.end&&entries().some(e=>!validCount(model.savedReports[e.key]));
+    const eligible=()=>canLogYesterday(model.now,model.joined,model.videos);
+    function showToast(text){clearTimeout(toastTimer);toast.textContent=text;toast.hidden=false;toastTimer=setTimeout(()=>toast.hidden=true,2400);}
+    function setState(state,message){
+      model.operation++;model.saving=false;model.imageLoading=false;
+      if(model.deactivated&&state!=="management")state="deactivated";
+      if(state==="dashboard"&&model.trialPassed)state="approved";
+      if(state==="dashboard"&&gated())state="gate";
+      if(state==="gate")model.selectedDay="today";
+      if(state==="milestone"&&model.review)state=model.review.status==="approved"?"approved":model.review.status==="sent"?"pending":"milestone";
+      if(state==="walkthrough"){model.walkStep=0;model.helpReturn=gated()?"gate":"dashboard";}
+      model.state=state;render();
+      if(model.state==="walkthrough")positionTour();
+      else {const el=app.querySelector("h1,h2");if(el){el.setAttribute("tabindex","-1");el.focus({preventScroll:true});}app.scrollIntoView({block:"start",behavior:"instant"});}
+      if(message)showToast(message);
+    }
+    function header(){return '<header class="app-bar"><div class="brand"><span class="brand-mark">TDT</span></div><span class="business-label">'+business()+'</span></header>';}
+    function shell(html){return header()+'<div class="screen"><div class="narrow stack">'+html+'</div></div>';}
+    function google(mode){return '<button class="google-button" data-google="'+mode+'">Continue with Google</button>';}
+    function welcome(signin=false){return '<div class="screen"><div class="narrow center-state"><div class="narrow"><div class="brand" style="justify-content:center"><span class="brand-mark">TDT</span></div><h1>'+(signin?'Welcome back.':'Welcome to your '+business()+' Creator dashboard.')+'</h1>'+google(signin?"signin":"invite")+(signin?'<p class="muted small">Use your personal Google account.</p>':"")+'</div></div></div>';}
+    function notice(){
+      const r=model.review;if(!r)return "";
+      if(r.status==="approved")return '<div class="notice good"><div><strong>Onboarding is ready.</strong><button class="text-button" data-action="approved">Continue</button></div></div>';
+      if(r.status==="sent")return '<div class="notice info"><div><strong>Your video is being checked.</strong><button class="text-button" data-action="pending">View submission</button></div></div>';
+      return '<div class="notice info"><div><strong>Please check your submission.</strong><button class="text-button" data-action="milestone">Update submission</button></div></div>';
+    }
+    function milestoneAction(){return model.review?notice():'<section class="panel compact-action milestone-card"><h2>Reached 10,000 views?</h2><p class="muted small">Send your video and screenshot for review.</p><button class="secondary" data-action="milestone">Submit for review</button></section>';}
+    function weeklyAction(){return localDate(model.now)>model.period.end?'<button class="secondary" id="weekly-views">Log your views</button>':'<p class="muted small">Weekly views open '+dayName(new Date(Date.parse(model.period.end+'T12:00:00Z')+86400000).toISOString().slice(0,10))+'.</p>';}
+    function dayChoice(){
+      const yes=eligible();if(!yes&&model.selectedDay==="yesterday")model.selectedDay="today";
+      return '<div class="day-choice '+(yes?"":"one")+'" aria-label="Choose the day to log"><button class="day-option '+(model.selectedDay==="today"?"active":"")+'" aria-pressed="'+(model.selectedDay==="today")+'" type="button" data-day="today">Today · '+dayName(localDate(model.now))+'</button>'+
+        (yes?'<button class="day-option '+(model.selectedDay==="yesterday"?"active":"")+'" aria-pressed="'+(model.selectedDay==="yesterday")+'" type="button" data-day="yesterday">Yesterday · '+dayName(previousDate(model.now))+'</button>':"")+'</div>';
+    }
+    function videoForm(){
+      const day=model.selectedDay==="yesterday"?previousDate(model.now):localDate(model.now);
+      const number=nextVideoNumber(model.videos,day);
+      if(number===null)return '<section class="panel stack" id="track-panel"><h2>Both videos are logged.</h2><p class="muted small">For '+dayName(day)+'.</p></section>';
+      return '<section class="panel stack" id="track-panel"><div><h2>Track your videos</h2><p class="muted small">Video '+number+' · '+dayName(day)+'.</p></div>'+
+        (model.savedVideo?'<div class="save-confirm" role="status"><strong>Video submitted.</strong></div>':"")+
+        '<form id="video-form" class="stack" novalidate>'+["tiktok","instagram"].map(p=>'<div class="field"><label for="'+p+'-link">'+platformName(p)+' link</label><input id="'+p+'-link" type="url" inputmode="url" value="'+esc(model.draft[p])+'" placeholder="https://'+p+'.com/..." '+(model.saving?"disabled":"")+'></div>').join("")+
+        '<p id="video-error" class="error-text" role="alert" '+(model.videoError?"":"hidden")+'>'+esc(model.videoError)+'</p><button class="primary" type="submit" '+(model.saving?"disabled":"")+'>'+(model.saving?"Submitting…":"Submit video")+'</button></form></section>';
+    }
+    function walkthrough(){
+      const steps=[["Track your videos","Add your TikTok link, Instagram link, or both. Then tap Submit video."],["If you missed yesterday","Yesterday appears until 12:00 PM if you missed that day."],["Log your views","After seven days, enter views in the boxes for your posted videos. Unused boxes need nothing."]];
+      const [title,copy]=steps[model.walkStep];
+      return '<div class="walkthrough-layer" role="dialog" aria-modal="true" aria-labelledby="walk-title"><div class="walkthrough-card"><span class="walkthrough-count">'+(model.walkStep+1)+' of 3</span><h2 id="walk-title">'+title+'</h2><p class="muted">'+copy+'</p><button class="primary" id="walk-next">'+(model.walkStep===2?"Got it":"Next")+'</button></div></div>';
+    }
+    function dashboard(tour=false){return shell('<div class="task-head"><h1>Good morning, Amara.</h1><span class="status '+model.status+'">'+(model.status==="trial"?"Trial":model.status==="pending"?"Under review":"Approved")+'</span></div>'+
+      '<section class="panel stack" id="day-panel"><div class="date-header"><h2>'+dayName(localDate(model.now))+'</h2><button class="text-button help-button" data-action="walkthrough">Help</button></div>'+dayChoice()+(eligible()?'<p class="muted small">Yesterday is available until 12:00 PM.</p>':"")+'</section>'+videoForm()+'<div class="weekly-action">'+weeklyAction()+'</div>'+milestoneAction()+(tour?walkthrough():""));}
+    function dateSentence(list){
+      const days=[...new Set(list.map(e=>e.date))];
+      return !days.length?"No views to report.":days.length===1?"For videos you logged on "+dayName(days[0])+".":"For videos you logged between "+dayName(days[0])+" and "+dayName(days[days.length-1])+".";
+    }
+    function gate(tour=false){
+      const due=entries(),days=reportDays(model.joined,model.period);
+      let html='<div><h1>Log your views.</h1><div class="spacer-8"></div><p class="muted">'+dateSentence(days.map(date=>({date})))+'</p></div>';
+      if(eligible()&&!tour){
+        html+='<section class="panel stack">'+dayChoice()+'<p class="muted small">Yesterday is available until 12:00 PM.</p></section>';
+        if(model.selectedDay==="yesterday")return shell(html+videoForm()+'<button class="text-button" id="return-views">Back to views</button>');
+      }
+      if(!days.length)return shell(html+'<button class="primary" data-action="dashboard">Continue</button>');
+      return shell(html+'<form id="gate-form" class="stack" novalidate>'+days.map(day=>'<section class="gate-day"><h2>'+dayName(day)+'</h2><div class="gate-fields">'+[1,2].map(number=>'<div class="count-video"><h3>Video '+number+'</h3><div class="platform-counts">'+['tiktok','instagram'].map(platform=>{const entry=due.find(e=>e.date===day&&e.number===number&&e.platform===platform),id=entry?.key||day+':'+number+':'+platform;return '<div class="field count-field '+platform+'"><label for="'+id+'">'+platformName(platform)+'</label><input id="'+id+'" aria-label="'+platformName(platform)+' Video '+number+'" '+(entry?'data-report="'+entry.key+'"':'disabled placeholder="No video logged"')+' type="text" inputmode="numeric" pattern="[0-9]*" value="'+esc(entry?model.reports[entry.key]??'':'')+'" '+(model.saving?'disabled':'')+'></div>';}).join('')+'</div></div>').join('')+'</div></section>').join('')+
+        '<p id="gate-error" class="error-text" role="alert" '+(model.gateError?"":"hidden")+'>'+esc(model.gateError)+'</p><button class="primary" type="submit" '+(model.saving?"disabled":"")+'>'+(model.saving?"Saving…":"Save views")+'</button></form>'+(!gated()?'<button class="text-button" data-action="dashboard">Back to dashboard</button>':'')+milestoneAction());
+    }
+    function imagePreview(){return model.image?'<figure class="proof-image"><img id="proof-preview" src="'+esc(model.image.url)+'" alt="Screenshot of the submitted video views"><figcaption>'+esc(model.image.demo?"Demo screenshot — not real creator evidence":model.image.name)+'</figcaption></figure>':"";}
+    function milestone(){
+      const choices=milestoneEntries(),selected=choices.find(e=>e.key===model.milestone.key);
+      if(!choices.length)return shell('<h1>Submit your video.</h1><p class="muted">Log your video link first, then submit it here for review.</p><button class="primary" data-action="dashboard">Back to dashboard</button>');
+      if(model.review?.status==="approved")return approved();
+      if(model.review?.status==="sent")return pending();
+      return shell('<div><h1>Submit your video.</h1><div class="spacer-8"></div><p class="muted">Choose your video with 10,000 or more views.</p></div>'+
+        (model.review?.status==="needs-update"?'<div class="notice info">Please check your screenshot and video, then send them again.</div>':"")+
+        '<form id="proof-form" class="panel stack" novalidate><div class="field"><label for="milestone-video">Video</label><select id="milestone-video"><option value="">Choose a video</option>'+choices.map(e=>'<option value="'+e.key+'" '+(e.key===model.milestone.key?'selected':'')+'>'+dayName(e.date)+' · Video '+e.number+' · '+platformName(e.platform)+'</option>').join('')+'</select></div><div class="field"><label for="milestone-views">Views</label><input id="milestone-views" type="text" inputmode="numeric" pattern="[0-9]*" value="'+esc(model.milestone.views)+'"></div>'+
+        (selected?'<div class="field"><label for="proof-link">Video link</label><input id="proof-link" type="url" readonly value="'+esc(selected.url)+'"></div>':'')+'<div class="field"><label for="proof-file">Screenshot of the views</label><input id="proof-file" type="file" accept="image/png,image/jpeg,image/webp" aria-describedby="proof-file-help"><small id="proof-file-help">PNG, JPG or WebP · up to 5 MB</small></div>'+imagePreview()+
+        (model.image?'<button class="text-button" type="button" id="remove-image">Remove screenshot</button>':"")+
+        '<p id="proof-error" class="error-text" role="alert" '+(model.proofError||model.imageError?"":"hidden")+'>'+esc(model.imageError||model.proofError)+'</p>'+(model.imageLoading?'<p class="muted small" role="status">Reading screenshot…</p>':'')+'<button class="primary" type="submit" '+(model.saving?"disabled":"")+'>'+(model.saving?"Sending…":"Send for review")+'</button></form><button class="text-button" data-action="dashboard">Back to dashboard</button>');
+    }
+    function pending(){
+      const r=model.review;if(!r||r.status!=="sent")return milestone();
+      return shell('<div class="center-state"><div class="narrow"><h1>Your video is being checked.</h1><p class="muted">After approval, Start onboarding will appear on your dashboard.</p><div class="panel"><strong>'+platformName(r.platform)+' Video '+r.number+' · '+dayName(r.date)+'</strong><p class="muted small">Screenshot received.</p></div><button class="primary" data-action="dashboard">Back to dashboard</button></div></div>');
+    }
+    function management(){
+      const r=model.review;if(!r)return '<div class="admin-bar"><strong>TDT Management</strong></div><div class="screen"><h1>No reviews waiting.</h1></div>';
+      return '<div class="admin-bar"><strong>TDT Management</strong><span class="status pending">'+(r.status==="sent"?"1 review":r.status==="approved"?"Reviewed":"Awaiting proof")+'</span></div><div class="screen"><div class="narrow stack"><div><p class="eyebrow">Onboarding review</p><h1>Check Amara’s video.</h1></div><section class="panel stack"><div class="profile"><div class="photo" role="img" aria-label="Profile photo placeholder">AO</div><div><h2>Amara Okafor</h2><p class="muted">'+business()+' · Trial creator</p></div></div>'+
+        '<div class="facts"><div class="fact"><small>Joined</small><strong>'+dayName(localDate(model.joined))+'</strong></div><div class="fact"><small>Reported</small><strong>'+dayName(localDate(r.submittedAt||model.now))+'</strong></div><div class="fact"><small>'+platformName(r.platform)+'</small><strong>'+Number(r.views).toLocaleString("en-GB")+'</strong></div><div class="fact"><small>Status</small><strong>'+(r.status==="approved"?"Approved":r.status==="sent"?"Needs review":"Awaiting proof")+'</strong></div></div>'+
+        (validVideoUrl(r.url,r.platform)?'<a class="secondary proof-link" id="open-proof" href="'+esc(r.url)+'" target="_blank" rel="noopener noreferrer">Open '+platformName(r.platform)+' video</a>':'<p class="error-text">A valid video link is required.</p>')+
+        (model.image?imagePreview():'<p class="muted">Screenshot not submitted yet.</p>')+'<p class="muted small">Check the screenshot and the actual video before deciding.</p>'+
+        (r.status==="sent"&&model.image?'<div class="button-row two"><button class="primary" id="manager-approve">Approve onboarding</button><button class="secondary" id="keep-trial">Keep in trial</button></div>':r.status==="approved"?'<div class="notice good">Trial passed across TDT. Further memberships still require management assignment.</div>':"")+'</section></div></div>';
+    }
+    function approved(){return shell('<div class="center-state"><div class="narrow"><h1>Onboarding is ready.</h1><button class="primary" id="open-onboarding">Start onboarding</button><p id="onboarding-boundary" class="muted small" hidden>Actual onboarding is the next prototype phase. It is not included in this revision.</p></div></div>');}
+    function paused(){return '<div class="screen"><div class="narrow center-state"><div class="narrow"><div class="brand" style="justify-content:center"><span class="brand-mark">TDT</span></div><h1>Your access has been paused.</h1></div></div></div>';}
+    function loading(){return '<div class="screen"><div class="narrow center-state"><div class="narrow"><div class="spinner"></div><h2>Loading your dashboard…</h2></div></div></div>';}
+    function errorPage(){return shell('<div class="center-state"><div class="narrow"><h1>'+(model.offline?'You’re offline.':'Something went wrong.')+'</h1><p class="muted">Your entries are still here. '+(model.offline?'Reconnect and try again.':'Please try again.')+'</p><button class="primary" id="retry-action">Try again</button><button class="text-button" id="back-error">Back</button></div></div>');}
+    function render(){
+      workspace.className="workspace preview-"+model.viewport;document.body.classList.toggle("reduce-motion",model.reducedMotion);document.body.classList.toggle("touring",model.state==="walkthrough");
+      const views={invite:()=>welcome(),signin:()=>welcome(true),dashboard,walkthrough:()=>(model.walkStep===2?gate(true):dashboard())+walkthrough(),gate,milestone,pending,management,approved,deactivated:paused,loading,error:errorPage,
+        expired:()=>shell('<div class="center-state"><div class="narrow stack"><h1>This link has expired.</h1><p class="muted">Ask management for a new link.</p></div></div>'),
+        "wrong-email":()=>shell('<h1>This account does not have access.</h1><p class="muted">Check with management which Google account to use.</p><button class="primary" data-action="signin">Back to sign in</button>')};
+      app.innerHTML=(views[model.state]||dashboard)();
+      app.querySelectorAll('#proof-form input,#proof-form select,#proof-form button').forEach(control=>control.disabled=model.saving||model.imageLoading);
+      document.querySelectorAll("[data-state]").forEach(b=>b.classList.toggle("active",b.dataset.state===model.state));
+      document.getElementById("review-context").textContent="Revision 7 · Demo time: "+dayName(localDate(model.now))+" 2026, "+(Number(model.now.slice(11,13))<12?"10:00 AM":"12:00 PM")+" Lagos. Google sign-in, saves, notifications and uploads are simulated. Screenshots stay in this tab until reset/reload. Seed video URLs are examples; management opens the selected post link, not a profile.";
+      document.getElementById("review-transition").textContent="Current: "+model.state+" · Mock review notifications: "+model.notifications+". Production screenshot retention is not decided.";
+      document.getElementById("offline-action").textContent="Offline: "+(model.offline?"on":"off");
+      document.getElementById("motion-action").textContent="Reduced motion: "+(model.reducedMotion?"on":"off");bind();
+      document.querySelectorAll('[data-viewport]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.viewport===model.viewport)));
+      document.getElementById('preview-size').textContent='Preview size: '+model.viewport+' ('+({phone:390,tablet:768,desktop:900}[model.viewport])+'px maximum).';
+      if(model.state==="walkthrough"){
+        const target=app.querySelector(model.walkStep===0?'#track-panel':model.walkStep===1?'#day-panel':'#gate-form .gate-day')||app.querySelector('.screen .narrow');
+        target?.classList.add('tour-focus');
+        app.querySelectorAll('.app-bar,.screen').forEach(e=>e.inert=true);
+        // Place the guide before accepting another tap, without a delayed scroll race.
+        positionTour();
+      }
+    }
+    function positionTour(){
+      if(model.state!=="walkthrough")return;
+      const layer=app.querySelector('.walkthrough-layer'),target=app.querySelector('.tour-focus'),rect=app.getBoundingClientRect();
+      if(!layer)return;
+      layer.style.setProperty('--tour-left',Math.max(0,rect.left)+'px');layer.style.setProperty('--tour-width',Math.min(rect.width,window.innerWidth)+'px');
+      if(!target){document.getElementById('walk-next')?.focus({preventScroll:true});return;}
+      const top=layer.getBoundingClientRect().top,box=target.getBoundingClientRect(),desired=Math.max(12,(top-box.height)/2);
+      window.scrollBy({top:box.top-desired,behavior:'instant'});document.getElementById('walk-next')?.focus({preventScroll:true});
+    }
+    function offline(returnTo){model.returnTo=returnTo;setState("error");}
+    function commit(returnTo,done){
+      if(model.saving)return;if(model.offline){offline(returnTo);return;}
+      model.saving=true;const op=++model.operation;render();
+      setTimeout(()=>{if(op!==model.operation||model.deactivated)return;model.saving=false;if(model.offline){offline(returnTo);return;}done();},450);
+    }
+    function clearImage(){if(model.image?.url.startsWith("blob:"))URL.revokeObjectURL(model.image.url);model.image=null;}
+    async function selectImage(file){
+      if(model.saving)return;
+      const op=++model.operation;model.imageError="";model.imageLoading=false;
+      if(!validImageFile(file)){model.imageError="Choose a PNG, JPG or WebP image up to 5 MB.";render();document.getElementById("proof-file")?.focus();return;}
+      const url=URL.createObjectURL(file);model.imageLoading=true;render();
+      try{
+        const image=new Image();image.src=url;await image.decode();
+        if(!image.naturalWidth||!image.naturalHeight||image.naturalWidth*image.naturalHeight>40000000)throw new Error("image dimensions");
+        if(op!==model.operation){URL.revokeObjectURL(url);return;}
+        clearImage();model.imageLoading=false;model.image={url,name:file.name,demo:false};model.proofError="";render();
+      }catch{URL.revokeObjectURL(url);if(op===model.operation){model.imageLoading=false;model.imageError="We couldn’t read that image. Please choose another.";render();document.getElementById("proof-file")?.focus();}}
+    }
+    function demoImage(){
+      clearImage();const c=document.createElement("canvas");c.width=540;c.height=360;const x=c.getContext("2d");
+      x.fillStyle="#edf5ef";x.fillRect(0,0,540,360);x.fillStyle="#174936";x.font="bold 28px sans-serif";x.fillText("DEMO SCREENSHOT",30,65);x.font="22px sans-serif";x.fillText("TikTok · Video views",30,135);x.font="bold 56px sans-serif";x.fillText("10,240",30,220);x.font="18px sans-serif";x.fillText("Synthetic data — no real creator",30,295);
+      model.image={url:c.toDataURL("image/png"),name:"demo-views.png",demo:true};
+    }
+    function approve(){
+      if(model.deactivated||!model.review||model.review.status!=="sent"||!model.image){showToast("Review the submitted link, screenshot and access status first.");return;}
+      model.review.status="approved";model.trialPassed=true;model.status="approved";setState("approved","Approval recorded in this prototype.");
+    }
+    function bind(){
+      app.querySelectorAll("[data-action]").forEach(b=>b.addEventListener("click",()=>setState(b.dataset.action)));
+      document.getElementById("weekly-views")?.addEventListener("click",()=>setState("gate"));
+      app.querySelectorAll("[data-google]").forEach(b=>b.addEventListener("click",()=>{
+        const target=b.dataset.google==="invite"?"walkthrough":model.walkComplete?"dashboard":"walkthrough";
+        if(model.offline){offline(b.dataset.google==="invite"?"invite":"signin");return;}
+        setState("loading");const op=model.operation;setTimeout(()=>{if(op===model.operation)setState(model.deactivated?"deactivated":target);},450);
+      }));
+      app.querySelectorAll("[data-day]").forEach(b=>b.addEventListener("click",()=>{
+        if(b.dataset.day==="yesterday"&&!eligible()){showToast("Yesterday is no longer available.");render();return;}
+        model.selectedDay=b.dataset.day;model.savedVideo=false;render();
+      }));
+      for(const p of ["tiktok","instagram"])document.getElementById(p+"-link")?.addEventListener("input",e=>model.draft[p]=e.target.value);
+      document.getElementById("video-form")?.addEventListener("submit",e=>{
+        e.preventDefault();if(model.saving)return;
+        const supplied=Object.entries(model.draft).filter(([,url])=>url.trim()),bad=supplied.find(([p,url])=>!validVideoUrl(url.trim(),p));
+        if(!supplied.length||bad){
+          model.videoError=bad?"Enter a valid "+platformName(bad[0])+" video link.":"Add a TikTok link, an Instagram link, or both.";render();
+          const field=document.getElementById((bad?.[0]||"tiktok")+"-link");field.setAttribute("aria-invalid","true");field.focus();return;
+        }
+        if(model.selectedDay==="yesterday"&&!eligible()){model.selectedDay="today";render();showToast("Yesterday is no longer available.");return;}
+        if(model.selectedDay==="today"&&gated()){setState("gate");return;}
+        const day=model.selectedDay==="yesterday"?previousDate(model.now):localDate(model.now),links=Object.fromEntries(supplied.map(([p,url])=>[p,url.trim()])),number=nextVideoNumber(model.videos,day);
+        if(number===null){render();showToast('Both videos for this day are already logged.');return;}
+        if(model.videos.some(v=>Object.entries(links).some(([p,url])=>v.links[p]===url))){model.videoError="This video link has already been submitted.";render();return;}
+        model.videoError="";commit(model.state,()=>{
+          model.videos.push({id:"new"+model.videos.length,date:day,loggedAt:model.now,number,links});
+          model.draft={tiktok:"",instagram:""};model.savedVideo=true;model.selectedDay="today";setState("dashboard","Video submitted.");
+        });
+      });
+      document.getElementById("walk-next")?.addEventListener("click",()=>{if(model.walkStep<2){model.walkStep++;render();}else{model.walkComplete=true;setState(model.helpReturn,"You’re ready.");}});
+      document.getElementById("return-views")?.addEventListener("click",()=>{model.selectedDay="today";render();});
+      app.querySelectorAll("[data-report]").forEach(input=>input.addEventListener("input",()=>model.reports[input.dataset.report]=input.value));
+      document.getElementById("gate-form")?.addEventListener("submit",e=>{
+        e.preventDefault();if(model.saving)return;
+        const due=entries(),missing=due.find(entry=>!validCount(model.reports[entry.key]));
+        if(missing){model.gateError="Enter a whole-number view count for this posted video.";render();const field=document.getElementById(missing.key);field.setAttribute("aria-invalid","true");field.focus();return;}
+        model.gateError="";commit("gate",()=>{for(const entry of due)model.savedReports[entry.key]=model.reports[entry.key];const qualifying=qualifyingEntry(due,model.savedReports);if(qualifying&&!model.review&&!model.milestone.key){model.milestone={key:qualifying.key,views:model.savedReports[qualifying.key]};clearImage();}setState("dashboard","Views saved.");});
+      });
+      document.getElementById("milestone-video")?.addEventListener("change",e=>{if(model.saving)return;model.operation++;model.milestone.key=e.target.value;model.milestone.views="";clearImage();model.imageError="";model.proofError="";render();document.getElementById("milestone-video")?.focus();});
+      document.getElementById("milestone-views")?.addEventListener("input",e=>model.milestone.views=e.target.value);
+      document.getElementById("proof-file")?.addEventListener("change",e=>{if(e.target.files[0])selectImage(e.target.files[0]);});
+      document.getElementById("remove-image")?.addEventListener("click",()=>{if(model.saving)return;model.operation++;clearImage();render();document.getElementById("proof-file")?.focus();});
+      document.getElementById("proof-form")?.addEventListener("submit",e=>{
+        e.preventDefault();if(model.saving||model.imageLoading)return;
+        const candidate=milestoneEntries().find(entry=>entry.key===model.milestone.key),submittedViews=model.milestone.views;
+        if(!candidate){model.proofError="Choose the video you want us to check.";render();document.getElementById("milestone-video")?.focus();return;}
+        if(!validCount(submittedViews)||Number(submittedViews)<POLICY.threshold){model.proofError="Enter at least 10,000 views for this video.";render();const field=document.getElementById("milestone-views");field.setAttribute("aria-invalid","true");field.focus();return;}
+        if(!validVideoUrl(candidate.url,candidate.platform)){model.proofError="Enter the link to this "+platformName(candidate.platform)+" video.";render();document.getElementById("proof-link").focus();return;}
+        if(!model.image){model.proofError="Add a screenshot of your video views.";render();document.getElementById("proof-file").focus();return;}
+        model.proofError="";commit("milestone",()=>{const isNew=!model.review;model.review={...candidate,views:submittedViews,status:"sent",source:"milestone",submittedAt:model.now};if(isNew)model.notifications++;model.status="pending";setState("pending","Sent for review.");});
+      });
+      document.getElementById("manager-approve")?.addEventListener("click",approve);
+      document.getElementById("keep-trial")?.addEventListener("click",()=>{model.review.status="needs-update";model.milestone={key:model.review.key,views:model.review.views};model.status="trial";setState("milestone","Creator remains in trial; submission update requested.");});
+      document.getElementById("open-onboarding")?.addEventListener("click",()=>document.getElementById("onboarding-boundary").hidden=false);
+      document.getElementById("retry-action")?.addEventListener("click",()=>model.offline?showToast("Reconnect before trying again."):setState(model.returnTo));
+      document.getElementById("back-error")?.addEventListener("click",()=>setState(model.returnTo));
+    }
+    function prepareReview(){
+      model.videos=baseVideos(true);model.reports={};model.savedReports={};
+      for(const e of entries())model.reports[e.key]=model.savedReports[e.key]=e.key==="v7a:tiktok"?"10240":"700";
+      const entry=qualifyingEntry(entries(),model.savedReports);model.milestone={key:entry.key,views:model.savedReports[entry.key]};model.review={...entry,views:model.milestone.views,status:'sent',submittedAt:model.now};model.notifications=1;
+    }
+    function scenario(name){
+      if(name==="weekend"){model.now="2026-08-08T10:00:00+01:00";setState("dashboard");return;}
+      if(["management","pending"].includes(name)&&model.review){setState(name);return;}
+      if(name==="dashboard"&&model.review){setState("dashboard");return;}
+      const viewport=model.viewport,motion=model.reducedMotion,op=model.operation+1;
+      clearImage();model=initialModel();model.viewport=viewport;model.reducedMotion=motion;model.operation=op;
+      if(["gate","pending","management","approved"].includes(name)){model.videos=baseVideos(true);model.reports={};model.savedReports={};}
+      if(["pending","management","approved"].includes(name))prepareReview();
+      if(["pending","management","approved"].includes(name)){demoImage();model.review.status="sent";model.status="pending";}
+      if(name==="approved"){model.review.status="approved";model.trialPassed=true;model.status="approved";}
+      if(name==="deactivated")model.deactivated=true;
+      if(name==="logged"){model.videos=baseVideos(true);for(const e of entries())model.reports[e.key]=model.savedReports[e.key]="700";name="dashboard";}
+      if(name==="after-noon"){model.now="2026-08-08T12:00:00+01:00";name="dashboard";}
+      if(name==="grace")name="dashboard";
+      if(name==="midweek"){model.now="2026-08-06T10:00:00+01:00";model.reports={};model.savedReports={};name="dashboard";}
+      if(name==="empty"){model.videos=[];model.reports={};model.savedReports={};model.joined="2026-08-08T09:00:00+01:00";name="dashboard";}
+      setState(name);
+    }
+    document.addEventListener("keydown",e=>{if(model.state==="walkthrough"&&app.contains(document.activeElement)&&["Tab","Escape"].includes(e.key)){e.preventDefault();document.getElementById("walk-next")?.focus();}});
+    window.addEventListener('resize',()=>requestAnimationFrame(positionTour));
+    document.querySelectorAll("[data-state]").forEach(b=>b.addEventListener("click",()=>scenario(b.dataset.state)));
+    document.querySelectorAll("[data-viewport]").forEach(b=>b.addEventListener("click",()=>{model.viewport=b.dataset.viewport;render();if(model.state!=="walkthrough")app.scrollIntoView({block:'start',behavior:'instant'});}));
+    document.getElementById("offline-action").addEventListener("click",()=>{model.offline=!model.offline;render();});
+    document.getElementById("motion-action").addEventListener("click",()=>{model.reducedMotion=!model.reducedMotion;render();});
+    document.getElementById("qualify-action").addEventListener("click",()=>{scenario("gate");for(const e of entries())model.reports[e.key]=e.key==="v7a:tiktok"?"10240":"700";render();showToast("Demo counts entered. Save views to continue.");});
+    document.getElementById("sample-image-action").addEventListener("click",()=>{if(model.state!=="milestone"||model.saving||model.imageLoading){showToast('Open the video submission form first.');return;}demoImage();render();showToast("Demo screenshot added locally.");});
+    document.getElementById("approve-action").addEventListener("click",()=>{if(!model.review)scenario("management");else setState("management");});
+    document.getElementById("deactivate-action").addEventListener("click",()=>{model.deactivated=true;setState("deactivated");});
+    document.getElementById("reset-action").addEventListener("click",()=>scenario("invite"));
+    document.getElementById("copy-decision").addEventListener("click",async()=>{
+      const decision=document.querySelector('input[name="decision"]:checked')?.value,output=document.getElementById("decision-output");
+      if(!decision){output.textContent="Choose approve, revise, or reject.";return;}
+      const text="TDT trial prototype revision 7: "+decision.toUpperCase()+"\nNotes: "+document.getElementById("decision-notes").value.trim();
+      try{await navigator.clipboard.writeText(text);output.textContent="Decision copied. Share it in this task; this control does not approve production.";}catch{output.textContent=text;}
+    });
+    render();
+
+  </script>
+</body>
+</html>

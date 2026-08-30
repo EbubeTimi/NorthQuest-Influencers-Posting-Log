@@ -279,7 +279,8 @@ Signatures and security mode only — full bodies are in `migrations/`, searchab
 | `start_trial(business_slug, full_name, tiktok_url, insta_url)` | — | DEFINER | Creates a `trial` creator — name + own profile link only, no bank, no contract |
 | `complete_creator_onboarding(creator_id, bank_name, acct_num, acct_name, contract_file_url)` | — | DEFINER | The only path that can flip a creator's own row to `active` — used by invited creators countersigning and by `trial_approved` creators completing the real handover; a plain `trial` creator is rejected |
 | `set_new_creator_contract_file(creator_id, path)` | — | DEFINER | One-time write of `contract_file_url` for the plain-signup path, after the signature upload |
-| `keepalive_tick()`, `ping()`, `ping_external()` | — | DEFINER | The two independent anti-pause defenses |
+| `keepalive_tick()`, `ping_external()` | — | DEFINER | Server-only anti-pause routines; app roles cannot execute `ping_external()` |
+| `ping()` | — | INVOKER | Harmless database-clock health check with no owner privileges |
 | `send_email(to, subject, html, kind)`, `email_shell(...)` | — | mixed | Brevo send path, currently unused (bonus notification emails were removed; sign-in codes go through Supabase Auth directly, not this path) |
 
 ## Row Level Security

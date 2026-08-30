@@ -1,0 +1,274 @@
+{
+  "revision": 7,
+  "date": "2026-08-28",
+  "onboarding": [
+    {
+      "name": "business below back 320",
+      "status": "PASS"
+    },
+    {
+      "name": "business fits phone 320",
+      "status": "PASS"
+    },
+    {
+      "name": "business below back 390",
+      "status": "PASS"
+    },
+    {
+      "name": "business fits phone 390",
+      "status": "PASS"
+    },
+    {
+      "name": "trial setup requires profile",
+      "status": "PASS"
+    },
+    {
+      "name": "same recipient completes mandatory walkthrough",
+      "status": "PASS"
+    },
+    {
+      "name": "video saved before proof",
+      "status": "PASS"
+    },
+    {
+      "name": "proof opens exact logged content link",
+      "status": "PASS"
+    },
+    {
+      "name": "screenshot is mandatory",
+      "status": "PASS"
+    },
+    {
+      "name": "failed proof save retains selected video and image",
+      "status": "PASS"
+    },
+    {
+      "name": "creator sees review pending",
+      "status": "PASS"
+    },
+    {
+      "name": "no membership before verification",
+      "status": "PASS"
+    },
+    {
+      "name": "manager sees exact submitted video",
+      "status": "PASS"
+    },
+    {
+      "name": "management must check evidence",
+      "status": "PASS"
+    },
+    {
+      "name": "creator sees correction",
+      "status": "PASS"
+    },
+    {
+      "name": "onboarding created but no active membership",
+      "status": "PASS"
+    },
+    {
+      "name": "audit trail retained",
+      "status": "PASS"
+    },
+    {
+      "name": "onboarding refuses incomplete setup",
+      "status": "PASS"
+    },
+    {
+      "name": "manager sees submitted profile",
+      "status": "PASS"
+    },
+    {
+      "name": "active membership still needs manager check",
+      "status": "PASS"
+    },
+    {
+      "name": "exactly one local membership",
+      "status": "PASS"
+    },
+    {
+      "name": "active dashboard boundary remains explicit",
+      "status": "PASS"
+    },
+    {
+      "name": "onboarding result fits phone",
+      "status": "PASS"
+    }
+  ],
+  "deepLinks": [
+    {
+      "name": "direct next-phase link on reload",
+      "status": "PASS"
+    },
+    {
+      "name": "next-phase link on already-open page",
+      "status": "PASS"
+    }
+  ],
+  "recruitmentRegression": [
+    {
+      "name": "Applicants heading not repeated visibly",
+      "status": "PASS"
+    },
+    {
+      "name": "realistic full name below back icon",
+      "status": "PASS"
+    },
+    {
+      "name": "contact lines have deliberate spacing",
+      "status": "PASS"
+    },
+    {
+      "name": "brand then person then contact details",
+      "status": "PASS"
+    },
+    {
+      "name": "uncontacted outcome is not pre-recorded",
+      "status": "PASS"
+    },
+    {
+      "name": "Outreach heading removed",
+      "status": "PASS"
+    },
+    {
+      "name": "WhatsApp action after outcome",
+      "status": "PASS"
+    },
+    {
+      "name": "message says first name and allows links",
+      "status": "PASS"
+    },
+    {
+      "name": "custom link is in prepared WhatsApp message",
+      "status": "PASS"
+    },
+    {
+      "name": "decline lands in a visible list and confirmation",
+      "status": "PASS"
+    },
+    {
+      "name": "exact five stage filters",
+      "status": "PASS"
+    },
+    {
+      "name": "declined in own Applicants queue",
+      "status": "PASS"
+    },
+    {
+      "name": "decline review shows reason and recorder",
+      "status": "PASS"
+    },
+    {
+      "name": "declined is not team rejected",
+      "status": "PASS"
+    },
+    {
+      "name": "declined excluded from accepted summary",
+      "status": "PASS"
+    },
+    {
+      "name": "start trial has no end date",
+      "status": "PASS"
+    },
+    {
+      "name": "no End trial control",
+      "status": "PASS"
+    },
+    {
+      "name": "prior Contacted filter preserved and Trial started count updated",
+      "status": "PASS"
+    },
+    {
+      "name": "cancel rename discards unsaved text",
+      "status": "PASS"
+    },
+    {
+      "name": "duplicate brand rename rejected",
+      "status": "PASS"
+    },
+    {
+      "name": "rename failed save keeps text",
+      "status": "PASS"
+    },
+    {
+      "name": "brand rename visible",
+      "status": "PASS"
+    },
+    {
+      "name": "renamed page preserves list and filters",
+      "status": "PASS"
+    },
+    {
+      "name": "rename does not break recipient link",
+      "status": "PASS"
+    },
+    {
+      "name": "creator sees renamed brand",
+      "status": "PASS"
+    },
+    {
+      "name": "agency application branding",
+      "status": "PASS"
+    },
+    {
+      "name": "all identity fields have required marks",
+      "status": "PASS"
+    },
+    {
+      "name": "automatic draft status",
+      "status": "PASS"
+    },
+    {
+      "name": "draft survives navigation without explicit save",
+      "status": "PASS"
+    },
+    {
+      "name": "every shown content question has required mark",
+      "status": "PASS"
+    },
+    {
+      "name": "video required final message optional",
+      "status": "PASS"
+    },
+    {
+      "name": "Applicants fits 320",
+      "status": "PASS"
+    },
+    {
+      "name": "person detail fits 320",
+      "status": "PASS"
+    },
+    {
+      "name": "Save is compact but touchable 320",
+      "status": "PASS"
+    },
+    {
+      "name": "Applicants fits 390",
+      "status": "PASS"
+    },
+    {
+      "name": "person detail fits 390",
+      "status": "PASS"
+    },
+    {
+      "name": "Save is compact but touchable 390",
+      "status": "PASS"
+    },
+    {
+      "name": "Applicants fits 768",
+      "status": "PASS"
+    },
+    {
+      "name": "person detail fits 768",
+      "status": "PASS"
+    },
+    {
+      "name": "Save is compact but touchable 768",
+      "status": "PASS"
+    }
+  ],
+  "limits": [
+    "Local prototype only; mock Google, uploads, messaging and memberships",
+    "Not production security, real video playback, persistent storage or launch readiness verification"
+  ]
+}

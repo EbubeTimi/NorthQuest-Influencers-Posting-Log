@@ -14,13 +14,26 @@ npm install
 npm run dev
 ```
 
-The Supabase URL and anon key are compiled in with sensible defaults, so it runs
-without a `.env` file. Override them with `NEXT_PUBLIC_SUPABASE_URL` and
-`NEXT_PUBLIC_SUPABASE_ANON_KEY` when pointing at a test project.
+Copy `.env.example` to `.env.local` and supply the intended environment's
+Supabase URL and publishable key. The application deliberately has no compiled
+database fallback, so a missing deployment configuration fails closed instead
+of silently connecting to the wrong project.
 
-The anon key is public by design and is safe in source control. Row Level
-Security is the access boundary, not key secrecy. The **service role** key is a
-different thing entirely and must never appear in this repository.
+The publishable key is public by design; Row Level Security is the data-access
+boundary. The Supabase **secret** key bypasses RLS and must only exist in a
+server-side secret store such as Vercel Environment Variables. It must never be
+committed to this repository or exposed through a `NEXT_PUBLIC_` name.
+
+Required Vercel project variables:
+
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
+- `SUPABASE_SECRET_KEY`
+- `CRON_SECRET`
+
+The legacy `NEXT_PUBLIC_SUPABASE_ANON_KEY` and
+`SUPABASE_SERVICE_ROLE_KEY` names remain temporarily supported while an older
+environment is migrated.
 
 ## Keeping the database awake
 

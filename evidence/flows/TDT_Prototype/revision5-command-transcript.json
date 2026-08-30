@@ -1,0 +1,30 @@
+{
+  "generatedAt": "2026-08-27T12:11:54.994Z",
+  "scope": "Prototype-only focused verification; no production build requested or performed",
+  "results": [
+    {
+      "command": "node tests/prototype-contract.test.js",
+      "chunk_id": "4a5e91",
+      "wall_time_seconds": 0.3664313,
+      "exit_code": 0,
+      "original_token_count": 309,
+      "output": "PASS  welcome copy replaces invited copy\nPASS  no trial chooser or business switcher\nPASS  no creator threshold lecture or paused-form banner\nPASS  screenshot step and file input\nPASS  manager has real submitted-link anchor\nPASS  paused-access copy\nPASS  read-only revision and boundaries explicit\nPASS  dashboard has weekly and independent milestone entries\nPASS  weekly number entry groups by video and platform\nPASS  pending and approved copy is concise\nPASS  proof controls locked during save or image decode\nPASS  submit snapshots counts and captures reporting time\nPASS  no remote writes or persistent browser storage\nPASS  shared behavior is independently testable\nPASS  only logged platform links within joined/completed dates\nPASS  missed yesterday before noon\nPASS  no Yesterday at noon\nPASS  no Yesterday when already logged\nPASS  no Yesterday before join date\nPASS  zero valid; blank negative decimal and exponent invalid\nPASS  separate videos cannot accumulate\nPASS  single-video protected 10,000 threshold\nPASS  second concurrent trial refused\nPASS  passed creator skips future trial\nPASS  unassigned creator can start trial\nPASS  platform links validated\nPASS  screenshot format and size constrained\n27/27 checks passed\n"
+    },
+    {
+      "command": "node tests/manage-bonus.test.js",
+      "chunk_id": "7cb181",
+      "wall_time_seconds": 0.2846315,
+      "exit_code": 0,
+      "original_token_count": 136,
+      "output": "PASS  defaults to the current month\nPASS  offers July and the current month\nPASS  current month shows no bonus for Ada\nPASS  July shows the July bonus total\nPASS  July offers a delete option per bonus\nPASS  the middle option is labelled with its own value\nPASS  writes to July, not the current month\nPASS  removes only the middle entry\nPASS  adds into the selected month\nPASS  ignores an out-of-range delete\nPASS  clear all empties the list\nPASS  header names the selected month\nPASS  header reverts for the current month\n\nAll checks passed\n"
+    },
+    {
+      "command": "git diff --check",
+      "chunk_id": "2d9a2f",
+      "wall_time_seconds": 0.2347854,
+      "exit_code": 0,
+      "original_token_count": 234,
+      "output": "warning: in the working copy of 'audit/tdt-unified-creator-ops/00_Flow_Contracts.md', LF will be replaced by CRLF the next time Git touches it\nwarning: in the working copy of 'audit/tdt-unified-creator-ops/IMPLEMENTATION_PLAN.md', LF will be replaced by CRLF the next time Git touches it\nwarning: in the working copy of 'audit/tdt-unified-creator-ops/TDT_RULE_CONFLICTS.md', LF will be replaced by CRLF the next time Git touches it\nwarning: in the working copy of 'prototypes/PROTOTYPE_BRIEF.md', LF will be replaced by CRLF the next time Git touches it\nwarning: in the working copy of 'prototypes/unified-tdt-creator-ops.html', LF will be replaced by CRLF the next time Git touches it\nwarning: in the working copy of 'tests/prototype-contract.test.js', LF will be replaced by CRLF the next time Git touches it\nwarning: in the working copy of 'tests/prototype-runtime.test.js', LF will be replaced by CRLF the next time Git touches it\n"
+    }
+  ]
+}

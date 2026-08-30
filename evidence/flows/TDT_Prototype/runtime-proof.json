@@ -1,0 +1,55 @@
+{
+  "generated_at": "2026-08-25",
+  "branch": "codex/unified-tdt-creator-ops-prototype",
+  "artifact": "prototypes/unified-tdt-creator-ops.html",
+  "environment": "local HTTP server at 127.0.0.1:4173; installed Chrome in headless mode; deterministic mock data",
+  "production_side_effects": false,
+  "automated_contract_checks": 20,
+  "runtime_checks": {
+    "phone_390_single_readable_column": "PASS",
+    "phone_390_document_overflow_px": 0,
+    "phone_390_device_overflow_px": 0,
+    "assigned_memberships_only": "PASS — NorthQuest and Aura; CashDrive absent",
+    "business_sheet_escape_focus_restore": "PASS",
+    "noon_backdate_grace": "PASS",
+    "today_is_locked_and_yesterday_is_conditional": "PASS",
+    "mandatory_spotlight_walkthrough": "PASS — no skip action",
+    "video_validation_focus_and_aria_invalid": "PASS",
+    "video_success_after_simulated_persistence_confirmation": "PASS",
+    "single_video_10240_creates_review_pending": "PASS",
+    "self_report_does_not_unlock_onboarding": "PASS",
+    "management_approval_unlocks_onboarding": "PASS",
+    "northquest_deactivation_leaves_aura_usable": "PASS",
+    "reduced_motion": "PASS",
+    "tablet_768_horizontal_overflow_px": 0,
+    "desktop_1280_horizontal_overflow_px": 0,
+    "browser_console_warnings_or_errors": "PASS — none"
+  },
+  "visual_review": {
+    "revision3-phone-dashboard.png": "PASS — locked Today, readable stacked form, no recent-video clutter",
+    "revision3-phone-view-gate.png": "PASS — dates 4–7 with separate TikTok/Instagram Video 1/2 fields",
+    "revision3-phone-review-pending.png": "PASS — management approval boundary is explicit",
+    "revision3-phone-management-review.png": "PASS — photo, joined/reported dates, evidence and decision are visible",
+    "revision3-phone-approved.png": "PASS — creator sees onboarding only after approval"
+  },
+  "build_verification": {
+    "dependencies": "PASS after clean compiler download",
+    "next_compiler": "PASS",
+    "fonts": "PASS — official IBM Plex packages bundled locally; no Google build-time fetch",
+    "framework": "Next.js 16.3.3 and React 19.2.0",
+    "npm_run_build": "PASS",
+    "excel_export_buffer": "PASS with uuid 11.1.1 override",
+    "npm_audit_production": "PASS — 0 vulnerabilities",
+    "security_checkpoint": "Re-run after the announced 2026-08-26 Next.js security release"
+  },
+  "unverified": [
+    "Real Google authentication and invitation claim",
+    "Supabase RLS and persistence",
+    "Management notification delivery and audit persistence",
+    "Private creator/application uploads",
+    "Google Sheets and Drive writes",
+    "Apify actors, outputs, and cost",
+    "Production performance and deployment"
+  ],
+  "assurance": "self-reviewed, lower assurance"
+}

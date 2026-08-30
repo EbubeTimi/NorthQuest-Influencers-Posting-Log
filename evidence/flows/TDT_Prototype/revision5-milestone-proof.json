@@ -1,0 +1,77 @@
+{
+  "generatedAt": "2026-08-27T12:12:18.989Z",
+  "checks": [
+    {
+      "name": "milestone action visible before the weekly deadline",
+      "status": "PASS"
+    },
+    {
+      "name": "screenshot is in the same milestone form",
+      "status": "PASS"
+    },
+    {
+      "name": "unselected video focuses chooser",
+      "status": "PASS"
+    },
+    {
+      "name": "milestone uses the exact logged URL",
+      "status": "PASS"
+    },
+    {
+      "name": "below-threshold milestone is rejected",
+      "status": "PASS"
+    },
+    {
+      "name": "milestone screenshot required",
+      "status": "PASS"
+    },
+    {
+      "name": "changing video removes unrelated screenshot and count",
+      "status": "PASS"
+    },
+    {
+      "name": "leaving milestone keeps its draft",
+      "status": "PASS"
+    },
+    {
+      "name": "milestone offline retry preserves screenshot",
+      "status": "PASS"
+    },
+    {
+      "name": "one notification for the milestone",
+      "status": "PASS"
+    },
+    {
+      "name": "pending milestone allows normal midweek logging",
+      "status": "PASS"
+    },
+    {
+      "name": "dashboard shows submitted review, not duplicate submission",
+      "status": "PASS"
+    },
+    {
+      "name": "early milestone does not complete weekly reporting",
+      "status": "PASS"
+    },
+    {
+      "name": "weekly gate cannot skip to today's video form",
+      "status": "PASS"
+    },
+    {
+      "name": "weekly save does not duplicate milestone notification",
+      "status": "PASS"
+    },
+    {
+      "name": "management receives chosen Instagram link",
+      "status": "PASS"
+    },
+    {
+      "name": "approved dashboard leads to onboarding only",
+      "status": "PASS"
+    },
+    {
+      "name": "no logged videos has a clear recovery",
+      "status": "PASS"
+    }
+  ]
+}

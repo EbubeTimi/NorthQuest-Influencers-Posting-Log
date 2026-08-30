@@ -1,0 +1,132 @@
+{
+  "revision": 3,
+  "date": "2026-08-28",
+  "surface": "local in-app browser",
+  "productionVerified": false,
+  "checks": [
+    {
+      "name": "Applicants has no search or repeated agency subtitle",
+      "status": "PASS"
+    },
+    {
+      "name": "only pending applicant is in distribution",
+      "status": "PASS"
+    },
+    {
+      "name": "compact phone row stays between 44 and 80 pixels",
+      "status": "PASS"
+    },
+    {
+      "name": "phone title is 22px and applicant name 16px",
+      "status": "PASS"
+    },
+    {
+      "name": "CashDrive lists Noah only",
+      "status": "PASS"
+    },
+    {
+      "name": "Aura is separate and empty",
+      "status": "PASS"
+    },
+    {
+      "name": "vibe check shows intro and hides preliminary answers",
+      "status": "PASS"
+    },
+    {
+      "name": "acceptance shows movement, not outreach inside Applicants",
+      "status": "PASS"
+    },
+    {
+      "name": "accepted person leaves pending queue",
+      "status": "PASS"
+    },
+    {
+      "name": "assigned business opens outreach without old video or answers",
+      "status": "PASS"
+    },
+    {
+      "name": "WhatsApp opens mock composer not live messaging",
+      "status": "PASS"
+    },
+    {
+      "name": "template draft survives business switch without changing target",
+      "status": "PASS"
+    },
+    {
+      "name": "NorthQuest edit did not overwrite CashDrive",
+      "status": "PASS"
+    },
+    {
+      "name": "accepted trial has fixed brand and tier",
+      "status": "PASS"
+    },
+    {
+      "name": "invitation edit opens correct template context",
+      "status": "PASS"
+    },
+    {
+      "name": "Back restores brand context",
+      "status": "PASS"
+    },
+    {
+      "name": "other agency sees no records",
+      "status": "PASS"
+    },
+    {
+      "name": "Uyi can edit templates",
+      "status": "PASS"
+    },
+    {
+      "name": "rejection is in its own list",
+      "status": "PASS"
+    },
+    {
+      "name": "rejected person is not pending",
+      "status": "PASS"
+    },
+    {
+      "name": "UGC No ends before video and has no contact promise",
+      "status": "PASS"
+    },
+    {
+      "name": "in-tab draft survives leaving and returning",
+      "status": "PASS"
+    },
+    {
+      "name": "failed early ending reports offline",
+      "status": "PASS"
+    },
+    {
+      "name": "changing No back to Yes restores later questions",
+      "status": "PASS"
+    },
+    {
+      "name": "offline keeps full form for retry",
+      "status": "PASS"
+    },
+    {
+      "name": "full ending mentions WhatsApp",
+      "status": "PASS"
+    },
+    {
+      "name": "Applicants fits 320",
+      "status": "PASS"
+    },
+    {
+      "name": "Applicants fits 390",
+      "status": "PASS"
+    },
+    {
+      "name": "Applicants fits 768",
+      "status": "PASS"
+    },
+    {
+      "name": "Applicants fits 1280",
+      "status": "PASS"
+    },
+    {
+      "name": "navigation controls retain touch targets",
+      "status": "PASS"
+    }
+  ]
+}
