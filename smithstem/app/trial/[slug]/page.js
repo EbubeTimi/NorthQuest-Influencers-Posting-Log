@@ -54,7 +54,7 @@ export default function TrialEntryPage() {
       setBusy(false);
       setError(
         signUpErr.message?.toLowerCase().includes("already registered")
-          ? "That email already has a Smithstem account. Sign in normally instead of using this link."
+          ? "That email already has an account. Sign in normally instead of using this link."
           : signUpErr.message
       );
       return;
@@ -81,7 +81,7 @@ export default function TrialEntryPage() {
       <div className="w-full max-w-sm">
         <div className="mb-8 text-center">
           <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-accent text-2xl font-bold text-white">Ω</div>
-          <h1 className="font-display text-2xl font-bold">Smithstem</h1>
+          <h1 className="font-display text-2xl font-bold">GrowthCooks Marketing Agency</h1>
         </div>
 
         {state.phase === "loading" && (
@@ -150,7 +150,7 @@ export default function TrialEntryPage() {
               <input className="input" placeholder="Your Instagram profile link" value={form.insta} onChange={(e) => setForm((f) => ({ ...f, insta: e.target.value }))} />
               <div>
                 <input className="input" type="email" placeholder="Your personal email" value={form.email} onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))} required />
-                <p className="mt-2 text-tiny text-faint">Not your {state.businessName} one — you don't have that yet. This also creates your Smithstem sign-in, so use one you actually check.</p>
+                <p className="mt-2 text-tiny text-faint">Not your {state.businessName} one — you don't have that yet. This also creates your sign-in, so use one you actually check.</p>
               </div>
               {error && <p className="text-base text-red-600">{error}</p>}
               <button className="btn-primary w-full" disabled={busy}>{busy ? "Setting you up…" : "Start my trial"}</button>

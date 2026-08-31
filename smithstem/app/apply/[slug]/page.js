@@ -83,7 +83,7 @@ export default function ApplyPage() {
       <div className="w-full max-w-md">
         <div className="mb-8 text-center">
           <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-accent text-2xl font-bold text-white">Ω</div>
-          <h1 className="font-display text-2xl font-bold">Smithstem</h1>
+          <h1 className="font-display text-2xl font-bold">GrowthCooks Marketing Agency</h1>
         </div>
 
         {state.phase === "loading" && (

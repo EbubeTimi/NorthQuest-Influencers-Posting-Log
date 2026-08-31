@@ -74,6 +74,7 @@ export default function UnifiedApplyPage() {
         ) : (
           <div className="space-y-4">
             <div className="mb-2 text-center">
+              <p className="mb-1 text-tiny font-semibold uppercase tracking-wide text-muted">GrowthCooks Marketing Agency</p>
               <h1 className="font-display text-2xl font-bold">Creator Application</h1>
             </div>
 
