@@ -47,8 +47,31 @@ under `audit/`, ~20 test files, 147 evidence files including screenshots at
 particular `00_Flow_Map.md` (the whole system), `TDT_RULE_CONFLICTS.md`
 (every superseded decision, in order), and `SEPTEMBER_1_LAUNCH_CONTRACT.md`.
 
-Smith's stated preference: bring `main` up to the Codex branch, not the
-reverse. Not yet executed.
+### Smith settled all four on 31 Aug — every one the Codex way
+
+| Decision | Chosen | Status |
+|---|---|---|
+| Sign-in | Google, matched to invite | **not built anywhere** — needs Supabase Google provider + code + a live test |
+| Existing creators | Fresh start, no migration | effectively already true — invites expired, shared-join RPC revoked |
+| Public branding | GrowthCooks Marketing Agency | **DONE 31 Aug** — `/apply`, `/apply/[slug]`, `/trial/[slug]` |
+| Apify cadence | Three windows (1-14, 1-21, 1-month) | blocked — the edge functions were never deployed |
+
+**The finding that reframes everything:** these four are Codex *design
+intentions*, captured only in its `prototypes/`, `audit/`, and tests. Codex's
+own shipped app (`smithstem/app/`) still does email-OTP sign-in and still
+renders "Smithstem". Confirmed by `git grep` — `GrowthCooks`, `signInWithOAuth`
+and the three-window cadence appear in **zero** lines of runnable app/lib code
+on either branch. So "adopt the Codex branch" would ship prototypes, not the
+decisions. Each has to be *built*. The app-code delta between the two branches
+is only 6 files (65+/261-); the other ~11,600 lines are prototypes and
+evidence. Merging the whole branch the day before launch buys risk, not the
+decisions — port deliberately instead.
+
+Branding is done. Fresh-start is the de-facto state. The two that remain need
+things only Smith can unblock: Google sign-in needs the provider configured in
+the Supabase console (and task #23, email-confirm, decided) plus one real
+sign-in test; the Apify cadence is moot until the edge-function deploy is
+approved — the block that has stalled all four automations all along.
 
 ---
 
