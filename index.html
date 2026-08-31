@@ -1203,10 +1203,10 @@
   <div class="manage-month-bar">
     <span class="mmb-icon">&#128197;</span>
     <div>
-      <div class="mmb-label">Managing bonuses for</div>
+      <div class="mmb-label">Managing month</div>
       <select class="mmb-select" id="manage-month" onchange="onManageMonthChange(this.value)"></select>
     </div>
-    <div class="mmb-hint">This is the month the <strong>Bonus</strong> column below writes to. To add or fix a bonus for an earlier month, pick it here (e.g.&nbsp;June) — it saves straight into that month's payment register, and nothing else changes.</div>
+    <div class="mmb-hint">The <strong>Base Pay</strong> and <strong>Bonus</strong> columns below apply to this month. To fix an earlier month, pick it here (e.g.&nbsp;June) — changes save to that month's register only. Each month is independent, so fixing one never changes another.</div>
     <button class="btn btn-sm mmb-edit" onclick="openBonusTiersModal();return false;">Edit bonus amounts</button>
   </div>
   <div class="creator-table-wrap">
@@ -2304,15 +2304,13 @@ function onBasePayEdit(name, value) {
   }
   const rate = parseFloat(String(value).replace(/[^\d.]/g, ''));
   if (isNaN(rate) || rate <= 0) { renderManageCreators(); return; }
-  const c = allCreators.find(c => String(c.name).toLowerCase() === name.toLowerCase());
-  if (c) c.rate = rate;
-  jsonp({ action:'setRate', name, rate }, (d) => {
-    if (d && d.status === 'success') {
-      showToast('success', 'Base pay updated', name + ' is now on ₦' + rate.toLocaleString('en-NG') + '/month (₦' + fmtMoney2(rate/62) + ' per video).');
-    } else {
-      showToast('error', 'Not saved', 'Could not save the new base pay. Check your connection and try again.');
-    }
-  });
+  // Save base pay for the selected month only. It carries forward to later
+  // months until the next change; earlier months keep whatever they had.
+  const ym = manageMonthOrToday();
+  savePaymentField(ym, name, 'rateOverride', String(rate), false);
+  showToast('success', 'Base pay set for ' + monthLabel(ym),
+    name.split(' ')[0] + ' is on ₦' + rate.toLocaleString('en-NG') + '/month (₦' + fmtMoney2(rate/62) +
+    ' per video) for ' + monthLabel(ym) + ' only. Other months are unchanged.');
   renderManageCreators();
   renderPayments();
 }
@@ -2412,9 +2410,10 @@ function onBonusPick(name, sel) {
 }
 
 function basePaySelect(c) {
-  const rate = parseFloat(c.rate) || 150000;
+  const ym = manageMonthOrToday();
+  const rate = effMonthlyRate(c.name, ym);
   const opts = BASE_PAY_TIERS.includes(rate) ? BASE_PAY_TIERS : [...BASE_PAY_TIERS, rate].sort((a, b) => a - b);
-  return '<select class="pay-input bp-select" style="max-width:130px" onchange="onBasePayEdit(\'' + escH(c.name) + '\',this.value)" title="Monthly base pay. Per-video rate = base pay ÷ 62. Changing this updates the payment register instantly.">' +
+  return '<select class="pay-input bp-select" style="max-width:130px" onchange="onBasePayEdit(\'' + escH(c.name) + '\',this.value)" title="Base pay for ' + escH(monthLabel(ym)) + '. Per-video rate = base pay ÷ 62. Saves for this month only; other months are unchanged.">' +
     opts.map(t => '<option value="' + t + '"' + (t === rate ? ' selected' : '') + '>&#8358;' + t.toLocaleString('en-NG') + '</option>').join('') +
     '<option value="custom">Custom…</option></select>';
 }
@@ -2635,6 +2634,27 @@ function calcBonus(viewsList) {
   return total;
 }
 
+// A creator's monthly base pay CAN differ month to month. Payment Manual now
+// carries a per-month "rateOverride". This returns the base pay for a given
+// month: that month's own override if one is set, otherwise the creator's
+// default base pay from the Creators sheet. Each month is independent —
+// setting one month never changes another. With no overrides anywhere — the
+// state of every existing record — this is exactly the old behaviour (always
+// the default), so nothing is re-priced until you deliberately set a month.
+function creatorDefaultRate(name) {
+  const c = allCreators.find(x => String(x.name).toLowerCase() === String(name).toLowerCase());
+  return (c && parseFloat(c.rate)) ? parseFloat(c.rate) : 150000;
+}
+function effMonthlyRate(name, ym) {
+  const nl = String(name).toLowerCase();
+  const rec = allPayments.find(p => String(p.name).toLowerCase() === nl && p.month === ym);
+  if (rec) {
+    const ov = String(rec.rateOverride || '').replace(/[^\d.]/g, '');
+    if (ov !== '' && !isNaN(parseFloat(ov)) && parseFloat(ov) > 0) return parseFloat(ov);
+  }
+  return creatorDefaultRate(name);
+}
+
 // ── BONUS TIERS — editable from Manage Creators / Payments, no code changes ──
 function loadBonusTiers() {
   jsonp({ action:'getBonusTiers' }, (data) => {
@@ -2791,9 +2811,9 @@ function onPayEdit(idx, field, value, rerender) {
 function savePaymentField(month, name, field, value, rerender) {
   lastPayEditTime = Date.now();
   let rec = allPayments.find(p => p.month === month && String(p.name).toLowerCase() === name.toLowerCase());
-  if (!rec) { rec = { month, name, bonusViews:'', specialBonus:'', paymentStatus:'Pending', paymentDate:'', remarks:'', postsOverride:'', postsCredit:'', totalOverride:'' }; allPayments.push(rec); }
+  if (!rec) { rec = { month, name, bonusViews:'', specialBonus:'', paymentStatus:'Pending', paymentDate:'', remarks:'', postsOverride:'', postsCredit:'', totalOverride:'', rateOverride:'' }; allPayments.push(rec); }
   rec[field] = value;
-  jsonp({ action:'savePayment', month, name, bonusViews:rec.bonusViews||'', specialBonus:rec.specialBonus||'', paymentStatus:rec.paymentStatus||'Pending', paymentDate:rec.paymentDate||'', remarks:rec.remarks||'', postsOverride:rec.postsOverride||'', postsCredit:rec.postsCredit||'', totalOverride:rec.totalOverride||'' }, (d) => {
+  jsonp({ action:'savePayment', month, name, bonusViews:rec.bonusViews||'', specialBonus:rec.specialBonus||'', paymentStatus:rec.paymentStatus||'Pending', paymentDate:rec.paymentDate||'', remarks:rec.remarks||'', postsOverride:rec.postsOverride||'', postsCredit:rec.postsCredit||'', totalOverride:rec.totalOverride||'', rateOverride:rec.rateOverride||'' }, (d) => {
     if (!d || d.status !== 'success') showToast('error', 'Not saved', 'Could not save that change. Check your connection and try again.');
   });
   if (rerender) renderPayments();
@@ -2809,7 +2829,7 @@ function onPostsEdit(idx, actualPosts, typedValue) {
   if (isNaN(typed) || typed < 0) { renderPayments(); return; }
   const credit = Math.round(typed - actualPosts);
   let rec = allPayments.find(p => p.month === selectedPayMonth && String(p.name).toLowerCase() === name.toLowerCase());
-  if (!rec) { rec = { month: selectedPayMonth, name, bonusViews:'', specialBonus:'', paymentStatus:'Pending', paymentDate:'', remarks:'', postsOverride:'', postsCredit:'', totalOverride:'' }; allPayments.push(rec); }
+  if (!rec) { rec = { month: selectedPayMonth, name, bonusViews:'', specialBonus:'', paymentStatus:'Pending', paymentDate:'', remarks:'', postsOverride:'', postsCredit:'', totalOverride:'', rateOverride:'' }; allPayments.push(rec); }
   rec.postsOverride = '';      // wipe any legacy fixed override
   rec.postsCredit = String(credit);
   savePaymentField(selectedPayMonth, name, 'postsCredit', String(credit), true);
@@ -2844,22 +2864,15 @@ function onRateEdit(idx, value) {
   if (!name) return;
   const raw = parseFloat(String(value).replace(/[^\d.]/g, ''));
   if (isNaN(raw) || raw <= 0) { renderPayments(); return; }
-  // The cell shows per-video rate but the backend stores monthly base pay.
+  // The cell shows per-video rate but we store monthly base pay.
   // Flat divisor of 62 (regardless of month length).
-  let rate;
-  if (raw < 10000) {
-    // Looks like a per-video rate — convert to monthly base pay
-    rate = Math.round(raw * 62);
-  } else {
-    rate = raw;
-  }
-  const c = allCreators.find(c => String(c.name).toLowerCase() === name.toLowerCase());
-  if (c) c.rate = rate;
-  else allCreators.push({ name, status: 'Active', rate, bankName:'', acctNum:'', acctName:'' });
-  jsonp({ action:'setRate', name, rate }, (d) => {
-    if (!d || d.status !== 'success') showToast('error', 'Not saved', 'Could not save the new rate. Check your connection and try again.');
-  });
-  renderPayments();
+  const rate = raw < 10000 ? Math.round(raw * 62) : raw;   // per-video → monthly
+  // Save the base pay for THIS month only (carries forward to later months
+  // until the next change; earlier months are untouched).
+  savePaymentField(selectedPayMonth, name, 'rateOverride', String(rate), true);
+  showToast('success', 'Base pay set for ' + monthLabel(selectedPayMonth),
+    name.split(' ')[0] + ' is on ₦' + rate.toLocaleString('en-NG') + '/month for ' + monthLabel(selectedPayMonth) +
+    ' only. Other months are unchanged.');
 }
 
 function onBankEdit(idx, field, value) {
@@ -2937,7 +2950,8 @@ function renderPayments() {
       bankName: c.bankName || '', acctNum: c.acctNum || '', acctName: c.acctName || ''
     };
   });
-  const tierOf = n => (cmap[n.toLowerCase()] || { rate: defaultMonthlySalary }).rate;
+  // Base pay for THIS register's month (per-month override wins, else default).
+  const tierOf = n => effMonthlyRate(n, selectedPayMonth);
 
   // Segment creators by base-pay tier — highest earners first, A–Z inside each tier.
   const names = Object.keys(counts).sort((a, b) => tierOf(b) - tierOf(a) || a.localeCompare(b));
@@ -2996,7 +3010,7 @@ function renderPayments() {
         tierLabel = '<tr class="pay-section-label"><td colspan="15">&#8358;' + Number(rowTier).toLocaleString('en-NG') + ' base pay</td></tr>';
       }
       const ci = cmap[name.toLowerCase()] || { rate: defaultMonthlySalary, bankName:'', acctNum:'', acctName:'' };
-      const monthlySalary = ci.rate;
+      const monthlySalary = effMonthlyRate(name, selectedPayMonth);
       const man = allPayments.find(p => p.month === selectedPayMonth && String(p.name).toLowerCase() === name.toLowerCase()) || {};
       // New behavior: postsCredit ADDS to actual posts (so new logs accumulate naturally).
       // Old behavior fallback: postsOverride REPLACES (only if postsCredit is empty and override exists).
