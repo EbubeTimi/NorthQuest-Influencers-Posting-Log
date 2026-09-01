@@ -165,14 +165,25 @@ Deno.serve(async (req: Request) => {
     }
 
     const phase = new URL(req.url).searchParams.get("phase") || "start";
-    const { data: apifyToken } = await admin.rpc("get_apify_token");
-    if (!apifyToken) throw new Error("Apify token not configured");
 
     const { data: businesses } = await admin.from("businesses").select("id, slug, name, drive_analytics_folder_id").not("drive_analytics_folder_id", "is", null);
 
+    // Each brand scrapes with its own Apify account (get_business_apify_token).
+    // A brand with no account configured yet returns null and is skipped
+    // outright — no run started, no error. Today that is only NorthQuest;
+    // Aura and CashDrive stay silent until Smith loads their tokens.
+    async function tokenFor(businessId: string) {
+      const { data } = await admin.rpc("get_business_apify_token", { p_business_id: businessId });
+      return (data as string) || null;
+    }
+
     if (phase === "start") {
       const results = [];
-      for (const b of businesses || []) results.push({ business: b.slug, ...(await startForBusiness(admin, apifyToken as string, b)) });
+      for (const b of businesses || []) {
+        const apifyToken = await tokenFor(b.id as string);
+        if (!apifyToken) { results.push({ business: b.slug, skipped: true, reason: "no_apify_account" }); continue; }
+        results.push({ business: b.slug, ...(await startForBusiness(admin, apifyToken, b)) });
+      }
       return new Response(JSON.stringify({ ok: true, results }), { headers: { "Content-Type": "application/json" } });
     }
 
@@ -183,7 +194,9 @@ Deno.serve(async (req: Request) => {
     for (const run of pending || []) {
       const business = (businesses || []).find((b) => b.id === run.business_id);
       if (!business) continue;
-      results.push({ business: business.slug, ...(await collectForRun(admin, apifyToken as string, driveToken, run, business)) });
+      const apifyToken = await tokenFor(business.id as string);
+      if (!apifyToken) { results.push({ business: business.slug, skipped: true, reason: "no_apify_account" }); continue; }
+      results.push({ business: business.slug, ...(await collectForRun(admin, apifyToken, driveToken, run, business)) });
     }
     return new Response(JSON.stringify({ ok: true, results }), { headers: { "Content-Type": "application/json" } });
   } catch (err) {

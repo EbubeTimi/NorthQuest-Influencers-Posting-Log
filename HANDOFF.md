@@ -73,6 +73,36 @@ the Supabase console (and task #23, email-confirm, decided) plus one real
 sign-in test; the Apify cadence is moot until the edge-function deploy is
 approved — the block that has stalled all four automations all along.
 
+### Apify is now per-brand (Smith, 1 Sept)
+
+Each brand scrapes with its **own** Apify account, not one shared token. The
+account that exists today is **NorthQuest's alone**. Aura and CashDrive each
+get a separate Apify account later; until their token is loaded they pull
+nothing — silently skipped, no error. Built for on the branch, not yet applied
+(Supabase is approval-locked):
+
+- migration `20260901120000_per_business_apify_token.sql` adds
+  `get_business_apify_token(business_id)` — reads Vault secret
+  `apify_api_token_<slug>`, returns NULL when a brand has no account, with a
+  legacy fallback to the old `apify_api_token` for NorthQuest so it keeps
+  working the moment this ships.
+- `analytics-monthly` now looks up each brand's token and skips any brand
+  whose token is NULL. Weekly is self-reported only and was never affected.
+
+When Smith gets Aura's / CashDrive's Apify accounts, their token goes into
+Vault as `apify_api_token_aura` / `apify_api_token_cashdrive`. Nothing else to
+change.
+
+### The real current blocker: Supabase MCP approval
+
+Every Supabase call in this session — read, deploy, migrate — returns
+"requires approval" and the prompt is not being granted on Smith's side. That
+is what actually blocks the deploys, the per-brand migration above, and even
+reading the Vault to confirm secrets. Getting that one approval to appear and
+be allowed unblocks the entire Supabase side at once. Fallback if it never
+appears: deploy the functions and run the migration from the Supabase
+dashboard / CLI directly.
+
 ---
 
 ## Ground truth in the database
