@@ -732,6 +732,11 @@
   .pay-row-del { display:inline-flex; align-items:center; justify-content:center; width:18px; height:18px; padding:0; margin-left:4px; border:none; background:transparent; color:#c0392b; font-size:14px; font-weight:bold; line-height:1; cursor:pointer; border-radius:4px; vertical-align:middle; opacity:0.55; transition:all 0.15s; }
   .pay-row-del:hover { opacity:1; background:#c0392b; color:#fff; }
   .pay-section-label td { background:#f0eaff; color:#4a2eab; font-size:9px; font-weight:800; letter-spacing:0.1em; text-transform:uppercase; border:none; padding:5px 10px; }
+  .manage-tabs { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin:0 0 12px; }
+  .manage-tab { padding:8px 16px; border:1.5px solid var(--border); border-radius:9px; background:var(--surface); color:var(--text2); font-weight:600; font-size:13px; cursor:pointer; font-family:inherit; }
+  .manage-tab.active { background:var(--accent); border-color:var(--accent); color:#fff; }
+  .manage-add { margin-left:auto; display:flex; gap:6px; align-items:center; flex-wrap:wrap; }
+  .manage-add .pay-input { min-width:0; }
   .manage-month-bar { display:flex; align-items:center; gap:16px; flex-wrap:wrap; background:var(--accent-light); border:1.5px solid var(--accent); border-radius:var(--radius); padding:14px 18px; margin:0 0 14px; }
   .manage-month-bar .mmb-icon { font-size:22px; line-height:1; }
   .manage-month-bar .mmb-label { font-size:11px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase; color:var(--accent3); margin-bottom:4px; }
@@ -1209,9 +1214,19 @@
     <div class="mmb-hint">The <strong>Base Pay</strong> and <strong>Bonus</strong> columns below apply to this month. To fix an earlier month, pick it here (e.g.&nbsp;June) — changes save to that month's register only. Each month is independent, so fixing one never changes another.</div>
     <button class="btn btn-sm mmb-edit" onclick="openBonusTiersModal();return false;">Edit bonus amounts</button>
   </div>
+
+  <div class="manage-tabs">
+    <button class="manage-tab active" id="mtab-active" onclick="setManageTab('active')">Active this month</button>
+    <button class="manage-tab" id="mtab-inactive" onclick="setManageTab('inactive')">Deactivated this month</button>
+    <span class="manage-add">
+      <select class="pay-input" id="manage-add-name" style="max-width:180px"></select>
+      <select class="pay-input" id="manage-add-tier" style="max-width:120px"></select>
+      <button class="btn btn-sm btn-primary" onclick="addCreatorToMonth()" style="white-space:nowrap">+ Add to this month</button>
+    </span>
+  </div>
   <div class="creator-table-wrap">
     <table class="log-table">
-      <thead><tr><th>Creator</th><th>Status</th><th>Contract</th><th>Contact</th><th>Base Pay (&#8358;/month)</th><th id="manage-bonus-th">Bonus (This Month)</th><th>Joined</th><th>Left</th><th>Total Posts</th><th>Action</th></tr></thead>
+      <thead><tr><th>Creator</th><th>Status</th><th>Contract</th><th>Contact</th><th>Base Pay (&#8358;/month)</th><th id="manage-bonus-th">Bonus (This Month)</th><th>Joined</th><th>Left</th><th>Posts (month)</th><th>Action</th></tr></thead>
       <tbody id="manage-body"><tr><td colspan="10" class="empty-state"><span class="spinner"></span></td></tr></tbody>
     </table>
   </div>
@@ -1232,6 +1247,8 @@
     <span class="section-title">Payment register</span>
     <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
       <span class="page-search-wrap"><input class="page-search-input" id="pay-search" type="text" placeholder="Search creators..." oninput="filterTableRows('pay-search','pay-body')" autocomplete="off"></span>
+      <select class="pay-input" id="paymonth-add-name" style="max-width:180px"></select>
+      <button class="btn btn-sm btn-primary" onclick="addCreatorToPayMonth()" style="white-space:nowrap">+ Add creator to this month</button>
       <button id="pay-refresh-btn" class="btn btn-sm" onclick="refreshPaymentsData(this)">&#x21BB; Refresh</button>
       <button class="btn btn-sm" onclick="exportPaymentsCSV()">&#x2913; Download CSV</button>
       <button id="pay-clear-bonuses-btn" class="btn btn-sm" onclick="clearAllBonusesThisMonth(this)" style="color:var(--red)">&#x2715; Clear all bonuses (this month)</button>
@@ -1376,6 +1393,8 @@ let weekOffset = 0, selectedMonth = null, selectedPayMonth = null;
 // Which month the Manage Creators bonus column reads and writes. Null means
 // "the current month", which is what it always used to be locked to.
 let manageMonth = null;
+// Which tab of Manage Creators is showing: 'active' or 'inactive' (deactivated).
+let manageTab = 'active';
 let isAdmin = false, dataLoaded = false, creatorsLoaded = false, paysLoaded = false;
 // dataLoaded only means "stop showing spinners". It is set even when every
 // fetch attempt failed, so on its own it cannot tell an empty day from an
@@ -2576,41 +2595,111 @@ function renderManageMonthPicker() {
   }
 }
 
+// Month-scoped roster: what state a creator is in for a given month.
+// addedYM = the month they joined; leftYM = the month they were deactivated
+// (only set for inactive creators). "Active in this month" means they had
+// joined by then and had not yet left; "deactivated this month" files them
+// under the month they were let go so they stop showing afterwards.
+function creatorMonthStatus(c, ym) {
+  const addedYM = c.added ? monthYM(c.added) : '';
+  const leftRaw = leftDateFor(c);                    // '' for active creators
+  const leftYM = leftRaw ? monthYM(leftRaw) : null;
+  const nl = String(c.name).toLowerCase();
+  const hasRecord = allPayments.some(p => p.month === ym && String(p.name).toLowerCase() === nl);
+  const deactivatedThisMonth = (leftYM !== null && leftYM === ym);
+  const activeInMonth = ((addedYM === '' || addedYM <= ym) || hasRecord) && (leftYM === null || ym < leftYM);
+  return { activeInMonth, deactivatedThisMonth, leftYM };
+}
+
+function setManageTab(t) { manageTab = (t === 'inactive') ? 'inactive' : 'active'; renderManageCreators(); }
+
+function renderManageTabs() {
+  const ym = manageMonthOrToday();
+  const at = document.getElementById('mtab-active');
+  const it = document.getElementById('mtab-inactive');
+  if (at) at.classList.toggle('active', manageTab === 'active');
+  if (it) it.classList.toggle('active', manageTab === 'inactive');
+  // "Add to this month" offers active creators not already in this month's
+  // roster — e.g. a late joiner who logged nothing and wouldn't otherwise show.
+  const shown = {};
+  allCreators.forEach(c => { if (creatorMonthStatus(c, ym).activeInMonth) shown[String(c.name).toLowerCase()] = 1; });
+  const cands = allCreators.filter(c => String(c.status).toLowerCase() === 'active' && !shown[String(c.name).toLowerCase()])
+    .sort((a,b) => a.name.localeCompare(b.name));
+  const nameSel = document.getElementById('manage-add-name');
+  if (nameSel) nameSel.innerHTML = '<option value="">Add a creator to ' + escH(monthShort(ym)) + '…</option>' +
+    cands.map(c => '<option value="' + escH(c.name) + '">' + escH(c.name) + '</option>').join('');
+  const tierSel = document.getElementById('manage-add-tier');
+  if (tierSel && !tierSel.dataset.filled) {
+    tierSel.innerHTML = BASE_PAY_TIERS.map(t => '<option value="' + t + '"' + (t===150000?' selected':'') + '>&#8358;' + t.toLocaleString('en-NG') + '</option>').join('');
+    tierSel.dataset.filled = '1';
+  }
+}
+
+function addCreatorToMonth() {
+  const nameSel = document.getElementById('manage-add-name');
+  const name = nameSel ? nameSel.value : '';
+  if (!name) { showToast('error', 'Pick a creator', 'Choose a creator from the dropdown first.'); return; }
+  const ym = manageMonthOrToday();
+  const tierSel = document.getElementById('manage-add-tier');
+  const tier = tierSel ? (parseInt(tierSel.value, 10) || creatorDefaultRate(name)) : creatorDefaultRate(name);
+  // A rate record for this month makes them appear in the month's roster and
+  // in the payment register even with zero logged posts.
+  savePaymentField(ym, name, 'rateOverride', String(tier), false);
+  manageTab = 'active';
+  showToast('success', 'Added to ' + monthLabel(ym),
+    name.split(' ')[0] + ' now appears in ' + monthLabel(ym) + ' at ₦' + tier.toLocaleString('en-NG') +
+    '/month. Set their bonus in the row — they show in the payment register too.');
+  renderManageCreators();
+  renderPayments();
+}
+
 function renderManageCreators() {
   const tbody = document.getElementById('manage-body');
   const counts = document.getElementById('manage-counts');
   renderManageMonthPicker();
   if (!creatorsLoaded) { tbody.innerHTML = '<tr><td colspan="10" class="empty-state"><span class="spinner"></span></td></tr>'; return; }
-  if (!allCreators.length) { tbody.innerHTML = '<tr><td colspan="10" class="empty-state"><strong>No creators yet</strong></td></tr>'; counts.textContent = ''; renderOnboardingOverview(); return; }
-  const active = allCreators.filter(c => String(c.status).toLowerCase()==='active').length;
-  counts.textContent = active + ' active · ' + (allCreators.length-active) + ' inactive · ' + allCreators.length + ' total';
+  renderManageTabs();
   renderOnboardingOverview();
   updateBonusLegendText();
-  const sorted = [...allCreators].sort((a,b) => {
-    const aa = String(a.status).toLowerCase()==='active'?0:1;
-    const bb = String(b.status).toLowerCase()==='active'?0:1;
-    return aa!==bb ? aa-bb : a.name.localeCompare(b.name);
+  const ym = manageMonthOrToday();
+  const activeList = [], inactiveList = [];
+  allCreators.forEach(c => {
+    const st = creatorMonthStatus(c, ym);
+    if (st.deactivatedThisMonth) inactiveList.push(c);
+    else if (st.activeInMonth) activeList.push(c);
   });
-  tbody.innerHTML = sorted.map(c => {
-    const isActive = String(c.status).toLowerCase()==='active';
-    const badge = isActive ? '<span class="badge badge-active">Active</span>' : '<span class="badge badge-inactive">Inactive</span>';
+  const list = (manageTab === 'inactive' ? inactiveList : activeList).sort((a,b) => a.name.localeCompare(b.name));
+  counts.textContent = activeList.length + ' active · ' + inactiveList.length + ' left · in ' + monthShort(ym);
+  if (!allCreators.length) { tbody.innerHTML = '<tr><td colspan="10" class="empty-state"><strong>No creators yet</strong></td></tr>'; return; }
+  if (!list.length) {
+    tbody.innerHTML = '<tr><td colspan="10" class="empty-state"><strong>' +
+      (manageTab === 'inactive' ? 'No one was deactivated in ' + escH(monthLabel(ym)) : 'No active creators in ' + escH(monthLabel(ym))) +
+      '</strong></td></tr>';
+    return;
+  }
+  tbody.innerHTML = list.map(c => {
+    const isActiveNow = String(c.status).toLowerCase() === 'active';
+    const st = creatorMonthStatus(c, ym);
+    const badge = st.deactivatedThisMonth
+      ? '<span class="badge badge-inactive">Left in ' + escH(monthShort(ym)) + '</span>'
+      : '<span class="badge badge-active">Active</span>';
     const added = c.added ? new Date(c.added).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}) : '—';
     const leftRaw = leftDateFor(c);
     const left = leftRaw
       ? '<span title="Recorded when the creator was deactivated (or their last logged post for older records)">' + new Date(leftRaw + 'T00:00:00').toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}) + '</span>'
       : '—';
-    const posts = allRows.filter(r => r.name===c.name).length;
+    const posts = allRows.filter(r => r.name===c.name && monthYM(r.date)===ym).length;
     return '<tr data-creator="' + escH(c.name) + '"><td><span class="creator-link" onclick="openModal(\'' + escH(c.name) + '\')">' + escH(c.name) + '</span></td>' +
       '<td>' + badge + '</td>' +
       '<td>' + contractCell(c) + '</td>' +
       '<td>' + contactCell(c) + '</td>' +
-      '<td>' + (isActive ? basePaySelect(c) : '<span style="color:var(--text3)">—</span>') + '</td>' +
-      '<td>' + (isActive ? bonusControl(c.name) : '<span style="color:var(--text3)">—</span>') + '</td>' +
+      '<td>' + basePaySelect(c) + '</td>' +
+      '<td>' + bonusControl(c.name) + '</td>' +
       '<td style="color:var(--text3)">' + added + '</td>' +
       '<td style="color:var(--text3)">' + left + '</td>' +
       '<td style="color:var(--text2)">' + posts + '</td>' +
       '<td><div style="display:flex;gap:6px;flex-wrap:wrap">' +
-      '<button class="btn btn-sm ' + (isActive?'btn-danger':'') + '" onclick="toggleCreator(\'' + escH(c.name) + '\')">' + (isActive?'Deactivate':'Reactivate') + '</button>' +
+      '<button class="btn btn-sm ' + (isActiveNow?'btn-danger':'') + '" onclick="toggleCreator(\'' + escH(c.name) + '\')">' + (isActiveNow?'Deactivate':'Reactivate') + '</button>' +
       '<button class="btn btn-sm btn-delete" onclick="deleteCreator(\'' + escH(c.name) + '\')">Delete</button>' +
       '</div></td></tr>';
   }).join('');
@@ -2748,6 +2837,18 @@ function loadPayments() {
 }
 
 function selectPayMonth(ym) { selectedPayMonth = ym; renderPayments(); }
+
+// Add a creator to the current register month even if they logged nothing —
+// creates a payment record at their default base pay so the row appears.
+function addCreatorToPayMonth() {
+  const sel = document.getElementById('paymonth-add-name');
+  const name = sel ? sel.value : '';
+  if (!name) { showToast('error', 'Pick a creator', 'Choose a creator to add to this month.'); return; }
+  savePaymentField(selectedPayMonth, name, 'rateOverride', String(creatorDefaultRate(name)), false);
+  showToast('success', 'Added to ' + monthLabel(selectedPayMonth),
+    name.split(' ')[0] + ' added to ' + monthLabel(selectedPayMonth) + '. Set their base pay and bonus in the row.');
+  renderPayments();
+}
 
 // Pull the latest posts, creators, and payment data so the register is current
 function refreshPaymentsData(btn) {
@@ -2938,6 +3039,15 @@ function renderPayments() {
   const monthRows = allRows.filter(r => monthYM(r.date) === selectedPayMonth);
   const counts = {};
   monthRows.forEach(r => { counts[r.name] = (counts[r.name] || 0) + 1; });
+  // Also include anyone added to this month by hand (they have a payment record
+  // for it) even with zero logged posts — late joiners who never logged still
+  // need to be paid. Staff are handled in their own section, so skip them.
+  allPayments.forEach(p => {
+    if (p.month !== selectedPayMonth || !p.name) return;
+    const nm = String(p.name);
+    if (STAFF.some(s => s.key === nm)) return;
+    if (!Object.keys(counts).some(k => k.toLowerCase() === nm.toLowerCase())) counts[nm] = 0;
+  });
 
   // Per-video rate = monthly base pay ÷ 62 (flat divisor, regardless of month length).
   const maxVideos = 62;
@@ -2956,6 +3066,17 @@ function renderPayments() {
   // Segment creators by base-pay tier — highest earners first, A–Z inside each tier.
   const names = Object.keys(counts).sort((a, b) => tierOf(b) - tierOf(a) || a.localeCompare(b));
   payRowNames = names;
+  // Fill the "add creator to this month" picker with active creators who are
+  // not already in this month's register.
+  (function(){
+    const sel = document.getElementById('paymonth-add-name');
+    if (!sel) return;
+    const inReg = {}; names.forEach(n => inReg[String(n).toLowerCase()] = 1);
+    const cands = allCreators.filter(c => String(c.status).toLowerCase() === 'active' && !inReg[String(c.name).toLowerCase()])
+      .sort((a,b) => a.name.localeCompare(b.name));
+    sel.innerHTML = '<option value="">Add a creator to ' + escH(monthShort(selectedPayMonth)) + '…</option>' +
+      cands.map(c => '<option value="' + escH(c.name) + '">' + escH(c.name) + '</option>').join('');
+  })();
 
   let tPosts = 0, tBase = 0, tPerf = 0, tSpecial = 0, tTotal = 0;
 
