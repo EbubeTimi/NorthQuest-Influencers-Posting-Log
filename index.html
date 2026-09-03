@@ -1219,7 +1219,7 @@
     <button class="manage-tab active" id="mtab-active" onclick="setManageTab('active')">Active this month</button>
     <button class="manage-tab" id="mtab-inactive" onclick="setManageTab('inactive')">Deactivated this month</button>
     <span class="manage-add">
-      <select class="pay-input" id="manage-add-name" style="max-width:180px"></select>
+      <select class="pay-input" id="manage-add-name" style="max-width:180px" onchange="onManageAddNameChange(this.value)"></select>
       <select class="pay-input" id="manage-add-tier" style="max-width:120px"></select>
       <button class="btn btn-sm btn-primary" onclick="addCreatorToMonth()" style="white-space:nowrap">+ Add to this month</button>
     </span>
@@ -2613,27 +2613,53 @@ function creatorMonthStatus(c, ym) {
 
 function setManageTab(t) { manageTab = (t === 'inactive') ? 'inactive' : 'active'; renderManageCreators(); }
 
+// Creators you can ADD to a month = active creators who don't yet have a row
+// for it: no logged posts AND no payment record. That's exactly the late
+// joiner who logged nothing. (Someone who already has a row is edited in place,
+// not "added", so we leave them out to avoid overwriting their pay.)
+function monthAddCandidates(ym) {
+  const hasRow = {};
+  allRows.forEach(r => { if (monthYM(r.date) === ym) hasRow[String(r.name).toLowerCase()] = 1; });
+  allPayments.forEach(p => { if (p.month === ym && p.name) hasRow[String(p.name).toLowerCase()] = 1; });
+  return allCreators
+    .filter(c => String(c.status).toLowerCase() === 'active' && !hasRow[String(c.name).toLowerCase()])
+    .sort((a,b) => a.name.localeCompare(b.name));
+}
+function fillAddPicker(selId, ym) {
+  const sel = document.getElementById(selId);
+  if (!sel) return;
+  const cands = monthAddCandidates(ym);
+  sel.disabled = !cands.length;
+  sel.innerHTML = cands.length
+    ? '<option value="">Add a creator to ' + escH(monthShort(ym)) + '…</option>' +
+        cands.map(c => '<option value="' + escH(c.name) + '">' + escH(c.name) + '</option>').join('')
+    : '<option value="">Everyone active already has a row in ' + escH(monthShort(ym)) + '</option>';
+}
+
 function renderManageTabs() {
   const ym = manageMonthOrToday();
   const at = document.getElementById('mtab-active');
   const it = document.getElementById('mtab-inactive');
   if (at) at.classList.toggle('active', manageTab === 'active');
   if (it) it.classList.toggle('active', manageTab === 'inactive');
-  // "Add to this month" offers active creators not already in this month's
-  // roster — e.g. a late joiner who logged nothing and wouldn't otherwise show.
-  const shown = {};
-  allCreators.forEach(c => { if (creatorMonthStatus(c, ym).activeInMonth) shown[String(c.name).toLowerCase()] = 1; });
-  const cands = allCreators.filter(c => String(c.status).toLowerCase() === 'active' && !shown[String(c.name).toLowerCase()])
-    .sort((a,b) => a.name.localeCompare(b.name));
-  const nameSel = document.getElementById('manage-add-name');
-  if (nameSel) nameSel.innerHTML = '<option value="">Add a creator to ' + escH(monthShort(ym)) + '…</option>' +
-    cands.map(c => '<option value="' + escH(c.name) + '">' + escH(c.name) + '</option>').join('');
-  const tierSel = document.getElementById('manage-add-tier');
-  if (tierSel && !tierSel.dataset.filled) {
-    tierSel.innerHTML = BASE_PAY_TIERS.map(t => '<option value="' + t + '"' + (t===150000?' selected':'') + '>&#8358;' + t.toLocaleString('en-NG') + '</option>').join('');
-    tierSel.dataset.filled = '1';
-  }
+  // "Add to this month" offers creators with no row yet that month (see
+  // monthAddCandidates) — e.g. a late joiner who logged nothing.
+  fillAddPicker('manage-add-name', ym);
+  syncManageAddTier();
 }
+
+// Keep the tier dropdown showing the SELECTED creator's own default base pay
+// (not a fixed guess) — otherwise adding someone silently used the wrong tier.
+function syncManageAddTier() {
+  const nameSel = document.getElementById('manage-add-name');
+  const tierSel = document.getElementById('manage-add-tier');
+  if (!tierSel) return;
+  const name = nameSel ? nameSel.value : '';
+  const rate = name ? creatorDefaultRate(name) : 150000;
+  const opts = BASE_PAY_TIERS.includes(rate) ? BASE_PAY_TIERS : [...BASE_PAY_TIERS, rate].sort((a,b)=>a-b);
+  tierSel.innerHTML = opts.map(t => '<option value="' + t + '"' + (t===rate?' selected':'') + '>&#8358;' + t.toLocaleString('en-NG') + '</option>').join('');
+}
+function onManageAddNameChange() { syncManageAddTier(); }
 
 function addCreatorToMonth() {
   const nameSel = document.getElementById('manage-add-name');
@@ -3066,17 +3092,8 @@ function renderPayments() {
   // Segment creators by base-pay tier — highest earners first, A–Z inside each tier.
   const names = Object.keys(counts).sort((a, b) => tierOf(b) - tierOf(a) || a.localeCompare(b));
   payRowNames = names;
-  // Fill the "add creator to this month" picker with active creators who are
-  // not already in this month's register.
-  (function(){
-    const sel = document.getElementById('paymonth-add-name');
-    if (!sel) return;
-    const inReg = {}; names.forEach(n => inReg[String(n).toLowerCase()] = 1);
-    const cands = allCreators.filter(c => String(c.status).toLowerCase() === 'active' && !inReg[String(c.name).toLowerCase()])
-      .sort((a,b) => a.name.localeCompare(b.name));
-    sel.innerHTML = '<option value="">Add a creator to ' + escH(monthShort(selectedPayMonth)) + '…</option>' +
-      cands.map(c => '<option value="' + escH(c.name) + '">' + escH(c.name) + '</option>').join('');
-  })();
+  // Fill the "add creator to this month" picker — see monthAddCandidates.
+  fillAddPicker('paymonth-add-name', selectedPayMonth);
 
   let tPosts = 0, tBase = 0, tPerf = 0, tSpecial = 0, tTotal = 0;
 
