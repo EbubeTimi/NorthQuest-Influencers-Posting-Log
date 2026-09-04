@@ -42,6 +42,37 @@
     --radius-sm: 8px;
     --shadow: 0 1px 4px rgba(74,46,171,0.06), 0 4px 16px rgba(74,46,171,0.05);
     --shadow-sm: 0 1px 3px rgba(74,46,171,0.06);
+    --accent-rgb: 109,76,224;
+  }
+
+  /* CREATOR-FACING SURFACES — calmer warm-neutral/green palette from the
+     approved dashboard redesign. Scoped to these containers only so the
+     admin side keeps its existing purple look untouched. */
+  #page-chooser, #page-views, #page-submit, #page-intake {
+    background: #faf7f0;
+    min-height: 100vh;
+  }
+  #page-chooser, #page-views, #page-submit, #page-intake, #creator-modal {
+    --bg: #faf7f0;
+    --surface: #ffffff;
+    --surface2: #f1eee3;
+    --surface3: #e8e1d4;
+    --border: #e4dfd0;
+    --border2: #d6cfba;
+    --accent: #1f5c3f;
+    --accent2: #1a4f36;
+    --accent3: #163f2c;
+    --accent-light: #e7efe7;
+    --accent-mid: rgba(31,92,63,0.14);
+    --accent-soft: #e7efe7;
+    --accent-rgb: 31,92,63;
+    --text: #1c1a16;
+    --text2: #6b6558;
+    --text3: #6b6558;
+    --radius: 10px;
+    --radius-sm: 6px;
+    --shadow: 0 1px 2px rgba(28,26,22,0.05), 0 3px 10px rgba(28,26,22,0.05);
+    --shadow-sm: 0 1px 2px rgba(28,26,22,0.05);
   }
 
   * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -189,42 +220,24 @@
 
   /* WELCOME BANNER */
   .welcome-banner {
-    background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 60%, var(--accent3) 100%);
-    border-radius: var(--radius);
-    padding: 28px 32px;
-    margin-bottom: 28px;
-    color: white;
+    background: transparent;
+    border-bottom: 1px solid var(--border);
+    padding: 0 0 20px;
+    margin-bottom: 24px;
+    color: var(--text);
     position: relative;
-    overflow: hidden;
-    box-shadow: 0 4px 14px rgba(109,76,224,0.25);
-  }
-  .welcome-banner::before {
-    content: '';
-    position: absolute;
-    top: -40px; right: -40px;
-    width: 200px; height: 200px;
-    background: radial-gradient(circle, rgba(255,255,255,0.12) 0%, transparent 70%);
-    border-radius: 50%;
-  }
-  .welcome-banner::after {
-    content: 'NQ';
-    position: absolute; right: 30px; top: 50%;
-    transform: translateY(-50%);
-    font-family: 'Playfair Display', serif;
-    font-size: 92px; font-weight: 700;
-    opacity: 0.1; letter-spacing: -4px;
   }
   .welcome-greeting {
-    font-size: 11px; font-weight: 600;
-    letter-spacing: 0.14em; text-transform: uppercase;
-    opacity: 0.8; margin-bottom: 8px; position: relative;
+    font-size: 11px; font-weight: 700;
+    letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--accent); margin-bottom: 8px; position: relative;
   }
   .welcome-title {
     font-family: 'Playfair Display', serif;
     font-size: 26px; font-weight: 700;
-    margin-bottom: 6px; position: relative;
+    margin-bottom: 6px; position: relative; color: var(--text);
   }
-  .welcome-sub { font-size: 13px; opacity: 0.85; position: relative; }
+  .welcome-sub { font-size: 13px; color: var(--text2); position: relative; }
 
   /* STATS */
   .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px; }
@@ -269,7 +282,7 @@
   .form-group { margin-bottom: 18px; }
   .i-pick { display: flex; align-items: flex-start; gap: 11px; border: 2px solid var(--border); border-radius: 12px; padding: 13px 14px; margin-bottom: 10px; cursor: pointer; transition: border-color .15s, background .15s; }
   .i-pick input { width: 18px; height: 18px; margin-top: 2px; flex-shrink: 0; accent-color: var(--accent); }
-  .i-pick:has(input:checked) { border-color: var(--accent); background: var(--accent-soft, rgba(109,76,224,.07)); }
+  .i-pick:has(input:checked) { border-color: var(--accent); background: var(--accent-soft, rgba(var(--accent-rgb),.07)); }
   .i-pick .i-pick-t { display: block; font-weight: 600; font-size: 14px; }
   .i-pick .i-pick-d { display: block; font-size: 12.5px; color: var(--text3); margin-top: 2px; line-height: 1.45; }
   .form-label { font-size: 12px; color: var(--text2); font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 6px; display: block; }
@@ -322,16 +335,16 @@
 
   /* TODAY STATUS BANNER */
   .today-status {
-    margin-top: 10px; border-radius: var(--radius-sm);
+    margin-top: 10px; border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
     padding: 12px 14px; font-size: 13px; font-weight: 500;
     display: flex; align-items: flex-start; gap: 10px;
+    background: var(--surface2); border-left: 3px solid var(--border2); color: var(--text);
   }
-  .today-status.s-none { background: var(--surface2); color: var(--text2); }
-  .today-status.s-one  { background: var(--green-light); color: var(--green); }
-  .today-status.s-done { background: var(--amber-light); color: var(--amber); border: 1.5px solid #f0c050; }
+  .today-status.s-one  { border-left-color: var(--blue); background: var(--blue-light); }
+  .today-status.s-done { border-left-color: var(--green); background: var(--green-light); }
   /* We asked the server and never got an answer. Deliberately NOT s-none:
      "no videos logged" and "we do not know" must never look the same. */
-  .today-status.s-unknown { background: var(--amber-light); color: var(--amber); border: 1.5px solid #f0d9a8; }
+  .today-status.s-unknown { border-left-color: var(--amber); background: var(--amber-light); }
   .today-status .s-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
   .today-status .s-retry {
     background: none; border: none; padding: 4px 0 0; margin-top: 4px; display: block;
@@ -340,9 +353,9 @@
 
   /* GRACE BANNER, "you missed yesterday, log it before 2 PM" */
   .grace-banner {
-    margin-top: 10px; border-radius: var(--radius-sm);
+    margin-top: 10px; border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
     padding: 12px 14px; font-size: 13px; font-weight: 500;
-    background: var(--amber-light); color: var(--amber); border: 1.5px solid #f0d9a8;
+    background: var(--amber-light); color: var(--text); border-left: 3px solid var(--amber);
   }
   .grace-banner .btn-log-yesterday {
     display: block; margin-top: 8px; border: none; border-radius: var(--radius-sm);
@@ -381,33 +394,29 @@
   /* POST CARDS */
   .post-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
   .post-card {
-    border-radius: var(--radius-sm); border: 2px solid var(--border);
-    padding: 14px 10px; text-align: center;
-    transition: border-color 0.2s, background 0.2s, opacity 0.25s;
+    border-radius: var(--radius-sm); border: 1.5px solid var(--border); border-left-width: 3px;
+    padding: 14px 12px; text-align: left; background: var(--surface);
+    transition: border-color 0.2s, opacity 0.25s;
   }
-  .post-card .pc-num { font-size: 26px; font-weight: 700; line-height: 1; margin-bottom: 4px; }
-  .post-card .pc-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; }
-  .post-card .pc-note { font-size: 11px; line-height: 1.4; color: var(--text3); }
+  .post-card .pc-num { font-size: 22px; font-weight: 700; line-height: 1; margin-bottom: 5px; }
+  .post-card .pc-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; color: var(--text2); }
+  .post-card .pc-note { font-size: 11.5px; line-height: 1.4; color: var(--text2); }
 
-  .post-card.pc-initial { background: var(--surface2); opacity: 0.55; }
+  .post-card.pc-initial { border-left-color: var(--border); opacity: 0.7; }
   .post-card.pc-initial .pc-num, .post-card.pc-initial .pc-title { color: var(--text3); }
 
-  .post-card.pc-active { background: var(--accent-light); border-color: var(--accent); }
+  .post-card.pc-active { border-left-color: var(--accent); }
   .post-card.pc-active .pc-num { color: var(--accent); }
-  .post-card.pc-active .pc-title { color: var(--accent); }
-  .post-card.pc-active .pc-note { color: var(--text2); }
 
-  .post-card.pc-locked { background: var(--surface2); opacity: 0.4; }
+  .post-card.pc-locked { border-left-color: var(--border); opacity: 0.55; }
   .post-card.pc-locked .pc-num, .post-card.pc-locked .pc-title { color: var(--text3); }
 
   /* Dashed = we could not check. Distinct from locked (known, not yet earned). */
-  .post-card.pc-unknown { background: #fdfaf2; border-style: dashed; border-color: #e0c893; }
+  .post-card.pc-unknown { border-left-color: var(--amber); border-style: dashed; }
   .post-card.pc-unknown .pc-num, .post-card.pc-unknown .pc-title, .post-card.pc-unknown .pc-note { color: var(--amber); }
 
-  .post-card.pc-done { background: var(--green-light); border-color: var(--green); opacity: 0.88; }
+  .post-card.pc-done { border-left-color: var(--border2); opacity: 0.7; }
   .post-card.pc-done .pc-num { color: var(--green); }
-  .post-card.pc-done .pc-title { color: var(--green); }
-  .post-card.pc-done .pc-note { color: var(--green); font-weight: 500; }
 
   /* SUBMIT BUTTON SPINNER */
   .btn-spinner {
@@ -479,10 +488,10 @@
     background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%);
     color: white;
     width: 100%; padding: 14px; margin-top: 8px;
-    box-shadow: 0 2px 10px rgba(109,76,224,0.3);
+    box-shadow: 0 2px 10px rgba(var(--accent-rgb),0.3);
     font-size: 15px;
   }
-  .btn-primary:hover { box-shadow: 0 4px 14px rgba(109,76,224,0.4); }
+  .btn-primary:hover { box-shadow: 0 4px 14px rgba(var(--accent-rgb),0.4); }
   .btn-primary:active { transform: scale(0.98); }
   .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
   .btn-sm {
@@ -829,10 +838,10 @@
   .views-video-row:last-child { margin-bottom:0; }
   .views-video-row .vv-platform { min-width:64px; font-size:12px; font-weight:600; color:var(--text3); }
   .views-video-row input { flex:1; padding:9px 10px; border:1px solid var(--border2); border-radius:var(--radius-sm); font-family:inherit; font-size:14px; }
-  .mylog-summary { display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-bottom:18px; }
-  .mylog-stat { background:var(--surface2); border:1px solid var(--border); border-radius:var(--radius-sm); padding:12px; text-align:center; }
-  .mylog-stat .v { font-size:22px; font-weight:700; color:var(--accent3); }
-  .mylog-stat .l { font-size:11px; text-transform:uppercase; letter-spacing:0.05em; color:var(--text3); margin-top:2px; }
+  .mylog-summary { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:18px; }
+  .mylog-stat { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-sm); padding:12px 14px; text-align:left; }
+  .mylog-stat .v { font-size:19px; font-weight:700; color:var(--text); margin-bottom:4px; }
+  .mylog-stat .l { font-size:11px; text-transform:uppercase; letter-spacing:0.05em; color:var(--text2); }
   .mylog-day { display:flex; align-items:flex-start; gap:12px; padding:9px 12px; border-bottom:1px solid var(--border); font-size:13px; }
   .mylog-day:last-child { border-bottom:none; }
   .mylog-day.today-row { background:var(--accent-light); border-radius:var(--radius-sm); }
@@ -845,7 +854,7 @@
   .mylog-slot { font-size:11px; }
   .mylog-slot .no-link { color:var(--border2); font-weight:600; }
   .mylog-pay-note { font-size:11px; color:var(--text3); margin-top:4px; }
-  .mylog-grace { margin-bottom:16px; border-radius:8px; padding:10px 12px; font-size:13px; font-weight:500; background:var(--amber-light); color:var(--amber); border:1.5px solid #f0d9a8; }
+  .mylog-grace { margin-bottom:16px; border-radius:0 var(--radius-sm) var(--radius-sm) 0; padding:10px 12px; font-size:13px; font-weight:500; background:var(--amber-light); color:var(--text); border-left:3px solid var(--amber); }
   .mylog-grace button { display:block; margin-top:8px; border:none; border-radius:var(--radius-sm); background:var(--amber); color:#fff; font:inherit; font-weight:700; padding:8px 12px; cursor:pointer; }
   @media (max-width: 480px) {
     .mylog-day { padding:9px 8px; gap:8px; }
@@ -932,7 +941,7 @@
   <div class="welcome-banner">
     <div class="welcome-greeting">Northquest Finance</div>
     <div class="welcome-title">Welcome, Creator</div>
-    <div class="welcome-sub">Log your daily posts below. Every submission counts towards your monthly total.</div>
+    <div class="welcome-sub">Log your daily posts below.</div>
   </div>
 
   <div class="form-card" id="submit-form-card">
@@ -1010,7 +1019,6 @@
             <input class="link-input" id="f-insta" type="text" inputmode="url" placeholder="https://instagram.com/reel/..." autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" />
           </div>
         </div>
-        <div class="form-hint">If one platform is unavailable or your account is restricted, paste the other link only.</div>
       </div>
 
       <div class="form-group">
@@ -1098,7 +1106,7 @@
       <input type="checkbox" id="i-agree" style="width:18px;height:18px;margin-top:2px;flex-shrink:0" />
       <label for="i-agree" style="font-size:13px;color:var(--text2);line-height:1.5">I have read and agree to the UGC Content Creator Agreement, including the account ownership and content preservation terms.</label>
     </div>
-    <div class="form-group"><label class="form-label">Type your full name as your signature</label>
+    <div class="form-group"><label class="form-label" style="text-transform:none">Type your full name as your signature</label>
       <input class="form-input" id="i-sign" type="text" placeholder="Your full name" /></div>
     <div class="form-group"><label class="form-label">Date</label>
       <input class="form-input" id="i-signdate" type="date" /></div>
@@ -1809,16 +1817,15 @@ function onNameChange(fetchFresh) {
            r.date === today;
   }).length;
 
-  statusEl.style.display = '';
   if (count === 0) {
-    statusEl.className = 'today-status s-none';
-    sIcon.textContent = '📋';
-    sMsg.textContent = 'No videos logged yet today. Submit your first video below.';
+    statusEl.style.display = 'none';
   } else if (count === 1) {
+    statusEl.style.display = '';
     statusEl.className = 'today-status s-one';
     sIcon.textContent = '✓';
     sMsg.textContent = 'Your first video is logged for today. Submit your second video below.';
   } else {
+    statusEl.style.display = '';
     statusEl.className = 'today-status s-done';
     sIcon.textContent = '✓✓';
     sMsg.textContent = 'Both videos logged for today. You\'re all done, see you tomorrow!';
@@ -2397,7 +2404,6 @@ function renderMyLogs(name) {
       '<div class="mylog-stat"><div class="v">&#8358;' + Math.round(perf).toLocaleString('en-NG') + '</div><div class="l">Bonuses so far</div></div>' +
       '<div class="mylog-stat"><div class="v">' + fullDays + '</div><div class="l">Days fully done</div></div>' +
     '</div>' +
-    '<div style="font-size:12px;color:var(--text2);margin-bottom:16px;background:var(--accent-light);border-radius:8px;padding:10px 12px">A &#x2713; means that video was logged successfully. Just submitted a video? Open this view to confirm it went through.</div>' +
     '<div class="month-block"><div class="month-block-header"><span class="month-block-name">' + monthLabel(ym) + '</span><span class="month-block-total">' + monthRows.length + ' of 62 videos</span></div>' + dayRowsHtml.join('') + '</div>';
   document.getElementById('creator-modal').classList.add('open');
 }
