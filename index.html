@@ -281,10 +281,32 @@
 
   .form-group { margin-bottom: 18px; }
   .i-pick { display: flex; align-items: flex-start; gap: 11px; border: 2px solid var(--border); border-radius: 12px; padding: 13px 14px; margin-bottom: 10px; cursor: pointer; transition: border-color .15s, background .15s; }
-  .i-pick input { width: 18px; height: 18px; margin-top: 2px; flex-shrink: 0; accent-color: var(--accent); }
+  /* Custom radio: native rendering on some platforms shows the UNCHECKED
+     dot as a solid filled circle, indistinguishable from checked. This one
+     is unambiguous — empty ring until picked, then ring + solid dot. */
+  .i-pick input {
+    -webkit-appearance: none; appearance: none;
+    width: 19px; height: 19px; border-radius: 50%;
+    border: 2px solid var(--border2); background: var(--surface);
+    margin-top: 1px; flex-shrink: 0; cursor: pointer;
+    display: grid; place-content: center; transition: border-color .15s;
+  }
+  .i-pick input::before {
+    content: ''; width: 9px; height: 9px; border-radius: 50%;
+    background: var(--accent); transform: scale(0); transition: transform .12s ease-in-out;
+  }
+  .i-pick input:checked { border-color: var(--accent); }
+  .i-pick input:checked::before { transform: scale(1); }
   .i-pick:has(input:checked) { border-color: var(--accent); background: var(--accent-soft, rgba(var(--accent-rgb),.07)); }
   .i-pick .i-pick-t { display: block; font-weight: 600; font-size: 14px; }
   .i-pick .i-pick-d { display: block; font-size: 12.5px; color: var(--text3); margin-top: 2px; line-height: 1.45; }
+
+  /* CONTRACT SIGN-AND-EXPORT STEPS (Google Docs -> Adobe Acrobat -> upload) */
+  .contract-steps { background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 14px 16px 14px 34px; margin: 14px 0 20px; }
+  .contract-steps ol { margin: 0; padding-left: 6px; }
+  .contract-steps li { font-size: 13px; color: var(--text2); line-height: 1.6; margin-bottom: 8px; }
+  .contract-steps li:last-child { margin-bottom: 0; }
+  .contract-steps li strong { color: var(--text); }
 
   /* INTAKE WIZARD — one focused step at a time instead of one long form */
   .intake-progress { margin-bottom: 24px; }
@@ -1114,13 +1136,13 @@
         <input class="form-input" id="i-nqemail" type="email" placeholder="thenqemail@gmail.com" /></div>
       <div class="form-group"><label class="form-label">NorthQuest email password</label>
         <input class="form-input" id="i-nqemailpass" type="text" placeholder="Password for that email" /></div>
-      <div class="form-group"><label class="form-label">Instagram username</label>
-        <input class="form-input" id="i-iguser" type="text" placeholder="@username" /></div>
-      <div class="form-group"><label class="form-label">Instagram password</label>
+      <div class="form-group"><label class="form-label">Instagram username <span class="optional">(at least one of Instagram or TikTok required)</span></label>
+        <input class="form-input" id="i-iguser" type="text" placeholder="@username, or leave blank if blocked" /></div>
+      <div class="form-group"><label class="form-label">Instagram password <span class="optional">optional</span></label>
         <input class="form-input" id="i-igpass" type="text" placeholder="Password" /></div>
-      <div class="form-group"><label class="form-label">TikTok username</label>
-        <input class="form-input" id="i-ttuser" type="text" placeholder="@username" /></div>
-      <div class="form-group"><label class="form-label">TikTok password</label>
+      <div class="form-group"><label class="form-label">TikTok username <span class="optional">(at least one of Instagram or TikTok required)</span></label>
+        <input class="form-input" id="i-ttuser" type="text" placeholder="@username, or leave blank if blocked" /></div>
+      <div class="form-group"><label class="form-label">TikTok password <span class="optional">optional</span></label>
         <input class="form-input" id="i-ttpass" type="text" placeholder="Password" /></div>
       <div class="intake-nav">
         <button type="button" class="btn-back" onclick="intakeGoBack()">Back</button>
@@ -1147,16 +1169,46 @@
     <!-- STEP 5: contract + signature -->
     <div class="intake-step" data-step="5" style="display:none">
       <div class="form-title">Contract</div>
-      <div class="form-subtitle" id="i-contract-note">Please read the agreement, then confirm below. A team member will also reach out to you personally.</div>
-      <div class="form-group"><a id="i-contract-link" class="btn btn-sm" style="display:inline-block;text-decoration:none" target="_blank">&#x2913; Download the contract</a></div>
-      <div class="form-group" style="display:flex;align-items:flex-start;gap:10px">
-        <input type="checkbox" id="i-agree" style="width:18px;height:18px;margin-top:2px;flex-shrink:0" />
-        <label for="i-agree" style="font-size:13px;color:var(--text2);line-height:1.5">I have read and agree to the UGC Content Creator Agreement, including the account ownership and content preservation terms.</label>
+      <div class="form-subtitle">Two documents below &mdash; one to read, one to sign. Do this part on your phone, using the Google Docs and Adobe Acrobat apps.</div>
+
+      <div class="form-group">
+        <label class="form-label">Document 1 &mdash; read this first</label>
+        <a id="i-contract-read-link" class="btn btn-sm" style="display:inline-block;text-decoration:none" target="_blank">&#x2913; Open Document 1</a>
       </div>
-      <div class="form-group"><label class="form-label" style="text-transform:none">Type your full name as your signature</label>
-        <input class="form-input" id="i-sign" type="text" placeholder="Your full name" /></div>
-      <div class="form-group"><label class="form-label">Date</label>
-        <input class="form-input" id="i-signdate" type="date" /></div>
+      <div class="form-group" style="display:flex;align-items:flex-start;gap:10px">
+        <input type="checkbox" id="i-read-doc1" style="width:17px;height:17px;margin-top:2px;flex-shrink:0" />
+        <label for="i-read-doc1" style="font-size:12.5px;color:var(--text2);line-height:1.5">I have opened and read Document 1, all the way through.</label>
+      </div>
+
+      <div class="form-group" style="margin-top:22px">
+        <label class="form-label">Document 2 &mdash; the contract to sign</label>
+        <a id="i-contract-link" class="btn btn-sm" style="display:inline-block;text-decoration:none" target="_blank">&#x2913; Open Document 2</a>
+      </div>
+
+      <div class="contract-steps">
+        <ol>
+          <li>Under <strong>Parties</strong> at the top of Document 2, fill in your name and address.</li>
+          <li>At the bottom, fill in your name and today's date. Leave the signature line blank &mdash; you'll sign it in Adobe Acrobat, not here.</li>
+          <li>Tap anywhere on the screen, then tap the three dots in the top right corner.</li>
+          <li>Tap <strong>Share &amp; export</strong>.</li>
+          <li>Swipe across the app icons that show up, and tap <strong>Adobe Acrobat</strong>.</li>
+          <li>In Adobe Acrobat, tap the pen/draw icon at the bottom left of the screen, and sign the contract.</li>
+          <li>Tap the export icon (an arrow coming out of an open box) and save the signed file to your phone. Name it with just your full name &mdash; for example, <strong>Smith Taiwo</strong>.</li>
+          <li>Come back here and upload that file below.</li>
+        </ol>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Upload your signed contract</label>
+        <input class="form-input" id="i-contract-file" type="file" accept="application/pdf" onchange="onContractFileChange()" />
+        <div class="form-hint" id="contract-file-hint"></div>
+      </div>
+
+      <div class="form-group" style="display:flex;align-items:flex-start;gap:10px">
+        <input type="checkbox" id="i-agree" style="width:17px;height:17px;margin-top:2px;flex-shrink:0" />
+        <label for="i-agree" style="font-size:12.5px;color:var(--text2);line-height:1.5">I have read and agree to the UGC Content Creator Agreement, including the account ownership and content preservation terms.</label>
+      </div>
+
       <div class="intake-nav">
         <button type="button" class="btn-back" onclick="intakeGoBack()">Back</button>
         <button class="btn btn-primary" id="intake-btn" onclick="submitIntake()">Complete onboarding</button>
@@ -1453,6 +1505,7 @@ const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwLrQ6h0XAOKIxYw_r2u
 const ADMIN_PASS = '';
 const LEGACY_LOGIN_FALLBACK = false;
 const CONTRACT_URL = '';
+const CONTRACT_READ_URL = '';
 const SESSION_KEY = 'nq_admin';
 const ADMIN_KEY_SESSION = 'nq_admin_key';
 let adminKey = '';
@@ -3753,7 +3806,12 @@ function showIntakeStep(n) {
   const alertEl = document.getElementById('intake-alert');
   if (alertEl) alertEl.classList.remove('show');
   const total = INTAKE_STEP_LABELS.length;
-  document.getElementById('intake-step-label').textContent = 'Step ' + n + ' of ' + total + ': ' + INTAKE_STEP_LABELS[n - 1];
+  // A little personality, not a straight-to-the-point form: once we know
+  // their name (from step 1), greet them by first name on every later step.
+  const fullName = (document.getElementById('i-name').value || '').trim();
+  const firstName = fullName ? fullName.split(' ')[0] : '';
+  const greet = (firstName && n > 1) ? ('Hey ' + firstName + ' — ') : '';
+  document.getElementById('intake-step-label').textContent = greet + 'Step ' + n + ' of ' + total + ': ' + INTAKE_STEP_LABELS[n - 1];
   document.getElementById('intake-progress-fill').style.transform = 'scaleX(' + (n / total) + ')';
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
@@ -3766,6 +3824,10 @@ function intakeGoNext() {
     if (!g('i-email')) { intakeFail('Please enter your email.'); return; }
   } else if (intakeStepIdx === 2) {
     if (!intakeTier()) { intakeFail('Please pick the kind of content you create.'); return; }
+  } else if (intakeStepIdx === 3) {
+    if (!g('i-nqemail'))     { intakeFail('Please enter the NorthQuest email address.'); return; }
+    if (!g('i-nqemailpass')) { intakeFail('Please enter the NorthQuest email password.'); return; }
+    if (!g('i-iguser') && !g('i-ttuser')) { intakeFail('Please enter at least one: your Instagram username or your TikTok username. (If one platform has blocked your account, the other is enough.)'); return; }
   } else if (intakeStepIdx === 4) {
     if (!g('i-bank') || !g('i-acctnum') || !g('i-acctname')) { intakeFail('Please complete your bank details so you can be paid.'); return; }
   }
@@ -3777,65 +3839,115 @@ function intakeGoBack() {
 }
 
 function setupIntake() {
-  const dt = document.getElementById('i-signdate');
-  if (dt) dt.value = todayStr();
+  const readLink = document.getElementById('i-contract-read-link');
+  if (readLink) {
+    if (CONTRACT_READ_URL) { readLink.href = CONTRACT_READ_URL; }
+    else { readLink.style.display = 'none'; }
+  }
   const link = document.getElementById('i-contract-link');
   if (link) {
     if (CONTRACT_URL) { link.href = CONTRACT_URL; }
-    else {
-      link.style.display = 'none';
-      const n = document.getElementById('i-contract-note');
-      if (n) n.textContent = 'A team member will share the full contract with you and follow up personally. Please confirm below that you agree to its terms.';
-    }
+    else { link.style.display = 'none'; }
   }
   showIntakeStep(1);
   if ((location.hash || '').toLowerCase().indexOf('intake') >= 0) showPage('intake');
+}
+
+// Soft nudge only, never a hard block — a creator could reasonably save the
+// file as "smith taiwo.pdf" or add a word, and admin still needs to be able
+// to tell whose contract this is at a glance in Drive.
+function onContractFileChange() {
+  const input = document.getElementById('i-contract-file');
+  const hint = document.getElementById('contract-file-hint');
+  const file = input.files && input.files[0];
+  if (!file) { hint.textContent = ''; return; }
+  const name = (document.getElementById('i-name').value || '').trim().toLowerCase();
+  const base = file.name.replace(/\.[^.]+$/, '').trim().toLowerCase();
+  const looksRight = !name || base.indexOf(name) > -1 || name.split(' ').every(part => base.indexOf(part) > -1);
+  hint.textContent = looksRight
+    ? 'Selected: ' + file.name
+    : 'Selected: ' + file.name + ' — this doesn\'t look like it\'s named after you. Double check it\'s the right file.';
+}
+
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result).split(',').pop());
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
 }
 
 function submitIntake() {
   const g = id => (document.getElementById(id).value || '').trim();
   const name = g('i-name'), phone = g('i-phone'), email = g('i-email');
   const bank = g('i-bank'), acctNum = g('i-acctnum'), acctName = g('i-acctname');
+  const readDoc1 = document.getElementById('i-read-doc1').checked;
   const agree = document.getElementById('i-agree').checked;
-  const sign = g('i-sign'), signDate = g('i-signdate');
+  const fileInput = document.getElementById('i-contract-file');
+  const file = fileInput.files && fileInput.files[0];
   const alertEl = document.getElementById('intake-alert');
   alertEl.classList.remove('show');
   const fail = m => { alertEl.className = 'alert alert-error show'; alertEl.textContent = m; alertEl.scrollIntoView({ behavior:'smooth', block:'center' }); };
   if (!name)  { fail('Please enter your full name.'); return; }
   if (!phone) { fail('Please enter your phone number.'); return; }
   if (!email) { fail('Please enter your email.'); return; }
+  if (!g('i-nqemail'))     { fail('Please enter the NorthQuest email address.'); return; }
+  if (!g('i-nqemailpass')) { fail('Please enter the NorthQuest email password.'); return; }
+  if (!g('i-iguser') && !g('i-ttuser')) { fail('Please enter at least one: your Instagram username or your TikTok username.'); return; }
   if (!bank || !acctNum || !acctName) { fail('Please complete your bank details so you can be paid.'); return; }
   const tier = intakeTier();
   if (!tier) { fail('Please pick the kind of content you create.'); return; }
+  if (!readDoc1) { fail('Please tick that you\'ve opened and read Document 1.'); return; }
+  if (!file) { fail('Please upload your signed contract (Document 2) before completing onboarding.'); return; }
   if (!agree) { fail('Please read and tick the box to agree to the contract.'); return; }
-  if (!sign)  { fail('Please type your full name as your signature.'); return; }
 
   const btn = document.getElementById('intake-btn');
-  btn.disabled = true; btn.textContent = 'Submitting...';
-  const payload = {
-    action:'intake', name, phone, email,
-    nqEmail:g('i-nqemail'), nqEmailPass:g('i-nqemailpass'),
-    igUser:g('i-iguser'), igPass:g('i-igpass'),
-    ttUser:g('i-ttuser'), ttPass:g('i-ttpass'),
-    bankName:bank, acctNum, acctName,
-    creatorType:tier.label, rate:tier.rate,
-    signature:sign, signDate:signDate || todayStr()
-  };
-  jsonp(payload, (data) => {
-    btn.disabled = false; btn.textContent = 'Complete onboarding';
-    if (data && data.status === 'success') {
-      document.getElementById('intake-confirm-msg').innerHTML = 'You are now set up as an active creator. You can start logging your posts straight away. Welcome to NorthQuest!';
-      document.getElementById('intake-confirm').classList.add('show');
-      showToast('success', 'Welcome, ' + name.split(' ')[0] + '! 🎉', 'Your onboarding is complete.');
-      ['i-name','i-phone','i-email','i-nqemail','i-nqemailpass','i-iguser','i-igpass','i-ttuser','i-ttpass','i-bank','i-acctnum','i-acctname','i-sign'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
-      document.getElementById('i-agree').checked = false;
-      document.querySelectorAll('input[name="i-ctype"]').forEach(r => { r.checked = false; });
-      loadCreators();
-      showIntakeStep(1);
-    } else {
-      fail((data && data.message) || 'Something went wrong. Please try again.');
+  btn.disabled = true; btn.textContent = 'Uploading signed contract...';
+
+  fileToBase64(file).then(base64 => {
+    return fetch(SCRIPT_URL, {
+      method: 'POST',
+      body: JSON.stringify({ action: 'uploadContract', name, fileName: file.name, mimeType: file.type || 'application/pdf', data: base64 })
+    }).then(r => r.json());
+  }).then(uploadResult => {
+    if (!uploadResult || uploadResult.status !== 'success') {
+      btn.disabled = false; btn.textContent = 'Complete onboarding';
+      fail((uploadResult && uploadResult.message) || 'Could not upload your signed contract. Please try again.');
+      return;
     }
-  }, 20000);
+    btn.textContent = 'Submitting...';
+    const payload = {
+      action:'intake', name, phone, email,
+      nqEmail:g('i-nqemail'), nqEmailPass:g('i-nqemailpass'),
+      igUser:g('i-iguser'), igPass:g('i-igpass'),
+      ttUser:g('i-ttuser'), ttPass:g('i-ttpass'),
+      bankName:bank, acctNum, acctName,
+      creatorType:tier.label, rate:tier.rate,
+      signature:name, signDate:todayStr()
+    };
+    jsonp(payload, (data) => {
+      btn.disabled = false; btn.textContent = 'Complete onboarding';
+      if (data && data.status === 'success') {
+        document.getElementById('intake-confirm-msg').innerHTML = 'You are now set up as an active creator. You can start logging your posts straight away. Welcome to NorthQuest!';
+        document.getElementById('intake-confirm').classList.add('show');
+        showToast('success', 'Welcome, ' + name.split(' ')[0] + '! 🎉', 'Your onboarding is complete.');
+        ['i-name','i-phone','i-email','i-nqemail','i-nqemailpass','i-iguser','i-igpass','i-ttuser','i-ttpass','i-bank','i-acctnum','i-acctname'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+        fileInput.value = '';
+        document.getElementById('contract-file-hint').textContent = '';
+        document.getElementById('i-read-doc1').checked = false;
+        document.getElementById('i-agree').checked = false;
+        document.querySelectorAll('input[name="i-ctype"]').forEach(r => { r.checked = false; });
+        loadCreators();
+        showIntakeStep(1);
+      } else {
+        fail((data && data.message) || 'Something went wrong. Please try again.');
+      }
+    }, 20000);
+  }).catch(() => {
+    btn.disabled = false; btn.textContent = 'Complete onboarding';
+    fail('Could not upload your signed contract. Check your connection and try again.');
+  });
 }
 
 function togglePassword() {
