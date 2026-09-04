@@ -350,16 +350,23 @@
     padding: 8px 12px; cursor: pointer;
   }
 
-  /* YESTERDAY MODE — persistent reminder while backdating a missed video */
+  /* YESTERDAY MODE — persistent reminder while backdating a missed video.
+     Deliberately solid/saturated, not a light tint like every other banner
+     on this page (today-status, grace-banner) — this is a MODE, and must be
+     impossible to mistake for "today" at a glance. */
   .yesterday-mode-banner {
     margin-top: 10px; border-radius: var(--radius-sm);
-    padding: 10px 14px; font-size: 13px; font-weight: 600;
-    background: var(--accent-light); color: var(--accent);
+    padding: 10px 14px; font-size: 13px; font-weight: 700;
+    background: var(--accent3); color: #fff;
   }
+  .yesterday-mode-banner .back-row { display: block; margin-bottom: 4px; }
   .yesterday-mode-banner .btn-back-today {
-    background: none; border: none; padding: 0; margin-left: 4px;
-    font: inherit; font-weight: 700; color: inherit; text-decoration: underline; cursor: pointer;
+    background: rgba(255,255,255,0.16); border: none; padding: 4px 10px; border-radius: 6px;
+    font: inherit; font-weight: 700; color: #fff; cursor: pointer;
   }
+  .yesterday-mode-banner .btn-back-today:hover { background: rgba(255,255,255,0.26); }
+  /* Same signal reinforced on the form card itself. */
+  .form-card.yesterday-mode { border-top: 4px solid var(--accent3); }
 
   /* FORM DONE STATE */
   .form-done-banner {
@@ -931,7 +938,7 @@
     <div class="welcome-sub">Log your daily posts below. Every submission counts towards your monthly total.</div>
   </div>
 
-  <div class="form-card">
+  <div class="form-card" id="submit-form-card">
     <div class="back-link" onclick="showPage('chooser')">&larr; Back</div>
     <!-- Inline confirmation (visible right above form after submit) -->
     <div class="inline-confirm" id="inline-confirm">
@@ -957,8 +964,8 @@
         <button type="button" class="btn-log-yesterday" onclick="startLogYesterday()">Log yesterday's videos</button>
       </div>
       <div class="yesterday-mode-banner" id="yesterday-mode-banner" style="display:none">
-        Logging for <strong>yesterday</strong> (<span id="yesterday-mode-date"></span>) &middot;
-        <button type="button" class="btn-back-today" onclick="exitLogYesterday()">&larr; Back to today</button>
+        <span class="back-row"><button type="button" class="btn-back-today" onclick="exitLogYesterday()">&larr; Back to today</button></span>
+        Logging for <strong>yesterday</strong> (<span id="yesterday-mode-date"></span>)
       </div>
       <button class="view-logs-btn" id="view-logs-btn" onclick="openMyLogs()" type="button">View my logs for this month &rarr;</button>
     </div>
@@ -1847,6 +1854,8 @@ function updateDateLockDisplay() {
   document.getElementById('today-date-display').textContent = formatted;
   const note = document.getElementById('date-lock-note');
   if (note) note.textContent = loggingYesterday ? 'Yesterday — grace window' : 'Today only';
+  const card = document.getElementById('submit-form-card');
+  if (card) card.classList.toggle('yesterday-mode', loggingYesterday);
 }
 
 function startLogYesterday() {
