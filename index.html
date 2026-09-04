@@ -285,6 +285,20 @@
   .i-pick:has(input:checked) { border-color: var(--accent); background: var(--accent-soft, rgba(var(--accent-rgb),.07)); }
   .i-pick .i-pick-t { display: block; font-weight: 600; font-size: 14px; }
   .i-pick .i-pick-d { display: block; font-size: 12.5px; color: var(--text3); margin-top: 2px; line-height: 1.45; }
+
+  /* INTAKE WIZARD — one focused step at a time instead of one long form */
+  .intake-progress { margin-bottom: 24px; }
+  .intake-progress .ip-label { font-size: 12px; font-weight: 700; color: var(--text2); letter-spacing: 0.02em; margin-bottom: 8px; }
+  .intake-progress .ip-track { height: 4px; background: var(--surface2); border-radius: 2px; overflow: hidden; }
+  .intake-progress .ip-fill { height: 100%; width: 100%; background: var(--accent); border-radius: 2px; transform-origin: left; transition: transform 0.25s ease; }
+  .intake-nav { display: flex; gap: 10px; margin-top: 22px; }
+  .intake-nav .btn-primary { flex: 1; width: auto; margin-top: 0; }
+  .intake-nav .btn-back {
+    flex: 0 0 auto; padding: 13px 18px; border-radius: var(--radius-sm);
+    border: 1.5px solid var(--border); background: var(--surface); color: var(--text2);
+    font: inherit; font-size: 14px; font-weight: 600; cursor: pointer;
+  }
+  .intake-nav .btn-back:hover { border-color: var(--accent); color: var(--accent); }
   .form-label { font-size: 12px; color: var(--text2); font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 6px; display: block; }
   .form-label .optional { font-weight: 400; color: var(--text3); text-transform: none; letter-spacing: 0; font-size: 11px; }
   .form-input {
@@ -1047,71 +1061,108 @@
   <div class="welcome-banner">
     <div class="welcome-greeting">Northquest Finance</div>
     <div class="welcome-title">Creator Onboarding</div>
-    <div class="welcome-sub">Welcome aboard. Fill this in once and you are fully set up. It takes about five minutes.</div>
+    <div class="welcome-sub">Welcome aboard. Five short steps and you are fully set up.</div>
   </div>
 
-  <div class="form-card" style="max-width:640px">
+  <div class="form-card" style="max-width:560px">
     <div class="inline-confirm" id="intake-confirm">
       <strong>All done!</strong>
       <span id="intake-confirm-msg"></span>
     </div>
 
-    <div class="form-title">Your details</div>
-    <div class="form-subtitle">Everything here is private and is used only to set you up and pay you.</div>
-
-    <div class="form-group"><label class="form-label">Full name</label>
-      <input class="form-input" id="i-name" type="text" placeholder="As it should appear on records" /></div>
-    <div class="form-group"><label class="form-label">Phone number</label>
-      <input class="form-input" id="i-phone" type="tel" placeholder="080..." /></div>
-    <div class="form-group"><label class="form-label">Personal email</label>
-      <input class="form-input" id="i-email" type="email" placeholder="you@email.com" /></div>
-
-    <div class="form-title" style="font-size:16px;margin-top:26px">What you create</div>
-    <div class="form-subtitle">Pick the one you were brought on to do. If you are not sure, ask Smith before you choose.</div>
-    <div class="form-group">
-      <label class="i-pick"><input type="radio" name="i-ctype" value="whatsapp" />
-        <span><span class="i-pick-t">WhatsApp &amp; picture content</span><span class="i-pick-d">Status posts, pictures and written posts</span></span></label>
-      <label class="i-pick"><input type="radio" name="i-ctype" value="video" />
-        <span><span class="i-pick-t">Video content</span><span class="i-pick-d">TikTok and Instagram videos</span></span></label>
+    <div class="intake-progress" id="intake-progress">
+      <div class="ip-label" id="intake-step-label">Step 1 of 5: Your details</div>
+      <div class="ip-track"><div class="ip-fill" id="intake-progress-fill" style="transform:scaleX(0.2)"></div></div>
     </div>
 
-    <div class="form-title" style="font-size:16px;margin-top:26px">NorthQuest accounts you created</div>
-    <div class="form-subtitle">The email and social accounts you opened for NorthQuest content. These belong to the program under your contract.</div>
-
-    <div class="form-group"><label class="form-label">NorthQuest email address</label>
-      <input class="form-input" id="i-nqemail" type="email" placeholder="thenqemail@gmail.com" /></div>
-    <div class="form-group"><label class="form-label">NorthQuest email password</label>
-      <input class="form-input" id="i-nqemailpass" type="text" placeholder="Password for that email" /></div>
-    <div class="form-group"><label class="form-label">Instagram username</label>
-      <input class="form-input" id="i-iguser" type="text" placeholder="@username" /></div>
-    <div class="form-group"><label class="form-label">Instagram password</label>
-      <input class="form-input" id="i-igpass" type="text" placeholder="Password" /></div>
-    <div class="form-group"><label class="form-label">TikTok username</label>
-      <input class="form-input" id="i-ttuser" type="text" placeholder="@username" /></div>
-    <div class="form-group"><label class="form-label">TikTok password</label>
-      <input class="form-input" id="i-ttpass" type="text" placeholder="Password" /></div>
-
-    <div class="form-title" style="font-size:16px;margin-top:26px">Bank details for payment</div>
-    <div class="form-group"><label class="form-label">Bank name</label>
-      <input class="form-input" id="i-bank" type="text" placeholder="e.g. OPay, GTBank" /></div>
-    <div class="form-group"><label class="form-label">Account number</label>
-      <input class="form-input" id="i-acctnum" type="text" inputmode="numeric" placeholder="10-digit number" /></div>
-    <div class="form-group"><label class="form-label">Account name</label>
-      <input class="form-input" id="i-acctname" type="text" placeholder="Name on the account" /></div>
-
-    <div class="form-title" style="font-size:16px;margin-top:26px">Contract</div>
-    <div class="form-subtitle" id="i-contract-note">Please read the agreement, then confirm below. A team member will also reach out to you personally.</div>
-    <div class="form-group"><a id="i-contract-link" class="btn btn-sm" style="display:inline-block;text-decoration:none" target="_blank">&#x2913; Download the contract</a></div>
-    <div class="form-group" style="display:flex;align-items:flex-start;gap:10px">
-      <input type="checkbox" id="i-agree" style="width:18px;height:18px;margin-top:2px;flex-shrink:0" />
-      <label for="i-agree" style="font-size:13px;color:var(--text2);line-height:1.5">I have read and agree to the UGC Content Creator Agreement, including the account ownership and content preservation terms.</label>
+    <!-- STEP 1: personal details -->
+    <div class="intake-step" data-step="1">
+      <div class="form-title">Your details</div>
+      <div class="form-subtitle">Everything here is private and is used only to set you up and pay you.</div>
+      <div class="form-group"><label class="form-label">Full name</label>
+        <input class="form-input" id="i-name" type="text" placeholder="As it should appear on records" /></div>
+      <div class="form-group"><label class="form-label">Phone number</label>
+        <input class="form-input" id="i-phone" type="tel" placeholder="080..." /></div>
+      <div class="form-group"><label class="form-label">Personal email</label>
+        <input class="form-input" id="i-email" type="email" placeholder="you@email.com" /></div>
+      <div class="intake-nav">
+        <button type="button" class="btn btn-primary" onclick="intakeGoNext()">Next: What you create</button>
+      </div>
     </div>
-    <div class="form-group"><label class="form-label" style="text-transform:none">Type your full name as your signature</label>
-      <input class="form-input" id="i-sign" type="text" placeholder="Your full name" /></div>
-    <div class="form-group"><label class="form-label">Date</label>
-      <input class="form-input" id="i-signdate" type="date" /></div>
 
-    <button class="btn btn-primary" id="intake-btn" onclick="submitIntake()">Complete onboarding</button>
+    <!-- STEP 2: content type -->
+    <div class="intake-step" data-step="2" style="display:none">
+      <div class="form-title">What you create</div>
+      <div class="form-subtitle">Pick the one you were brought on to do. If you are not sure, ask Smith before you choose.</div>
+      <div class="form-group">
+        <label class="i-pick"><input type="radio" name="i-ctype" value="whatsapp" />
+          <span><span class="i-pick-t">WhatsApp &amp; picture content</span><span class="i-pick-d">Status posts, pictures and written posts</span></span></label>
+        <label class="i-pick"><input type="radio" name="i-ctype" value="video" />
+          <span><span class="i-pick-t">Video content</span><span class="i-pick-d">TikTok and Instagram videos</span></span></label>
+      </div>
+      <div class="intake-nav">
+        <button type="button" class="btn-back" onclick="intakeGoBack()">Back</button>
+        <button type="button" class="btn btn-primary" onclick="intakeGoNext()">Next: Your accounts</button>
+      </div>
+    </div>
+
+    <!-- STEP 3: NQ-owned accounts -->
+    <div class="intake-step" data-step="3" style="display:none">
+      <div class="form-title">NorthQuest accounts you created</div>
+      <div class="form-subtitle">The email and social accounts you opened for NorthQuest content. These belong to the program under your contract.</div>
+      <div class="form-group"><label class="form-label">NorthQuest email address</label>
+        <input class="form-input" id="i-nqemail" type="email" placeholder="thenqemail@gmail.com" /></div>
+      <div class="form-group"><label class="form-label">NorthQuest email password</label>
+        <input class="form-input" id="i-nqemailpass" type="text" placeholder="Password for that email" /></div>
+      <div class="form-group"><label class="form-label">Instagram username</label>
+        <input class="form-input" id="i-iguser" type="text" placeholder="@username" /></div>
+      <div class="form-group"><label class="form-label">Instagram password</label>
+        <input class="form-input" id="i-igpass" type="text" placeholder="Password" /></div>
+      <div class="form-group"><label class="form-label">TikTok username</label>
+        <input class="form-input" id="i-ttuser" type="text" placeholder="@username" /></div>
+      <div class="form-group"><label class="form-label">TikTok password</label>
+        <input class="form-input" id="i-ttpass" type="text" placeholder="Password" /></div>
+      <div class="intake-nav">
+        <button type="button" class="btn-back" onclick="intakeGoBack()">Back</button>
+        <button type="button" class="btn btn-primary" onclick="intakeGoNext()">Next: Bank details</button>
+      </div>
+    </div>
+
+    <!-- STEP 4: bank details -->
+    <div class="intake-step" data-step="4" style="display:none">
+      <div class="form-title">Bank details for payment</div>
+      <div class="form-subtitle">Where your pay is sent every month.</div>
+      <div class="form-group"><label class="form-label">Bank name</label>
+        <input class="form-input" id="i-bank" type="text" placeholder="e.g. OPay, GTBank" /></div>
+      <div class="form-group"><label class="form-label">Account number</label>
+        <input class="form-input" id="i-acctnum" type="text" inputmode="numeric" placeholder="10-digit number" /></div>
+      <div class="form-group"><label class="form-label">Account name</label>
+        <input class="form-input" id="i-acctname" type="text" placeholder="Name on the account" /></div>
+      <div class="intake-nav">
+        <button type="button" class="btn-back" onclick="intakeGoBack()">Back</button>
+        <button type="button" class="btn btn-primary" onclick="intakeGoNext()">Next: Contract</button>
+      </div>
+    </div>
+
+    <!-- STEP 5: contract + signature -->
+    <div class="intake-step" data-step="5" style="display:none">
+      <div class="form-title">Contract</div>
+      <div class="form-subtitle" id="i-contract-note">Please read the agreement, then confirm below. A team member will also reach out to you personally.</div>
+      <div class="form-group"><a id="i-contract-link" class="btn btn-sm" style="display:inline-block;text-decoration:none" target="_blank">&#x2913; Download the contract</a></div>
+      <div class="form-group" style="display:flex;align-items:flex-start;gap:10px">
+        <input type="checkbox" id="i-agree" style="width:18px;height:18px;margin-top:2px;flex-shrink:0" />
+        <label for="i-agree" style="font-size:13px;color:var(--text2);line-height:1.5">I have read and agree to the UGC Content Creator Agreement, including the account ownership and content preservation terms.</label>
+      </div>
+      <div class="form-group"><label class="form-label" style="text-transform:none">Type your full name as your signature</label>
+        <input class="form-input" id="i-sign" type="text" placeholder="Your full name" /></div>
+      <div class="form-group"><label class="form-label">Date</label>
+        <input class="form-input" id="i-signdate" type="date" /></div>
+      <div class="intake-nav">
+        <button type="button" class="btn-back" onclick="intakeGoBack()">Back</button>
+        <button class="btn btn-primary" id="intake-btn" onclick="submitIntake()">Complete onboarding</button>
+      </div>
+    </div>
+
     <div class="alert alert-error" id="intake-alert"></div>
   </div>
 </div>
@@ -3682,6 +3733,49 @@ function intakeTier() {
   return el ? CREATOR_TIERS[el.value] : null;
 }
 
+// INTAKE WIZARD — one focused step at a time, so a first-time creator never
+// sees the whole form (details + accounts + bank + contract) at once.
+let intakeStepIdx = 1;
+const INTAKE_STEP_LABELS = ['Your details', 'What you create', 'Your accounts', 'Bank details', 'Contract'];
+
+function intakeFail(m) {
+  const alertEl = document.getElementById('intake-alert');
+  alertEl.className = 'alert alert-error show';
+  alertEl.textContent = m;
+  alertEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+function showIntakeStep(n) {
+  intakeStepIdx = n;
+  document.querySelectorAll('.intake-step').forEach(el => {
+    el.style.display = (parseInt(el.dataset.step, 10) === n) ? '' : 'none';
+  });
+  const alertEl = document.getElementById('intake-alert');
+  if (alertEl) alertEl.classList.remove('show');
+  const total = INTAKE_STEP_LABELS.length;
+  document.getElementById('intake-step-label').textContent = 'Step ' + n + ' of ' + total + ': ' + INTAKE_STEP_LABELS[n - 1];
+  document.getElementById('intake-progress-fill').style.transform = 'scaleX(' + (n / total) + ')';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function intakeGoNext() {
+  const g = id => (document.getElementById(id).value || '').trim();
+  if (intakeStepIdx === 1) {
+    if (!g('i-name'))  { intakeFail('Please enter your full name.'); return; }
+    if (!g('i-phone')) { intakeFail('Please enter your phone number.'); return; }
+    if (!g('i-email')) { intakeFail('Please enter your email.'); return; }
+  } else if (intakeStepIdx === 2) {
+    if (!intakeTier()) { intakeFail('Please pick the kind of content you create.'); return; }
+  } else if (intakeStepIdx === 4) {
+    if (!g('i-bank') || !g('i-acctnum') || !g('i-acctname')) { intakeFail('Please complete your bank details so you can be paid.'); return; }
+  }
+  showIntakeStep(Math.min(intakeStepIdx + 1, INTAKE_STEP_LABELS.length));
+}
+
+function intakeGoBack() {
+  showIntakeStep(Math.max(intakeStepIdx - 1, 1));
+}
+
 function setupIntake() {
   const dt = document.getElementById('i-signdate');
   if (dt) dt.value = todayStr();
@@ -3694,6 +3788,7 @@ function setupIntake() {
       if (n) n.textContent = 'A team member will share the full contract with you and follow up personally. Please confirm below that you agree to its terms.';
     }
   }
+  showIntakeStep(1);
   if ((location.hash || '').toLowerCase().indexOf('intake') >= 0) showPage('intake');
 }
 
@@ -3736,7 +3831,7 @@ function submitIntake() {
       document.getElementById('i-agree').checked = false;
       document.querySelectorAll('input[name="i-ctype"]').forEach(r => { r.checked = false; });
       loadCreators();
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      showIntakeStep(1);
     } else {
       fail((data && data.message) || 'Something went wrong. Please try again.');
     }
