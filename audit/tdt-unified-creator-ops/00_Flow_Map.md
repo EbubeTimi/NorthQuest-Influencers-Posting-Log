@@ -13,12 +13,12 @@ audit history.
 | 0 | Platform security and configuration | Branch fix verified; live RLS and Vercel variables pending | Backup, live RLS verification, four Vercel variables, advisor clear |
 | 1 | Application → vibe check → business distribution → outreach | Prototype accepted for now; final visual pass deferred | Durable agency-scoped intake, private introduction video, audit history |
 | 2 | Trial invitation → logging → weekly views → 10k evidence → review | Revision 7 prototype approved | Real invitation/auth, persistent evidence, management decision |
-| 3 | Brand onboarding | Next prototype | Creator tasks, management check, one idempotent active membership |
-| 4 | Active creator dashboard and business switching | Existing draft preserved; not approved | Daily/weekly/bonus/payment flows and membership isolation |
+| 3 | Brand onboarding | Revised prototype ready for review | In-app contract signing, targeted correction, management check, one idempotent active membership |
+| 4 | Active creator dashboard and business switching | Revision 16 behavior/flow approved; production UI remains blocked | Daily/weekly/bonus/payment flows and membership isolation |
 | 5 | Unified management dashboard | Not yet prototyped as one complete flow | Businesses, creators, access, evidence, onboarding, lifecycle and audit |
 | 6 | CashDrive enquiries | Source fields inspected; not yet prototyped | Creator submission, management stages, CashDrive-only access and history |
 | 7 | CashDrive inventory | Not yet prototyped | Vehicle/media/status records linked safely to enquiries and content |
-| 8 | Sheets and Apify operations | Historical code conflicts with current rules | Weekly Sheets plus cumulative 1–14, 1–21 and month-end jobs |
+| 8 | Sheets and Apify operations | Historical code conflicts with current rules | Weekly Sheets plus cumulative 1–14, 1–21 and month-end jobs using one isolated Apify account per business |
 | 9 | End-to-end staging, scale and security | Local checks only | Real role isolation, uploads, retries, 1,000+ creator performance |
 | 10 | Final TypeUI/UI–UX pass and production approval | Deferred by user until flows are complete | Phone-first visual approval, then separate implementation/deploy approval |
 
@@ -86,6 +86,15 @@ area changes trial qualification or weekly reporting.
 - Management may deactivate one business membership without deleting the person, other memberships, or history.
 - A whole-person suspension is a separate, higher-impact action.
 - Joined, deactivated, reactivated dates, reason, and acting manager are audited.
+- For an active creator, operational writes stop while payment statements, video history and bonus history remain available read-only.
+
+## F09A — Complete brand onboarding
+
+- The approved trial creator enters with the same Google identity, confirms personal details, and supplies separate TikTok/Instagram usernames and public profile links.
+- Bank entry supports search and free text; the account number is exactly ten digits in the current Nigerian payment contract.
+- The complete approved contract is read and signed in-app. The system generates an immutable signed PDF rather than accepting an arbitrary uploaded document as the contract.
+- Management reviews the generated agreement and every section. Corrections name exact sections and reopen only those fields; completion creates one active business membership.
+- Social account passwords are never collected by Smithstem. Account control uses official platform roles/permissions or a separately approved credential-vault handover.
 
 ## F11 — Applications
 
@@ -103,7 +112,8 @@ area changes trial qualification or weekly reporting.
 
 - Accepted self-reported views collate to each business's designated Sheet/Drive location.
 - Across every business, Apify runs three cumulative windows: 1–14, 1–21, and 1–month-end.
-- Jobs use configuration, idempotency, leases, bounded retries, reconciliation, cost guards, and one-business failure isolation.
+- NorthQuest, CashDrive, and Aura each supply a separate server-only Apify credential/account. Central scheduling never means shared credentials.
+- Jobs use business-scoped configuration, idempotency, leases, bounded retries, reconciliation, cost guards, credential rotation, and one-business failure isolation.
 
 ## Regression impact map
 

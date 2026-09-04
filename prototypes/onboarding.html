@@ -18,11 +18,13 @@
     button,a{touch-action:manipulation}
     button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid #6ab99e;outline-offset:2px}
     h1[tabindex="-1"]:focus{outline:none}
-    .app{width:min(100%,430px);min-height:100dvh;margin:0 auto;background:var(--paper);box-shadow:var(--shadow);position:relative}
+    .review-workspace{min-height:100dvh}.app{width:min(100%,430px);min-height:100dvh;margin:0 auto;background:var(--paper);box-shadow:var(--shadow);position:relative}
     header{min-height:68px;padding:calc(14px + env(safe-area-inset-top)) 20px 14px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:12px}
     .brand{font-weight:800;letter-spacing:-.02em}.person{font-size:14px;color:var(--muted)}
     main{padding:24px 20px calc(110px + env(safe-area-inset-bottom))}
     .screen{display:none}.screen.active{display:block;animation:enter .16s ease-out}
+    .simple-state{padding-top:28px}.simple-state .eyebrow{font-size:15px}.simple-state .actions{margin-top:26px}
+    .paused-state{min-height:62dvh;align-content:center}.paused-state.active{display:grid}
     @keyframes enter{from{opacity:.25;transform:translateY(4px)}}
     .eyebrow{margin:0 0 8px;color:var(--green);font-size:13px;font-weight:800;letter-spacing:.1em;text-transform:uppercase}
     h1{margin:0;font-size:30px;line-height:1.08;letter-spacing:-.035em}
@@ -49,29 +51,39 @@
     .summary{margin-top:20px;border-top:1px solid var(--line)}
     .row{padding:13px 0;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:flex-start;gap:18px}
     .row span:first-child{font-size:13px;color:var(--muted)}.row strong{font-size:14px;text-align:right;overflow-wrap:anywhere}
-    .contract{max-height:240px;overflow:auto;border:1px solid var(--line);border-radius:10px;padding:15px;background:var(--ground);font-size:14px;margin-top:14px}
-    .contract p{color:var(--ink);margin:0 0 12px}.contract p:last-child{margin-bottom:0}
+    .contract{max-height:330px;overflow:auto;border:1px solid var(--line);border-radius:10px;padding:15px;background:var(--ground);font-size:14px;margin-top:14px;text-align:left}
+    .contract p{color:var(--ink);margin:0 0 12px}.contract p:last-child{margin-bottom:0}.contract h2{font-size:17px;margin:18px 0 7px}.contract h2:first-child{margin-top:0}
     .check{display:flex;gap:10px;align-items:flex-start;padding:13px 0}.check input{width:22px;min-height:22px;margin:1px 0 0}.check label{font-size:14px}
+    .check-list-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:22px}.check-list-heading h2{font-size:15px}.check-list-heading .quiet{flex:0 0 auto}.check-list-heading + .stack{margin-top:4px}
     .statusmark{width:58px;height:58px;border-radius:50%;display:grid;place-items:center;background:var(--soft);color:var(--green);font-size:26px;font-weight:900;margin-bottom:20px}
     .history{margin-top:22px}.event{position:relative;padding:0 0 18px 20px;border-left:2px solid var(--line);font-size:14px}.event:before{content:"";position:absolute;width:9px;height:9px;border-radius:50%;background:var(--green);left:-5.5px;top:4px}.event b{display:block}.event span{color:var(--muted);font-size:13px}
-    .prototype{position:absolute;left:12px;right:12px;bottom:calc(10px + env(safe-area-inset-bottom));z-index:5;background:#10251f;color:white;border-radius:12px;box-shadow:0 10px 35px rgba(0,0,0,.22)}
+    .signature-wrap{border:1px solid #aebcb5;border-radius:10px;overflow:hidden;background:#fff}.signature-wrap canvas{display:block;width:100%;height:150px;touch-action:none}.signature-tools{display:flex;justify-content:space-between;align-items:center;padding:8px 10px;border-top:1px solid var(--line)}
+    .signature-tools .hint{padding-right:8px}.correction-options{border:0;padding:0;margin:18px 0 0}.correction-options legend{font-weight:800;margin-bottom:8px}.correction-options .check{border-bottom:1px solid var(--line)}
+    .correction-block{display:none;gap:16px}.correction-block.active{display:grid}.readonly-link{border:0;background:transparent;color:var(--green);font-weight:800;padding:0;text-decoration:underline;text-underline-offset:3px;cursor:pointer}
+    .draft-status{font-size:12px;color:var(--muted);margin-top:16px}.signed-paper{margin-top:20px;padding:22px 18px;border:1px solid var(--line);background:#fff;box-shadow:0 8px 28px rgba(16,37,31,.08);font-family:Georgia,serif;color:#202420}.signed-paper p{color:#202420;font-size:13px}.signed-meta{display:grid;gap:8px;margin:18px 0;padding:12px 0;border-top:1px solid #cfd5d1;border-bottom:1px solid #cfd5d1}.signed-meta div{display:flex;justify-content:space-between;gap:12px;font-size:13px}.signed-signature{font-family:cursive;font-size:30px;transform:rotate(-4deg);min-height:54px;display:flex;align-items:center}.signed-paper img{display:block;max-width:210px;max-height:82px;object-fit:contain}.section-title{margin:22px 0 0;font-size:15px}.correction-group{margin-top:16px;border-top:1px solid var(--line)}
+    .prototype{position:fixed;left:12px;right:12px;bottom:calc(10px + env(safe-area-inset-bottom));z-index:5;background:#10251f;color:white;border-radius:12px;box-shadow:0 10px 35px rgba(0,0,0,.22)}
     .prototype summary{min-height:48px;padding:12px 14px;cursor:pointer;font-weight:750;display:flex;align-items:center;justify-content:space-between;list-style:none}.prototype summary::-webkit-details-marker{display:none}
     .prototype .panel{padding:0 12px 12px;display:grid;grid-template-columns:1fr 1fr;gap:7px}.prototype button{min-height:42px;border:1px solid #577269;border-radius:8px;background:#17372e;color:white;padding:8px;font-size:13px}
     .prototype button.current{background:#d8eee5;color:#123329;border-color:#d8eee5}
     .sr{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
     @media(min-width:700px){body{padding:26px}.app{min-height:850px;border-radius:22px;overflow:hidden}}
+    @media(min-width:850px){.review-workspace{display:grid;grid-template-columns:430px 320px;gap:24px;justify-content:center;align-items:start}.app{margin:0}.prototype{position:sticky;top:26px;left:auto;right:auto;bottom:auto;width:320px;max-height:calc(100dvh - 52px);overflow:auto}.prototype .panel{grid-template-columns:1fr}.prototype summary{cursor:default}}
     @media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;scroll-behavior:auto!important}}
+    /* TypeUI mobile-first polish: compact, trustworthy, and consistent with the wider platform. */
+    :root{--ui-canvas:#f3f5f2;--ui-paper:#fffefa;--ui-accent:#0b6248;--ui-accent-strong:#074b38;--ui-focus:#69b99d;--ui-line:#d8dfda;--ground:var(--ui-canvas);--paper:var(--ui-paper);--green:var(--ui-accent);--green2:var(--ui-accent-strong);--line:var(--ui-line)}
+    html,body{background:var(--ui-canvas)}.app{background:var(--ui-paper);box-shadow:0 10px 30px rgba(19,34,28,.07)}header{min-height:60px;padding:calc(12px + env(safe-area-inset-top)) 18px 12px;background:var(--ui-paper)}main{padding:22px 18px calc(104px + env(safe-area-inset-bottom))}h1{font-size:1.875rem;line-height:1.12;text-wrap:balance}h2{font-size:1.125rem;line-height:1.3;text-wrap:balance}.stack{gap:20px}.btn,input,select,textarea,.notice,.contract,.signature-wrap{border-radius:10px}.primary{background:var(--ui-accent)}.primary:hover{background:var(--ui-accent-strong)}.quiet{text-decoration:none}.prototype{background:#18362c;border-radius:14px}.prototype button{min-height:44px;border-color:#4f6b61;border-radius:10px}.review-workspace button:focus-visible,.review-workspace a:focus-visible,.review-workspace input:focus-visible,.review-workspace select:focus-visible,.review-workspace textarea:focus-visible{outline-color:var(--ui-focus);outline-offset:3px}
+    @media(max-width:699px){.app{box-shadow:none}.prototype{left:8px;right:8px}.actions.two{grid-template-columns:1fr}}
   </style>
 </head>
 <body>
+<div class="review-workspace">
 <div class="app">
   <header><div class="brand">TDT</div><div class="person" id="roleLabel">Amara · Creator</div></header>
   <main>
-    <section class="screen" data-screen="ready">
-      <div class="statusmark">✓</div><p class="eyebrow">NorthQuest</p><h1>Onboarding is ready.</h1>
-      <p>Your trial has been approved. Complete these details to join the NorthQuest creator team.</p>
-      <div class="notice"><strong>Use the same Google account.</strong><p>Your approved trial and this onboarding are already connected.</p></div>
-      <div class="actions"><button class="btn primary" data-go="details">Start onboarding</button></div>
+    <section data-screen="ready" class="screen simple-state">
+      <p class="eyebrow">NorthQuest</p><h1>Your onboarding is ready.</h1>
+      <p>Use the same Google account you used during your trial.</p>
+      <div class="actions"><button class="btn primary" data-go="details">Begin</button></div>
     </section>
 
     <section class="screen" data-screen="details">
@@ -82,17 +94,20 @@
         <div class="field"><label for="whatsapp">WhatsApp number</label><input id="whatsapp" value="+2349076217386" inputmode="tel" autocomplete="tel" /></div>
         <div class="field"><label for="address">Address</label><textarea id="address" placeholder="Your current address">12 Example Street, Ikeja, Lagos</textarea></div>
       </div>
+      <p class="draft-status" role="status">Your progress saves automatically.</p>
       <div class="actions two"><button class="btn secondary" data-go="ready">Back</button><button class="btn primary" id="detailsNext">Continue</button></div>
     </section>
 
     <section class="screen" data-screen="profiles">
-      <p class="eyebrow">Step 2 of 4</p><h1>Your creator profiles</h1><p>Add the public accounts you will use for NorthQuest. One is enough.</p>
+      <p class="eyebrow">Step 2 of 4</p><h1>Your creator profiles</h1><p>Add the accounts you will use for NorthQuest.</p>
       <div class="progress"><span class="on"></span><span class="on"></span><span></span><span></span></div>
       <div class="stack">
+        <div class="field"><label for="tiktokUsername">TikTok username</label><input id="tiktokUsername" placeholder="@yourname" autocomplete="off" /></div>
         <div class="field"><label for="tiktok">TikTok profile link</label><input id="tiktok" placeholder="https://www.tiktok.com/@yourname" inputmode="url" /></div>
-        <div class="field"><label for="instagram">Instagram profile link</label><input id="instagram" value="https://www.instagram.com/amara.example" inputmode="url" /></div>
-        <div class="private"><span>🔒</span><span><b>We will never ask for your passwords.</b><br />Only public profile links belong here.</span></div>
+        <div class="field"><label for="instagramUsername">Instagram username</label><input id="instagramUsername" placeholder="@yourname" autocomplete="off" /></div>
+        <div class="field"><label for="instagram">Instagram profile link</label><input id="instagram" placeholder="https://www.instagram.com/yourname" inputmode="url" /></div>
       </div>
+      <p class="draft-status" role="status">Your progress saves automatically.</p>
       <div class="actions two"><button class="btn secondary" data-go="details">Back</button><button class="btn primary" id="profilesNext">Continue</button></div>
     </section>
 
@@ -100,51 +115,79 @@
       <p class="eyebrow">Step 3 of 4</p><h1>Payment details</h1><p>These details are private and visible only to authorised management.</p>
       <div class="progress"><span class="on"></span><span class="on"></span><span class="on"></span><span></span></div>
       <div class="stack">
-        <div class="field"><label for="bank">Bank</label><select id="bank"><option value="">Choose bank</option><option selected>GTBank</option><option>Access Bank</option><option>OPay</option></select></div>
-        <div class="field"><label for="accountNumber">Account number</label><input id="accountNumber" value="0123456789" maxlength="10" inputmode="numeric" autocomplete="off" /></div>
+        <div class="field"><label for="bank">Bank or financial institution</label><input id="bank" list="nigerianBanks" value="GTBank" placeholder="Start typing your bank name" autocomplete="off" /><datalist id="nigerianBanks"><option value="Access Bank"></option><option value="Citibank Nigeria"></option><option value="Ecobank Nigeria"></option><option value="Fidelity Bank"></option><option value="First Bank of Nigeria"></option><option value="First City Monument Bank (FCMB)"></option><option value="Globus Bank"></option><option value="GTBank"></option><option value="Jaiz Bank"></option><option value="Keystone Bank"></option><option value="Kuda Bank"></option><option value="Lotus Bank"></option><option value="Moniepoint MFB"></option><option value="OPay"></option><option value="Optimized Microfinance Bank"></option><option value="PalmPay"></option><option value="Parallex Bank"></option><option value="Polaris Bank"></option><option value="PremiumTrust Bank"></option><option value="Providus Bank"></option><option value="Stanbic IBTC Bank"></option><option value="Standard Chartered Bank Nigeria"></option><option value="Sterling Bank"></option><option value="SunTrust Bank"></option><option value="TAJBank"></option><option value="Titan Trust Bank"></option><option value="Union Bank of Nigeria"></option><option value="United Bank for Africa (UBA)"></option><option value="Unity Bank"></option><option value="Wema Bank"></option><option value="Zenith Bank"></option></datalist><p class="hint">Type the name if it is not suggested.</p></div>
+        <div class="field"><label for="accountNumber">Account number</label><input id="accountNumber" value="0123456789" maxlength="10" minlength="10" pattern="[0-9]{10}" inputmode="numeric" autocomplete="off" /></div>
         <div class="field"><label for="accountName">Account name</label><input id="accountName" value="Amara Okafor" autocomplete="off" /></div>
       </div>
+      <p class="draft-status" role="status">Your progress saves automatically.</p>
       <div class="actions two"><button class="btn secondary" data-go="profiles">Back</button><button class="btn primary" id="paymentNext">Continue</button></div>
     </section>
 
     <section class="screen" data-screen="contract">
-      <p class="eyebrow">Step 4 of 4</p><h1>Read and sign</h1><p>This review copy represents the fixed NorthQuest agreement. The final system will show the approved legal version.</p>
+      <p class="eyebrow">Step 4 of 4</p><h1>Read and sign</h1><p>Read the agreement, complete the marked details and sign below.</p>
       <div class="progress"><span class="on"></span><span class="on"></span><span class="on"></span><span class="on"></span></div>
       <div class="contract" tabindex="0" aria-label="Contract preview">
-        <p><strong>NorthQuest creator agreement — review placeholder</strong></p>
-        <p>Your final agreement will state the contracting party, work, ownership, payment, confidentiality, ending the relationship and both signatures.</p>
-        <p>This prototype does not create, change or accept a legal contract.</p>
+        <h2>NorthQuest creator agreement</h2>
+        <p><strong>Review placeholder:</strong> the production flow will display the complete approved legal document here. This prototype does not create or change legal terms.</p>
+        <h2>1. Creator engagement</h2><p>The approved agreement will identify the parties, the creator's responsibilities and the effective period.</p>
+        <h2>2. Accounts and content</h2><p>The approved agreement will describe account ownership, permitted access, content responsibilities and the handover process.</p>
+        <h2>3. Payment</h2><p>The approved agreement will state payment, bonus and record-review terms.</p>
+        <h2>4. Confidentiality and ending the engagement</h2><p>The approved agreement will contain the complete confidentiality, correction, termination and return-of-access terms.</p>
       </div>
       <div class="stack">
-        <div class="field"><label for="signedContract">Upload your complete signed contract (PDF)</label><input id="signedContract" type="file" accept="application/pdf,.pdf" /><button type="button" class="quiet" id="exampleContract">Use example signed PDF</button><p class="hint" id="fileName">No file selected in this prototype.</p></div>
-        <div class="check"><input id="contractAgree" type="checkbox" /><label for="contractAgree">I have read the complete agreement and the PDF I selected contains my completed details and signature.</label></div>
+        <div class="field"><label for="contractName">Full legal name</label><input id="contractName" value="Amara Okafor" autocomplete="name" /></div>
+        <div class="field"><label for="contractAddress">Address</label><textarea id="contractAddress">12 Example Street, Ikeja, Lagos</textarea></div>
+        <div class="field"><label for="contractDate">Date</label><input id="contractDate" type="date" /></div>
+        <div class="field"><span class="label">Signature</span><div class="signature-wrap"><canvas id="signatureCanvas" width="720" height="300" tabindex="0" role="img" aria-label="Draw your signature here"></canvas><div class="signature-tools"><p class="hint" id="signatureStatus">Draw your signature in the box.</p><button type="button" class="quiet" id="clearSignature">Clear signature</button></div></div></div>
+        <div class="check"><input id="contractAgree" type="checkbox" /><label for="contractAgree">I have read the complete agreement and confirm the details and signature above are mine.</label></div>
       </div>
+      <p class="draft-status" role="status">Your progress saves automatically.</p>
       <div class="actions two"><button class="btn secondary" data-go="payment">Back</button><button class="btn primary" id="contractNext">Review</button></div>
     </section>
 
     <section class="screen" data-screen="review">
-      <p class="eyebrow">Check before submitting</p><h1>Does everything look right?</h1>
+      <h1>Does everything look right?</h1>
       <div class="summary">
-        <div class="row"><span>Name</span><strong>Amara Okafor</strong></div>
+        <div class="row"><span>Full name</span><strong id="reviewFullName">Amara Okafor</strong></div>
         <div class="row"><span>Brand</span><strong>NorthQuest</strong></div>
-        <div class="row"><span>Creator profile</span><strong>Instagram added</strong></div>
-        <div class="row"><span>Payment</span><strong>GTBank ···· 6789</strong></div>
-        <div class="row"><span>Contract</span><strong id="reviewFile">Signed PDF selected</strong></div>
+        <div class="row"><span>WhatsApp number</span><strong id="reviewWhatsapp">+2349076217386</strong></div>
+        <div class="row"><span>Address</span><strong id="reviewAddress">12 Example Street, Ikeja, Lagos</strong></div>
+        <div class="row"><span>TikTok username</span><strong id="reviewTikTokUsername">—</strong></div>
+        <div class="row"><span>TikTok profile link</span><strong id="reviewTikTokLink">—</strong></div>
+        <div class="row"><span>Instagram username</span><strong id="reviewInstagramUsername">—</strong></div>
+        <div class="row"><span>Instagram profile link</span><strong id="reviewInstagramLink">—</strong></div>
+        <div class="row"><span>Bank</span><strong id="reviewBank">GTBank</strong></div>
+        <div class="row"><span>Account number</span><strong id="reviewAccountNumber">0123456789</strong></div>
+        <div class="row"><span>Account name</span><strong id="reviewAccountName">Amara Okafor</strong></div>
+        <div class="row"><span>Agreement date</span><strong id="reviewContractDate">—</strong></div>
+        <div class="row"><span>Signature</span><strong>Added to agreement</strong></div>
+        <div class="row"><span>Signed agreement</span><strong><button type="button" class="readonly-link" id="reviewSignedAgreement">View agreement</button></strong></div>
       </div>
-      <div class="private"><span>🔒</span><span>Submitting creates a private onboarding record. It does not activate the account until management checks it.</span></div>
-      <div class="actions"><button class="btn primary" id="submitOnboarding">Submit onboarding</button><button class="quiet" data-go="details">Edit details</button></div>
+      <p>Management will review your details.</p>
+      <div class="actions"><button class="btn primary" id="submitOnboarding">Submit</button><button class="quiet" data-go="details">Edit details</button></div>
+    </section>
+
+    <section class="screen" data-screen="signed">
+      <p class="eyebrow">NorthQuest</p><h1>Signed agreement</h1>
+      <div class="signed-paper" aria-label="Signed contract preview">
+        <h2>NorthQuest creator agreement</h2>
+        <p>This preview shows where the creator’s completed details and signature appear on the final agreement.</p>
+        <div class="signed-meta"><div><span>Creator</span><strong id="signedName">Amara Okafor</strong></div><div><span>Address</span><strong id="signedAddress">12 Example Street, Ikeja, Lagos</strong></div><div><span>Date</span><strong id="signedDate">—</strong></div></div>
+        <h2>Agreement</h2><p>The complete approved NorthQuest agreement appears here in production. The creator’s signature is bound to this exact version.</p>
+        <h2>Creator signature</h2><div class="signed-signature" id="signedSignatureText">Amara Okafor</div><img id="signedSignaturePreview" alt="Creator signature drawn on the agreement" hidden />
+      </div>
+      <div class="actions"><button class="btn secondary" id="closeSignedAgreement">Back</button></div>
     </section>
 
     <section class="screen" data-screen="error">
-      <div class="statusmark" style="background:var(--redsoft);color:var(--red)">×</div><p class="eyebrow">Nothing was lost</p><h1>It didn’t save.</h1>
-      <p>Your answers and selected file are still here. Check your connection and try again.</p>
-      <div class="notice error"><strong>Prototype failure</strong><p>No information was sent anywhere.</p></div>
-      <div class="actions"><button class="btn primary" data-go="awaiting">Try again</button><button class="btn secondary" data-go="review">Review details</button></div>
+      <h1>Your onboarding did not save.</h1>
+      <p>Your answers and selected files are still here. Check your internet connection and try again.</p>
+      <div class="actions"><button class="btn primary" data-go="awaiting">Try again</button><button class="btn secondary" data-go="review">Return to review</button></div>
     </section>
 
     <section class="screen" data-screen="awaiting">
-      <div class="statusmark">✓</div><p class="eyebrow">Submitted</p><h1>We’re checking your details.</h1>
-      <p>You’ll see a button here when your NorthQuest dashboard is ready.</p>
+      <h1>Submitted.</h1><p>We’re checking your details.</p>
+      <p>You’ll see a button here when your dashboard is ready.</p>
       <div class="history"><div class="event"><b>Onboarding submitted</b><span>Today · 10:42 AM</span></div><div class="event"><b>Trial approved</b><span>Today · 9:15 AM</span></div></div>
     </section>
 
@@ -152,52 +195,127 @@
       <p class="eyebrow">NorthQuest · Management</p><h1>Amara Okafor</h1><p>Check each item before completing onboarding.</p>
       <div class="summary">
         <div class="row"><span>Google identity</span><strong>amara@example.com</strong></div>
-        <div class="row"><span>Instagram</span><strong><a href="#" onclick="return false">Open profile</a></strong></div>
-        <div class="row"><span>Bank</span><strong>GTBank ···· 6789</strong></div>
-        <div class="row"><span>Contract</span><strong><a href="#" onclick="return false">Open signed PDF</a></strong></div>
+        <div class="row"><span>TikTok</span><strong><a href="#" onclick="return false">@amara.nq</a></strong></div>
+        <div class="row"><span>Instagram</span><strong><a href="#" onclick="return false">@amara.example</a></strong></div>
+        <div class="row"><span>Bank</span><strong id="managerBank">GTBank</strong></div>
+        <div class="row"><span>Account number</span><strong id="managerAccountNumber">0123456789</strong></div>
+        <div class="row"><span>Account name</span><strong id="managerAccountName">Amara Okafor</strong></div>
+        <div class="row"><span>Contract</span><strong><button type="button" class="readonly-link" id="openSignedAgreement">View signed agreement</button></strong></div>
       </div>
+      <div class="check-list-heading"><h2>Review checks</h2><button type="button" class="quiet" id="selectAllChecks" aria-controls="checkIdentity checkProfile checkPayment checkContract" aria-pressed="false">Select all</button></div>
       <div class="stack" id="managerChecks">
         <div class="check"><input id="checkIdentity" type="checkbox" /><label for="checkIdentity">Identity and contact details match</label></div>
         <div class="check"><input id="checkProfile" type="checkbox" /><label for="checkProfile">Creator profile opens correctly</label></div>
         <div class="check"><input id="checkPayment" type="checkbox" /><label for="checkPayment">Payment details are complete</label></div>
         <div class="check"><input id="checkContract" type="checkbox" /><label for="checkContract">Complete signed contract checked</label></div>
       </div>
+      <span class="sr" id="managerChecksStatus" role="status" aria-live="polite"></span>
+      <fieldset class="correction-options">
+        <legend>Choose exactly what needs correction</legend>
+        <p class="section-title"><strong>Personal details</strong></p>
+        <div class="check"><input id="correctionFullName" data-correction-field="fullName" type="checkbox" /><label for="correctionFullName">Full name</label></div>
+        <div class="check"><input id="correctionWhatsapp" data-correction-field="whatsapp" type="checkbox" /><label for="correctionWhatsapp">WhatsApp number</label></div>
+        <div class="check"><input id="correctionAddress" data-correction-field="address" type="checkbox" /><label for="correctionAddress">Address</label></div>
+        <p class="section-title"><strong>Creator profiles</strong></p>
+        <div class="check"><input id="correctionTikTokUsername" data-correction-field="tiktokUsername" type="checkbox" /><label for="correctionTikTokUsername">TikTok username</label></div>
+        <div class="check"><input id="correctionTikTokLink" data-correction-field="tiktokLink" type="checkbox" /><label for="correctionTikTokLink">TikTok profile link</label></div>
+        <div class="check"><input id="correctionInstagramUsername" data-correction-field="instagramUsername" type="checkbox" /><label for="correctionInstagramUsername">Instagram username</label></div>
+        <div class="check"><input id="correctionInstagramLink" data-correction-field="instagramLink" type="checkbox" /><label for="correctionInstagramLink">Instagram profile link</label></div>
+        <p class="section-title"><strong>Payment</strong></p>
+        <div class="check"><input id="correctionBank" data-correction-field="bank" type="checkbox" /><label for="correctionBank">Bank</label></div>
+        <div class="check"><input id="correctionAccountNumber" data-correction-field="accountNumber" type="checkbox" /><label for="correctionAccountNumber">Account number</label></div>
+        <div class="check"><input id="correctionAccountName" data-correction-field="accountName" type="checkbox" /><label for="correctionAccountName">Account name</label></div>
+        <p class="section-title"><strong>Contract</strong></p>
+        <div class="check"><input id="correctionContractName" data-correction-field="contractName" type="checkbox" /><label for="correctionContractName">Name on agreement</label></div>
+        <div class="check"><input id="correctionContractAddress" data-correction-field="contractAddress" type="checkbox" /><label for="correctionContractAddress">Address on agreement</label></div>
+        <div class="check"><input id="correctionContractDate" data-correction-field="contractDate" type="checkbox" /><label for="correctionContractDate">Agreement date</label></div>
+        <div class="check"><input id="correctionSignature" data-correction-field="signature" type="checkbox" /><label for="correctionSignature">Signature</label></div>
+        <div class="field"><label for="correctionNote">What should be corrected?</label><textarea id="correctionNote">Please sign the agreement again in the box below.</textarea></div>
+      </fieldset>
       <div class="actions"><button class="btn primary" id="completeOnboarding">Complete onboarding</button><button class="btn secondary" id="requestCorrection">Request correction</button></div>
     </section>
 
     <section class="screen" data-screen="correction">
-      <p class="eyebrow">Update needed</p><h1>Check your account name.</h1><p>Management asked you to correct one item. Everything else remains saved.</p>
-      <div class="notice warn"><strong>Account name</strong><p>Enter it exactly as it appears on the bank account.</p></div>
-      <div class="stack"><div class="field"><label for="correctedName">Account name</label><input id="correctedName" value="Amara N. Okafor" /></div></div>
-      <div class="actions"><button class="btn primary" data-go="awaiting">Resubmit correction</button></div>
+      <p class="eyebrow">NorthQuest</p><h1>Correction needed.</h1>
+      <div class="notice warn"><strong id="correctionSummary">Signature</strong><p id="correctionMessage">Please sign the agreement again in the box below.</p></div>
+      <div class="stack" id="correctionFields">
+        <div class="correction-block" data-correction="fullName"><div class="field"><label for="correctedFullName">Full name</label><input id="correctedFullName" value="Amara Okafor" /></div></div>
+        <div class="correction-block" data-correction="whatsapp"><div class="field"><label for="correctedWhatsapp">WhatsApp number</label><input id="correctedWhatsapp" value="+2349076217386" inputmode="tel" /></div></div>
+        <div class="correction-block" data-correction="address"><div class="field"><label for="correctedAddress">Address</label><textarea id="correctedAddress">12 Example Street, Ikeja, Lagos</textarea></div></div>
+        <div class="correction-block" data-correction="tiktokUsername"><div class="field"><label for="correctedTikTokUsername">TikTok username</label><input id="correctedTikTokUsername" placeholder="@yourname" /></div></div>
+        <div class="correction-block" data-correction="tiktokLink"><div class="field"><label for="correctedTikTokLink">TikTok profile link</label><input id="correctedTikTokLink" placeholder="https://www.tiktok.com/@yourname" /></div></div>
+        <div class="correction-block" data-correction="instagramUsername"><div class="field"><label for="correctedInstagramUsername">Instagram username</label><input id="correctedInstagramUsername" placeholder="@yourname" /></div></div>
+        <div class="correction-block" data-correction="instagramLink"><div class="field"><label for="correctedInstagramLink">Instagram profile link</label><input id="correctedInstagramLink" placeholder="https://www.instagram.com/yourname" /></div></div>
+        <div class="correction-block" data-correction="bank"><div class="field"><label for="correctedBank">Bank</label><input id="correctedBank" value="GTBank" /></div></div>
+        <div class="correction-block" data-correction="accountNumber"><div class="field"><label for="correctedAccountNumber">Account number</label><input id="correctedAccountNumber" value="0123456789" maxlength="10" inputmode="numeric" /></div></div>
+        <div class="correction-block" data-correction="accountName"><div class="field"><label for="correctedAccountName">Account name</label><input id="correctedAccountName" value="Amara Okafor" /></div></div>
+        <div class="correction-block" data-correction="contractName"><div class="field"><label for="correctedContractName">Name on agreement</label><input id="correctedContractName" value="Amara Okafor" /></div></div>
+        <div class="correction-block" data-correction="contractAddress"><div class="field"><label for="correctedContractAddress">Address on agreement</label><textarea id="correctedContractAddress">12 Example Street, Ikeja, Lagos</textarea></div></div>
+        <div class="correction-block" data-correction="contractDate"><div class="field"><label for="correctedContractDate">Agreement date</label><input id="correctedContractDate" type="date" /></div></div>
+        <div class="correction-block active" data-correction="signature"><div class="contract"><h2>NorthQuest creator agreement</h2><p>The same approved agreement reopens here so the new signature remains attached to the document being signed.</p></div><div class="field"><span class="label">Draw signature again</span><div class="signature-wrap"><canvas id="correctionSignatureCanvas" width="720" height="300" aria-label="Draw your corrected signature here"></canvas><div class="signature-tools"><p class="hint" id="correctionSignatureStatus">Draw your signature in the box.</p><button type="button" class="quiet" id="clearCorrectionSignature">Clear signature</button></div></div></div></div>
+      </div>
+      <div class="actions"><button class="btn primary" id="resubmitCorrection">Submit correction</button></div>
       <div class="history"><div class="event"><b>Correction requested by Ella</b><span>Today · 11:05 AM</span></div><div class="event"><b>Original onboarding retained</b><span>Today · 10:42 AM</span></div></div>
     </section>
 
-    <section class="screen" data-screen="complete">
-      <div class="statusmark">✓</div><p class="eyebrow">NorthQuest</p><h1>Your dashboard is ready.</h1><p>Your onboarding is complete. You can now continue as an active NorthQuest creator.</p>
-      <div class="notice"><strong>One login, one record.</strong><p>Your trial, onboarding and creator history stay connected.</p></div>
+    <section data-screen="complete" class="screen simple-state">
+      <p class="eyebrow">NorthQuest</p><h1>Welcome to your creator dashboard, Amara.</h1>
       <div class="actions"><button class="btn primary" onclick="alert('This hands off to the separate active-creator dashboard prototype.')">Open dashboard</button></div>
     </section>
 
-    <section class="screen" data-screen="paused">
-      <p class="eyebrow">NorthQuest</p><h1>Your access has been paused.</h1>
+    <section data-screen="paused" class="screen simple-state paused-state">
+      <div><p class="eyebrow">NorthQuest</p><h1>Your access has been paused.</h1><div class="actions"><button class="btn secondary" id="openReadOnlyRecords">View payments and records</button></div></div>
     </section>
   </main>
 
-  <details class="prototype">
+</div>
+  <details class="prototype" aria-label="Prototype review states">
     <summary>Prototype states <span>⌃</span></summary>
     <div class="panel" id="stateButtons"></div>
   </details>
 </div>
 <script>
-  const screens = ["ready","details","profiles","payment","contract","review","error","awaiting","manager","correction","complete","paused"];
-  const labels = {ready:"Ready",details:"Your details",profiles:"Profiles",payment:"Payment",contract:"Contract",review:"Review",error:"Save failed",awaiting:"Awaiting review",manager:"Manager review",correction:"Correction",complete:"Completed",paused:"Paused"};
+  const screens = ["ready","details","profiles","payment","contract","review","signed","error","awaiting","manager","correction","complete","paused"];
+  const labels = {ready:"Ready",details:"Your details",profiles:"Profiles",payment:"Payment",contract:"Contract",review:"Review",signed:"Signed agreement",error:"Save failed",awaiting:"Awaiting review",manager:"Manager review",correction:"Correction",complete:"Completed",paused:"Paused"};
   let current = screens.includes(new URLSearchParams(location.search).get("screen")) ? new URLSearchParams(location.search).get("screen") : "ready";
   let failOnce = true;
-  let contractSelected = false;
+  let signatureProvided = false;
+  let correctionSignatureProvided = false;
+  let signedReturn = "review";
+  let activeCorrectionFields = ["signature"];
+  const draftKey = "smithstem-northquest-onboarding-prototype-v2";
+  const draftFieldIds = ["fullName","whatsapp","address","tiktokUsername","tiktok","instagramUsername","instagram","bank","accountNumber","accountName","contractName","contractAddress","contractDate","contractAgree"];
   const roleLabel = document.getElementById("roleLabel");
   const panel = document.getElementById("stateButtons");
   const prototypeMenu = document.querySelector(".prototype");
+  const sideReview = window.matchMedia("(min-width: 850px)");
+  function syncReviewPanel(){prototypeMenu.open=sideReview.matches;}
+  syncReviewPanel();
+  sideReview.addEventListener("change",syncReviewPanel);
+  const lagosDateParts=Object.fromEntries(new Intl.DateTimeFormat("en-GB",{timeZone:"Africa/Lagos",year:"numeric",month:"2-digit",day:"2-digit"}).formatToParts(new Date()).filter(part=>part.type!=="literal").map(part=>[part.type,part.value]));
+  document.getElementById("contractDate").value=`${lagosDateParts.year}-${lagosDateParts.month}-${lagosDateParts.day}`;
+
+  function draftData(){
+    return Object.fromEntries(draftFieldIds.map(id=>{const field=document.getElementById(id);return [id,field.type==="checkbox"?field.checked:field.value];}));
+  }
+  function saveDraft(){
+    try{
+      const draft={...draftData(),signature:signatureProvided?signaturePad.dataUrl():null};
+      localStorage.setItem(draftKey,JSON.stringify(draft));
+      document.querySelectorAll(".draft-status").forEach(item=>item.textContent="Saved automatically.");
+    }catch(error){
+      document.querySelectorAll(".draft-status").forEach(item=>item.textContent="Could not save on this device.");
+    }
+  }
+  function restoreDraft(){
+    try{
+      const raw=localStorage.getItem(draftKey); if(!raw) return;
+      const draft=JSON.parse(raw);
+      draftFieldIds.forEach(id=>{const field=document.getElementById(id);if(!(id in draft))return;if(field.type==="checkbox")field.checked=Boolean(draft[id]);else field.value=draft[id];});
+      if(draft.signature) signaturePad.load(draft.signature);
+    }catch(error){ /* A broken prototype draft must not block the flow. */ }
+  }
+  draftFieldIds.forEach(id=>document.getElementById(id).addEventListener("input",saveDraft));
 
   function show(name, updateUrl=true){
     current = screens.includes(name) ? name : "ready";
@@ -208,17 +326,22 @@
     window.scrollTo({top:0,behavior:"auto"});
     const heading = document.querySelector(`.screen[data-screen="${current}"] h1`);
     if(heading){ heading.setAttribute("tabindex","-1"); heading.focus({preventScroll:true}); }
+    if(current==="review") updateReview();
+    if(current==="signed") renderSignedAgreement();
   }
-  screens.forEach(name => { const b=document.createElement("button"); b.type="button"; b.dataset.state=name; b.textContent=labels[name]; b.addEventListener("click",()=>{ show(name); prototypeMenu.open=false; }); panel.appendChild(b); });
+  screens.forEach(name => { const b=document.createElement("button"); b.type="button"; b.dataset.state=name; b.textContent=labels[name]; b.addEventListener("click",()=>{ show(name); if(!sideReview.matches) prototypeMenu.open=false; }); panel.appendChild(b); });
   document.addEventListener("click", e => { const target=e.target.closest("[data-go]"); if(target) show(target.dataset.go); });
 
   document.getElementById("detailsNext").addEventListener("click",()=>{
     if(!document.getElementById("fullName").value.trim() || !document.getElementById("whatsapp").value.trim() || !document.getElementById("address").value.trim()) return alert("Complete all three details.");
+    document.getElementById("contractName").value=document.getElementById("fullName").value.trim();
+    document.getElementById("contractAddress").value=document.getElementById("address").value.trim();
+    saveDraft();
     show("profiles");
   });
   document.getElementById("profilesNext").addEventListener("click",()=>{
-    const tt=document.getElementById("tiktok").value.trim(), ig=document.getElementById("instagram").value.trim();
-    if(!tt && !ig) return alert("Add at least one public creator profile.");
+    const required=["tiktokUsername","tiktok","instagramUsername","instagram"];
+    if(!required.every(id=>document.getElementById(id).value.trim())) return alert("Add both usernames and profile links.");
     show("payment");
   });
   document.getElementById("paymentNext").addEventListener("click",()=>{
@@ -226,27 +349,102 @@
     if(!document.getElementById("bank").value || !/^\d{10}$/.test(number) || !document.getElementById("accountName").value.trim()) return alert("Check the bank details.");
     show("contract");
   });
-  document.getElementById("signedContract").addEventListener("change",e=>{
-    const f=e.target.files[0]; contractSelected=Boolean(f); document.getElementById("fileName").textContent=f?`Selected: ${f.name}`:"No file selected in this prototype.";
-    document.getElementById("reviewFile").textContent=f?f.name:"Review example PDF";
-  });
-  document.getElementById("exampleContract").addEventListener("click",()=>{
-    contractSelected=true;
-    document.getElementById("fileName").textContent="Selected: Amara-Okafor-signed-contract.pdf · Example file";
-    document.getElementById("reviewFile").textContent="Amara-Okafor-signed-contract.pdf · Example";
-  });
+
+  function setupSignature(canvasId,statusId,clearId,onChange){
+    const canvas=document.getElementById(canvasId); const context=canvas.getContext("2d"); let drawing=false; let hasInk=false;
+    context.lineWidth=4; context.lineCap="round"; context.strokeStyle="#10251f";
+    function point(event){const rect=canvas.getBoundingClientRect();return{x:(event.clientX-rect.left)*(canvas.width/rect.width),y:(event.clientY-rect.top)*(canvas.height/rect.height)};}
+    function changed(value){hasInk=value;document.getElementById(statusId).textContent=value?"Signature added.":"Draw your signature in the box.";onChange(value);}
+    canvas.addEventListener("pointerdown",event=>{drawing=true;canvas.setPointerCapture(event.pointerId);const p=point(event);context.beginPath();context.moveTo(p.x,p.y);});
+    canvas.addEventListener("pointermove",event=>{if(!drawing)return;const p=point(event);context.lineTo(p.x,p.y);context.stroke();changed(true);});
+    ["pointerup","pointercancel"].forEach(type=>canvas.addEventListener(type,()=>{if(drawing&&hasInk)onChange(true);drawing=false;}));
+    document.getElementById(clearId).addEventListener("click",()=>{context.clearRect(0,0,canvas.width,canvas.height);changed(false);});
+    return {hasInk:()=>hasInk,dataUrl:()=>canvas.toDataURL("image/png"),clear:()=>{context.clearRect(0,0,canvas.width,canvas.height);changed(false);},load:url=>{const image=new Image();image.onload=()=>{context.clearRect(0,0,canvas.width,canvas.height);context.drawImage(image,0,0,canvas.width,canvas.height);changed(true);};image.src=url;}};
+  }
+  const signaturePad=setupSignature("signatureCanvas","signatureStatus","clearSignature",value=>{signatureProvided=value;if(value)saveDraft();});
+  const correctionSignaturePad=setupSignature("correctionSignatureCanvas","correctionSignatureStatus","clearCorrectionSignature",value=>{correctionSignatureProvided=value;});
   document.getElementById("contractNext").addEventListener("click",()=>{
-    if(!contractSelected) return alert("Select your complete signed PDF.");
-    if(!document.getElementById("contractAgree").checked) return alert("Confirm that you read and completed the signed PDF.");
+    if(!document.getElementById("contractName").value.trim() || !document.getElementById("contractAddress").value.trim() || !document.getElementById("contractDate").value) return alert("Complete the name, address and date on the agreement.");
+    if(!signatureProvided) return alert("Add your signature.");
+    if(!document.getElementById("contractAgree").checked) return alert("Confirm that you read the agreement.");
+    saveDraft();
     show("review");
   });
+  function text(id){return document.getElementById(id).value.trim()||"—";}
+  function updateReview(){
+    const values={reviewFullName:text("fullName"),reviewWhatsapp:text("whatsapp"),reviewAddress:text("address"),reviewTikTokUsername:text("tiktokUsername"),reviewTikTokLink:text("tiktok"),reviewInstagramUsername:text("instagramUsername"),reviewInstagramLink:text("instagram"),reviewBank:text("bank"),reviewAccountNumber:text("accountNumber"),reviewAccountName:text("accountName"),reviewContractDate:text("contractDate")};
+    Object.entries(values).forEach(([id,value])=>document.getElementById(id).textContent=value);
+    document.getElementById("managerBank").textContent=text("bank");
+    document.getElementById("managerAccountNumber").textContent=text("accountNumber");
+    document.getElementById("managerAccountName").textContent=text("accountName");
+  }
+  function renderSignedAgreement(){
+    document.getElementById("signedName").textContent=text("contractName");
+    document.getElementById("signedAddress").textContent=text("contractAddress");
+    document.getElementById("signedDate").textContent=text("contractDate");
+    const image=document.getElementById("signedSignaturePreview"); const fallback=document.getElementById("signedSignatureText");
+    if(signatureProvided){image.src=signaturePad.dataUrl();image.hidden=false;fallback.hidden=true;}else{image.hidden=true;fallback.hidden=false;fallback.textContent=text("contractName");}
+  }
+  function openSignedAgreement(returnTo){signedReturn=returnTo;show("signed");}
+  document.getElementById("reviewSignedAgreement").addEventListener("click",()=>openSignedAgreement("review"));
+  document.getElementById("openSignedAgreement").addEventListener("click",()=>openSignedAgreement("manager"));
+  document.getElementById("closeSignedAgreement").addEventListener("click",()=>show(signedReturn));
   document.getElementById("submitOnboarding").addEventListener("click",()=>{ if(failOnce){failOnce=false;show("error");}else show("awaiting"); });
+  const managerCheckIds=["checkIdentity","checkProfile","checkPayment","checkContract"];
+  const selectAllChecks=document.getElementById("selectAllChecks");
+  function syncManagerCheckControl(){
+    const selectedCount=managerCheckIds.filter(id=>document.getElementById(id).checked).length;
+    const allSelected=selectedCount===managerCheckIds.length;
+    const button=selectAllChecks;
+    button.textContent=allSelected?"Clear all":"Select all";
+    button.setAttribute("aria-pressed",String(allSelected));
+    document.getElementById("managerChecksStatus").textContent=allSelected?"All four review checks selected.":`${selectedCount} of four review checks selected.`;
+  }
+  selectAllChecks.addEventListener("click",()=>{
+    const shouldSelect=!managerCheckIds.every(id=>document.getElementById(id).checked);
+    managerCheckIds.forEach(id=>{document.getElementById(id).checked=shouldSelect;});
+    syncManagerCheckControl();
+  });
+  managerCheckIds.forEach(id=>document.getElementById(id).addEventListener("change",syncManagerCheckControl));
+  syncManagerCheckControl();
   document.getElementById("completeOnboarding").addEventListener("click",()=>{
-    const checks=["checkIdentity","checkProfile","checkPayment","checkContract"].every(id=>document.getElementById(id).checked);
+    const checks=managerCheckIds.every(id=>document.getElementById(id).checked);
     if(!checks) return alert("Check all four items before completing onboarding.");
     show("complete");
   });
-  document.getElementById("requestCorrection").addEventListener("click",()=>show("correction"));
+  const correctionDefinitions={
+    fullName:{label:"Full name",source:"fullName",target:"correctedFullName"},whatsapp:{label:"WhatsApp number",source:"whatsapp",target:"correctedWhatsapp"},address:{label:"Address",source:"address",target:"correctedAddress"},
+    tiktokUsername:{label:"TikTok username",source:"tiktokUsername",target:"correctedTikTokUsername"},tiktokLink:{label:"TikTok profile link",source:"tiktok",target:"correctedTikTokLink"},instagramUsername:{label:"Instagram username",source:"instagramUsername",target:"correctedInstagramUsername"},instagramLink:{label:"Instagram profile link",source:"instagram",target:"correctedInstagramLink"},
+    bank:{label:"Bank",source:"bank",target:"correctedBank"},accountNumber:{label:"Account number",source:"accountNumber",target:"correctedAccountNumber"},accountName:{label:"Account name",source:"accountName",target:"correctedAccountName"},contractName:{label:"Name on agreement",source:"contractName",target:"correctedContractName"},contractAddress:{label:"Address on agreement",source:"contractAddress",target:"correctedContractAddress"},contractDate:{label:"Agreement date",source:"contractDate",target:"correctedContractDate"},signature:{label:"Signature"}
+  };
+  function selectedCorrections(){return [...document.querySelectorAll("[data-correction-field]:checked")].map(item=>item.dataset.correctionField);}
+  function activateCorrectionFields(selected){
+    activeCorrectionFields=selected;
+    document.querySelectorAll("[data-correction]").forEach(block=>block.classList.toggle("active",selected.includes(block.dataset.correction)));
+  }
+  function prepareCorrection(){
+    const selected=selectedCorrections();
+    if(!selected.length) return alert("Choose the part that needs correction.");
+    const note=document.getElementById("correctionNote").value.trim();
+    if(!note) return alert("Tell the creator what to correct.");
+    selected.forEach(key=>{const definition=correctionDefinitions[key];if(definition.source)document.getElementById(definition.target).value=document.getElementById(definition.source).value;});
+    document.getElementById("correctionSummary").textContent=selected.map(key=>correctionDefinitions[key].label).join(", ");
+    document.getElementById("correctionMessage").textContent=note;
+    if(selected.includes("signature")) correctionSignaturePad.clear();
+    activateCorrectionFields(selected);
+    show("correction");
+  }
+  document.getElementById("requestCorrection").addEventListener("click",prepareCorrection);
+  document.getElementById("resubmitCorrection").addEventListener("click",()=>{
+    for(const key of activeCorrectionFields){
+      if(key==="signature"){if(!correctionSignatureProvided)return alert("Add the corrected signature.");signaturePad.load(correctionSignaturePad.dataUrl());continue;}
+      const definition=correctionDefinitions[key];const corrected=document.getElementById(definition.target).value.trim();if(!corrected)return alert(`Complete ${definition.label.toLowerCase()}.`);document.getElementById(definition.source).value=corrected;
+    }
+    saveDraft();show("awaiting");
+  });
+  document.getElementById("openReadOnlyRecords").addEventListener("click",()=>alert("Prototype handoff: operational actions remain paused, while payment statements, video history and bonus records stay read-only."));
+  restoreDraft();
+  if(current==="correction") activateCorrectionFields(["signature"]);
   show(current,false);
 </script>
 </body>

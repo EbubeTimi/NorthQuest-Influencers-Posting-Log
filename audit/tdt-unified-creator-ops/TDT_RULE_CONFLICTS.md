@@ -1,5 +1,41 @@
 # Authoritative rule conflict audit
 
+## Brand onboarding revision — 3 September 2026
+
+- The onboarding-ready and completed states remove decorative tick marks and centre the NorthQuest status and primary action. Ready copy is reduced to “Onboarding is ready”, “Click below to start”, and the same-Google-account instruction.
+- Creator profiles require separate username and public-link fields for TikTok and Instagram. The user's request to collect passwords conflicts with the locked security objective and the confirmed legacy credential exposure. Smithstem will not collect/store/export passwords; business access must use platform permissions or a separately approved credential vault.
+- Replace arbitrary signed-PDF upload with the complete approved agreement rendered in the phone flow, designated name/address/date fields, acknowledgement and drawn signature. Production generates and privately stores the whole signed PDF plus immutable version/hash and signing evidence; legal text is not editable by the creator.
+- Management chooses the exact sections needing correction and supplies a note. Only those sections reopen; accepted sections and original submissions remain retained.
+- Searchable/free-text Nigerian financial-institution entry replaces the three-option bank dropdown. Current account-number validation is exactly ten digits.
+- Paused active creators lose operational write access but retain read-only payment statements, video history and bonus history. Monthly payment transparency on the 10th belongs to the active-dashboard/payment-ledger flow.
+
+## Verification findings — 28 August 2026
+
+See [storage verification](../../evidence/flows/Recruitment_Prototype/STORAGE_VERIFICATION_2026-08-28.md). These are observed integration gaps, not changes to product decisions:
+
+- The new private Drive destination is not used by either application route. Generic apply attempts the legacy global-root Drive/Sheet sync; brand-specific apply does not. Folder existence and tool-based text readback are not website-upload proof.
+- The repo-default Supabase project explicitly reports Google sign-in disabled. Deployment overrides and authenticated destination settings remain unverified; public-role empty rows do not prove missing configuration.
+- Legacy weekly collation excludes trials, chooses all-time maximum reports and can select an unfinished window; legacy Apify remains monthly-only. These cannot satisfy the approved reporting contracts.
+- Legacy onboarding stores only a signature PNG and can append supplied social-account passwords into a brand Doc. Full contract retention and secure credential handling require separate implementation before reuse; no sensitive Doc contents were read.
+- Build and local prototype checks pass, but live role isolation, durable video attachment, reviewer playback, failure recovery and retention remain open gates. Source Forms/Sheets and production settings remain untouched.
+
+## Onboarding audit — 29 August 2026
+
+- The legacy production onboarding page asks for brand email, Instagram and
+  TikTok passwords and passes them to the Drive synchronization function. This
+  directly conflicts with the current security contract. The new flow must
+  never request, store, export or log social/email passwords.
+- The legacy flow stores a drawn signature PNG and may activate the creator
+  before an external Drive copy finishes. Current onboarding requires the
+  complete accepted contract version plus complete signed document, durable
+  confirmation, and an explicit management completion before one active brand
+  membership is created.
+- A default NorthQuest fallback for an account with no assigned business is not
+  permitted. Onboarding must derive the brand from the verified trial decision
+  and onboarding case; unknown or mismatched assignments fail closed.
+- This audit authorizes an approval prototype and removal from the future
+  design, not a production route change, contract rewrite or live-data cleanup.
+
 ## Latest storage decision — Google Drive selected
 
 - User explicitly selected Google Drive; supersedes provider-pending and the private-Supabase recommendation, but does not authorize deployment or real-data deletion.
@@ -83,6 +119,10 @@ The two recruitment handoff documents supplied on August 28 were read in full. T
 | Blanket no-migration launch vs new 526-application migration plan | New handoff authorizes planning a separate, rehearsable recruitment import. It does not authorize executing an import or changing production. Old video counts/links/credentials still excluded. | Reconcile all 526 records and aggregates only after frozen export, mapping review and approval. No importer execution now. |
 | Single admin role vs agency/brand/creator scopes | Daniel/Ella/Oyi/Smith daily GrowthCooks operations; Smith owner-only destructive/administrator/export controls are a recommended boundary, not confirmed policy. | Demonstrate only simulated roles. No real grants; owner boundary confirmation required before production. |
 | Existing reusable public trial links vs screened named trial | Email-bound invitation, accepted outreach, one concurrent trial/person, agency-brand engagement and required trial fields. Passing remains TDT-wide. | No repeat trial for a passed creator; subsequent brand onboarding requires explicit assignment. |
+| Contract password-sharing language vs secure reassignable brand accounts | Use brand-controlled TikTok Business Center and Meta Business Portfolio ownership/recovery with removable creator roles. Smithstem never stores raw platform passwords. | Existing legal documents must be replaced only through a reviewed, approved new contract version; no silent edits to signed agreements. |
+| September 4 request to add social passwords before Business Center setup vs secure credential boundary | Do not add raw TikTok/Instagram password fields to Smithstem. If temporary credential handover is genuinely required, use a separately approved password vault outside the application with restricted access, MFA, rotation and deletion; continue researching platform delegation. | Onboarding prototype and production schema remain credential-free. This boundary can change only through a dedicated security/legal decision, never as an ordinary form-field edit. |
+| Management contract editing vs immutable signed evidence | Management edits only a new brand-scoped draft. A designated owner/legal approver publishes it; every signature remains bound to the exact rendered version and hash. | Material changes create a new version/amendment and may require re-signing. Draft/publish/re-sign actions are audited. |
+| Supplied contract labels vs document contents (3 September 2026) | `UGC Agreement (2).docx` and `(3).docx` are textually and visually identical NorthQuest agreements; neither is an Aura agreement. The separately named CashDrive upload was unavailable during final inspection, so an older local CashDrive contract was comparison-only. | Do not assign or publish an Aura/CashDrive template from filename alone. Obtain and review the correct distinct source files before implementation. |
 | Prototype approval vs launch readiness | Trial revision 7 design approved by “yes i am happy lets move”; recruitment and active-dashboard drafts not approved. September 1, 2026 remains target. | No production UI or deployment authorized by this prototype work; real end-to-end tests still required. |
 
 Repository seams inspected: `app/apply/page.js`, `app/admin/page.js`, `app/onboarding/page.js`, `app/auth/callback/page.js`, recruitment migrations `20260817204900` / `20260818231500`, `PROJECT_BIBLE.md`, and the existing shared contracts. Historical flow-map wording that a high weekly self-report alone creates review is also superseded: a complete link/count/screenshot submission is required.
@@ -125,7 +165,7 @@ The uncommitted active dashboard draft is preserved while recruitment takes prio
 | 6 | Every due video/platform in the completed date period must be reported | The first audit incorrectly claimed an old video's report could clear a new video; current rows are keyed by `video_log_id`. Actual gaps: duplicate video/platform rows are allowed and the gate scans every older unreported video | Bound the due query to the completed period and make video/platform report retries idempotent |
 | 7 | 10,000 on one video creates management review | CashDrive is 5,000; threshold is editable; prior instruction incorrectly removed approval | Protect 10,000 for all businesses; create one review/notification; retain management verification |
 | 8 | Only management approval unlocks onboarding | Existing manual controls are mixed with older qualification states | Replace with explicit `trial → review_pending → onboarding_approved` transitions and audit them |
-| 9 | Apify runs 1–14, 1–21, and 1–month-end across all businesses | Code is monthly-only with a day-one-next-month cron | Replace with three cumulative monthly windows and per-business run isolation |
+| 9 | Apify runs 1–14, 1–21, and 1–month-end for all businesses, with a separate Apify account/credential for NorthQuest, CashDrive, and Aura | Code is monthly-only with a day-one-next-month cron and `get_apify_token()` returns one shared Vault secret named `apify_api_token` for every business | Replace with three cumulative monthly windows, per-business job isolation, and server-only business-to-secret resolution. Never fall back to NorthQuest or a global token when another business is unconfigured |
 | 10 | TDT-wide Applications area | Applicant data exists, but it is not yet the unified administration flow shown in the supplied form | Build a separate applications workspace and structured applicant records/uploads |
 | 11 | CashDrive Inventory and Enquiries areas | Both workflows are absent | Add separate tenant-scoped areas; use the supplied enquiry fields as the starting contract |
 | 12 | Admin sees creator photo, joined/deactivated dates, business records, and actions | Creator history and lifecycle details are incomplete and fragmented | Add auditable lifecycle records and safe private media references |

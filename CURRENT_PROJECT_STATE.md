@@ -1,0 +1,78 @@
+# Current project state
+
+Last updated: 4 September 2026, Africa/Lagos.
+
+This is the canonical restart point for the unified TDT/Smithstem creator-operations project. Read it before continuing work and update it after every major approved decision, completed flow, failed verification, or change in the next action. Detailed rules remain in `audit/tdt-unified-creator-ops/00_Flow_Contracts.md` and `audit/tdt-unified-creator-ops/TDT_RULE_CONFLICTS.md`.
+
+## Safety and delivery boundary
+
+- Repository: `EbubeTimi/NorthQuest-Influencers-Posting-Log`.
+- Working branch: `codex/unified-tdt-creator-ops-prototype`.
+- Draft pull request: `https://github.com/EbubeTimi/NorthQuest-Influencers-Posting-Log/pull/1`.
+- Never write directly to `main`.
+- Production UI implementation and deployment require explicit user approval.
+- Do not mutate production data or the source Google Form/Sheets without explicit approval.
+- Preserve unrelated and pre-existing working-tree changes. Stage exact paths only.
+- Tell the user immediately when any command, build, test, connection, render, migration, or verification fails.
+
+## Product authority
+
+- TDT is the parent. GrowthCooks Marketing Agency is the operational recruitment workspace; do not assert an unconfirmed legal-subsidiary relationship.
+- Canonical brands are NorthQuest, CashDrive, and Aura.
+- One person uses one personal-Google identity and separate brand memberships. Active multi-brand creators can switch businesses; a trial creator has one trial business and never repeats a passed TDT-wide trial.
+- Trial qualification requires one already-recorded content link/platform, a claimed count of at least 10,000, and a screenshot of that exact post. Management verifies and approves onboarding; self-report never self-approves.
+- Exactly two daily video slots, each with TikTok and Instagram. No Video 3 and no Facebook tracking/bonus.
+- Today is locked. Yesterday appears only when missed and until 12:00 PM the next day.
+- Aura uses Monday-Sunday. NorthQuest and CashDrive use managed business periods. New creators join the period in progress and owe reports only for content logged after joining.
+- Apify runs per business with a separate business account/credential at cumulative days 1-14, 1-21, and 1-month-end; no week-one run.
+- Smithstem never collects or stores Google, TikTok, or Instagram passwords. Each brand controls one management boundary containing many separate creator-operated accounts: for example, roughly 70 distinct NorthQuest TikTok accounts and 70 distinct NorthQuest Instagram accounts, with one account pair assigned to each creator. Creators receive removable least-privilege roles only for their own account pair; management controls the portfolio, recovery factors and reassignment.
+- Contracts are brand-specific and versioned. Management edits only drafts; an authorized owner/legal approver publishes. Published and signed versions are immutable, and material changes use an amendment/re-signing case.
+- Canonical database/file destinations and the remaining implementation order are recorded in `audit/tdt-unified-creator-ops/DATA_STORAGE_ARCHITECTURE.md`.
+
+## Completed and verified
+
+- Repository audit, authoritative rule conflicts, flow map, and flow contracts are recorded.
+- Trial creator prototype revision 7 is visually approved.
+- Recruitment prototype is accepted for now. A shared TypeUI-guided mobile-first visual pass was applied on 4 September 2026 and awaits the user's visual approval.
+- Brand-onboarding prototype behavior was accepted on 4 September 2026 (“I think we're all done here”). It includes the concise entry/status copy, profile placeholders, automatic reload/back draft recovery, every review field shown separately (including the creator's full account number), an in-document signed-agreement preview, exact field-level corrections including signature re-entry, management review with an accessible Select all/Clear all shortcut for its four approval checks, and paused read-only records. The shared TypeUI-guided visual pass is applied and awaits visual approval.
+- Onboarding prototype uses a side-by-side review shell on wide screens and an accessible state selector on narrow screens.
+- Latest reported checks: 229 named local checks passed after the shared UI pass and active-dashboard revision, including onboarding 14/14, active creator 35/35, shared trial contract 33/33, trial browser checks 60/60, TypeUI visual-contract checks 3/3, and Supabase hardening 8/8. The isolated PostgreSQL migration runtime and production build also passed previously.
+- Active creator prototype revision 16 is behavior/flow approved as the basis for the next phase. Home is summary-only, the current Lagos date precedes the greeting, a separate centre Track action owns daily entry, and five accessible icon actions cover Home, Track, Videos, Bonuses and Payments. “Your dashboard” switches between This month and All time. Monthly target follows the actual month length; expected pay is separate from settled payments; the zero-bonus state omits a meaningless naira amount; and the Active badge and aggregate “Total so far” were removed. This approval does not authorize production UI implementation or deployment.
+- A browser-cache mismatch briefly reopened the older onboarding copy during verification. The live file response was confirmed current and the reviewer URL was refreshed with `v=8`; the corrected Ready screen and complete state list then rendered successfully.
+- RLS hardening migration is prepared and locally proven but not applied to production.
+- Contract review on 3 September found `UGC Agreement (2).docx` and `(3).docx` textually and visually identical NorthQuest agreements. Neither is Aura. Their credential-sharing and termination-control clauses conflict with secure account reassignment and require a legally approved new version.
+
+## Still open or blocked
+
+- Correct distinct Aura agreement is not available.
+- The exact newly supplied `CASHDRIVE_UGC_CONTENT_CREATOR_AGREEMENT.docx` became unavailable during inspection. An older local CashDrive contract was used for comparison only and must not be published as the supplied source.
+- The designated contract publisher/legal approver is not yet confirmed. Recommended boundary: only Smith or a specifically designated legal approver can publish.
+- Vercel project currently has no environment variables configured. Required production secret names and values remain unconfigured and unverified.
+- TypeUI OAuth is connected and TypeUI MCP tools are exposed in this task. The six project-local TypeUI fundamentals guardrails are installed and were read before the shared mobile-first visual pass.
+- Live Supabase RLS remains pending a backup, explicit live-change approval, migration, permission tests, and a clean security-advisor rerun.
+- Recruitment uploads, Drive destination, signed-PDF generation/storage, platform role invitations, notifications, Sheets collation, Apify jobs, CashDrive enquiries/inventory, and end-to-end staging are not production-ready.
+- No production deployment has been authorized or performed.
+
+## Current next actions
+
+1. Reattach and identify the correct CashDrive and Aura contract source files.
+2. Prototype the management contract flow: brand list -> version history -> new draft -> editor -> phone/PDF preview -> approve/publish -> amendment/re-signing request.
+3. Prototype the unified management dashboard connections for video logs, weekly reports, bonus review, payment preparation, creator access and audit history.
+4. Design the separate approved password-vault handover procedure if platform delegation remains unavailable; raw social passwords remain excluded from Smithstem.
+5. Prototype CashDrive enquiries and inventory after the unified management flow.
+6. Implement and verify private uploads, signed PDFs, audit history, notifications, Sheets, and per-business Apify connections in a non-production environment.
+7. Complete live-safety preparation and request explicit approval immediately before any production RLS change.
+8. Run complete phone-first, role-isolation, retry, security, scale, and end-to-end tests.
+9. Repeat the TypeUI/UI-UX pass for each new flow, obtain explicit production approval for the complete system, and only then deploy.
+
+## Restart protocol
+
+When resuming this task, do not restart discovery and do not ask the user to repeat already recorded observations. Read, in order:
+
+1. `CURRENT_PROJECT_STATE.md`
+2. `audit/tdt-unified-creator-ops/00_Flow_Map.md`
+3. `audit/tdt-unified-creator-ops/00_Flow_Contracts.md`
+4. `audit/tdt-unified-creator-ops/TDT_RULE_CONFLICTS.md`
+5. The brief for the flow being changed under `prototypes/`
+
+Then inspect the current branch and working tree before changing anything. New explicit user instructions override this checkpoint and must be recorded here and in the relevant flow contract.

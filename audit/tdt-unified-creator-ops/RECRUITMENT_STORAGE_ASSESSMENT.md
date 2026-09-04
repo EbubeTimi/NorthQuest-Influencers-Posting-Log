@@ -1,5 +1,9 @@
 # Recruitment media — read-only assessment, 28 August 2026
 
+## Subsequent verification pass — 28 August 2026
+
+See [storage verification](../../evidence/flows/Recruitment_Prototype/STORAGE_VERIFICATION_2026-08-28.md) for the newer evidence. A harmless 486-byte text marker was uploaded to the new private folder and read back successfully; it remains there. No video or website upload was tested. Nine legacy brand destinations exist and permit the Smithstem service account, but the new folder remains owner-only and unconnected to the runtime. The repo-default Supabase project's public auth settings explicitly report Google disabled; live protected destination rows and deployment overrides remain unverified. The full application build and 57 local prototype contract checks passed. Legacy destination divergence, ignored sync failures, signature-only contract export, password-to-Doc export and reporting-window gaps are recorded there. No production code/data/configuration or original Forms/Sheets were changed.
+
 ## Current decision and verified setup — 28 August 2026
 
 APPROVED: user selected Google Drive for temporary introduction videos and asked to set it up, then continue. This supersedes the earlier provider-pending/Supabase recommendation below. Final UI/UX passes are deferred until the flows are complete; this does not waive functional checks or production-deployment approval.

@@ -1,6 +1,6 @@
 # Shared flow contracts
 
-Current instructions through 2026-08-28 override every earlier repository rule. Trial revision 7 visual design is approved; recruitment and active-dashboard additions still require their own prototype approval. This is not production approval.
+Current instructions through 2026-09-03 override every earlier repository rule. Trial revision 7 visual design is approved; recruitment and active-dashboard additions still require their own prototype approval. This is not production approval.
 
 ## Identity, invitation, and membership contract
 
@@ -57,6 +57,36 @@ Correction to the first audit: an old report cannot clear a different new video 
 - Retries cannot create duplicate review items, notifications, approvals, or audit events.
 - Trial deactivation shows only “Your access has been paused.” No alternate-business message, chooser or sign-out action appears on that screen.
 
+## Brand onboarding contract — 3 September 2026
+
+- Smith accepted the onboarding prototype behavior on 4 September 2026 (“I think we're all done here”). Final TypeUI/visual refinement and production implementation remain separate gates.
+- Entry copy is left-aligned and brief: NorthQuest, “Your onboarding is ready.”, “Use the same Google account you used during your trial.” and a “Begin” action. No start-instruction card or decorative success tick.
+- Creator details include full name, WhatsApp and address. Creator profiles store separate TikTok/Instagram usernames and public profile links.
+- Smithstem must never collect, store, export or log Google, TikTok or Instagram passwords. Business ownership does not make plaintext password collection safe. Use platform role/permission delegation; if a platform cannot delegate, use a separately approved credential-vault handover outside Smithstem.
+- Each brand owns its own platform administration boundary. NorthQuest, CashDrive and Aura use separate TikTok Business Centers and Meta Business Portfolios (or separately scoped brand assets), with at least two trusted management administrators and management-controlled recovery email, phone, MFA and recovery codes.
+- A brand administration boundary contains many separate creator-operated social accounts, not one shared brand profile. For example, approximately 70 NorthQuest creators can each have a distinct NorthQuest TikTok account and distinct NorthQuest Instagram account, all inventoried under NorthQuest management and linked one-to-one to the relevant creator assignment.
+- Creators receive removable, least-privilege access only to their own assigned account pair: TikTok Standard + account Operator (or the closest supported organic-content role), and Meta task/partial access for content and messages on the relevant professional Instagram asset. Creator access must never include the ability to add/remove administrators, change recovery ownership, reach another creator's account or reach another brand's assets.
+- Deactivation removes the creator's delegated platform access and records actor, time, reason and affected account. The brand account remains controlled by management and can be reassigned to another creator without transferring a personal password. Smithstem stores platform account identifiers, roles and access lifecycle only; OAuth/API secrets remain server-side and raw platform passwords never enter Smithstem.
+- Bank/financial-institution entry is searchable but accepts a typed institution not in suggestions. Nigerian account number input is exactly ten digits in the current contract; account name is required. Production account verification remains separate.
+- The creator reads the complete approved, immutable contract inside the phone flow, fills designated name/address/date fields, acknowledges it and draws a signature. Legal terms are not creator-editable. The server generates the complete signed PDF and stores its version/hash, completion data, signature, timestamp and consent/audit evidence in private storage before reporting success.
+- Management can modify contract templates only by creating a new draft version for one brand. A designated legal/owner approver must preview and publish it; published and signed versions are immutable. Publishing a new version affects only future onboarding unless management creates an explicit amendment/re-signing case. Never silently replace the legal text attached to an existing signature.
+- Contract history records brand, version, status, source file, content hash, author, approver, effective date, change note and timestamps. Draft editors cannot overwrite a published version. A creator's signature is bound to the exact rendered version/hash they saw, and the signed PDF is retained with the audit trail.
+- The creator review spells out every entered field, including the full account number so the creator can catch mistakes, and opens a document preview showing exactly where the signature lands. Only that creator and authorized management may view the full bank record; lists, logs, exports and ordinary audit events remain masked. Management opens the exact generated signed agreement, checks each onboarding area and either completes onboarding or explicitly selects the exact fields needing correction with a note. Manager Review offers one accessible Select all/Clear all control for its four approval checks while preserving individual checkboxes. A signature correction reopens both the agreement and signature drawing box. The creator sees and edits only selected fields; accepted fields remain locked and original submissions remain immutable.
+- Creator onboarding drafts survive Back and reload. The review prototype may use local browser storage for mock data only; production uses authenticated, encrypted, tenant-isolated server drafts and never stores financial details or credentials in browser local storage.
+- Submission failure says exactly that onboarding did not save and retains the current answers. Awaiting review uses “Submitted. We’re checking your details.” without a success icon. Completion says “Welcome to your creator dashboard, {first name}” with one Open dashboard action. Paused access shows only NorthQuest, the paused message and read-only payments/records action.
+- Completing onboarding creates the active business membership exactly once. Failed generation/upload/save preserves the draft and never activates membership.
+- Pausing active operational access blocks new work but preserves read-only access to payment statements, video history and bonus history. The active dashboard will show exact amounts owed and paid, including the monthly payment view on the 10th.
+
+## Active creator dashboard contract — 4 September 2026
+
+- Home is a summary-only surface. It does not contain the daily video form, weekly-view shortcut or bonus shortcut. A separate centre Track navigation action owns Today/eligible Yesterday and the daily video form.
+- The phone bottom navigation contains five icon actions with accessible names: Home, Track videos, Videos, Bonuses and Payments. Bonuses uses a money-bag symbol rather than a generic dollar symbol.
+- Home shows the current Lagos date before the greeting and uses “Your dashboard” with accessible This month and All time controls. The monthly summary shows videos logged, the month target, configured rate per video, expected video amount, and approved bonus count/amount. At two slots per day the target is 60 in a 30-day month, 62 in a 31-day month and follows February's actual day count. The all-time view shows cumulative videos, video amount, approved bonuses and settled payments.
+- The Active badge and aggregate “Total so far” are omitted. A zero-bonus state shows the count without a meaningless zero-naira amount.
+- Expected amounts are transparent calculations, not proof of payment. Bonus totals include only approved bonus records; settled Payments remains the payment source of truth.
+- Creator record/task screens show the creator name and current Lagos date. The empty Payments state says only “Your payments appear here after they’re paid.”
+- A missed-Yesterday warning may appear on Home, but date choices and entry controls remain in Track. The weekly gate still replaces normal work with the required view-report task until it is complete.
+
 ## Applications, CashDrive, and launch-data contract
 
 - Applications belong to the GrowthCooks Marketing Agency recruitment workspace, separate from a brand dashboard. TDT remains parent organization without an asserted legal subsidiary classification. Applications are agency-scoped until invitation acceptance links the same person to platform identity.
@@ -83,8 +113,11 @@ See `RECRUITMENT_FLOW_CONTRACT.md` for the complete affected flow and source map
 ## Automation contract
 
 - Weekly self-reported views collate to the designated Sheet/Drive destination for each business.
-- Apify runs across every business three times per month: days 1–14, days 1–21, and days 1–month-end. There is no week-one scrape.
-- Schedules, destinations, actor configuration, notification recipients, and business settings live in managed configuration with validation and audit history.
+- Apify runs for every business three times per month: days 1–14, days 1–21, and days 1–month-end. There is no week-one scrape.
+- NorthQuest, CashDrive, and Aura each use their own Apify account and business-scoped credentials. A single shared NorthQuest token must never run another business's scrape.
+- The platform may schedule and monitor all businesses centrally, but every run resolves its account, actor configuration, cost guard, destination, and audit scope from the target business before starting.
+- Apify credentials remain server-only and must be stored as separate secret references; they never appear in browser code, general business records, logs, or audit payloads. Rotating or disabling one business credential must not interrupt another business.
+- Schedules, destinations, actor configuration, notification recipients, credential references, and business settings live in managed configuration with validation and audit history.
 - Delivery is at-least-once with idempotent results, bounded retries, cost guards, run ledgers, and reconciliation before repeating an external effect.
 
 ## Security, audit, and scale contract
