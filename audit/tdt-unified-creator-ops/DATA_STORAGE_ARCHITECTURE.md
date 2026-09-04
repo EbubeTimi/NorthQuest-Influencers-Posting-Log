@@ -24,7 +24,7 @@ Supabase/PostgreSQL is the system of record for structured data. Private object 
 | Rate and pay | effective-dated rate assignment plus immutable `payment_ledger_items` and monthly statements | Generated CSV/XLSX only when requested | Creator dashboard, payment register and export |
 | Application | agency-scoped applicant and immutable answer snapshot | Introduction video in the approved private Drive destination during the temporary phase | Applicants/vibe-check workflow |
 | Onboarding draft | `onboarding_cases` and versioned field snapshots | Unsigned preview generated on demand | Creator correction and management review |
-| Contract template | `contract_templates` and immutable `contract_versions` | Exact published source/preview in private contract storage | Contract management workspace |
+| Contract template | brand current-contract pointer plus immutable `contract_versions` metadata | Exact uploaded DOCX/PDF and rendered preview in private contract storage | Contract management workspace |
 | Signed contract | signature metadata, contract-version ID, PDF hash and signed timestamps | Final immutable PDF in private contract storage, with an optional managed Drive copy | Creator record, management review and audit |
 | Operational audit | append-only `audit_events` | None | Per-person and per-business history |
 | Apify analytics | business-scoped run ledger plus immutable analytics snapshots | Optional business report export | Analytics dashboard and reconciliation |
@@ -68,11 +68,11 @@ Creator chooses an existing video/platform -> screenshot uploads privately -> cl
 
 ### Contract
 
-Authorized manager edits a draft -> authorized publisher freezes a version -> creator completes fields and signs that version -> server generates PDF -> file and hash commit -> management approves/corrects -> completed onboarding creates the business membership exactly once.
+Smith uploads a complete brand contract -> server validates and privately stores exact bytes/hash -> Smith reviews and makes it live for new onboarding -> creator completes fields and signs those exact bytes -> server generates PDF -> file and hash commit -> management approves/corrects -> completed onboarding creates the business membership exactly once. Existing signed PDFs remain bound to their original source; selected creators receive an explicit re-signing case only when Smith requests it.
 
 ## Pending implementation order
 
-1. Approve the management contract prototype and identify the exact NorthQuest, CashDrive and Aura contract sources plus the authorized publisher.
+1. Approve management contract prototype revision 2 and provide the exact Aura source when ready; Smith is the sole current contract authority.
 2. Approve the unified management-dashboard flow connecting videos, views, bonuses, payments, onboarding, access and audit.
 3. Create the reconciled target schema and RLS migration in a non-production environment; do not reuse conflicting legacy policies blindly.
 4. Connect and test private file uploads, signed-PDF generation, short-lived access and retention/recovery.

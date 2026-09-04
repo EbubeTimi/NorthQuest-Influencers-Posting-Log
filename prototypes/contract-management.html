@@ -3,171 +3,105 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>GrowthCooks contract management prototype</title>
+  <title>Management Business Contracts prototype</title>
   <style>
-    /* TypeUI mobile-first polish: compact, trustworthy, and consistent with the wider platform. */
-    :root{--ui-canvas:#f3f5f2;--ui-paper:#fffefa;--ui-accent:#0b6248;--ui-focus:#69b99d;--ink:#10251f;--muted:#60716b;--line:#d8dfda;--canvas:var(--ui-canvas);--paper:var(--ui-paper);--accent:var(--ui-accent);--accent2:#074b38;--soft:#e8f3ee;--warn:#fff5d7;--danger:#922f2f;--danger-soft:#fff0ef;--focus:var(--ui-focus);--shadow:0 10px 30px rgba(19,34,28,.07)}
-    *{box-sizing:border-box}html,body{margin:0;background:var(--canvas);color:var(--ink);font:16px/1.45 Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}button,input,textarea,select{font:inherit}button,a{touch-action:manipulation}button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{outline:3px solid var(--focus);outline-offset:3px}h1[tabindex="-1"]:focus{outline:none}.workspace{min-height:100dvh}.app{width:min(100%,430px);min-height:100dvh;margin:auto;background:var(--paper);box-shadow:var(--shadow)}header{min-height:62px;padding:calc(12px + env(safe-area-inset-top)) 18px 12px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:14px}.brand{font-weight:850;letter-spacing:-.03em}.person{font-size:13px;color:var(--muted)}main{padding:22px 18px calc(100px + env(safe-area-inset-bottom))}.screen{display:none}.screen.active{display:block;animation:enter .16s ease-out}@keyframes enter{from{opacity:.2;transform:translateY(4px)}}h1{margin:0;font-size:1.85rem;line-height:1.12;letter-spacing:-.035em;text-wrap:balance}h2{margin:0;font-size:1.1rem;line-height:1.3;letter-spacing:-.02em}p{margin:8px 0 0;color:var(--muted)}.eyebrow{margin:0 0 7px;color:var(--accent);font-size:12px;font-weight:850;letter-spacing:.09em;text-transform:uppercase}.topline{display:flex;align-items:center;gap:10px;margin-bottom:18px}.back{width:44px;height:44px;border:0;background:transparent;color:var(--ink);font-size:25px;border-radius:10px;cursor:pointer}.stack{display:grid;gap:18px;margin-top:22px}.brand-row,.version-row,.audit-row{padding:15px 0;border-bottom:1px solid var(--line)}.brand-row:first-child,.version-row:first-child{border-top:1px solid var(--line)}.row-top{display:flex;justify-content:space-between;align-items:flex-start;gap:14px}.row-top p{font-size:13px}.status{display:inline-flex;align-items:center;min-height:28px;padding:4px 9px;border-radius:999px;background:var(--soft);color:var(--accent2);font-size:12px;font-weight:800;white-space:nowrap}.status.warn{background:var(--warn);color:#755400}.status.muted{background:#edf0ee;color:#596660}.quiet{min-height:44px;border:0;background:transparent;color:var(--accent);font-weight:800;padding:8px 0;cursor:pointer;text-align:left;text-decoration:none}.actions{display:grid;gap:10px;margin-top:24px}.actions.two{grid-template-columns:1fr 1fr}.btn{min-height:50px;border-radius:10px;border:0;padding:12px 15px;font-weight:850;cursor:pointer;display:flex;align-items:center;justify-content:center;text-align:center}.primary{background:var(--accent);color:#fff}.primary:hover{background:var(--accent2)}.secondary{background:transparent;color:var(--accent);border:1px solid #9ab4aa}.danger{background:transparent;color:var(--danger);border:1px solid #cfa8a5}.btn:disabled{opacity:.55;cursor:not-allowed}.field{display:grid;gap:7px}.field label,.label{font-size:14px;font-weight:800}input,textarea,select{width:100%;min-height:50px;border:1px solid #aebbb5;border-radius:10px;background:#fff;padding:12px 13px;color:var(--ink)}textarea{min-height:132px;resize:vertical}input::placeholder,textarea::placeholder{color:#89958f}.hint,.save-status{font-size:13px;color:var(--muted);margin:0}.section-editor{padding:17px 0;border-bottom:1px solid var(--line)}.section-editor:first-child{border-top:1px solid var(--line)}.section-editor textarea{margin-top:9px}.paper{margin-top:20px;padding:24px 19px;background:#fff;border:1px solid var(--line);box-shadow:0 8px 24px rgba(19,34,28,.08);font-family:Georgia,"Times New Roman",serif;color:#202420}.paper h2{font-family:inherit;font-size:17px;margin:20px 0 7px}.paper h2:first-child{margin-top:0}.paper p{color:#202420;font-size:13px;margin:0 0 10px}.paper-meta{padding:12px 0;margin:16px 0;border-top:1px solid #cfd6d2;border-bottom:1px solid #cfd6d2;font:12px/1.5 Inter,system-ui,sans-serif}.paper-meta div{display:flex;justify-content:space-between;gap:14px}.notice{margin-top:20px;padding:14px;border-radius:10px;background:var(--soft);color:var(--ink)}.notice.warn{background:var(--warn)}.notice.error{background:var(--danger-soft);color:#6e2424}.notice p{color:inherit;font-size:14px}.check{display:flex;align-items:flex-start;gap:10px;padding:12px 0}.check input{width:22px;min-height:22px;margin:1px 0}.check label{font-size:14px}.metrics{display:grid;grid-template-columns:1fr 1fr;margin-top:20px;border-top:1px solid var(--line)}.metric{padding:13px 0;border-bottom:1px solid var(--line)}.metric:nth-child(odd){padding-right:12px}.metric:nth-child(even){padding-left:12px;border-left:1px solid var(--line)}.metric span{display:block;color:var(--muted);font-size:12px}.metric strong{display:block;margin-top:4px}.audit{margin-top:22px}.audit-row{position:relative;padding-left:18px}.audit-row:before{content:"";position:absolute;left:0;top:21px;width:8px;height:8px;border-radius:50%;background:var(--accent)}.audit-row b{display:block;font-size:14px}.audit-row span{font-size:12px;color:var(--muted)}.prototype{position:fixed;z-index:10;left:8px;right:8px;bottom:calc(8px + env(safe-area-inset-bottom));background:#18362c;color:#fff;border-radius:14px;box-shadow:0 12px 36px rgba(0,0,0,.24)}.prototype summary{min-height:48px;padding:12px 14px;cursor:pointer;list-style:none;font-weight:800}.prototype summary::-webkit-details-marker{display:none}.prototype-panel{padding:0 10px 10px;display:grid;grid-template-columns:1fr 1fr;gap:7px;max-height:48dvh;overflow:auto}.prototype button{min-height:44px;border:1px solid #526e63;border-radius:9px;background:#214339;color:#fff;padding:8px;font-size:12px}.prototype button.current{background:#dff1ea;color:#143329;border-color:#dff1ea}.prototype small{display:block;grid-column:1/-1;color:#d1ddd8;padding:5px 3px}.sr{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
-    @media(max-width:699px){.app{box-shadow:none}.actions.two{grid-template-columns:1fr}}
-    @media(min-width:700px){body{padding:26px}.app{min-height:850px;border-radius:22px;overflow:hidden}}
-    @media(min-width:850px){.workspace{display:grid;grid-template-columns:430px 330px;gap:24px;justify-content:center;align-items:start}.app{margin:0}.prototype{position:sticky;top:26px;left:auto;right:auto;bottom:auto;width:330px;max-height:calc(100dvh - 52px);overflow:auto}.prototype-panel{grid-template-columns:1fr;max-height:none}.prototype summary{cursor:default}}
+    /* TypeUI mobile-first polish: compact hierarchy, low chrome and accessible controls. */
+    :root{--ui-canvas:#f3f5f2;--ui-paper:#fffefa;--ui-accent:#0b6248;--ui-focus:#69b99d;--canvas:var(--ui-canvas);--paper:var(--ui-paper);--ink:#10251f;--muted:#5d6e68;--line:#d7dfda;--accent:var(--ui-accent);--accent-dark:#044833;--soft:#e7f2ed;--warn:#7a5300;--warn-bg:#fff4d2;--danger:#8b2e2e;--danger-bg:#fff0ef;--focus:var(--ui-focus);--shadow:0 12px 36px rgba(18,38,31,.08)}
+    *{box-sizing:border-box}html,body{margin:0;background:var(--canvas);color:var(--ink);font:16px/1.42 Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}button,input,textarea{font:inherit}button{touch-action:manipulation}button:focus-visible,input:focus-visible,textarea:focus-visible{outline:3px solid var(--focus);outline-offset:3px}h1[tabindex="-1"]:focus{outline:none}.workspace{min-height:100dvh}.app{width:min(100%,430px);min-height:100dvh;margin:auto;background:var(--paper);box-shadow:var(--shadow)}header{min-height:58px;padding:calc(11px + env(safe-area-inset-top)) 18px 11px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:12px}.brand{font-weight:850;letter-spacing:-.025em}.person{font-size:13px;color:var(--muted)}main{padding:20px 18px calc(96px + env(safe-area-inset-bottom))}.screen{display:none}.screen.active{display:block;animation:enter .15s ease-out}@keyframes enter{from{opacity:.25;transform:translateY(3px)}}h1{margin:0;font-size:1.58rem;line-height:1.15;letter-spacing:-.035em;text-wrap:balance}h2{margin:0;font-size:1.02rem;line-height:1.3;letter-spacing:-.012em}p{margin:7px 0 0;color:var(--muted)}.eyebrow{margin:0 0 6px;color:var(--accent);font-size:11px;font-weight:850;letter-spacing:.09em;text-transform:uppercase}.topline{display:flex;align-items:center;gap:8px;margin-bottom:18px}.exit{width:46px;height:46px;border:0;border-radius:10px;background:transparent;color:var(--ink);display:grid;place-items:center;cursor:pointer;flex:0 0 auto}.exit svg{width:27px;height:27px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}.list{margin-top:22px;border-top:1px solid var(--line)}.business-row{min-height:76px;padding:13px 0;border-bottom:1px solid var(--line);display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:14px}.business-row p{font-size:13px;margin-top:3px}.manage{min-height:44px;border:1px solid #7f9d91;border-radius:9px;background:transparent;color:var(--accent);padding:9px 13px;font-weight:800;cursor:pointer}.manage:hover{background:var(--soft)}.summary{margin-top:22px;padding:16px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}.summary-row{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding:5px 0}.summary-row span{font-size:13px;color:var(--muted)}.summary-row strong{font-size:13px;text-align:right}.status{display:inline-flex;align-items:center;gap:6px;color:var(--accent);font-size:13px;font-weight:800}.status::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}.actions{display:grid;gap:9px;margin-top:22px}.actions.inline{grid-template-columns:1fr 1fr}.btn{min-height:48px;border-radius:9px;border:0;padding:11px 14px;font-weight:850;cursor:pointer;display:flex;align-items:center;justify-content:center;text-align:center}.primary{background:var(--accent);color:#fff}.primary:hover{background:var(--accent-dark)}.secondary{background:transparent;color:var(--accent);border:1px solid #8ca79c}.quiet{min-height:44px;border:0;background:transparent;color:var(--accent);padding:8px 0;font-weight:800;text-align:left;cursor:pointer;text-decoration:none}.field{display:grid;gap:7px;margin-top:20px}.field label{font-size:14px;font-weight:800}.field input[type="text"],.field textarea{width:100%;min-height:48px;border:1px solid #9caca5;border-radius:9px;background:#fff;padding:11px 12px;color:var(--ink)}.field textarea{min-height:92px;resize:vertical}.file-pick{position:relative;margin-top:20px}.file-pick input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer}.file-surface{min-height:114px;border:1.5px dashed #83998f;border-radius:11px;background:#f8faf8;padding:18px;display:grid;place-items:center;text-align:center}.file-surface strong{display:block}.file-surface span{display:block;margin-top:4px;color:var(--muted);font-size:13px}.file-name{margin-top:10px;font-size:13px;color:var(--accent);font-weight:750}.paper{margin-top:20px;padding:22px 18px;background:#fff;border:1px solid var(--line);box-shadow:0 7px 20px rgba(18,38,31,.06);font-family:Georgia,"Times New Roman",serif;color:#202420}.paper h2{font-family:inherit;font-size:16px}.paper p{color:#202420;font-size:13px}.paper-lines{margin-top:18px;display:grid;gap:7px}.paper-line{height:7px;border-radius:999px;background:#e2e5e2}.paper-line.short{width:62%}.notice{margin-top:20px;padding:13px 14px;border-radius:9px;background:var(--soft);font-size:14px}.notice.warn{background:var(--warn-bg);color:#5c4300}.notice.error{background:var(--danger-bg);color:#6d2525}.check{display:flex;align-items:flex-start;gap:10px;padding:11px 0;border-bottom:1px solid var(--line)}.check input{width:22px;height:22px;margin:0;flex:0 0 auto}.check label{font-size:14px}.count{font-size:13px;color:var(--muted);margin-top:12px}.history-list{margin-top:20px;border-top:1px solid var(--line)}.history-row{padding:13px 0;border-bottom:1px solid var(--line)}.history-row strong{display:block;font-size:14px}.history-row span{display:block;margin-top:3px;font-size:12px;color:var(--muted)}.creator-preview{margin-top:22px;padding:18px;border-radius:12px;background:#f7f9f7}.creator-preview h2{font-size:1.22rem}.prototype{position:fixed;z-index:10;left:8px;right:8px;bottom:calc(8px + env(safe-area-inset-bottom));background:#18362c;color:#fff;border-radius:13px;box-shadow:0 12px 36px rgba(0,0,0,.24)}.prototype summary{min-height:48px;padding:12px 14px;cursor:pointer;list-style:none;font-weight:800}.prototype summary::-webkit-details-marker{display:none}.prototype-panel{padding:0 10px 10px;display:grid;grid-template-columns:1fr 1fr;gap:7px;max-height:48dvh;overflow:auto}.prototype button{min-height:44px;border:1px solid #58756a;border-radius:8px;background:#214339;color:#fff;padding:8px;font-size:12px}.prototype button.current{background:#dff1ea;color:#143329;border-color:#dff1ea}.prototype small{display:block;grid-column:1/-1;color:#d1ddd8;padding:5px 3px}.sr{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+    @media(max-width:699px){.app{box-shadow:none}.actions.inline{grid-template-columns:1fr}}
+    @media(min-width:700px){body{padding:26px}.app{min-height:800px;border-radius:20px;overflow:hidden}}
+    @media(min-width:850px){.workspace{display:grid;grid-template-columns:430px 320px;gap:24px;justify-content:center;align-items:start}.app{margin:0}.prototype{position:sticky;top:26px;left:auto;right:auto;bottom:auto;width:320px;max-height:calc(100dvh - 52px);overflow:auto}.prototype-panel{grid-template-columns:1fr;max-height:none}.prototype summary{cursor:default}}
     @media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;scroll-behavior:auto!important}}
   </style>
 </head>
 <body>
 <div class="workspace">
-<div class="app">
-  <header><div class="brand">GrowthCooks</div><div class="person">Smith · Management</div></header>
-  <main>
-    <section class="screen" data-screen="brands">
-      <p class="eyebrow">Management</p><h1>Business agreements</h1><p>Choose the agreement you want to manage.</p>
-      <div class="stack" id="brandList">
-        <div class="brand-row"><div class="row-top"><div><h2>NorthQuest</h2><p>Published version 3 · 68 signed</p></div><span class="status">Published</span></div><button class="quiet" data-business="NorthQuest">Manage agreement</button></div>
-        <div class="brand-row"><div class="row-top"><div><h2>CashDrive</h2><p>Published version 1 · 12 signed</p></div><span class="status">Published</span></div><button class="quiet" data-business="CashDrive">Manage agreement</button></div>
-        <div class="brand-row"><div class="row-top"><div><h2>Aura</h2><p>The supplied files contain NorthQuest terms.</p></div><span class="status warn">Source needed</span></div><button class="quiet" data-go="source">See what is needed</button></div>
-      </div>
-    </section>
+  <div class="app">
+    <header><div class="brand">GrowthCooks</div><div class="person">Smith · Management</div></header>
+    <main>
+      <section class="screen" data-screen="brands">
+        <p class="eyebrow">Management</p><h1>Management Business Contracts</h1>
+        <div class="list">
+          <div class="business-row"><div><h2>NorthQuest</h2><p>68 signed</p></div><button class="manage" data-business="NorthQuest">Manage</button></div>
+          <div class="business-row"><div><h2>CashDrive</h2><p>12 signed</p></div><button class="manage" data-business="CashDrive">Manage</button></div>
+          <div class="business-row"><div><h2>Aura</h2><p>No contract added</p></div><button class="manage" data-business="Aura">Manage</button></div>
+        </div>
+      </section>
 
-    <section class="screen" data-screen="history">
-      <div class="topline"><button class="back" data-go="brands" aria-label="Back to business agreements">←</button><div><p class="eyebrow" id="historyBrand">NorthQuest</p><h1>Agreement history</h1></div></div>
-      <div class="metrics"><div class="metric"><span>Current version</span><strong id="currentVersion">Version 3</strong></div><div class="metric"><span>Signed copies</span><strong id="signedCount">68</strong></div></div>
-      <div class="stack">
-        <div class="version-row"><div class="row-top"><div><h2 id="publishedTitle">Creator agreement</h2><p>Published 3 September 2026 · Authorized publisher</p></div><span class="status">Current</span></div><button class="quiet" data-go="preview">View exact version</button></div>
-        <div class="version-row"><div class="row-top"><div><h2>Version 2</h2><p>Published 21 August 2026 · 41 signed</p></div><span class="status muted">Archived</span></div><button class="quiet" data-go="audit">View history</button></div>
-      </div>
-      <div class="actions"><button class="btn primary" data-go="editor">Create new draft</button><button class="btn secondary" data-go="amend">Request re-signing</button></div>
-    </section>
+      <section class="screen" data-screen="business">
+        <div class="topline"><button class="exit" data-go="brands" aria-label="Back to business contracts"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4h5v16h-5"/><path d="M11 8 7 12l4 4"/><path d="M7 12h10"/><path d="M4 4h7"/></svg></button><div><p class="eyebrow">Business contract</p><h1 class="businessName">NorthQuest</h1></div></div>
+        <div id="contractPresent">
+          <div class="summary"><div class="summary-row"><span>Current contract</span><strong id="sourceFile">NQ UGC AGREEMENT.docx</strong></div><div class="summary-row"><span>Creators signed</span><strong id="signedCount">68</strong></div><div class="summary-row"><span>New onboarding</span><strong class="status">Uses this contract</strong></div></div>
+          <div class="actions"><button class="btn primary" data-go="upload">Replace contract</button><button class="btn secondary" data-go="document">View contract</button></div>
+          <button class="quiet" data-go="resign">Request re-signing</button><button class="quiet" data-go="history">View history</button>
+        </div>
+        <div id="contractEmpty" hidden><div class="notice warn"><strong>No contract added.</strong><br />Upload Aura’s contract when it is ready.</div><div class="actions"><button class="btn primary" data-go="upload">Upload contract</button></div></div>
+      </section>
 
-    <section class="screen" data-screen="editor">
-      <div class="topline"><button class="back" data-go="history" aria-label="Back to agreement history">←</button><div><p class="eyebrow"><span class="businessName">NorthQuest</span> · Draft</p><h1>Edit agreement</h1></div></div>
-      <p>Edit the draft in clear sections. The published agreement remains unchanged.</p>
-      <div class="stack">
-        <div class="field"><label for="draftName">Version name</label><input id="draftName" value="September 2026 update" /></div>
-        <div class="field"><label for="changeSummary">What changed?</label><textarea id="changeSummary" placeholder="Summarize the reason for this version">Clarify creator account control and the payment calculation.</textarea></div>
-        <div class="section-editor"><h2>Parties and engagement</h2><textarea data-clause="parties">This agreement identifies the contracting parties, the creator and the business whose content the creator supports.</textarea></div>
-        <div class="section-editor"><h2>Content and accounts</h2><textarea data-clause="accounts">The approved agreement defines content responsibilities, account access, management control and the handover process.</textarea></div>
-        <div class="section-editor"><h2>Payment</h2><textarea data-clause="payment">The approved agreement defines the creator's rate, qualifying work, approved bonuses and monthly payment timing.</textarea></div>
-        <div class="section-editor"><h2>Ending the engagement</h2><textarea data-clause="ending">The approved agreement defines notice, deactivation, account reassignment, confidentiality and surviving obligations.</textarea></div>
-      </div>
-      <p class="save-status" id="saveStatus" role="status" aria-live="polite">Draft saved in this demo tab.</p>
-      <div class="actions two"><button class="btn secondary" data-go="history">Save and exit</button><button class="btn primary" data-go="preview">Preview</button></div>
-    </section>
+      <section class="screen" data-screen="document">
+        <div class="topline"><button class="exit" data-go="business" aria-label="Back to current contract"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4h5v16h-5"/><path d="M11 8 7 12l4 4"/><path d="M7 12h10"/><path d="M4 4h7"/></svg></button><div><p class="eyebrow businessName">NorthQuest</p><h1>Current contract</h1></div></div>
+        <article class="paper" aria-label="Uploaded contract preview"><h2 id="documentTitle">NorthQuest creator agreement</h2><p id="documentFile">NQ UGC AGREEMENT.docx</p><div class="paper-lines" aria-hidden="true"><div class="paper-line"></div><div class="paper-line"></div><div class="paper-line short"></div><div class="paper-line"></div><div class="paper-line"></div><div class="paper-line short"></div></div><p><strong>Creator signature area</strong><br />The creator’s name, date and drawn signature appear on the final signed PDF.</p></article>
+        <p class="notice">Production will render the exact uploaded pages here. This prototype does not alter the source file.</p>
+      </section>
 
-    <section class="screen" data-screen="preview">
-      <div class="topline"><button class="back" data-go="editor" aria-label="Back to draft editor">←</button><div><p class="eyebrow"><span class="businessName">NorthQuest</span> · Preview</p><h1>Exact creator view</h1></div></div>
-      <p>This is the version a creator will read and sign on their phone.</p>
-      <article class="paper" aria-label="Contract document preview">
-        <h2 id="paperTitle">NorthQuest creator agreement</h2>
-        <div class="paper-meta"><div><span>Version</span><strong id="paperVersion">Draft 4</strong></div><div><span>Creator</span><strong>Filled during onboarding</strong></div><div><span>Date</span><strong>Filled at signing</strong></div></div>
-        <h2>1. Parties and engagement</h2><p data-paper="parties">This agreement identifies the contracting parties, the creator and the business whose content the creator supports.</p>
-        <h2>2. Content and accounts</h2><p data-paper="accounts">The approved agreement defines content responsibilities, account access, management control and the handover process.</p>
-        <h2>3. Payment</h2><p data-paper="payment">The approved agreement defines the creator's rate, qualifying work, approved bonuses and monthly payment timing.</p>
-        <h2>4. Ending the engagement</h2><p data-paper="ending">The approved agreement defines notice, deactivation, account reassignment, confidentiality and surviving obligations.</p>
-        <h2>Creator signature</h2><p>Signature will appear here on the final signed PDF, bound to this exact version.</p>
-      </article>
-      <div class="actions"><button class="btn primary" data-go="awaiting">Submit for approval</button><button class="btn secondary" data-go="editor">Continue editing</button></div>
-    </section>
+      <section class="screen" data-screen="upload">
+        <div class="topline"><button class="exit" data-go="business" aria-label="Back to current contract"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4h5v16h-5"/><path d="M11 8 7 12l4 4"/><path d="M7 12h10"/><path d="M4 4h7"/></svg></button><div><p class="eyebrow businessName">NorthQuest</p><h1 id="uploadHeading">Replace contract</h1></div></div>
+        <p>Upload the complete contract you prepared in Microsoft Word.</p>
+        <label class="file-pick"><input id="contractFile" type="file" accept=".docx,.pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/pdf" /><span class="file-surface"><span><strong>Choose Word or PDF</strong><span>DOCX or PDF · up to 20 MB</span></span></span></label>
+        <p class="file-name" id="fileName" role="status" aria-live="polite">No file selected</p>
+        <div class="field"><label for="changeNote">Note <span class="sr">optional</span></label><textarea id="changeNote" placeholder="Optional note about this contract"></textarea></div>
+        <div class="actions"><button class="btn primary" id="reviewUpload" disabled>Review contract</button></div>
+      </section>
 
-    <section class="screen" data-screen="awaiting">
-      <p class="eyebrow"><span class="businessName">NorthQuest</span></p><h1>Waiting for approval</h1><p>The draft is locked while the authorized publisher checks it.</p>
-      <div class="notice"><strong>September 2026 update</strong><p>Submitted by Smith · Today, 2:15 PM</p></div>
-      <div class="audit"><div class="audit-row"><b>Draft submitted</b><span>Today · Smith</span></div><div class="audit-row"><b>Draft created from version 3</b><span>Today · Smith</span></div></div>
-      <div class="actions"><button class="btn secondary" data-go="history">Return to history</button></div>
-    </section>
+      <section class="screen" data-screen="confirm">
+        <div class="topline"><button class="exit" data-go="upload" aria-label="Back to upload"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4h5v16h-5"/><path d="M11 8 7 12l4 4"/><path d="M7 12h10"/><path d="M4 4h7"/></svg></button><div><p class="eyebrow businessName">NorthQuest</p><h1>Review contract</h1></div></div>
+        <article class="paper" aria-label="New contract preview"><h2 id="previewTitle">Uploaded contract</h2><p id="previewFile">Selected file</p><div class="paper-lines" aria-hidden="true"><div class="paper-line"></div><div class="paper-line"></div><div class="paper-line short"></div><div class="paper-line"></div><div class="paper-line short"></div></div></article>
+        <p class="notice warn">This replaces the contract used for new onboarding. Existing signed contracts remain unchanged.</p>
+        <div class="actions"><button class="btn primary" data-go="live">Make live</button><button class="btn secondary" data-go="upload">Choose another file</button></div>
+      </section>
 
-    <section class="screen" data-screen="publisher">
-      <div class="topline"><button class="back" data-go="history" aria-label="Back to agreement history">←</button><div><p class="eyebrow">Authorized publisher</p><h1>Review version 4</h1></div></div>
-      <div class="metrics"><div class="metric"><span>Business</span><strong class="businessName">NorthQuest</strong></div><div class="metric"><span>Previous version</span><strong>Version 3</strong></div></div>
-      <div class="notice warn"><strong>Publishing is permanent.</strong><p>Existing signed copies stay connected to their original versions.</p></div>
-      <div class="check"><input id="exactCheck" type="checkbox" /><label for="exactCheck">I reviewed the exact agreement preview and change summary.</label></div>
-      <div class="check"><input id="authorityCheck" type="checkbox" /><label for="authorityCheck">I am authorized to publish this agreement.</label></div>
-      <div class="actions"><button class="btn primary" id="publishButton" disabled>Publish version 4</button><button class="btn secondary" data-go="editor">Return for changes</button></div>
-    </section>
+      <section class="screen" data-screen="live">
+        <p class="eyebrow businessName">NorthQuest</p><h1>Contract updated</h1><p>New onboarding now uses this contract.</p>
+        <div class="actions"><button class="btn primary" data-go="resign">Choose who needs to sign again</button><button class="btn secondary" data-go="business">Not now</button></div>
+      </section>
 
-    <section class="screen" data-screen="published">
-      <p class="eyebrow"><span class="businessName">NorthQuest</span></p><h1>Version 4 is published</h1><p>New onboarding cases will use this agreement. Existing signed copies are unchanged.</p>
-      <div class="metrics"><div class="metric"><span>Published by</span><strong>Authorized publisher</strong></div><div class="metric"><span>Published</span><strong>Today, 2:42 PM</strong></div></div>
-      <div class="actions"><button class="btn primary" data-go="history">View agreement history</button><button class="btn secondary" data-go="amend">Choose who must sign again</button></div>
-    </section>
+      <section class="screen" data-screen="resign">
+        <div class="topline"><button class="exit" data-go="business" aria-label="Back to current contract"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4h5v16h-5"/><path d="M11 8 7 12l4 4"/><path d="M7 12h10"/><path d="M4 4h7"/></svg></button><div><p class="eyebrow businessName">NorthQuest</p><h1>Request re-signing</h1></div></div>
+        <p>Select the creators who need to read and sign the updated contract.</p>
+        <div class="list"><div class="check"><input id="selectAffected" type="checkbox" /><label for="selectAffected"><strong id="selectAllLabel">Select all 68 active creators</strong></label></div><div class="check"><input class="creator-check" id="amara" type="checkbox" /><label for="amara">Amara Okafor</label></div><div class="check"><input class="creator-check" id="noah" type="checkbox" /><label for="noah">Noah Adeyemi</label></div><div class="check"><input class="creator-check" id="ada" type="checkbox" /><label for="ada">Ada Nwosu</label></div></div>
+        <div class="field"><label for="resignReason">Message</label><textarea id="resignReason">Please review and sign your updated creator contract.</textarea></div><p class="count" id="affectedCount" role="status" aria-live="polite">0 creators selected</p>
+        <div class="actions"><button class="btn primary" data-go="resign-sent">Send request</button><button class="btn secondary" data-go="business">Cancel</button></div>
+      </section>
 
-    <section class="screen" data-screen="amend">
-      <div class="topline"><button class="back" data-go="history" aria-label="Back to agreement history">←</button><div><p class="eyebrow"><span class="businessName">NorthQuest</span></p><h1>Request re-signing</h1></div></div>
-      <p>Select the creators affected by this change. Their current signed agreements remain available.</p>
-      <div class="stack">
-        <div class="check"><input id="selectAffected" type="checkbox" /><label for="selectAffected"><strong>Select all 68 active creators</strong></label></div>
-        <div class="check"><input class="creator-check" id="amara" type="checkbox" /><label for="amara">Amara Okafor</label></div>
-        <div class="check"><input class="creator-check" id="noah" type="checkbox" /><label for="noah">Noah Adeyemi</label></div>
-        <div class="check"><input class="creator-check" id="ada" type="checkbox" /><label for="ada">Ada Nwosu</label></div>
-        <div class="field"><label for="resignReason">Reason shown to creators</label><textarea id="resignReason">Please review and sign the updated creator agreement.</textarea></div>
-      </div>
-      <p class="save-status" id="affectedCount" role="status">0 creators selected.</p>
-      <div class="actions"><button class="btn primary" data-go="resign-sent">Send re-signing request</button><button class="btn secondary" data-go="history">Cancel</button></div>
-    </section>
+      <section class="screen" data-screen="resign-sent">
+        <p class="eyebrow businessName">NorthQuest</p><h1>Request sent</h1><p>Selected creators will see the re-signing request on their dashboard.</p><div class="actions"><button class="btn primary" data-go="notice">Preview creator message</button><button class="btn secondary" data-go="business">Done</button></div>
+      </section>
 
-    <section class="screen" data-screen="resign-sent">
-      <p class="eyebrow"><span class="businessName">NorthQuest</span></p><h1>Re-signing requested</h1><p>Selected creators will see the updated agreement in onboarding. Their previous signed PDFs remain available.</p>
-      <div class="actions"><button class="btn primary" data-go="history">Return to agreement history</button></div>
-    </section>
+      <section class="screen" data-screen="notice">
+        <p class="eyebrow businessName">NorthQuest</p><h1>Creator dashboard preview</h1><div class="creator-preview"><p class="eyebrow">Contract</p><h2>Your contract needs your signature</h2><p>Read and sign the updated contract to continue.</p><div class="actions"><button class="btn primary" data-go="document">Review and sign</button></div></div><div class="actions"><button class="btn secondary" data-go="business">Back to management</button></div>
+      </section>
 
-    <section class="screen" data-screen="source">
-      <div class="topline"><button class="back" data-go="brands" aria-label="Back to business agreements">←</button><div><p class="eyebrow">Aura</p><h1>Agreement source needed</h1></div></div>
-      <p>The two files marked “UGC Agreement” contain NorthQuest terms, so they cannot be published for Aura.</p>
-      <div class="notice warn"><strong>Nothing has been changed.</strong><p>Attach or identify the correct Aura agreement before creating its first version.</p></div>
-      <div class="actions"><button class="btn secondary" data-go="brands">Return to businesses</button></div>
-    </section>
+      <section class="screen" data-screen="history">
+        <div class="topline"><button class="exit" data-go="business" aria-label="Back to current contract"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4h5v16h-5"/><path d="M11 8 7 12l4 4"/><path d="M7 12h10"/><path d="M4 4h7"/></svg></button><div><p class="eyebrow businessName">NorthQuest</p><h1>History</h1></div></div>
+        <p>Private record of contract changes and signed copies.</p><div class="history-list"><div class="history-row"><strong>Contract replaced</strong><span>4 September 2026 · Smith</span></div><div class="history-row"><strong>Previous source retained</strong><span>Available to authorized management only</span></div><div class="history-row"><strong>68 signed contracts preserved</strong><span>Each signed PDF remains connected to the contract the creator accepted</span></div></div>
+      </section>
 
-    <section class="screen" data-screen="audit">
-      <div class="topline"><button class="back" data-go="history" aria-label="Back to agreement history">←</button><div><p class="eyebrow"><span class="businessName">NorthQuest</span></p><h1>Version history</h1></div></div>
-      <div class="audit"><div class="audit-row"><b>Version 3 published</b><span>3 September 2026 · Authorized publisher</span></div><div class="audit-row"><b>Approval completed</b><span>3 September 2026 · Version and preview verified</span></div><div class="audit-row"><b>Draft submitted</b><span>2 September 2026 · Smith</span></div><div class="audit-row"><b>Draft created from version 2</b><span>2 September 2026 · Smith</span></div></div>
-      <div class="actions"><button class="btn secondary" data-go="history">Back</button></div>
-    </section>
-
-    <section class="screen" data-screen="error">
-      <p class="eyebrow"><span class="businessName">NorthQuest</span> · Draft</p><h1>Your draft did not save</h1><p>Your edits are still here. Check your internet connection and try again.</p>
-      <div class="actions"><button class="btn primary" data-go="editor">Try again</button><button class="btn secondary" data-go="preview">Review retained draft</button></div>
-    </section>
-
-    <section class="screen" data-screen="denied">
-      <p class="eyebrow"><span class="businessName">NorthQuest</span></p><h1>You cannot publish this version</h1><p>Only an authorized publisher can publish an agreement. Your draft remains waiting for review.</p>
-      <div class="actions"><button class="btn primary" data-go="awaiting">Return to submitted draft</button></div>
-    </section>
-  </main>
-</div>
-
-<details class="prototype" open>
-  <summary>Contract prototype states</summary>
-  <div class="prototype-panel">
-    <button data-demo="brands">Business agreements</button><button data-demo="history">Agreement history</button><button data-demo="editor">Draft editor</button><button data-demo="preview">Phone/PDF preview</button><button data-demo="awaiting">Waiting for approval</button><button data-demo="publisher">Publisher review</button><button data-demo="published">Published</button><button data-demo="amend">Re-signing</button><button data-demo="source">Aura source needed</button><button data-demo="audit">Audit history</button><button data-demo="error">Save failed</button><button data-demo="denied">Permission denied</button>
-    <small>Prototype only. No contract, signature, Drive file, database row or notification is created.</small>
+      <section class="screen" data-screen="error"><p class="eyebrow businessName">NorthQuest</p><h1>The contract did not upload</h1><p>Your selected file is still here. Check your internet connection and try again.</p><div class="actions"><button class="btn primary" data-go="upload">Try again</button><button class="btn secondary" data-go="business">Cancel</button></div></section>
+      <section class="screen" data-screen="denied"><p class="eyebrow">Restricted access</p><h1>You cannot manage contracts</h1><p>Only Smith currently has contract-management access.</p><div class="actions"><button class="btn primary" data-go="brands">Return</button></div></section>
+    </main>
   </div>
-</details>
+
+  <details class="prototype" open><summary>Contract prototype states</summary><div class="prototype-panel"><button data-demo="brands">Businesses</button><button data-demo="business">Current contract</button><button data-demo="document">View contract</button><button data-demo="upload">Upload</button><button data-demo="confirm">Review</button><button data-demo="live">Made live</button><button data-demo="resign">Select creators</button><button data-demo="resign-sent">Request sent</button><button data-demo="notice">Creator message</button><button data-demo="history">Private history</button><button data-demo="error">Upload failed</button><button data-demo="denied">Restricted access</button><small>Prototype only. No contract, signature, Drive file, database row or notification is created.</small></div></details>
 </div>
 <script>
-  const validScreens=new Set(['brands','history','editor','preview','awaiting','publisher','published','amend','resign-sent','source','audit','error','denied']);
-  const model={screen:'brands',business:'NorthQuest',clauses:{parties:'',accounts:'',payment:'',ending:''}};
-  const params=new URLSearchParams(location.search);if(validScreens.has(params.get('screen')))model.screen=params.get('screen');
-  const businessInfo={NorthQuest:{version:'Version 3',signed:'68',title:'NorthQuest creator agreement'},CashDrive:{version:'Version 1',signed:'12',title:'CashDrive creator agreement'}};
-  function render(){
-    document.querySelectorAll('[data-screen]').forEach(el=>el.classList.toggle('active',el.dataset.screen===model.screen));
-    document.querySelectorAll('[data-demo]').forEach(el=>el.classList.toggle('current',el.dataset.demo===model.screen));
-    document.querySelectorAll('.businessName').forEach(el=>el.textContent=model.business);
-    const info=businessInfo[model.business]||businessInfo.NorthQuest;
-    document.getElementById('historyBrand').textContent=model.business;
-    document.getElementById('currentVersion').textContent=info.version;
-    document.getElementById('signedCount').textContent=info.signed;
-    document.getElementById('publishedTitle').textContent=info.title;
-    document.getElementById('paperTitle').textContent=info.title;
-    const active=document.querySelector('[data-screen].active h1');if(active){active.tabIndex=-1;active.focus({preventScroll:true})}
-  }
-  function go(screen){if(!validScreens.has(screen))return;model.screen=screen;history.replaceState(null,'',`?screen=${screen}&v=1`);render();scrollTo({top:0,behavior:'smooth'})}
-  document.addEventListener('click',event=>{
-    const goButton=event.target.closest('[data-go]');if(goButton){go(goButton.dataset.go);return}
-    const demo=event.target.closest('[data-demo]');if(demo){go(demo.dataset.demo);return}
-    const business=event.target.closest('[data-business]');if(business){model.business=business.dataset.business;go('history')}
-  });
-  document.querySelectorAll('[data-clause]').forEach(area=>{model.clauses[area.dataset.clause]=area.value;area.addEventListener('input',()=>{model.clauses[area.dataset.clause]=area.value;document.querySelector(`[data-paper="${area.dataset.clause}"]`).textContent=area.value||'This section is empty.';const s=document.getElementById('saveStatus');s.textContent='Saving draft…';clearTimeout(area._t);area._t=setTimeout(()=>s.textContent='Draft saved in this demo tab.',450)})});
-  const publishButton=document.getElementById('publishButton'),publishChecks=[document.getElementById('exactCheck'),document.getElementById('authorityCheck')];publishChecks.forEach(c=>c.addEventListener('change',()=>publishButton.disabled=!publishChecks.every(x=>x.checked)));publishButton.addEventListener('click',()=>go('published'));
-  const all=document.getElementById('selectAffected'),creators=[...document.querySelectorAll('.creator-check')],count=document.getElementById('affectedCount');function updateCount(){const selected=creators.filter(c=>c.checked).length;count.textContent=all.checked?'68 creators selected.':`${selected} creator${selected===1?'':'s'} selected.`}all.addEventListener('change',()=>{creators.forEach(c=>c.checked=all.checked);updateCount()});creators.forEach(c=>c.addEventListener('change',()=>{all.checked=false;updateCount()}));
+  const screens=new Set(['brands','business','document','upload','confirm','live','resign','resign-sent','notice','history','error','denied']);
+  const businesses={NorthQuest:{file:'NQ UGC AGREEMENT.docx',signed:68,title:'NorthQuest creator agreement',hasContract:true},CashDrive:{file:'Cashdrive Creator Contract.docx',signed:12,title:'CashDrive creator agreement',hasContract:true},Aura:{file:'',signed:0,title:'Aura creator agreement',hasContract:false}};
+  const model={screen:'brands',business:'NorthQuest',selectedFile:''};const params=new URLSearchParams(location.search);if(screens.has(params.get('screen')))model.screen=params.get('screen');if(businesses[params.get('business')])model.business=params.get('business');
+  function render(){const info=businesses[model.business];document.querySelectorAll('[data-screen]').forEach(el=>el.classList.toggle('active',el.dataset.screen===model.screen));document.querySelectorAll('[data-demo]').forEach(el=>el.classList.toggle('current',el.dataset.demo===model.screen));document.querySelectorAll('.businessName').forEach(el=>el.textContent=model.business);document.getElementById('contractPresent').hidden=!info.hasContract;document.getElementById('contractEmpty').hidden=info.hasContract;document.getElementById('sourceFile').textContent=info.file;document.getElementById('signedCount').textContent=info.signed;document.getElementById('documentTitle').textContent=info.title;document.getElementById('documentFile').textContent=info.file;document.getElementById('uploadHeading').textContent=info.hasContract?'Replace contract':'Upload contract';document.getElementById('selectAllLabel').textContent=`Select all ${info.signed} active creators`;const heading=document.querySelector('[data-screen].active h1');if(heading){heading.tabIndex=-1;heading.focus({preventScroll:true})}}
+  function go(screen){if(!screens.has(screen))return;model.screen=screen;history.replaceState(null,'',`?screen=${screen}&business=${encodeURIComponent(model.business)}&v=2`);render();scrollTo({top:0,behavior:'smooth'})}
+  document.addEventListener('click',event=>{const goButton=event.target.closest('[data-go]');if(goButton){go(goButton.dataset.go);return}const demo=event.target.closest('[data-demo]');if(demo){go(demo.dataset.demo);return}const business=event.target.closest('[data-business]');if(business){model.business=business.dataset.business;go('business')}});
+  const fileInput=document.getElementById('contractFile'),fileName=document.getElementById('fileName'),reviewUpload=document.getElementById('reviewUpload');fileInput.addEventListener('change',()=>{const file=fileInput.files[0];model.selectedFile=file?file.name:'';fileName.textContent=model.selectedFile||'No file selected';reviewUpload.disabled=!file;document.getElementById('previewFile').textContent=model.selectedFile||'Selected file';document.getElementById('previewTitle').textContent=`${model.business} creator agreement`});reviewUpload.addEventListener('click',()=>go('confirm'));
+  const all=document.getElementById('selectAffected'),creators=[...document.querySelectorAll('.creator-check')],count=document.getElementById('affectedCount');function updateCount(){const selected=creators.filter(c=>c.checked).length;count.textContent=all.checked?`${businesses[model.business].signed} creators selected`:`${selected} creator${selected===1?'':'s'} selected`}all.addEventListener('change',()=>{creators.forEach(c=>c.checked=all.checked);updateCount()});creators.forEach(c=>c.addEventListener('change',()=>{all.checked=false;updateCount()}));
   render();
 </script>
 </body>
