@@ -36,8 +36,9 @@ This is the canonical restart point for the unified TDT/Smithstem creator-operat
 - Recruitment prototype is accepted for now. A shared TypeUI-guided mobile-first visual pass was applied on 4 September 2026 and awaits the user's visual approval.
 - Brand-onboarding prototype behavior was accepted on 4 September 2026 (“I think we're all done here”). It includes the concise entry/status copy, profile placeholders, automatic reload/back draft recovery, every review field shown separately (including the creator's full account number), an in-document signed-agreement preview, exact field-level corrections including signature re-entry, management review with an accessible Select all/Clear all shortcut for its four approval checks, and paused read-only records. The shared TypeUI-guided visual pass is applied and awaits visual approval.
 - Onboarding prototype uses a side-by-side review shell on wide screens and an accessible state selector on narrow screens.
-- Latest reported checks: 229 named local checks passed after the shared UI pass and active-dashboard revision, including onboarding 14/14, active creator 35/35, shared trial contract 33/33, trial browser checks 60/60, TypeUI visual-contract checks 3/3, and Supabase hardening 8/8. The isolated PostgreSQL migration runtime and production build also passed previously.
+- Latest reported checks: 243 named local checks passed after the shared UI pass, active-dashboard revision and contract-management prototype, including onboarding 14/14, active creator 35/35, contract management 14/14, shared trial contract 33/33, trial browser checks 60/60, TypeUI visual-contract checks 3/3, and Supabase hardening 8/8. The isolated PostgreSQL migration runtime and production build also passed previously.
 - Active creator prototype revision 16 is behavior/flow approved as the basis for the next phase. Home is summary-only, the current Lagos date precedes the greeting, a separate centre Track action owns daily entry, and five accessible icon actions cover Home, Track, Videos, Bonuses and Payments. “Your dashboard” switches between This month and All time. Monthly target follows the actual month length; expected pay is separate from settled payments; the zero-bonus state omits a meaningless naira amount; and the Active badge and aggregate “Total so far” were removed. This approval does not authorize production UI implementation or deployment.
+- Contract-management prototype revision 1 is ready for review. It covers business selection, immutable version history, segmented draft editing, creator/PDF preview, approval/publisher checks, publication, audit history, selective or all-creator re-signing, source-missing, save-failure and permission-denied states. TypeUI phone-first safeguards are applied. It performs no external write.
 - A browser-cache mismatch briefly reopened the older onboarding copy during verification. The live file response was confirmed current and the reviewer URL was refreshed with `v=8`; the corrected Ready screen and complete state list then rendered successfully.
 - RLS hardening migration is prepared and locally proven but not applied to production.
 - Contract review on 3 September found `UGC Agreement (2).docx` and `(3).docx` textually and visually identical NorthQuest agreements. Neither is Aura. Their credential-sharing and termination-control clauses conflict with secure account reassignment and require a legally approved new version.
@@ -45,7 +46,7 @@ This is the canonical restart point for the unified TDT/Smithstem creator-operat
 ## Still open or blocked
 
 - Correct distinct Aura agreement is not available.
-- The exact newly supplied `CASHDRIVE_UGC_CONTENT_CREATOR_AGREEMENT.docx` became unavailable during inspection. An older local CashDrive contract was used for comparison only and must not be published as the supplied source.
+- `Cashdrive Creator Contract.docx` is available and was inspected read-only as the current CashDrive prototype source. It is not published or changed by this work.
 - The designated contract publisher/legal approver is not yet confirmed. Recommended boundary: only Smith or a specifically designated legal approver can publish.
 - Vercel project currently has no environment variables configured. Required production secret names and values remain unconfigured and unverified.
 - TypeUI OAuth is connected and TypeUI MCP tools are exposed in this task. The six project-local TypeUI fundamentals guardrails are installed and were read before the shared mobile-first visual pass.
@@ -55,15 +56,14 @@ This is the canonical restart point for the unified TDT/Smithstem creator-operat
 
 ## Current next actions
 
-1. Reattach and identify the correct CashDrive and Aura contract source files.
-2. Prototype the management contract flow: brand list -> version history -> new draft -> editor -> phone/PDF preview -> approve/publish -> amendment/re-signing request.
-3. Prototype the unified management dashboard connections for video logs, weekly reports, bonus review, payment preparation, creator access and audit history.
-4. Design the separate approved password-vault handover procedure if platform delegation remains unavailable; raw social passwords remain excluded from Smithstem.
-5. Prototype CashDrive enquiries and inventory after the unified management flow.
-6. Implement and verify private uploads, signed PDFs, audit history, notifications, Sheets, and per-business Apify connections in a non-production environment.
-7. Complete live-safety preparation and request explicit approval immediately before any production RLS change.
-8. Run complete phone-first, role-isolation, retry, security, scale, and end-to-end tests.
-9. Repeat the TypeUI/UI-UX pass for each new flow, obtain explicit production approval for the complete system, and only then deploy.
+1. Review and approve or revise the management contract prototype; identify the correct Aura contract and the authorized publisher.
+2. Prototype the unified management dashboard connections for video logs, weekly reports, bonus review, payment preparation, creator access and audit history.
+3. Design the separate approved password-vault handover procedure if platform delegation remains unavailable; raw social passwords remain excluded from Smithstem.
+4. Prototype CashDrive enquiries and inventory after the unified management flow.
+5. Implement and verify private uploads, signed PDFs, audit history, notifications, Sheets, and per-business Apify connections in a non-production environment.
+6. Complete live-safety preparation and request explicit approval immediately before any production RLS change.
+7. Run complete phone-first, role-isolation, retry, security, scale, and end-to-end tests.
+8. Repeat the TypeUI/UI-UX pass for each new flow, obtain explicit production approval for the complete system, and only then deploy.
 
 ## Restart protocol
 

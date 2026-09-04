@@ -8,6 +8,7 @@ const prototypes = [
   'recruitment.html',
   'onboarding.html',
   'active-creator-dashboard.html',
+  'contract-management.html',
 ];
 
 const read = name => fs.readFileSync(path.join(__dirname, '..', 'prototypes', name), 'utf8');
@@ -34,7 +35,7 @@ test('the visual pass keeps phone controls and keyboard focus accessible', () =>
 });
 
 test('button-like quiet actions are not presented as text links', () => {
-  for (const name of ['recruitment.html', 'onboarding.html', 'active-creator-dashboard.html']) {
+  for (const name of ['recruitment.html', 'onboarding.html', 'active-creator-dashboard.html', 'contract-management.html']) {
     assert.match(read(name), /button\.quiet\{[^}]*text-decoration:none|\.quiet\{[^}]*text-decoration:none/);
   }
 });

@@ -14,6 +14,7 @@ audit history.
 | 1 | Application → vibe check → business distribution → outreach | Prototype accepted for now; final visual pass deferred | Durable agency-scoped intake, private introduction video, audit history |
 | 2 | Trial invitation → logging → weekly views → 10k evidence → review | Revision 7 prototype approved | Real invitation/auth, persistent evidence, management decision |
 | 3 | Brand onboarding | Revised prototype ready for review | In-app contract signing, targeted correction, management check, one idempotent active membership |
+| 3A | Management contract versions and publishing | Revision 1 ready for review | Exact brand sources, authorized publisher, immutable versions, signed PDFs and re-signing |
 | 4 | Active creator dashboard and business switching | Revision 16 behavior/flow approved; production UI remains blocked | Daily/weekly/bonus/payment flows and membership isolation |
 | 5 | Unified management dashboard | Not yet prototyped as one complete flow | Businesses, creators, access, evidence, onboarding, lifecycle and audit |
 | 6 | CashDrive enquiries | Source fields inspected; not yet prototyped | Creator submission, management stages, CashDrive-only access and history |
