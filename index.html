@@ -338,6 +338,29 @@
     font: inherit; font-weight: 700; color: inherit; text-decoration: underline; cursor: pointer;
   }
 
+  /* GRACE BANNER — "you missed yesterday, log it before 2 PM" */
+  .grace-banner {
+    margin-top: 10px; border-radius: var(--radius-sm);
+    padding: 12px 14px; font-size: 13px; font-weight: 500;
+    background: var(--amber-light); color: var(--amber); border: 1.5px solid #f0d9a8;
+  }
+  .grace-banner .btn-log-yesterday {
+    display: block; margin-top: 8px; border: none; border-radius: var(--radius-sm);
+    background: var(--amber); color: #fff; font: inherit; font-weight: 700;
+    padding: 8px 12px; cursor: pointer;
+  }
+
+  /* YESTERDAY MODE — persistent reminder while backdating a missed video */
+  .yesterday-mode-banner {
+    margin-top: 10px; border-radius: var(--radius-sm);
+    padding: 10px 14px; font-size: 13px; font-weight: 600;
+    background: var(--accent-light); color: var(--accent);
+  }
+  .yesterday-mode-banner .btn-back-today {
+    background: none; border: none; padding: 0; margin-left: 4px;
+    font: inherit; font-weight: 700; color: inherit; text-decoration: underline; cursor: pointer;
+  }
+
   /* FORM DONE STATE */
   .form-done-banner {
     text-align: center; padding: 28px 16px;
@@ -817,6 +840,9 @@
   .mylog-vrow .post-chip { text-align:center; }
   .mylog-slot { font-size:11px; }
   .mylog-slot .no-link { color:var(--border2); font-weight:600; }
+  .mylog-pay-note { font-size:11px; color:var(--text3); margin-top:4px; }
+  .mylog-grace { margin-bottom:16px; border-radius:8px; padding:10px 12px; font-size:13px; font-weight:500; background:var(--amber-light); color:var(--amber); border:1.5px solid #f0d9a8; }
+  .mylog-grace button { display:block; margin-top:8px; border:none; border-radius:var(--radius-sm); background:var(--amber); color:#fff; font:inherit; font-weight:700; padding:8px 12px; cursor:pointer; }
   @media (max-width: 480px) {
     .mylog-day { padding:9px 8px; gap:8px; }
     .mylog-daylabel { min-width:52px; }
@@ -926,16 +952,24 @@
         <span class="s-icon" id="today-status-icon"></span>
         <span id="today-status-msg"></span>
       </div>
+      <div class="grace-banner" id="grace-yesterday" style="display:none">
+        <span class="grace-msg"></span>
+        <button type="button" class="btn-log-yesterday" onclick="startLogYesterday()">Log yesterday's videos</button>
+      </div>
+      <div class="yesterday-mode-banner" id="yesterday-mode-banner" style="display:none">
+        Logging for <strong>yesterday</strong> (<span id="yesterday-mode-date"></span>) &middot;
+        <button type="button" class="btn-back-today" onclick="exitLogYesterday()">&larr; Back to today</button>
+      </div>
       <button class="view-logs-btn" id="view-logs-btn" onclick="openMyLogs()" type="button">View my logs for this month &rarr;</button>
     </div>
 
-    <!-- Date: locked to today, not editable -->
+    <!-- Date: locked to today (or yesterday, only inside the grace window), not editable -->
     <div class="form-group">
       <label class="form-label">Date</label>
       <div class="date-locked-display">
         <span class="lock-icon">&#128274;</span>
         <span id="today-date-display">—</span>
-        <span class="lock-note">Today only</span>
+        <span class="lock-note" id="date-lock-note">Today only</span>
       </div>
       <input type="hidden" id="f-date" />
     </div>
@@ -1401,6 +1435,11 @@ let isAdmin = false, dataLoaded = false, creatorsLoaded = false, paysLoaded = fa
 // empty variable. rowsLoadFailed carries that difference: while it is true we
 // know nothing about today and must not claim otherwise.
 let rowsLoadFailed = false;
+// True while a creator is backdating a missed video via "Log yesterday's
+// videos". Only flips true through startLogYesterday(); the server is the
+// real authority on the 2 PM cutoff and on which date is "yesterday" — this
+// just drives which day the submit form displays and targets.
+let loggingYesterday = false;
 // Bonus tiers — editable from the app (Manage creators / Payments → Edit
 // bonus tiers). This fallback only shows before the real sheet data loads.
 // Current structure (Aug 2026): 100k views=₦50k, 500k=₦100k, 1M=₦250k,
@@ -1483,6 +1522,12 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function todayStr() { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); }
+function yesterdayStr() { const d = new Date(); d.setDate(d.getDate() - 1); return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); }
+// Client-side estimate only, for showing/hiding the "log yesterday" banner.
+// The server enforces the real 2 PM (Africa/Lagos) cutoff independently, so a
+// wrong device clock/timezone can only hide or show the button early — it can
+// never let a submission through the server would otherwise reject.
+function graceWindowOpen() { return new Date().getHours() < 14; }
 
 // Every date comparison in this file assumes a plain 'YYYY-MM-DD' string.
 // A Google Sheets date cell does not always come back that way — if the cell
@@ -1717,10 +1762,20 @@ function onNameChange(fetchFresh) {
   const statusEl = document.getElementById('today-status');
   const sIcon    = document.getElementById('today-status-icon');
   const sMsg     = document.getElementById('today-status-msg');
+  const graceEl  = document.getElementById('grace-yesterday');
+
+  // A name change (picked from the dropdown, or cleared) always means "start
+  // over as today" — carrying yesterday-mode across a different creator would
+  // silently backdate the wrong person's video.
+  loggingYesterday = false;
+  const ymBanner = document.getElementById('yesterday-mode-banner');
+  if (ymBanner) ymBanner.style.display = 'none';
+  updateDateLockDisplay();
 
   const viewBtn = document.getElementById('view-logs-btn');
   if (!name) {
     statusEl.style.display = 'none';
+    if (graceEl) graceEl.style.display = 'none';
     if (viewBtn) viewBtn.style.display = 'none';
     updatePostCards(null);
     return;
@@ -1739,6 +1794,7 @@ function onNameChange(fetchFresh) {
     sIcon.textContent = '⚠';
     sMsg.innerHTML = 'We could not check today\'s logs. Your connection dropped, so we do not know whether you have already logged a video today.' +
       '<button type="button" class="s-retry" onclick="retryLoadRows(this)">Try checking again</button>';
+    if (graceEl) graceEl.style.display = 'none';
     updatePostCards('unknown');
     return;
   }
@@ -1764,6 +1820,59 @@ function onNameChange(fetchFresh) {
     sMsg.textContent = 'Both videos logged for today. You\'re all done — see you tomorrow!';
   }
   updatePostCards(count);
+
+  // Grace window: missed yesterday (or only logged 1 of 2) and it is still
+  // before the 2 PM cutoff — offer to backdate. The server has the real,
+  // authoritative cutoff; this only decides whether to show the button.
+  if (graceEl) {
+    const yCount = allRows.filter(function(r) {
+      return r.name.toLowerCase() === name.toLowerCase() && r.date === yesterdayStr();
+    }).length;
+    if (yCount < 2 && graceWindowOpen()) {
+      graceEl.style.display = '';
+      graceEl.querySelector('.grace-msg').textContent = yCount === 0
+        ? 'You did not log your videos yesterday. Log them before 2 PM.'
+        : 'You logged 1 of 2 videos yesterday. Log the second before 2 PM.';
+    } else {
+      graceEl.style.display = 'none';
+    }
+  }
+}
+
+// ── LOG YESTERDAY — grace window for a missed video ──
+function updateDateLockDisplay() {
+  const ds = loggingYesterday ? yesterdayStr() : todayStr();
+  const formatted = new Date(ds + 'T00:00:00').toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+  document.getElementById('f-date').value = ds;
+  document.getElementById('today-date-display').textContent = formatted;
+  const note = document.getElementById('date-lock-note');
+  if (note) note.textContent = loggingYesterday ? 'Yesterday — grace window' : 'Today only';
+}
+
+function startLogYesterday() {
+  loggingYesterday = true;
+  document.getElementById('grace-yesterday').style.display = 'none';
+  const ymBanner = document.getElementById('yesterday-mode-banner');
+  document.getElementById('yesterday-mode-date').textContent =
+    new Date(yesterdayStr() + 'T00:00:00').toLocaleDateString('en-GB', { day:'numeric', month:'long' });
+  ymBanner.style.display = '';
+  updateDateLockDisplay();
+  renderYesterdayCards();
+}
+
+function exitLogYesterday() {
+  loggingYesterday = false;
+  document.getElementById('yesterday-mode-banner').style.display = 'none';
+  updateDateLockDisplay();
+  onNameChange();
+}
+
+function renderYesterdayCards() {
+  const name = document.getElementById('f-name').value.trim();
+  const yCount = allRows.filter(function(r) {
+    return r.name.toLowerCase() === name.toLowerCase() && r.date === yesterdayStr();
+  }).length;
+  updatePostCards(yCount);
 }
 
 // Manual re-check after a failed load. Kept separate from the automatic
@@ -1792,7 +1901,8 @@ function setSubmitting(on, msg) {
 // ── SUBMIT — server-first, no optimistic success ──
 function submitLog() {
   const name   = document.getElementById('f-name').value.trim();
-  const date   = todayStr();
+  const date   = loggingYesterday ? yesterdayStr() : todayStr();
+  const dayWord = loggingYesterday ? 'yesterday' : 'today';
   const post   = document.getElementById('f-post').value;
   const tiktok = document.getElementById('f-tiktok').value.trim();
   const insta  = document.getElementById('f-insta').value.trim();
@@ -1809,22 +1919,22 @@ function submitLog() {
   // a creator ends up being told a video is already logged straight after
   // being told nothing was.
   if (rowsLoadFailed) {
-    showError('We could not check what you have already logged today, so submitting now could double-log your video. Tap "Try checking again" above first.');
+    showError('We could not check what you have already logged ' + dayWord + ', so submitting now could double-log your video. Tap "Try checking again" above first.');
     return;
   }
 
-  // Client-side guard: if allRows already shows 2 for today, block immediately
+  // Client-side guard: if allRows already shows 2 for the target day, block immediately
   const todayCount = allRows.filter(function(r) {
     return r.name.toLowerCase() === name.toLowerCase() &&
            r.date === date;
   }).length;
   if (todayCount >= 2) {
-    showError('Both videos are already logged for today. See you tomorrow!');
-    onNameChange();
+    showError('Both videos are already logged for ' + dayWord + '.' + (loggingYesterday ? '' : ' See you tomorrow!'));
+    if (loggingYesterday) renderYesterdayCards(); else onNameChange();
     return;
   }
 
-  // Client-side guard: the SAME link already logged today = the same video.
+  // Client-side guard: the SAME link already logged that day = the same video.
   // Stops a creator from re-submitting Video 1 as "Video 2" after a false failure.
   const dupRow = allRows.find(function(r) {
     if (r.name.toLowerCase() !== name.toLowerCase() || r.date !== date) return false;
@@ -1832,8 +1942,8 @@ function submitLog() {
            (insta  && r.insta  && r.insta.trim()  === insta);
   });
   if (dupRow) {
-    showError('This exact video link is already logged for today (as Video ' + dupRow.post + '). It saved successfully — no need to submit it again. If you have a second video, paste that video\'s link instead.');
-    onNameChange();
+    showError('This exact video link is already logged for ' + dayWord + ' (as Video ' + dupRow.post + '). It saved successfully — no need to submit it again. If you have a second video, paste that video\'s link instead.');
+    if (loggingYesterday) renderYesterdayCards(); else onNameChange();
     return;
   }
 
@@ -1843,16 +1953,18 @@ function submitLog() {
   // Confirm which video they are about to log BEFORE anything is sent —
   // stops creators accidentally logging Video 1 again as "Video 2".
   showConfirm(
-    isSecond ? 'Your SECOND video of the day' : 'Your FIRST video of the day',
+    isSecond ? ('Your SECOND video of ' + dayWord) : ('Your FIRST video of ' + dayWord),
     isSecond
-      ? 'You are about to log your <strong>second video for today</strong>. This should be a different video from your first one. Are you sure you want to continue?'
-      : 'You are about to log your <strong>first video for today</strong>. Continue?',
+      ? ('You are about to log your <strong>second video for ' + dayWord + '</strong>. This should be a different video from your first one. Are you sure you want to continue?')
+      : ('You are about to log your <strong>first video for ' + dayWord + '</strong>. Continue?'),
     'Yes, log Video ' + post,
     function() { doSubmitLog(name, date, post, tiktok, insta, issues, firstName, isSecond); }
   );
 }
 
 function doSubmitLog(name, date, post, tiktok, insta, issues, firstName, isSecond) {
+  const wasYesterday = loggingYesterday;
+  const dayWord = wasYesterday ? 'yesterday' : 'today';
   // Show loading — button becomes a spinner, stays disabled until server responds
   setSubmitting(true, 'Please wait — your video is being logged…');
   const patienceTimer = setTimeout(function() {
@@ -1860,7 +1972,7 @@ function doSubmitLog(name, date, post, tiktok, insta, issues, firstName, isSecon
   }, 6000);
 
   // Call the server. We wait for confirmation before doing anything.
-  jsonp({ action:'submit', name:name, date:date, post:post, tiktok:tiktok, insta:insta, issues:issues }, function(data, err) {
+  jsonp({ action:'submit', name:name, date:date, post:post, tiktok:tiktok, insta:insta, issues:issues, logYesterday: wasYesterday ? '1' : '' }, function(data, err) {
     clearTimeout(patienceTimer);
 
     if (data && data.status === 'success') {
@@ -1872,7 +1984,7 @@ function doSubmitLog(name, date, post, tiktok, insta, issues, firstName, isSecon
 
     } else if (data && data.status === 'duplicate') {
       setSubmitting(false);
-      // Server recognised this exact video link as already logged today.
+      // Server recognised this exact video link as already logged that day.
       // That means it DID save the first time — treat it as good news.
       loadRows();
       document.getElementById('f-tiktok').value = '';
@@ -1886,14 +1998,17 @@ function doSubmitLog(name, date, post, tiktok, insta, issues, firstName, isSecon
 
     } else if (data && data.status === 'blocked') {
       setSubmitting(false);
-      // Server says they already hit the limit — reload fresh data and update cards
+      // Server says they already hit the limit, or the grace window has
+      // closed (2 PM cutoff) — reload fresh data and update cards
       loadRows();
       showToast('error',
         'Already logged',
-        isSecond
-          ? 'Both videos for today are already logged. See you tomorrow!'
-          : 'Your first video for today is already logged — don\'t worry. Just submit your second video now.'
+        (data.message) ||
+        (isSecond
+          ? ('Both videos for ' + dayWord + ' are already logged.' + (wasYesterday ? '' : ' See you tomorrow!'))
+          : ('Your first video for ' + dayWord + ' is already logged — don\'t worry. Just submit your second video now.'))
       );
+      if (wasYesterday) { loggingYesterday = true; renderYesterdayCards(); }
 
     } else {
       // Connection dropped or timed out. The video may STILL have reached the
@@ -1953,6 +2068,18 @@ function finalizeSuccess(name, date, post, tiktok, insta, issues, firstName, isS
            r.tiktok === tiktok && r.insta === insta;
   });
   if (!already) allRows.push({ name:name, date:date, post:post, tiktok:tiktok, insta:insta, issues:issues, submitted: new Date().toISOString() });
+
+  // Both videos for the backdated day are now in — no need to keep asking
+  // for "yesterday", drop back to today's normal form on its own.
+  const wasYesterday = loggingYesterday;
+  if (wasYesterday) {
+    const yCount = allRows.filter(function(r) { return r.name.toLowerCase() === name.toLowerCase() && r.date === date; }).length;
+    if (yCount >= 2) {
+      loggingYesterday = false;
+      const b = document.getElementById('yesterday-mode-banner'); if (b) b.style.display = 'none';
+      updateDateLockDisplay();
+    }
+  }
   refreshAll();
 
   // Clear the link fields — submission was verified
@@ -1960,11 +2087,12 @@ function finalizeSuccess(name, date, post, tiktok, insta, issues, firstName, isS
   document.getElementById('f-insta').value  = '';
   document.getElementById('f-issues').value = '';
 
+  const dayWord = wasYesterday ? 'yesterday' : 'today';
   showToast('success',
     isSecond ? 'All done, ' + firstName + '!' : 'Video 1 successfully logged, ' + firstName + '!',
     isSecond
-      ? 'Your second video has been successfully logged and confirmed. Both posts are done for today — see you tomorrow!'
-      : 'Your first video has been successfully logged and confirmed. You can check it under "View my logs". Come back and submit your second video!'
+      ? ('Your second video has been successfully logged and confirmed. Both posts are done for ' + dayWord + (wasYesterday ? '.' : ' — see you tomorrow!'))
+      : ('Your first video has been successfully logged and confirmed for ' + dayWord + '. You can check it under "View my logs". Come back and submit your second video!')
   );
   setTimeout(function() { window.scrollTo({ top:0, behavior:'smooth' }); }, 200);
 }
@@ -1982,6 +2110,15 @@ function verifySubmission(name, date, post, tiktok, insta, firstName, isSecond, 
                (r.tiktok === tiktok && r.insta === insta);
       });
       if (!already) allRows.push({ name:name, date:date, post:String(data.post || post), tiktok:tiktok, insta:insta, issues:'', submitted: new Date().toISOString() });
+      const wasYesterday = loggingYesterday;
+      if (wasYesterday) {
+        const yCount = allRows.filter(function(r) { return r.name.toLowerCase() === name.toLowerCase() && r.date === date; }).length;
+        if (yCount >= 2) {
+          loggingYesterday = false;
+          const b = document.getElementById('yesterday-mode-banner'); if (b) b.style.display = 'none';
+          updateDateLockDisplay();
+        }
+      }
       refreshAll();
       document.getElementById('f-tiktok').value = '';
       document.getElementById('f-insta').value  = '';
@@ -1989,7 +2126,7 @@ function verifySubmission(name, date, post, tiktok, insta, firstName, isSecond, 
       showToast('success',
         isSecond ? 'All done, ' + firstName + '!' : 'Video 1 logged, ' + firstName + '!',
         'Your video went through — the connection was just slow. ' +
-        (isSecond ? 'Both posts are done for today!' : 'Come back and submit your second video!')
+        (isSecond ? ('Both posts are done for ' + (wasYesterday ? 'yesterday!' : 'today!')) : 'Come back and submit your second video!')
       );
       setTimeout(function() { window.scrollTo({ top:0, behavior:'smooth' }); }, 200);
 
@@ -2025,8 +2162,12 @@ function refreshAll() {
   renderMonthTabs();
   renderDetailedLog();
   if (isAdmin) { renderDashboard(); renderManageCreators(); renderPayments(); }
-  // Re-run the name status in case allRows just loaded/changed
-  if (document.getElementById('f-name') && document.getElementById('f-name').value) onNameChange();
+  // Re-run the name status in case allRows just loaded/changed. While
+  // backdating a missed video, re-render THAT state instead — a plain
+  // onNameChange() would reset loggingYesterday and jump back to today.
+  if (document.getElementById('f-name') && document.getElementById('f-name').value) {
+    if (loggingYesterday) renderYesterdayCards(); else onNameChange();
+  }
 }
 
 function populateNameDropdown() {
@@ -2205,13 +2346,50 @@ function renderMyLogs(name) {
       '<div class="mylog-videos">' + vrow(v1, 1) + vrow(v2, 2) + '</div></div>');
   }
 
+  // Pay figures — same source of truth as the Payment register (postsCredit
+  // is what an admin adds when a creator forgot to log; that credit is what
+  // "counts" here, not just the raw log count, per the Payment sheet being
+  // the source of truth for what people are actually paid).
+  const man = allPayments.find(p => p.month === ym && String(p.name).toLowerCase() === name.toLowerCase()) || {};
+  const creditRaw = String(man.postsCredit || '');
+  const overrideRaw = String(man.postsOverride || '');
+  const hasCredit = creditRaw !== '' && !isNaN(parseFloat(creditRaw));
+  const hasLegacyOverride = !hasCredit && overrideRaw !== '' && !isNaN(parseFloat(overrideRaw));
+  const credit = hasCredit ? parseFloat(creditRaw) : 0;
+  const effPosts = hasLegacyOverride ? parseFloat(overrideRaw) : (monthRows.length + credit);
+  const maxVideos = 62;
+  const monthlySalary = effMonthlyRate(name, ym);
+  const ratePerVideo = monthlySalary / maxVideos;
+  const baseAmount = Math.round(effPosts * ratePerVideo);
+  const perf = calcBonus(man.bonusViews || '');
+  const special = parseFloat(String(man.specialBonus || '').replace(/[^\d.]/g, '')) || 0;
+  const totalOv = String(man.totalOverride || '').replace(/[^\d.]/g, '');
+  const amountExpected = (totalOv !== '' && !isNaN(parseFloat(totalOv))) ? parseFloat(totalOv) : (baseAmount + perf + special);
+  const adminNote = (credit > 0 || hasLegacyOverride)
+    ? '<div class="mylog-pay-note">' + (hasLegacyOverride ? 'Set by admin.' : (Math.round(credit) + ' logged by admin.')) + '</div>'
+    : '';
+
+  // Grace banner — same missed-yesterday check as the submit page, so it
+  // shows here too when a creator opens "View my logs" instead.
+  const yCount = mine.filter(r => r.date === yesterdayStr()).length;
+  const graceHtml = (yCount < 2 && graceWindowOpen())
+    ? '<div class="mylog-grace">' + (yCount === 0
+        ? 'You did not log your videos yesterday. Log them before 2 PM.'
+        : 'You logged 1 of 2 videos yesterday. Log the second before 2 PM.') +
+      '<button type="button" onclick="closeModalDirect(); startLogYesterday();">Log yesterday\'s videos</button></div>'
+    : '';
+
   document.getElementById('modal-name').textContent = name;
   document.getElementById('modal-sub').textContent = 'Your posting record — ' + monthLabel(ym);
   document.getElementById('modal-body').innerHTML =
+    graceHtml +
     '<div class="mylog-summary">' +
-      '<div class="mylog-stat"><div class="v">' + monthRows.length + '</div><div class="l">Videos this month</div></div>' +
+      '<div class="mylog-stat"><div class="v">' + effPosts + '</div><div class="l">Videos logged</div>' + adminNote + '</div>' +
+      '<div class="mylog-stat"><div class="v">' + maxVideos + '</div><div class="l">Monthly target</div></div>' +
+      '<div class="mylog-stat"><div class="v">&#8358;' + Math.round(ratePerVideo).toLocaleString('en-NG') + '</div><div class="l">Rate per video</div></div>' +
+      '<div class="mylog-stat"><div class="v">&#8358;' + Math.round(amountExpected).toLocaleString('en-NG') + '</div><div class="l">Amount expected</div></div>' +
+      '<div class="mylog-stat"><div class="v">&#8358;' + Math.round(perf).toLocaleString('en-NG') + '</div><div class="l">Bonuses so far</div></div>' +
       '<div class="mylog-stat"><div class="v">' + fullDays + '</div><div class="l">Days fully done</div></div>' +
-      '<div class="mylog-stat"><div class="v">' + missedDays + '</div><div class="l">Days missed</div></div>' +
     '</div>' +
     '<div style="font-size:12px;color:var(--text2);margin-bottom:16px;background:var(--accent-light);border-radius:8px;padding:10px 12px">A &#x2713; means that video was logged successfully. Just submitted a video? Open this view to confirm it went through.</div>' +
     '<div class="month-block"><div class="month-block-header"><span class="month-block-name">' + monthLabel(ym) + '</span><span class="month-block-total">' + monthRows.length + ' of 62 videos</span></div>' + dayRowsHtml.join('') + '</div>';
