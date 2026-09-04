@@ -236,7 +236,7 @@
   .stat-value { font-size: 28px; font-weight: 700; color: var(--accent); letter-spacing: -1px; }
 
   .section-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; gap: 12px; flex-wrap: wrap; }
-  .section-title { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text2); }
+  .section-title { font-size: 14px; font-weight: 700; letter-spacing: 0.02em; color: var(--text2); }
 
   /* FORM */
   .form-card {
@@ -515,7 +515,7 @@
   table { width: 100%; border-collapse: collapse; font-size: 12px; }
   th {
     background: var(--surface2); color: var(--text3);
-    font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase;
+    font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase;
     padding: 10px 12px; text-align: center;
     border-bottom: 1px solid var(--border); font-weight: 600;
   }
@@ -572,7 +572,7 @@
   .month-tab .count {
     background: rgba(0,0,0,0.1);
     padding: 1px 7px; border-radius: 10px;
-    font-size: 10px; font-weight: 700;
+    font-size: 11px; font-weight: 700;
   }
   .month-tab.active .count { background: rgba(255,255,255,0.25); }
 
@@ -581,7 +581,7 @@
   .log-table { width: 100%; border-collapse: collapse; font-size: 13px; }
   .log-table th {
     background: var(--surface2); color: var(--text3);
-    font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase;
+    font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase;
     padding: 11px 16px; text-align: left;
     border-bottom: 1px solid var(--border); font-weight: 600;
   }
@@ -745,7 +745,7 @@
   .pay-period { font-size:13px; color:var(--text3); margin:2px 0 14px; }
   .pay-wrap { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); overflow-x:auto; -webkit-overflow-scrolling:touch; box-shadow:var(--shadow-sm); }
   .pay-table { width:100%; border-collapse:collapse; font-size:11px; }
-  .pay-table th { background:#1a6b4a; color:#fff; padding:9px 10px; text-align:left; font-size:10px; letter-spacing:0.02em; text-transform:uppercase; font-weight:600; white-space:nowrap; cursor:text; }
+  .pay-table th { background:#1a6b4a; color:#fff; padding:9px 10px; text-align:left; font-size:11px; letter-spacing:0.02em; text-transform:uppercase; font-weight:600; white-space:nowrap; cursor:text; }
   .pay-table th[contenteditable]:focus { outline:2px solid #f5b841; outline-offset:-2px; }
   .pay-table td { padding:5px 9px; border-bottom:1px solid var(--border); color:var(--text); vertical-align:middle; white-space:nowrap; }
   .pay-table tr:hover td { background:var(--surface2); }
@@ -758,7 +758,7 @@
   .pay-staff:hover td { background:#fef3cb; }
   .pay-row-del { display:inline-flex; align-items:center; justify-content:center; width:18px; height:18px; padding:0; margin-left:4px; border:none; background:transparent; color:#c0392b; font-size:14px; font-weight:bold; line-height:1; cursor:pointer; border-radius:4px; vertical-align:middle; opacity:0.55; transition:all 0.15s; }
   .pay-row-del:hover { opacity:1; background:#c0392b; color:#fff; }
-  .pay-section-label td { background:#f0eaff; color:#4a2eab; font-size:9px; font-weight:800; letter-spacing:0.1em; text-transform:uppercase; border:none; padding:5px 10px; }
+  .pay-section-label td { background:#f0eaff; color:#4a2eab; font-size:11px; font-weight:800; letter-spacing:0.1em; text-transform:uppercase; border:none; padding:5px 10px; }
   .manage-tabs { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin:0 0 12px; }
   .manage-tab { padding:8px 16px; border:1.5px solid var(--border); border-radius:9px; background:var(--surface); color:var(--text2); font-weight:600; font-size:13px; cursor:pointer; font-family:inherit; }
   .manage-tab.active { background:var(--accent); border-color:var(--accent); color:#fff; }
@@ -3297,7 +3297,7 @@ function renderPayments() {
     const stColor = status === 'Paid' ? 'background:#e6f4ec;color:#1a6b4a' : 'background:#fdf6e3;color:#b7770d';
     return '<tr class="pay-staff">' +
       '<td class="pay-num" style="color:#b7770d">S' + (si+1) + '</td>' +
-      '<td><strong>' + escH(s.display) + '</strong><br><span style="font-size:9px;color:var(--text3);font-weight:400">' + s.role + '</span></td>' +
+      '<td><strong>' + escH(s.display) + '</strong><br><span style="font-size:11px;color:var(--text3);font-weight:400">' + s.role + '</span></td>' +
       '<td><input class="pay-input" style="max-width:120px;text-align:right" value="' + (salary||'') + '" placeholder="Salary &#8358;" onchange="onStaffSalaryEdit(' + si + ',this.value)"></td>' +
       '<td style="color:var(--text3);text-align:center">—</td>' +
       '<td style="color:var(--text3);text-align:center">—</td>' +
