@@ -1056,7 +1056,7 @@
   <div class="welcome-banner">
     <div class="welcome-greeting">Northquest Finance</div>
     <div class="welcome-title">Creator Onboarding</div>
-    <div class="welcome-sub">Welcome aboard. Five short steps and you are fully set up.</div>
+    <div class="welcome-sub">Welcome aboard. Three steps and you are fully set up.</div>
   </div>
 
   <div class="form-card" style="max-width:560px">
@@ -1066,11 +1066,11 @@
     </div>
 
     <div class="intake-progress" id="intake-progress">
-      <div class="ip-label" id="intake-step-label">Step 1 of 5: Your details</div>
-      <div class="ip-track"><div class="ip-fill" id="intake-progress-fill" style="transform:scaleX(0.2)"></div></div>
+      <div class="ip-label" id="intake-step-label">Step 1 of 3: You &amp; your content</div>
+      <div class="ip-track"><div class="ip-fill" id="intake-progress-fill" style="transform:scaleX(0.333)"></div></div>
     </div>
 
-    <!-- STEP 1: personal details -->
+    <!-- STEP 1: personal details + content type -->
     <div class="intake-step" data-step="1">
       <div class="form-title">Your details</div>
       <div class="form-subtitle">Everything here is private and is used only to set you up and pay you.</div>
@@ -1080,14 +1080,8 @@
         <input class="form-input" id="i-phone" type="tel" placeholder="080..." /></div>
       <div class="form-group"><label class="form-label">Personal email</label>
         <input class="form-input" id="i-email" type="email" placeholder="you@email.com" /></div>
-      <div class="intake-nav">
-        <button type="button" class="btn btn-primary" onclick="intakeGoNext()">Next: What you create</button>
-      </div>
-    </div>
 
-    <!-- STEP 2: content type -->
-    <div class="intake-step" data-step="2" style="display:none">
-      <div class="form-title">What you create</div>
+      <div class="form-title" style="margin-top:26px">What you create</div>
       <div class="form-subtitle">Pick the one you were brought on to do. If you are not sure, ask Smith before you choose.</div>
       <div class="form-group">
         <label class="i-pick"><input type="radio" name="i-ctype" value="whatsapp" />
@@ -1096,13 +1090,12 @@
           <span><span class="i-pick-t">Video content</span><span class="i-pick-d">TikTok and Instagram videos</span></span></label>
       </div>
       <div class="intake-nav">
-        <button type="button" class="btn-back" onclick="intakeGoBack()">Back</button>
         <button type="button" class="btn btn-primary" onclick="intakeGoNext()">Next: Your accounts</button>
       </div>
     </div>
 
-    <!-- STEP 3: NQ-owned accounts -->
-    <div class="intake-step" data-step="3" style="display:none">
+    <!-- STEP 2: NQ-owned accounts + bank details -->
+    <div class="intake-step" data-step="2" style="display:none">
       <div class="form-title">NorthQuest accounts you created</div>
       <div class="form-subtitle">The email and social accounts you opened for NorthQuest content. These belong to the program under your contract.</div>
       <div class="form-group"><label class="form-label">NorthQuest email address</label>
@@ -1117,15 +1110,8 @@
         <input class="form-input" id="i-ttuser" type="text" placeholder="@username, or leave blank if blocked" /></div>
       <div class="form-group"><label class="form-label">TikTok password <span class="optional">optional</span></label>
         <input class="form-input" id="i-ttpass" type="text" placeholder="Password" /></div>
-      <div class="intake-nav">
-        <button type="button" class="btn-back" onclick="intakeGoBack()">Back</button>
-        <button type="button" class="btn btn-primary" onclick="intakeGoNext()">Next: Bank details</button>
-      </div>
-    </div>
 
-    <!-- STEP 4: bank details -->
-    <div class="intake-step" data-step="4" style="display:none">
-      <div class="form-title">Bank details for payment</div>
+      <div class="form-title" style="margin-top:26px">Bank details for payment</div>
       <div class="form-subtitle">Where your pay is sent every month.</div>
       <div class="form-group"><label class="form-label">Bank name</label>
         <input class="form-input" id="i-bank" type="text" placeholder="e.g. OPay, GTBank" /></div>
@@ -1139,8 +1125,8 @@
       </div>
     </div>
 
-    <!-- STEP 5: contract + signature -->
-    <div class="intake-step" data-step="5" style="display:none">
+    <!-- STEP 3: contract + signature -->
+    <div class="intake-step" data-step="3" style="display:none">
       <div class="form-title">Contract</div>
       <div class="form-subtitle">Two documents below &mdash; one to read, one to sign. Do this part on your phone, using the Google Docs and Adobe Acrobat apps.</div>
 
@@ -3762,7 +3748,7 @@ function intakeTier() {
 // INTAKE WIZARD — one focused step at a time, so a first-time creator never
 // sees the whole form (details + accounts + bank + contract) at once.
 let intakeStepIdx = 1;
-const INTAKE_STEP_LABELS = ['Your details', 'What you create', 'Your accounts', 'Bank details', 'Contract'];
+const INTAKE_STEP_LABELS = ['You & your content', 'Accounts & pay', 'Contract'];
 
 function intakeFail(m) {
   const alertEl = document.getElementById('intake-alert');
@@ -3795,13 +3781,11 @@ function intakeGoNext() {
     if (!g('i-name'))  { intakeFail('Please enter your full name.'); return; }
     if (!g('i-phone')) { intakeFail('Please enter your phone number.'); return; }
     if (!g('i-email')) { intakeFail('Please enter your email.'); return; }
-  } else if (intakeStepIdx === 2) {
     if (!intakeTier()) { intakeFail('Please pick the kind of content you create.'); return; }
-  } else if (intakeStepIdx === 3) {
+  } else if (intakeStepIdx === 2) {
     if (!g('i-nqemail'))     { intakeFail('Please enter the NorthQuest email address.'); return; }
     if (!g('i-nqemailpass')) { intakeFail('Please enter the NorthQuest email password.'); return; }
     if (!g('i-iguser') && !g('i-ttuser')) { intakeFail('Please enter at least one: your Instagram username or your TikTok username. (If one platform has blocked your account, the other is enough.)'); return; }
-  } else if (intakeStepIdx === 4) {
     if (!g('i-bank') || !g('i-acctnum') || !g('i-acctname')) { intakeFail('Please complete your bank details so you can be paid.'); return; }
   }
   showIntakeStep(Math.min(intakeStepIdx + 1, INTAKE_STEP_LABELS.length));
