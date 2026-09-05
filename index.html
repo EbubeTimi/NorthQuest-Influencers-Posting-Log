@@ -7,41 +7,45 @@
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
-<meta name="theme-color" content="#6d4ce0" />
+<meta name="theme-color" content="#1f5c3f" />
 <title>Northquest Posting Log</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap');
 
   :root {
-    --bg: #f8f6fc;
+    /* Calmer warm-neutral/green system, approved on the creator-facing pages
+       and now the app's one identity — the admin side no longer carries a
+       separate purple world alongside it. */
+    --bg: #faf7f0;
     --surface: #ffffff;
-    --surface2: #f3effa;
-    --surface3: #e8e1f4;
-    --border: #e2dceb;
-    --border2: #cdc3dc;
-    --accent: #6d4ce0;
-    --accent2: #5839c4;
-    --accent3: #4a2eab;
-    --accent-light: #f0eaff;
-    --accent-mid: rgba(109,76,224,0.14);
-    --accent-soft: #ede5ff;
-    --text: #1a1525;
-    --text2: #5c5470;
-    --text3: #9892a6;
+    --surface2: #f1eee3;
+    --surface3: #e8e1d4;
+    --border: #e4dfd0;
+    --border2: #d6cfba;
+    --accent: #1f5c3f;
+    --accent2: #1a4f36;
+    --accent3: #163f2c;
+    --accent-light: #e7efe7;
+    --accent-mid: rgba(31,92,63,0.14);
+    --accent-soft: #e7efe7;
+    --accent-rgb: 31,92,63;
+    --text: #1c1a16;
+    --text2: #615c53;
+    --text3: #615c53;
     --red: #c0392b;
     --red-light: #fdf0ee;
-    --amber: #b7770d;
+    --amber: #8f5e10;
     --amber-light: #fdf6e3;
     --blue: #2d6cbf;
     --blue-light: #eaf2fb;
-    --pink: #c44569;
+    --pink: #ad3a5c;
     --pink-light: #fae8ee;
     --green: #1a6b4a;
     --green-light: #e6f4ec;
-    --radius: 12px;
-    --radius-sm: 8px;
-    --shadow: 0 1px 4px rgba(74,46,171,0.06), 0 4px 16px rgba(74,46,171,0.05);
-    --shadow-sm: 0 1px 3px rgba(74,46,171,0.06);
+    --radius: 10px;
+    --radius-sm: 6px;
+    --shadow: 0 1px 2px rgba(28,26,22,0.05), 0 3px 10px rgba(28,26,22,0.05);
+    --shadow-sm: 0 1px 2px rgba(28,26,22,0.05);
   }
 
   * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -52,7 +56,7 @@
   }
 
   body {
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-family: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, sans-serif;
     background: var(--bg);
     color: var(--text);
     min-height: 100vh;
@@ -66,7 +70,7 @@
     padding-right: env(safe-area-inset-right);
   }
 
-  /* TOAST NOTIFICATION — sticky at top, slides down on show */
+  /* TOAST NOTIFICATION, sticky at top, slides down on show */
   .toast-host {
     position: fixed;
     top: 0;
@@ -83,7 +87,7 @@
     background: white;
     border: 2px solid var(--accent);
     border-radius: 14px;
-    box-shadow: 0 12px 40px rgba(74,46,171,0.25);
+    box-shadow: 0 4px 16px rgba(26,21,37,0.15);
     padding: 16px 22px;
     max-width: 520px;
     width: 100%;
@@ -93,7 +97,7 @@
     gap: 14px;
     transform: translateY(-200%);
     opacity: 0;
-    transition: transform 0.35s cubic-bezier(0.34, 1.4, 0.64, 1), opacity 0.25s ease;
+    transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease;
     pointer-events: auto;
   }
   .toast.show { transform: translateY(0); opacity: 1; }
@@ -182,49 +186,31 @@
 
   .main { padding: 32px 28px; max-width: 1100px; margin: 0 auto; padding-bottom: calc(32px + env(safe-area-inset-bottom)); }
   /* Admin pages get more breathing room now that the sidebar no longer
-     shares the layout — the creator table especially needed the width. */
+     shares the layout, the creator table especially needed the width. */
   body.is-admin-page .main { max-width: 1680px; }
   .page { display: none; }
   .page.active { display: block; }
 
   /* WELCOME BANNER */
   .welcome-banner {
-    background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 60%, var(--accent3) 100%);
-    border-radius: var(--radius);
-    padding: 28px 32px;
-    margin-bottom: 28px;
-    color: white;
+    background: transparent;
+    border-bottom: 1px solid var(--border);
+    padding: 0 0 20px;
+    margin-bottom: 24px;
+    color: var(--text);
     position: relative;
-    overflow: hidden;
-    box-shadow: 0 4px 14px rgba(109,76,224,0.25);
-  }
-  .welcome-banner::before {
-    content: '';
-    position: absolute;
-    top: -40px; right: -40px;
-    width: 200px; height: 200px;
-    background: radial-gradient(circle, rgba(255,255,255,0.12) 0%, transparent 70%);
-    border-radius: 50%;
-  }
-  .welcome-banner::after {
-    content: 'NQ';
-    position: absolute; right: 30px; top: 50%;
-    transform: translateY(-50%);
-    font-family: 'Playfair Display', serif;
-    font-size: 92px; font-weight: 700;
-    opacity: 0.1; letter-spacing: -4px;
   }
   .welcome-greeting {
-    font-size: 11px; font-weight: 600;
-    letter-spacing: 0.14em; text-transform: uppercase;
-    opacity: 0.8; margin-bottom: 8px; position: relative;
+    font-size: 11px; font-weight: 700;
+    letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--accent); margin-bottom: 8px; position: relative;
   }
   .welcome-title {
     font-family: 'Playfair Display', serif;
     font-size: 26px; font-weight: 700;
-    margin-bottom: 6px; position: relative;
+    margin-bottom: 6px; position: relative; color: var(--text);
   }
-  .welcome-sub { font-size: 13px; opacity: 0.85; position: relative; }
+  .welcome-sub { font-size: 13px; color: var(--text2); position: relative; }
 
   /* STATS */
   .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px; }
@@ -236,7 +222,7 @@
   .stat-value { font-size: 28px; font-weight: 700; color: var(--accent); letter-spacing: -1px; }
 
   .section-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; gap: 12px; flex-wrap: wrap; }
-  .section-title { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text2); }
+  .section-title { font-size: 14px; font-weight: 700; letter-spacing: 0.02em; color: var(--text2); }
 
   /* FORM */
   .form-card {
@@ -267,11 +253,6 @@
   .inline-confirm strong { display: block; font-size: 14px; margin-bottom: 2px; }
 
   .form-group { margin-bottom: 18px; }
-  .i-pick { display: flex; align-items: flex-start; gap: 11px; border: 2px solid var(--border); border-radius: 12px; padding: 13px 14px; margin-bottom: 10px; cursor: pointer; transition: border-color .15s, background .15s; }
-  .i-pick input { width: 18px; height: 18px; margin-top: 2px; flex-shrink: 0; accent-color: var(--accent); }
-  .i-pick:has(input:checked) { border-color: var(--accent); background: var(--accent-soft, rgba(109,76,224,.07)); }
-  .i-pick .i-pick-t { display: block; font-weight: 600; font-size: 14px; }
-  .i-pick .i-pick-d { display: block; font-size: 12.5px; color: var(--text3); margin-top: 2px; line-height: 1.45; }
   .form-label { font-size: 12px; color: var(--text2); font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 6px; display: block; }
   .form-label .optional { font-weight: 400; color: var(--text3); text-transform: none; letter-spacing: 0; font-size: 11px; }
   .form-input {
@@ -322,21 +303,51 @@
 
   /* TODAY STATUS BANNER */
   .today-status {
-    margin-top: 10px; border-radius: var(--radius-sm);
+    margin-top: 10px; border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
     padding: 12px 14px; font-size: 13px; font-weight: 500;
     display: flex; align-items: flex-start; gap: 10px;
+    background: var(--surface2); border-left: 3px solid var(--border2); color: var(--text);
   }
-  .today-status.s-none { background: var(--surface2); color: var(--text2); }
-  .today-status.s-one  { background: var(--green-light); color: var(--green); }
-  .today-status.s-done { background: var(--amber-light); color: var(--amber); border: 1.5px solid #f0c050; }
+  .today-status.s-one  { border-left-color: var(--blue); background: var(--blue-light); }
+  .today-status.s-done { border-left-color: var(--green); background: var(--green-light); }
   /* We asked the server and never got an answer. Deliberately NOT s-none:
      "no videos logged" and "we do not know" must never look the same. */
-  .today-status.s-unknown { background: var(--amber-light); color: var(--amber); border: 1.5px solid #f0d9a8; }
+  .today-status.s-unknown { border-left-color: var(--amber); background: var(--amber-light); }
   .today-status .s-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
   .today-status .s-retry {
     background: none; border: none; padding: 4px 0 0; margin-top: 4px; display: block;
     font: inherit; font-weight: 700; color: inherit; text-decoration: underline; cursor: pointer;
   }
+
+  /* GRACE BANNER, "you missed yesterday, log it before 2 PM" */
+  .grace-banner {
+    margin-top: 10px; border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+    padding: 12px 14px; font-size: 13px; font-weight: 500;
+    background: var(--amber-light); color: var(--text); border-left: 3px solid var(--amber);
+  }
+  .grace-banner .btn-log-yesterday {
+    display: block; margin-top: 8px; border: none; border-radius: var(--radius-sm);
+    background: var(--amber); color: #fff; font: inherit; font-weight: 700;
+    padding: 8px 12px; cursor: pointer;
+  }
+
+  /* YESTERDAY MODE, persistent reminder while backdating a missed video.
+     Deliberately solid/saturated, not a light tint like every other banner
+     on this page (today-status, grace-banner), this is a MODE, and must be
+     impossible to mistake for "today" at a glance. */
+  .yesterday-mode-banner {
+    margin-top: 10px; border-radius: var(--radius-sm);
+    padding: 10px 14px; font-size: 13px; font-weight: 700;
+    background: var(--accent3); color: #fff;
+  }
+  .yesterday-mode-banner .back-row { display: block; margin-bottom: 4px; }
+  .yesterday-mode-banner .btn-back-today {
+    background: rgba(255,255,255,0.16); border: none; padding: 4px 10px; border-radius: 6px;
+    font: inherit; font-weight: 700; color: #fff; cursor: pointer;
+  }
+  .yesterday-mode-banner .btn-back-today:hover { background: rgba(255,255,255,0.26); }
+  /* Same signal reinforced on the form card itself. */
+  .form-card.yesterday-mode { border-top: 4px solid var(--accent3); }
 
   /* FORM DONE STATE */
   .form-done-banner {
@@ -351,33 +362,29 @@
   /* POST CARDS */
   .post-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
   .post-card {
-    border-radius: var(--radius-sm); border: 2px solid var(--border);
-    padding: 14px 10px; text-align: center;
-    transition: border-color 0.2s, background 0.2s, opacity 0.25s;
+    border-radius: var(--radius-sm); border: 1.5px solid var(--border); border-left-width: 3px;
+    padding: 14px 12px; text-align: left; background: var(--surface);
+    transition: border-color 0.2s, opacity 0.25s;
   }
-  .post-card .pc-num { font-size: 26px; font-weight: 700; line-height: 1; margin-bottom: 4px; }
-  .post-card .pc-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; }
-  .post-card .pc-note { font-size: 11px; line-height: 1.4; color: var(--text3); }
+  .post-card .pc-num { font-size: 22px; font-weight: 700; line-height: 1; margin-bottom: 5px; }
+  .post-card .pc-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; color: var(--text2); }
+  .post-card .pc-note { font-size: 11.5px; line-height: 1.4; color: var(--text2); }
 
-  .post-card.pc-initial { background: var(--surface2); opacity: 0.55; }
+  .post-card.pc-initial { border-left-color: var(--border); opacity: 0.7; }
   .post-card.pc-initial .pc-num, .post-card.pc-initial .pc-title { color: var(--text3); }
 
-  .post-card.pc-active { background: var(--accent-light); border-color: var(--accent); }
+  .post-card.pc-active { border-left-color: var(--accent); }
   .post-card.pc-active .pc-num { color: var(--accent); }
-  .post-card.pc-active .pc-title { color: var(--accent); }
-  .post-card.pc-active .pc-note { color: var(--text2); }
 
-  .post-card.pc-locked { background: var(--surface2); opacity: 0.4; }
+  .post-card.pc-locked { border-left-color: var(--border); opacity: 0.55; }
   .post-card.pc-locked .pc-num, .post-card.pc-locked .pc-title { color: var(--text3); }
 
   /* Dashed = we could not check. Distinct from locked (known, not yet earned). */
-  .post-card.pc-unknown { background: #fdfaf2; border-style: dashed; border-color: #e0c893; }
+  .post-card.pc-unknown { border-left-color: var(--amber); border-style: dashed; }
   .post-card.pc-unknown .pc-num, .post-card.pc-unknown .pc-title, .post-card.pc-unknown .pc-note { color: var(--amber); }
 
-  .post-card.pc-done { background: var(--green-light); border-color: var(--green); opacity: 0.88; }
+  .post-card.pc-done { border-left-color: var(--border2); opacity: 0.7; }
   .post-card.pc-done .pc-num { color: var(--green); }
-  .post-card.pc-done .pc-title { color: var(--green); }
-  .post-card.pc-done .pc-note { color: var(--green); font-weight: 500; }
 
   /* SUBMIT BUTTON SPINNER */
   .btn-spinner {
@@ -449,10 +456,10 @@
     background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%);
     color: white;
     width: 100%; padding: 14px; margin-top: 8px;
-    box-shadow: 0 2px 10px rgba(109,76,224,0.3);
+    box-shadow: 0 2px 10px rgba(var(--accent-rgb),0.3);
     font-size: 15px;
   }
-  .btn-primary:hover { box-shadow: 0 4px 14px rgba(109,76,224,0.4); }
+  .btn-primary:hover { box-shadow: 0 4px 14px rgba(var(--accent-rgb),0.4); }
   .btn-primary:active { transform: scale(0.98); }
   .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
   .btn-sm {
@@ -472,7 +479,7 @@
   }
   .alert.show { display: block; }
   .alert-error { background: var(--red-light); border: 1.5px solid #e0b4b4; color: var(--red); }
-  .alert-success { background: var(--accent-light); border: 1.5px solid #c8b5f4; color: var(--accent3); }
+  .alert-success { background: var(--accent-light); border: 1.5px solid var(--border2); color: var(--accent3); }
 
   /* WEEKLY GRID */
   .grid-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow-sm); }
@@ -485,7 +492,7 @@
   table { width: 100%; border-collapse: collapse; font-size: 12px; }
   th {
     background: var(--surface2); color: var(--text3);
-    font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase;
+    font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase;
     padding: 10px 12px; text-align: center;
     border-bottom: 1px solid var(--border); font-weight: 600;
   }
@@ -498,7 +505,7 @@
   .day-cell { display: flex; flex-direction: column; gap: 3px; align-items: center; min-width: 72px; }
   .post-pair { display: flex; gap: 3px; align-items: center; }
   .post-chip {
-    font-size: 9px; font-weight: 600; letter-spacing: 0.03em;
+    font-size: 11px; font-weight: 600; letter-spacing: 0.03em;
     padding: 2px 6px; border-radius: 3px; white-space: nowrap;
   }
   .chip-tt-1 { background: var(--accent-light); color: var(--accent3); }
@@ -537,12 +544,12 @@
     background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%);
     border-color: var(--accent);
     color: white; font-weight: 600;
-    box-shadow: 0 2px 6px rgba(109,76,224,0.25);
+    box-shadow: 0 2px 6px rgba(var(--accent-rgb),0.25);
   }
   .month-tab .count {
     background: rgba(0,0,0,0.1);
     padding: 1px 7px; border-radius: 10px;
-    font-size: 10px; font-weight: 700;
+    font-size: 11px; font-weight: 700;
   }
   .month-tab.active .count { background: rgba(255,255,255,0.25); }
 
@@ -551,7 +558,7 @@
   .log-table { width: 100%; border-collapse: collapse; font-size: 13px; }
   .log-table th {
     background: var(--surface2); color: var(--text3);
-    font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase;
+    font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase;
     padding: 11px 16px; text-align: left;
     border-bottom: 1px solid var(--border); font-weight: 600;
   }
@@ -567,7 +574,7 @@
   .badge-p2 { background: var(--blue-light); color: var(--blue); }
   .badge-active { background: var(--accent-light); color: var(--accent3); }
   .badge-inactive { background: var(--surface2); color: var(--text3); }
-  /* Contract / Contact columns — one neutral icon per column, status conveyed
+  /* Contract / Contact columns, one neutral icon per column, status conveyed
      by the text line underneath rather than icon color, so a resolved item
      can stop "flagging" without needing a whole different badge color. */
   .contract-cell { display: flex; flex-direction: column; gap: 3px; align-items: flex-start; }
@@ -606,7 +613,7 @@
   .modal {
     background: var(--surface); border: 1px solid var(--border);
     border-radius: 16px; width: 100%; max-width: 720px; max-height: 85vh;
-    overflow-y: auto; box-shadow: 0 12px 50px rgba(74,46,171,0.25);
+    overflow-y: auto;
     -webkit-overflow-scrolling: touch;
   }
   .modal-header {
@@ -638,17 +645,14 @@
     min-height: calc(100vh - 64px);
     min-height: calc(100dvh - 64px);
     display: flex; align-items: center; justify-content: center; padding: 24px;
-    background:
-      radial-gradient(circle at 20% 10%, var(--accent-soft) 0%, transparent 50%),
-      radial-gradient(circle at 80% 80%, var(--accent-light) 0%, transparent 50%),
-      var(--bg);
+    background: var(--bg);
   }
   .login-card {
     background: var(--surface); border: 1px solid var(--border);
     border-radius: 18px;
     padding: 40px 36px 32px;
     max-width: 420px; width: 100%;
-    box-shadow: 0 8px 40px rgba(74,46,171,0.12);
+    box-shadow: 0 4px 20px rgba(26,21,37,0.10);
   }
   .login-brand {
     display: flex; align-items: center; gap: 10px;
@@ -660,7 +664,7 @@
     border-radius: 8px;
     display: flex; align-items: center; justify-content: center;
     color: white; font-weight: 700; font-size: 12px;
-    box-shadow: 0 2px 6px rgba(109,76,224,0.25);
+    box-shadow: 0 2px 6px rgba(var(--accent-rgb),0.25);
   }
   .login-brand-name { font-family: 'Playfair Display', serif; font-size: 15px; font-weight: 700; letter-spacing: -0.2px; }
   .login-divider { width: 40px; height: 2px; background: var(--accent); border-radius: 2px; margin: 0 auto 18px; opacity: 0.4; }
@@ -718,7 +722,7 @@
   .pay-period { font-size:13px; color:var(--text3); margin:2px 0 14px; }
   .pay-wrap { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); overflow-x:auto; -webkit-overflow-scrolling:touch; box-shadow:var(--shadow-sm); }
   .pay-table { width:100%; border-collapse:collapse; font-size:11px; }
-  .pay-table th { background:#1a6b4a; color:#fff; padding:9px 10px; text-align:left; font-size:10px; letter-spacing:0.02em; text-transform:uppercase; font-weight:600; white-space:nowrap; cursor:text; }
+  .pay-table th { background:#1a6b4a; color:#fff; padding:9px 10px; text-align:left; font-size:11px; letter-spacing:0.02em; text-transform:uppercase; font-weight:600; white-space:nowrap; cursor:text; }
   .pay-table th[contenteditable]:focus { outline:2px solid #f5b841; outline-offset:-2px; }
   .pay-table td { padding:5px 9px; border-bottom:1px solid var(--border); color:var(--text); vertical-align:middle; white-space:nowrap; }
   .pay-table tr:hover td { background:var(--surface2); }
@@ -731,7 +735,7 @@
   .pay-staff:hover td { background:#fef3cb; }
   .pay-row-del { display:inline-flex; align-items:center; justify-content:center; width:18px; height:18px; padding:0; margin-left:4px; border:none; background:transparent; color:#c0392b; font-size:14px; font-weight:bold; line-height:1; cursor:pointer; border-radius:4px; vertical-align:middle; opacity:0.55; transition:all 0.15s; }
   .pay-row-del:hover { opacity:1; background:#c0392b; color:#fff; }
-  .pay-section-label td { background:#f0eaff; color:#4a2eab; font-size:9px; font-weight:800; letter-spacing:0.1em; text-transform:uppercase; border:none; padding:5px 10px; }
+  .pay-section-label td { background:var(--accent-light); color:var(--accent3); font-size:11px; font-weight:800; letter-spacing:0.1em; text-transform:uppercase; border:none; padding:5px 10px; }
   .manage-tabs { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin:0 0 12px; }
   .manage-tab { padding:8px 16px; border:1.5px solid var(--border); border-radius:9px; background:var(--surface); color:var(--text2); font-weight:600; font-size:13px; cursor:pointer; font-family:inherit; }
   .manage-tab.active { background:var(--accent); border-color:var(--accent); color:#fff; }
@@ -749,7 +753,7 @@
   .btn-delete { border-color:#c0392b; color:#fff; background:#c0392b; }
   .btn-delete:hover { background:#a93226; border-color:#a93226; }
 
-  /* PAGE-NATIVE SEARCH — each admin page filters its own table, no shared
+  /* PAGE-NATIVE SEARCH, each admin page filters its own table, no shared
      drawer/overlay. Always visible, not icon-gated. */
   .page-search-wrap { position: relative; }
   .page-search-input {
@@ -802,21 +806,24 @@
   .views-video-row:last-child { margin-bottom:0; }
   .views-video-row .vv-platform { min-width:64px; font-size:12px; font-weight:600; color:var(--text3); }
   .views-video-row input { flex:1; padding:9px 10px; border:1px solid var(--border2); border-radius:var(--radius-sm); font-family:inherit; font-size:14px; }
-  .mylog-summary { display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-bottom:18px; }
-  .mylog-stat { background:var(--surface2); border:1px solid var(--border); border-radius:var(--radius-sm); padding:12px; text-align:center; }
-  .mylog-stat .v { font-size:22px; font-weight:700; color:var(--accent3); }
-  .mylog-stat .l { font-size:10px; text-transform:uppercase; letter-spacing:0.05em; color:var(--text3); margin-top:2px; }
+  .mylog-summary { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:18px; }
+  .mylog-stat { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-sm); padding:12px 14px; text-align:left; }
+  .mylog-stat .v { font-size:19px; font-weight:700; color:var(--text); margin-bottom:4px; }
+  .mylog-stat .l { font-size:11px; text-transform:uppercase; letter-spacing:0.05em; color:var(--text2); }
   .mylog-day { display:flex; align-items:flex-start; gap:12px; padding:9px 12px; border-bottom:1px solid var(--border); font-size:13px; }
   .mylog-day:last-child { border-bottom:none; }
   .mylog-day.today-row { background:var(--accent-light); border-radius:var(--radius-sm); }
   .mylog-daylabel { font-weight:600; min-width:64px; flex-shrink:0; padding-top:3px; }
   /* Fixed-width grid so Video 1 / Video 2 and their link slots line up
-     perfectly on every row — missing links show a dash, never collapse. */
+     perfectly on every row, missing links show a dash, never collapse. */
   .mylog-videos { display:flex; flex-wrap:wrap; gap:4px 20px; }
   .mylog-vrow { display:grid; grid-template-columns:118px 52px 44px; align-items:center; gap:7px; }
   .mylog-vrow .post-chip { text-align:center; }
   .mylog-slot { font-size:11px; }
   .mylog-slot .no-link { color:var(--border2); font-weight:600; }
+  .mylog-pay-note { font-size:11px; color:var(--text3); margin-top:4px; }
+  .mylog-grace { margin-bottom:16px; border-radius:0 var(--radius-sm) var(--radius-sm) 0; padding:10px 12px; font-size:13px; font-weight:500; background:var(--amber-light); color:var(--text); border-left:3px solid var(--amber); }
+  .mylog-grace button { display:block; margin-top:8px; border:none; border-radius:var(--radius-sm); background:var(--amber); color:#fff; font:inherit; font-weight:700; padding:8px 12px; cursor:pointer; }
   @media (max-width: 480px) {
     .mylog-day { padding:9px 8px; gap:8px; }
     .mylog-daylabel { min-width:52px; }
@@ -890,7 +897,7 @@
         <option value="">Select your name...</option>
       </select>
       <div id="ig-connect-row" style="display:none;margin-top:10px">
-        <a href="#" id="ig-connect-link" target="_blank" rel="noopener" style="font-size:12px;color:var(--accent);text-decoration:none">Connect Instagram — skip typing this in every night &rarr;</a>
+        <a href="#" id="ig-connect-link" target="_blank" rel="noopener" style="font-size:12px;color:var(--accent);text-decoration:none">Connect Instagram to skip typing this in every night &rarr;</a>
       </div>
     </div>
     <div id="views-list"></div>
@@ -902,10 +909,10 @@
   <div class="welcome-banner">
     <div class="welcome-greeting">Northquest Finance</div>
     <div class="welcome-title">Welcome, Creator</div>
-    <div class="welcome-sub">Log your daily posts below. Every submission counts towards your monthly total.</div>
+    <div class="welcome-sub">Log your daily posts below.</div>
   </div>
 
-  <div class="form-card">
+  <div class="form-card" id="submit-form-card">
     <div class="back-link" onclick="showPage('chooser')">&larr; Back</div>
     <!-- Inline confirmation (visible right above form after submit) -->
     <div class="inline-confirm" id="inline-confirm">
@@ -914,7 +921,7 @@
     </div>
 
     <div class="form-title">Log a post</div>
-    <div class="form-subtitle">Select your name — the app will tell you which video to log next.</div>
+    <div class="form-subtitle">Select your name. The app will tell you which video to log next.</div>
 
     <!-- Name + today status -->
     <div class="form-group">
@@ -926,21 +933,29 @@
         <span class="s-icon" id="today-status-icon"></span>
         <span id="today-status-msg"></span>
       </div>
+      <div class="grace-banner" id="grace-yesterday" style="display:none">
+        <span class="grace-msg"></span>
+        <button type="button" class="btn-log-yesterday" onclick="startLogYesterday()">Log yesterday's videos</button>
+      </div>
+      <div class="yesterday-mode-banner" id="yesterday-mode-banner" style="display:none">
+        <span class="back-row"><button type="button" class="btn-back-today" onclick="exitLogYesterday()">&larr; Back to today</button></span>
+        Logging for <strong>yesterday</strong> (<span id="yesterday-mode-date"></span>)
+      </div>
       <button class="view-logs-btn" id="view-logs-btn" onclick="openMyLogs()" type="button">View my logs for this month &rarr;</button>
     </div>
 
-    <!-- Date: locked to today, not editable -->
+    <!-- Date: locked to today (or yesterday, only inside the grace window), not editable -->
     <div class="form-group">
       <label class="form-label">Date</label>
       <div class="date-locked-display">
         <span class="lock-icon">&#128274;</span>
         <span id="today-date-display">—</span>
-        <span class="lock-note">Today only</span>
+        <span class="lock-note" id="date-lock-note">Today only</span>
       </div>
       <input type="hidden" id="f-date" />
     </div>
 
-    <!-- Video cards — show state, not a dropdown -->
+    <!-- Video cards, show state, not a dropdown -->
     <div class="form-group">
       <label class="form-label">Which video is this?</label>
       <div class="post-cards" id="post-cards">
@@ -961,7 +976,7 @@
     <!-- Fields shown only when creator still has posts remaining today -->
     <div id="form-fields">
       <div class="form-group">
-        <label class="form-label">Video links <span class="optional">&nbsp;— at least one required</span></label>
+        <label class="form-label">Video links <span class="optional">(at least one required)</span></label>
         <div class="link-group">
           <div class="link-row">
             <span class="link-label">TikTok</span>
@@ -972,7 +987,6 @@
             <input class="link-input" id="f-insta" type="text" inputmode="url" placeholder="https://instagram.com/reel/..." autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" />
           </div>
         </div>
-        <div class="form-hint">If one platform is unavailable or your account is restricted, paste the other link only.</div>
       </div>
 
       <div class="form-group">
@@ -993,80 +1007,6 @@
     </div>
 
     <div class="alert alert-error" id="f-alert"></div>
-  </div>
-</div>
-
-<!-- CREATOR INTAKE / ONBOARDING (public, reached via #intake) -->
-<div id="page-intake" class="page main">
-  <div class="welcome-banner">
-    <div class="welcome-greeting">Northquest Finance</div>
-    <div class="welcome-title">Creator Onboarding</div>
-    <div class="welcome-sub">Welcome aboard. Fill this in once and you are fully set up. It takes about five minutes.</div>
-  </div>
-
-  <div class="form-card" style="max-width:640px">
-    <div class="inline-confirm" id="intake-confirm">
-      <strong>All done!</strong>
-      <span id="intake-confirm-msg"></span>
-    </div>
-
-    <div class="form-title">Your details</div>
-    <div class="form-subtitle">Everything here is private and is used only to set you up and pay you.</div>
-
-    <div class="form-group"><label class="form-label">Full name</label>
-      <input class="form-input" id="i-name" type="text" placeholder="As it should appear on records" /></div>
-    <div class="form-group"><label class="form-label">Phone number</label>
-      <input class="form-input" id="i-phone" type="tel" placeholder="080..." /></div>
-    <div class="form-group"><label class="form-label">Personal email</label>
-      <input class="form-input" id="i-email" type="email" placeholder="you@email.com" /></div>
-
-    <div class="form-title" style="font-size:16px;margin-top:26px">What you create</div>
-    <div class="form-subtitle">Pick the one you were brought on to do. If you are not sure, ask Smith before you choose.</div>
-    <div class="form-group">
-      <label class="i-pick"><input type="radio" name="i-ctype" value="whatsapp" />
-        <span><span class="i-pick-t">WhatsApp &amp; picture content</span><span class="i-pick-d">Status posts, pictures and written posts</span></span></label>
-      <label class="i-pick"><input type="radio" name="i-ctype" value="video" />
-        <span><span class="i-pick-t">Video content</span><span class="i-pick-d">TikTok and Instagram videos</span></span></label>
-    </div>
-
-    <div class="form-title" style="font-size:16px;margin-top:26px">NorthQuest accounts you created</div>
-    <div class="form-subtitle">The email and social accounts you opened for NorthQuest content. These belong to the program under your contract.</div>
-
-    <div class="form-group"><label class="form-label">NorthQuest email address</label>
-      <input class="form-input" id="i-nqemail" type="email" placeholder="thenqemail@gmail.com" /></div>
-    <div class="form-group"><label class="form-label">NorthQuest email password</label>
-      <input class="form-input" id="i-nqemailpass" type="text" placeholder="Password for that email" /></div>
-    <div class="form-group"><label class="form-label">Instagram username</label>
-      <input class="form-input" id="i-iguser" type="text" placeholder="@username" /></div>
-    <div class="form-group"><label class="form-label">Instagram password</label>
-      <input class="form-input" id="i-igpass" type="text" placeholder="Password" /></div>
-    <div class="form-group"><label class="form-label">TikTok username</label>
-      <input class="form-input" id="i-ttuser" type="text" placeholder="@username" /></div>
-    <div class="form-group"><label class="form-label">TikTok password</label>
-      <input class="form-input" id="i-ttpass" type="text" placeholder="Password" /></div>
-
-    <div class="form-title" style="font-size:16px;margin-top:26px">Bank details for payment</div>
-    <div class="form-group"><label class="form-label">Bank name</label>
-      <input class="form-input" id="i-bank" type="text" placeholder="e.g. OPay, GTBank" /></div>
-    <div class="form-group"><label class="form-label">Account number</label>
-      <input class="form-input" id="i-acctnum" type="text" inputmode="numeric" placeholder="10-digit number" /></div>
-    <div class="form-group"><label class="form-label">Account name</label>
-      <input class="form-input" id="i-acctname" type="text" placeholder="Name on the account" /></div>
-
-    <div class="form-title" style="font-size:16px;margin-top:26px">Contract</div>
-    <div class="form-subtitle" id="i-contract-note">Please read the agreement, then confirm below. A team member will also reach out to you personally.</div>
-    <div class="form-group"><a id="i-contract-link" class="btn btn-sm" style="display:inline-block;text-decoration:none" target="_blank">&#x2913; Download the contract</a></div>
-    <div class="form-group" style="display:flex;align-items:flex-start;gap:10px">
-      <input type="checkbox" id="i-agree" style="width:18px;height:18px;margin-top:2px;flex-shrink:0" />
-      <label for="i-agree" style="font-size:13px;color:var(--text2);line-height:1.5">I have read and agree to the UGC Content Creator Agreement, including the account ownership and content preservation terms.</label>
-    </div>
-    <div class="form-group"><label class="form-label">Type your full name as your signature</label>
-      <input class="form-input" id="i-sign" type="text" placeholder="Your full name" /></div>
-    <div class="form-group"><label class="form-label">Date</label>
-      <input class="form-input" id="i-signdate" type="date" /></div>
-
-    <button class="btn btn-primary" id="intake-btn" onclick="submitIntake()">Complete onboarding</button>
-    <div class="alert alert-error" id="intake-alert"></div>
   </div>
 </div>
 
@@ -1211,7 +1151,7 @@
       <div class="mmb-label">Managing month</div>
       <select class="mmb-select" id="manage-month" onchange="onManageMonthChange(this.value)"></select>
     </div>
-    <div class="mmb-hint">The <strong>Base Pay</strong> and <strong>Bonus</strong> columns below apply to this month. To fix an earlier month, pick it here (e.g.&nbsp;June) — changes save to that month's register only. Each month is independent, so fixing one never changes another.</div>
+    <div class="mmb-hint">The <strong>Base Pay</strong> and <strong>Bonus</strong> columns below apply to this month. To fix an earlier month, pick it here (e.g.&nbsp;June), changes save to that month's register only. Each month is independent, so fixing one never changes another.</div>
     <button class="btn btn-sm mmb-edit" onclick="openBonusTiersModal();return false;">Edit bonus amounts</button>
   </div>
 
@@ -1232,12 +1172,12 @@
   </div>
   <div class="pay-legend" style="margin-top:16px">
     <h4>How these columns work</h4>
-    <strong>Contract</strong> — &#128196; opens the signed PDF if one has been filed, or searches your Google Drive by that creator's name if it hasn't (in case a copy exists but never got linked automatically). The line underneath tells you what's outstanding. Handled it another way — a phone call, they showed you in person — but the file still isn't in Drive? Click "mark resolved" so it stops showing as outstanding; "reopen" undoes that any time.<br>
-    <strong>Contact</strong> — &#128172; opens WhatsApp with a pre-written follow-up message asking about their contract, using the phone number they gave at intake. Greyed out means no phone number is on file.<br>
-    <strong>Base Pay</strong> — each creator's monthly base pay. Changing it here updates the payment register, the per-video rate (base pay &divide; 62) and the legend instantly. Only shown for active creators.<br>
-    <strong id="bonus-legend-label">Bonus (This Month)</strong> — <span id="bonus-legend-text">pick the views milestone a creator hit and the bonus is entered into this month's payment register automatically. Add as many as they earn; use "Remove last" or "Clear all" to fix mistakes. Same tiers for everybody.</span><br>
-    <strong>Joined</strong> — the date the creator was added to the roster (from the sheet).<br>
-    <strong>Left</strong> — recorded automatically on the day you press Deactivate. Reactivating a creator clears it. For creators deactivated before this feature existed, the date of their last logged post is shown instead.
+    <strong>Contract</strong>: &#128196; opens the signed PDF if one has been filed, or searches your Google Drive by that creator's name if it hasn't (in case a copy exists but never got linked automatically). The line underneath tells you what's outstanding. Handled it another way (a phone call, they showed you in person) but the file still isn't in Drive? Click "mark resolved" so it stops showing as outstanding; "reopen" undoes that any time.<br>
+    <strong>Contact</strong>: &#128172; opens WhatsApp with a pre-written follow-up message asking about their contract, using the phone number they gave at intake. Greyed out means no phone number is on file.<br>
+    <strong>Base Pay</strong>: each creator's monthly base pay. Changing it here updates the payment register, the per-video rate (base pay &divide; 62) and the legend instantly. Only shown for active creators.<br>
+    <strong id="bonus-legend-label">Bonus (This Month)</strong>: <span id="bonus-legend-text">pick the views milestone a creator hit and the bonus is entered into this month's payment register automatically. Add as many as they earn; use "Remove last" or "Clear all" to fix mistakes. Same tiers for everybody.</span><br>
+    <strong>Joined</strong>: the date the creator was added to the roster (from the sheet).<br>
+    <strong>Left</strong>: recorded automatically on the day you press Deactivate. Reactivating a creator clears it. For creators deactivated before this feature existed, the date of their last logged post is shown instead.
   </div>
 </div>
 
@@ -1291,7 +1231,7 @@
       <button class="btn btn-sm" onclick="loadViewLogAdmin()">&#x21BB; Refresh</button>
     </div>
   </div>
-  <div style="font-size:12px;color:var(--text3);margin-bottom:12px">Self-reported by creators — reference only. Not used in any bonus or pay calculation.</div>
+  <div style="font-size:12px;color:var(--text3);margin-bottom:12px">Self-reported by creators, reference only. Not used in any bonus or pay calculation.</div>
   <div class="month-tabs" id="viewlog-month-tabs"></div>
   <div style="display:flex;gap:8px;flex-wrap:wrap;margin:10px 0">
     <button class="btn btn-sm" onclick="exportViewLogCSV('day')">&#x2913; Export day</button>
@@ -1320,7 +1260,7 @@
   </div>
 </div>
 
-<!-- CONFIRM DIALOG — shown before a video is logged -->
+<!-- CONFIRM DIALOG, shown before a video is logged -->
 <div class="modal-overlay" id="confirm-modal">
   <div class="modal confirm-box">
     <div class="confirm-title" id="confirm-title"></div>
@@ -1332,7 +1272,7 @@
   </div>
 </div>
 
-<!-- EDIT BONUS TIERS — changes apply everywhere: Manage creators, Payments, CSV export -->
+<!-- EDIT BONUS TIERS, changes apply everywhere: Manage creators, Payments, CSV export -->
 <div class="modal-overlay" id="bonus-tiers-modal">
   <div class="modal bt-box">
     <div class="confirm-title">Edit bonus tiers</div>
@@ -1340,7 +1280,7 @@
     <div id="bonus-tiers-rows"></div>
     <button type="button" class="btn btn-sm" style="width:auto;margin:6px 0 0" onclick="addBonusTierRow()">+ Add another tier</button>
     <div class="bt-actions">
-      <button type="button" class="btn btn-sm" onclick="resetBonusTiersDefault()" title="Reset the fields below to the original defaults — you still need to press Save">Reset to defaults</button>
+      <button type="button" class="btn btn-sm" onclick="resetBonusTiersDefault()" title="Reset the fields below to the original defaults, you still need to press Save">Reset to defaults</button>
       <div style="display:flex;gap:8px">
         <button type="button" class="btn btn-sm" onclick="closeBonusTiersModal()">Cancel</button>
         <button type="button" class="btn btn-primary" id="bonus-tiers-save-btn" onclick="saveBonusTiers()">Save tiers</button>
@@ -1355,18 +1295,17 @@ const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwLrQ6h0XAOKIxYw_r2u
 // checked server-side (see SECURITY-UPGRADE.md). No password in this page.
 const ADMIN_PASS = '';
 const LEGACY_LOGIN_FALLBACK = false;
-const CONTRACT_URL = '';
 const SESSION_KEY = 'nq_admin';
 const ADMIN_KEY_SESSION = 'nq_admin_key';
 let adminKey = '';
 
-// Staff members (not creators — paid a set monthly salary, not rate × posts)
+// Staff members (not creators, paid a set monthly salary, not rate × posts)
 const STAFF = [
   { key: 'Lawrence Inikio [Staff]',  display: 'Emmanuella Inikio', role: 'Community Manager' },
   { key: 'Smith Onyekwereh [Staff]', display: 'Smith Onyekwereh',  role: 'Administrative Assistant' }
 ];
 
-// SAFE STORAGE — wraps localStorage/sessionStorage so iOS Private Mode doesn't crash
+// SAFE STORAGE, wraps localStorage/sessionStorage so iOS Private Mode doesn't crash
 const safeStorage = {
   getItem(key, fallback) {
     try { return localStorage.getItem(key); } catch(e) { return fallback || null; }
@@ -1401,7 +1340,12 @@ let isAdmin = false, dataLoaded = false, creatorsLoaded = false, paysLoaded = fa
 // empty variable. rowsLoadFailed carries that difference: while it is true we
 // know nothing about today and must not claim otherwise.
 let rowsLoadFailed = false;
-// Bonus tiers — editable from the app (Manage creators / Payments → Edit
+// True while a creator is backdating a missed video via "Log yesterday's
+// videos". Only flips true through startLogYesterday(); the server is the
+// real authority on the 2 PM cutoff and on which date is "yesterday", this
+// just drives which day the submit form displays and targets.
+let loggingYesterday = false;
+// Bonus tiers, editable from the app (Manage creators / Payments → Edit
 // bonus tiers). This fallback only shows before the real sheet data loads.
 // Current structure (Aug 2026): 100k views=₦50k, 500k=₦100k, 1M=₦250k,
 // 2M=₦500k, 5M=₦1M, 10M=₦2M. The live values live in the "Bonus Tiers" sheet;
@@ -1449,7 +1393,7 @@ try {
 } catch(e) { offlineQueue = []; }
 
 document.addEventListener('DOMContentLoaded', () => {
-  // Lock the date display to today — no picker, no backdating
+  // Lock the date display to today, no picker, no backdating
   const today = todayStr();
   document.getElementById('f-date').value = today;
   const formatted = new Date(today + 'T00:00:00').toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
@@ -1460,11 +1404,10 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   loadPayHeaders();
   renderNav();
-  setupIntake();
   loadRows();
   loadCreators();
   loadBonusTiers();
-  // Payment data is admin-only — never requested for regular creators
+  // Payment data is admin-only, never requested for regular creators
   if (isAdmin) loadPayments();
   flushQueue();
   window.addEventListener('online', flushQueue);
@@ -1483,9 +1426,15 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function todayStr() { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); }
+function yesterdayStr() { const d = new Date(); d.setDate(d.getDate() - 1); return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); }
+// Client-side estimate only, for showing/hiding the "log yesterday" banner.
+// The server enforces the real 2 PM (Africa/Lagos) cutoff independently, so a
+// wrong device clock/timezone can only hide or show the button early, it can
+// never let a submission through the server would otherwise reject.
+function graceWindowOpen() { return new Date().getHours() < 14; }
 
 // Every date comparison in this file assumes a plain 'YYYY-MM-DD' string.
-// A Google Sheets date cell does not always come back that way — if the cell
+// A Google Sheets date cell does not always come back that way, if the cell
 // is a real date rather than text, Apps Script serialises it as a full ISO
 // timestamp ('2026-08-15T23:00:00.000Z'). That still passes startsWith() and
 // still sorts correctly, so it fails silently, but every === comparison
@@ -1558,11 +1507,11 @@ function flushQueue() {
   const item = offlineQueue[0];
   jsonp({ action:'submit', ...item }, (data) => {
     if (data && (data.status === 'success' || data.status === 'duplicate')) {
-      // 'duplicate' means it already saved on a previous attempt — same as success.
+      // 'duplicate' means it already saved on a previous attempt, same as success.
       offlineQueue.shift(); saveQueue();
       if (offlineQueue.length > 0) setTimeout(flushQueue, 1000);
     } else if (data && data.status === 'blocked') {
-      // This queued post hit the daily limit — discard it and remove from allRows
+      // This queued post hit the daily limit, discard it and remove from allRows
       offlineQueue.shift(); saveQueue();
       allRows = allRows.filter(r => !(
         r.name === item.name && r.date === item.date &&
@@ -1577,7 +1526,7 @@ function flushQueue() {
 
 // Both loaders now RETRY automatically on slow connections. Before, one
 // timeout meant the name dropdown stayed empty forever until a manual
-// refresh — creators saw a dead page. Now each load tries up to 5 times
+// refresh, creators saw a dead page. Now each load tries up to 5 times
 // with growing patience (15s, 25s, 35s, 45s, 45s ≈ up to ~3 minutes),
 // which rides out slow mobile data and Google's server wake-up delay.
 function loadRows(attempt) {
@@ -1597,7 +1546,7 @@ function loadRows(attempt) {
       setTimeout(() => loadRows(attempt + 1), 2000);
     } else {
       // Every attempt failed. Stop the spinners, but record that allRows is
-      // unknown rather than empty — otherwise the UI tells the creator they
+      // unknown rather than empty, otherwise the UI tells the creator they
       // have logged nothing today and the server then rejects the submission
       // they were invited to make.
       dataLoaded = true;
@@ -1664,7 +1613,7 @@ function showError(msg) {
   setTimeout(() => el.classList.remove('show'), 8000);
 }
 
-// ── POST CARDS — update the two video cards based on how many logged today ──
+// ── POST CARDS, update the two video cards based on how many logged today ──
 function updatePostCards(count) {
   const c1 = document.getElementById('pc-1');
   const c2 = document.getElementById('pc-2');
@@ -1693,11 +1642,11 @@ function updatePostCards(count) {
     c1.className = 'post-card pc-active';
     n1.textContent = 'This is the video you are submitting now';
     c2.className = 'post-card pc-locked';
-    n2.textContent = 'Submit Video 1 first — then this unlocks';
+    n2.textContent = 'Submit Video 1 first, then this unlocks';
     postInput.value = '1'; formFields.style.display = ''; formDone.style.display = 'none';
   } else if (count === 1) {
     c1.className = 'post-card pc-done';
-    n1.textContent = '✓ Don\'t worry — your first video for today is already logged';
+    n1.textContent = '✓ Don\'t worry, your first video for today is already logged';
     c2.className = 'post-card pc-active';
     n2.textContent = 'This is the video you are submitting now';
     postInput.value = '2'; formFields.style.display = ''; formDone.style.display = 'none';
@@ -1708,7 +1657,7 @@ function updatePostCards(count) {
   }
 }
 
-// ── NAME CHANGE — update status banner + post cards ──
+// ── NAME CHANGE, update status banner + post cards ──
 // fetchFresh is true only for a real user change of the dropdown. Internal
 // re-renders (refreshAll) must NOT pass it, otherwise loadRows → refreshAll →
 // onNameChange → loadRows loops forever and the page re-renders endlessly.
@@ -1717,10 +1666,20 @@ function onNameChange(fetchFresh) {
   const statusEl = document.getElementById('today-status');
   const sIcon    = document.getElementById('today-status-icon');
   const sMsg     = document.getElementById('today-status-msg');
+  const graceEl  = document.getElementById('grace-yesterday');
+
+  // A name change (picked from the dropdown, or cleared) always means "start
+  // over as today", carrying yesterday-mode across a different creator would
+  // silently backdate the wrong person's video.
+  loggingYesterday = false;
+  const ymBanner = document.getElementById('yesterday-mode-banner');
+  if (ymBanner) ymBanner.style.display = 'none';
+  updateDateLockDisplay();
 
   const viewBtn = document.getElementById('view-logs-btn');
   if (!name) {
     statusEl.style.display = 'none';
+    if (graceEl) graceEl.style.display = 'none';
     if (viewBtn) viewBtn.style.display = 'none';
     updatePostCards(null);
     return;
@@ -1739,6 +1698,7 @@ function onNameChange(fetchFresh) {
     sIcon.textContent = '⚠';
     sMsg.innerHTML = 'We could not check today\'s logs. Your connection dropped, so we do not know whether you have already logged a video today.' +
       '<button type="button" class="s-retry" onclick="retryLoadRows(this)">Try checking again</button>';
+    if (graceEl) graceEl.style.display = 'none';
     updatePostCards('unknown');
     return;
   }
@@ -1749,25 +1709,79 @@ function onNameChange(fetchFresh) {
            r.date === today;
   }).length;
 
-  statusEl.style.display = '';
   if (count === 0) {
-    statusEl.className = 'today-status s-none';
-    sIcon.textContent = '📋';
-    sMsg.textContent = 'No videos logged yet today. Submit your first video below.';
+    statusEl.style.display = 'none';
   } else if (count === 1) {
+    statusEl.style.display = '';
     statusEl.className = 'today-status s-one';
     sIcon.textContent = '✓';
     sMsg.textContent = 'Your first video is logged for today. Submit your second video below.';
   } else {
+    statusEl.style.display = '';
     statusEl.className = 'today-status s-done';
     sIcon.textContent = '✓✓';
-    sMsg.textContent = 'Both videos logged for today. You\'re all done — see you tomorrow!';
+    sMsg.textContent = 'Both videos logged for today. You\'re all done, see you tomorrow!';
   }
   updatePostCards(count);
+
+  // Grace window: missed yesterday (or only logged 1 of 2) and it is still
+  // before the 2 PM cutoff, offer to backdate. The server has the real,
+  // authoritative cutoff; this only decides whether to show the button.
+  if (graceEl) {
+    const yCount = allRows.filter(function(r) {
+      return r.name.toLowerCase() === name.toLowerCase() && r.date === yesterdayStr();
+    }).length;
+    if (yCount < 2 && graceWindowOpen()) {
+      graceEl.style.display = '';
+      graceEl.querySelector('.grace-msg').textContent = yCount === 0
+        ? 'You did not log your videos yesterday. Log them before 2 PM.'
+        : 'You logged 1 of 2 videos yesterday. Log the second before 2 PM.';
+    } else {
+      graceEl.style.display = 'none';
+    }
+  }
+}
+
+// ── LOG YESTERDAY, grace window for a missed video ──
+function updateDateLockDisplay() {
+  const ds = loggingYesterday ? yesterdayStr() : todayStr();
+  const formatted = new Date(ds + 'T00:00:00').toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+  document.getElementById('f-date').value = ds;
+  document.getElementById('today-date-display').textContent = formatted;
+  const note = document.getElementById('date-lock-note');
+  if (note) note.textContent = loggingYesterday ? 'Yesterday: grace window' : 'Today only';
+  const card = document.getElementById('submit-form-card');
+  if (card) card.classList.toggle('yesterday-mode', loggingYesterday);
+}
+
+function startLogYesterday() {
+  loggingYesterday = true;
+  document.getElementById('grace-yesterday').style.display = 'none';
+  const ymBanner = document.getElementById('yesterday-mode-banner');
+  document.getElementById('yesterday-mode-date').textContent =
+    new Date(yesterdayStr() + 'T00:00:00').toLocaleDateString('en-GB', { day:'numeric', month:'long' });
+  ymBanner.style.display = '';
+  updateDateLockDisplay();
+  renderYesterdayCards();
+}
+
+function exitLogYesterday() {
+  loggingYesterday = false;
+  document.getElementById('yesterday-mode-banner').style.display = 'none';
+  updateDateLockDisplay();
+  onNameChange();
+}
+
+function renderYesterdayCards() {
+  const name = document.getElementById('f-name').value.trim();
+  const yCount = allRows.filter(function(r) {
+    return r.name.toLowerCase() === name.toLowerCase() && r.date === yesterdayStr();
+  }).length;
+  updatePostCards(yCount);
 }
 
 // Manual re-check after a failed load. Kept separate from the automatic
-// retries so the creator can see their tap did something — a silent
+// retries so the creator can see their tap did something, a silent
 // re-request reads as a dead button on a slow connection.
 function retryLoadRows(btn) {
   if (btn) { btn.disabled = true; btn.textContent = 'Checking…'; }
@@ -1777,7 +1791,7 @@ function retryLoadRows(btn) {
   loadRows();
 }
 
-// ── LOADING STATE — show/hide spinner on submit button ──
+// ── LOADING STATE, show/hide spinner on submit button ──
 function setSubmitting(on, msg) {
   const btn = document.getElementById('submit-btn');
   if (on) {
@@ -1789,10 +1803,11 @@ function setSubmitting(on, msg) {
   }
 }
 
-// ── SUBMIT — server-first, no optimistic success ──
+// ── SUBMIT, server-first, no optimistic success ──
 function submitLog() {
   const name   = document.getElementById('f-name').value.trim();
-  const date   = todayStr();
+  const date   = loggingYesterday ? yesterdayStr() : todayStr();
+  const dayWord = loggingYesterday ? 'yesterday' : 'today';
   const post   = document.getElementById('f-post').value;
   const tiktok = document.getElementById('f-tiktok').value.trim();
   const insta  = document.getElementById('f-insta').value.trim();
@@ -1802,29 +1817,29 @@ function submitLog() {
 
   if (!name)           { showError('Please select your name from the list.'); return; }
   if (!post)           { showError('Something went wrong. Please refresh the page and try again.'); return; }
-  if (!tiktok && !insta) { showError('Please paste at least one video link — TikTok or Instagram.'); return; }
+  if (!tiktok && !insta) { showError('Please paste at least one video link (TikTok or Instagram).'); return; }
 
   // Never submit against data we do not have. Both guards below scan allRows,
-  // and an allRows that failed to load waves everything through — which is how
+  // and an allRows that failed to load waves everything through, which is how
   // a creator ends up being told a video is already logged straight after
   // being told nothing was.
   if (rowsLoadFailed) {
-    showError('We could not check what you have already logged today, so submitting now could double-log your video. Tap "Try checking again" above first.');
+    showError('We could not check what you have already logged ' + dayWord + ', so submitting now could double-log your video. Tap "Try checking again" above first.');
     return;
   }
 
-  // Client-side guard: if allRows already shows 2 for today, block immediately
+  // Client-side guard: if allRows already shows 2 for the target day, block immediately
   const todayCount = allRows.filter(function(r) {
     return r.name.toLowerCase() === name.toLowerCase() &&
            r.date === date;
   }).length;
   if (todayCount >= 2) {
-    showError('Both videos are already logged for today. See you tomorrow!');
-    onNameChange();
+    showError('Both videos are already logged for ' + dayWord + '.' + (loggingYesterday ? '' : ' See you tomorrow!'));
+    if (loggingYesterday) renderYesterdayCards(); else onNameChange();
     return;
   }
 
-  // Client-side guard: the SAME link already logged today = the same video.
+  // Client-side guard: the SAME link already logged that day = the same video.
   // Stops a creator from re-submitting Video 1 as "Video 2" after a false failure.
   const dupRow = allRows.find(function(r) {
     if (r.name.toLowerCase() !== name.toLowerCase() || r.date !== date) return false;
@@ -1832,8 +1847,8 @@ function submitLog() {
            (insta  && r.insta  && r.insta.trim()  === insta);
   });
   if (dupRow) {
-    showError('This exact video link is already logged for today (as Video ' + dupRow.post + '). It saved successfully — no need to submit it again. If you have a second video, paste that video\'s link instead.');
-    onNameChange();
+    showError('This exact video link is already logged for ' + dayWord + ' (as Video ' + dupRow.post + '). It saved successfully. No need to submit it again. If you have a second video, paste that video\'s link instead.');
+    if (loggingYesterday) renderYesterdayCards(); else onNameChange();
     return;
   }
 
@@ -1843,28 +1858,30 @@ function submitLog() {
   // Confirm which video they are about to log BEFORE anything is sent —
   // stops creators accidentally logging Video 1 again as "Video 2".
   showConfirm(
-    isSecond ? 'Your SECOND video of the day' : 'Your FIRST video of the day',
+    isSecond ? ('Your SECOND video of ' + dayWord) : ('Your FIRST video of ' + dayWord),
     isSecond
-      ? 'You are about to log your <strong>second video for today</strong>. This should be a different video from your first one. Are you sure you want to continue?'
-      : 'You are about to log your <strong>first video for today</strong>. Continue?',
+      ? ('You are about to log your <strong>second video for ' + dayWord + '</strong>. This should be a different video from your first one. Are you sure you want to continue?')
+      : ('You are about to log your <strong>first video for ' + dayWord + '</strong>. Continue?'),
     'Yes, log Video ' + post,
     function() { doSubmitLog(name, date, post, tiktok, insta, issues, firstName, isSecond); }
   );
 }
 
 function doSubmitLog(name, date, post, tiktok, insta, issues, firstName, isSecond) {
-  // Show loading — button becomes a spinner, stays disabled until server responds
-  setSubmitting(true, 'Please wait — your video is being logged…');
+  const wasYesterday = loggingYesterday;
+  const dayWord = wasYesterday ? 'yesterday' : 'today';
+  // Show loading, button becomes a spinner, stays disabled until server responds
+  setSubmitting(true, 'Please wait, your video is being logged…');
   const patienceTimer = setTimeout(function() {
-    setSubmitting(true, 'Still logging — please keep this page open…');
+    setSubmitting(true, 'Still logging, please keep this page open…');
   }, 6000);
 
   // Call the server. We wait for confirmation before doing anything.
-  jsonp({ action:'submit', name:name, date:date, post:post, tiktok:tiktok, insta:insta, issues:issues }, function(data, err) {
+  jsonp({ action:'submit', name:name, date:date, post:post, tiktok:tiktok, insta:insta, issues:issues, logYesterday: wasYesterday ? '1' : '' }, function(data, err) {
     clearTimeout(patienceTimer);
 
     if (data && data.status === 'success') {
-      // Server said success — but before greying anything out, double-check
+      // Server said success, but before greying anything out, double-check
       // the backend that the row is really there. This is what stops a video
       // from "looking logged" when it never actually saved.
       setSubmitting(true, 'Confirming your video was logged…');
@@ -1872,34 +1889,37 @@ function doSubmitLog(name, date, post, tiktok, insta, issues, firstName, isSecon
 
     } else if (data && data.status === 'duplicate') {
       setSubmitting(false);
-      // Server recognised this exact video link as already logged today.
-      // That means it DID save the first time — treat it as good news.
+      // Server recognised this exact video link as already logged that day.
+      // That means it DID save the first time, treat it as good news.
       loadRows();
       document.getElementById('f-tiktok').value = '';
       document.getElementById('f-insta').value  = '';
       document.getElementById('f-issues').value = '';
       showToast('success',
         'Already saved, ' + firstName + '!',
-        'This video was already logged (as Video ' + (data.post || post) + '). It went through the first time — no need to submit it twice. ' +
+        'This video was already logged (as Video ' + (data.post || post) + '). It went through the first time. No need to submit it twice. ' +
         (isSecond ? '' : 'If you have a second video, paste that link instead.')
       );
 
     } else if (data && data.status === 'blocked') {
       setSubmitting(false);
-      // Server says they already hit the limit — reload fresh data and update cards
+      // Server says they already hit the limit, or the grace window has
+      // closed (2 PM cutoff), reload fresh data and update cards
       loadRows();
       showToast('error',
         'Already logged',
-        isSecond
-          ? 'Both videos for today are already logged. See you tomorrow!'
-          : 'Your first video for today is already logged — don\'t worry. Just submit your second video now.'
+        (data.message) ||
+        (isSecond
+          ? ('Both videos for ' + dayWord + ' are already logged.' + (wasYesterday ? '' : ' See you tomorrow!'))
+          : ('Your first video for ' + dayWord + ' is already logged, don\'t worry. Just submit your second video now.'))
       );
+      if (wasYesterday) { loggingYesterday = true; renderYesterdayCards(); }
 
     } else {
       // Connection dropped or timed out. The video may STILL have reached the
-      // server — so we VERIFY with the server before telling the creator anything.
+      // server, so we VERIFY with the server before telling the creator anything.
       // This is what stops false "your video was NOT saved" messages.
-      setSubmitting(true, 'Connection was slow — double-checking with the server…');
+      setSubmitting(true, 'Connection was slow, double-checking with the server…');
       verifySubmission(name, date, post, tiktok, insta, firstName, isSecond, 0);
     }
   }, 45000);
@@ -1926,8 +1946,8 @@ function confirmSaved(name, date, post, tiktok, insta, issues, firstName, isSeco
       finalizeSuccess(name, date, String(data.post || post), tiktok, insta, issues, firstName, isSecond);
     } else if (data && data.status === 'success' && !data.found) {
       if (attempt < 2) {
-        // The sheet can take a moment to reflect a fresh row — check again.
-        setSubmitting(true, 'Still confirming — please keep this page open…');
+        // The sheet can take a moment to reflect a fresh row, check again.
+        setSubmitting(true, 'Still confirming, please keep this page open…');
         setTimeout(function() { confirmSaved(name, date, post, tiktok, insta, issues, firstName, isSecond, attempt + 1); }, 3000);
       } else {
         // Server is reachable and the video is genuinely NOT there.
@@ -1935,12 +1955,12 @@ function confirmSaved(name, date, post, tiktok, insta, issues, firstName, isSeco
         loadRows();
         showToast('error',
           'Video ' + post + ' was NOT logged',
-          'Your video was not successfully logged. Nothing has been greyed out — your links are still in the form. Please tap Submit again to log Video ' + post + '.'
+          'Your video was not successfully logged. Nothing has been greyed out. Your links are still in the form. Please tap Submit again to log Video ' + post + '.'
         );
       }
     } else {
       // Could not reach the server to double-check, but the server already
-      // confirmed the save the first time — trust it rather than alarm the creator.
+      // confirmed the save the first time, trust it rather than alarm the creator.
       finalizeSuccess(name, date, post, tiktok, insta, issues, firstName, isSecond);
     }
   }, 12000);
@@ -1953,18 +1973,31 @@ function finalizeSuccess(name, date, post, tiktok, insta, issues, firstName, isS
            r.tiktok === tiktok && r.insta === insta;
   });
   if (!already) allRows.push({ name:name, date:date, post:post, tiktok:tiktok, insta:insta, issues:issues, submitted: new Date().toISOString() });
+
+  // Both videos for the backdated day are now in, no need to keep asking
+  // for "yesterday", drop back to today's normal form on its own.
+  const wasYesterday = loggingYesterday;
+  if (wasYesterday) {
+    const yCount = allRows.filter(function(r) { return r.name.toLowerCase() === name.toLowerCase() && r.date === date; }).length;
+    if (yCount >= 2) {
+      loggingYesterday = false;
+      const b = document.getElementById('yesterday-mode-banner'); if (b) b.style.display = 'none';
+      updateDateLockDisplay();
+    }
+  }
   refreshAll();
 
-  // Clear the link fields — submission was verified
+  // Clear the link fields, submission was verified
   document.getElementById('f-tiktok').value = '';
   document.getElementById('f-insta').value  = '';
   document.getElementById('f-issues').value = '';
 
+  const dayWord = wasYesterday ? 'yesterday' : 'today';
   showToast('success',
     isSecond ? 'All done, ' + firstName + '!' : 'Video 1 successfully logged, ' + firstName + '!',
     isSecond
-      ? 'Your second video has been successfully logged and confirmed. Both posts are done for today — see you tomorrow!'
-      : 'Your first video has been successfully logged and confirmed. You can check it under "View my logs". Come back and submit your second video!'
+      ? ('Your second video has been successfully logged and confirmed. Both posts are done for ' + dayWord + (wasYesterday ? '.' : '. See you tomorrow!'))
+      : ('Your first video has been successfully logged and confirmed for ' + dayWord + '. You can check it under "View my logs". Come back and submit your second video!')
   );
   setTimeout(function() { window.scrollTo({ top:0, behavior:'smooth' }); }, 200);
 }
@@ -1982,14 +2015,23 @@ function verifySubmission(name, date, post, tiktok, insta, firstName, isSecond, 
                (r.tiktok === tiktok && r.insta === insta);
       });
       if (!already) allRows.push({ name:name, date:date, post:String(data.post || post), tiktok:tiktok, insta:insta, issues:'', submitted: new Date().toISOString() });
+      const wasYesterday = loggingYesterday;
+      if (wasYesterday) {
+        const yCount = allRows.filter(function(r) { return r.name.toLowerCase() === name.toLowerCase() && r.date === date; }).length;
+        if (yCount >= 2) {
+          loggingYesterday = false;
+          const b = document.getElementById('yesterday-mode-banner'); if (b) b.style.display = 'none';
+          updateDateLockDisplay();
+        }
+      }
       refreshAll();
       document.getElementById('f-tiktok').value = '';
       document.getElementById('f-insta').value  = '';
       document.getElementById('f-issues').value = '';
       showToast('success',
         isSecond ? 'All done, ' + firstName + '!' : 'Video 1 logged, ' + firstName + '!',
-        'Your video went through — the connection was just slow. ' +
-        (isSecond ? 'Both posts are done for today!' : 'Come back and submit your second video!')
+        'Your video went through. The connection was just slow. ' +
+        (isSecond ? ('Both posts are done for ' + (wasYesterday ? 'yesterday!' : 'today!')) : 'Come back and submit your second video!')
       );
       setTimeout(function() { window.scrollTo({ top:0, behavior:'smooth' }); }, 200);
 
@@ -1998,12 +2040,12 @@ function verifySubmission(name, date, post, tiktok, insta, firstName, isSecond, 
       setSubmitting(false);
       showToast('error',
         'Video did not go through',
-        'The connection dropped and your video was NOT saved. Your links are still in the form — please tap Submit again.'
+        'The connection dropped and your video was NOT saved. Your links are still in the form. Please tap Submit again.'
       );
 
     } else if (attempt < 4) {
-      // Server still unreachable — wait and check again.
-      setSubmitting(true, 'Still checking — please keep this page open…');
+      // Server still unreachable, wait and check again.
+      setSubmitting(true, 'Still checking, please keep this page open…');
       setTimeout(function() {
         verifySubmission(name, date, post, tiktok, insta, firstName, isSecond, attempt + 1);
       }, 8000);
@@ -2013,7 +2055,7 @@ function verifySubmission(name, date, post, tiktok, insta, firstName, isSecond, 
       setSubmitting(false);
       showToast('error',
         'Could not confirm',
-        'Your internet connection is unstable, so we could not confirm whether the video saved. Please refresh this page when your connection is back — if Video ' + post + ' already shows as logged, do NOT submit it again.'
+        'Your internet connection is unstable, so we could not confirm whether the video saved. Please refresh this page when your connection is back. If Video ' + post + ' already shows as logged, do NOT submit it again.'
       );
     }
   }, 15000);
@@ -2025,19 +2067,23 @@ function refreshAll() {
   renderMonthTabs();
   renderDetailedLog();
   if (isAdmin) { renderDashboard(); renderManageCreators(); renderPayments(); }
-  // Re-run the name status in case allRows just loaded/changed
-  if (document.getElementById('f-name') && document.getElementById('f-name').value) onNameChange();
+  // Re-run the name status in case allRows just loaded/changed. While
+  // backdating a missed video, re-render THAT state instead, a plain
+  // onNameChange() would reset loggingYesterday and jump back to today.
+  if (document.getElementById('f-name') && document.getElementById('f-name').value) {
+    if (loggingYesterday) renderYesterdayCards(); else onNameChange();
+  }
 }
 
 function populateNameDropdown() {
   const sel = document.getElementById('f-name');
   const cur = sel.value;
   const names = getActiveCreators();
-  // Never leave the dropdown silently empty — always say what's happening.
+  // Never leave the dropdown silently empty, always say what's happening.
   let placeholder = 'Select your name...';
   if (!names.length) {
     placeholder = creatorsLoaded
-      ? 'Names did not load — tap here to retry'
+      ? 'Names did not load, tap here to retry'
       : 'Loading names… please wait';
   }
   sel.innerHTML = '<option value="">' + placeholder + '</option>';
@@ -2063,7 +2109,7 @@ function changeWeek(dir) { weekOffset += dir; renderWeeklyGrid(); }
 
 function renderWeeklyGrid() {
   const dates = getWeekDates(weekOffset);
-  document.getElementById('week-label').textContent = fmtDate(dates[0]) + ' — ' + fmtDate(dates[6]);
+  document.getElementById('week-label').textContent = fmtDate(dates[0]) + ' to ' + fmtDate(dates[6]);
   const head = document.getElementById('weekly-head');
   head.innerHTML = '<th>Creator</th>' + dates.map(d => '<th>' + dayLabel(d) + '</th>').join('') + '<th>Week Total</th>';
   const creators = getActiveCreators();
@@ -2152,7 +2198,7 @@ function openModal(name) {
 function closeModalOverlay(e) { if(e.target===document.getElementById('creator-modal')) closeModalDirect(); }
 function closeModalDirect() { document.getElementById('creator-modal').classList.remove('open'); }
 
-// ── VIEW MY LOGS — creators check their own week + current month, no password ──
+// ── VIEW MY LOGS, creators check their own week + current month, no password ──
 function openMyLogs() {
   const name = document.getElementById('f-name').value.trim();
   if (!name) return;
@@ -2192,7 +2238,7 @@ function renderMyLogs(name) {
       '<span class="mylog-slot">' + slot(r && r.insta, 'Insta', 'var(--pink)') + '</span></div>';
   };
 
-  // Newest first — today at the top, day 1 at the bottom. Creators check
+  // Newest first, today at the top, day 1 at the bottom. Creators check
   // this right after submitting, so today's entry must never require scrolling.
   const dayRowsHtml = [];
   for (let d = dayOfMonth; d >= 1; d--) {
@@ -2205,15 +2251,51 @@ function renderMyLogs(name) {
       '<div class="mylog-videos">' + vrow(v1, 1) + vrow(v2, 2) + '</div></div>');
   }
 
+  // Pay figures, same source of truth as the Payment register (postsCredit
+  // is what an admin adds when a creator forgot to log; that credit is what
+  // "counts" here, not just the raw log count, per the Payment sheet being
+  // the source of truth for what people are actually paid).
+  const man = allPayments.find(p => p.month === ym && String(p.name).toLowerCase() === name.toLowerCase()) || {};
+  const creditRaw = String(man.postsCredit || '');
+  const overrideRaw = String(man.postsOverride || '');
+  const hasCredit = creditRaw !== '' && !isNaN(parseFloat(creditRaw));
+  const hasLegacyOverride = !hasCredit && overrideRaw !== '' && !isNaN(parseFloat(overrideRaw));
+  const credit = hasCredit ? parseFloat(creditRaw) : 0;
+  const effPosts = hasLegacyOverride ? parseFloat(overrideRaw) : (monthRows.length + credit);
+  const maxVideos = 62;
+  const monthlySalary = effMonthlyRate(name, ym);
+  const ratePerVideo = monthlySalary / maxVideos;
+  const baseAmount = Math.round(effPosts * ratePerVideo);
+  const perf = calcBonus(man.bonusViews || '');
+  const special = parseFloat(String(man.specialBonus || '').replace(/[^\d.]/g, '')) || 0;
+  const totalOv = String(man.totalOverride || '').replace(/[^\d.]/g, '');
+  const amountExpected = (totalOv !== '' && !isNaN(parseFloat(totalOv))) ? parseFloat(totalOv) : (baseAmount + perf + special);
+  const adminNote = (credit > 0 || hasLegacyOverride)
+    ? '<div class="mylog-pay-note">' + (hasLegacyOverride ? 'Set by admin.' : (Math.round(credit) + ' logged by admin.')) + '</div>'
+    : '';
+
+  // Grace banner, same missed-yesterday check as the submit page, so it
+  // shows here too when a creator opens "View my logs" instead.
+  const yCount = mine.filter(r => r.date === yesterdayStr()).length;
+  const graceHtml = (yCount < 2 && graceWindowOpen())
+    ? '<div class="mylog-grace">' + (yCount === 0
+        ? 'You did not log your videos yesterday. Log them before 2 PM.'
+        : 'You logged 1 of 2 videos yesterday. Log the second before 2 PM.') +
+      '<button type="button" onclick="closeModalDirect(); startLogYesterday();">Log yesterday\'s videos</button></div>'
+    : '';
+
   document.getElementById('modal-name').textContent = name;
-  document.getElementById('modal-sub').textContent = 'Your posting record — ' + monthLabel(ym);
+  document.getElementById('modal-sub').textContent = 'Your posting record, ' + monthLabel(ym);
   document.getElementById('modal-body').innerHTML =
+    graceHtml +
     '<div class="mylog-summary">' +
-      '<div class="mylog-stat"><div class="v">' + monthRows.length + '</div><div class="l">Videos this month</div></div>' +
+      '<div class="mylog-stat"><div class="v">' + effPosts + '</div><div class="l">Videos logged</div>' + adminNote + '</div>' +
+      '<div class="mylog-stat"><div class="v">' + maxVideos + '</div><div class="l">Monthly target</div></div>' +
+      '<div class="mylog-stat"><div class="v">&#8358;' + Math.round(ratePerVideo).toLocaleString('en-NG') + '</div><div class="l">Rate per video</div></div>' +
+      '<div class="mylog-stat"><div class="v">&#8358;' + Math.round(amountExpected).toLocaleString('en-NG') + '</div><div class="l">Amount expected</div></div>' +
+      '<div class="mylog-stat"><div class="v">&#8358;' + Math.round(perf).toLocaleString('en-NG') + '</div><div class="l">Bonuses so far</div></div>' +
       '<div class="mylog-stat"><div class="v">' + fullDays + '</div><div class="l">Days fully done</div></div>' +
-      '<div class="mylog-stat"><div class="v">' + missedDays + '</div><div class="l">Days missed</div></div>' +
     '</div>' +
-    '<div style="font-size:12px;color:var(--text2);margin-bottom:16px;background:var(--accent-light);border-radius:8px;padding:10px 12px">A &#x2713; means that video was logged successfully. Just submitted a video? Open this view to confirm it went through.</div>' +
     '<div class="month-block"><div class="month-block-header"><span class="month-block-name">' + monthLabel(ym) + '</span><span class="month-block-total">' + monthRows.length + ' of 62 videos</span></div>' + dayRowsHtml.join('') + '</div>';
   document.getElementById('creator-modal').classList.add('open');
 }
@@ -2354,7 +2436,7 @@ const BASE_PAY_TIERS = [100000, 150000, 200000, 250000, 300000];
 // One tap enters a views-milestone bonus into THIS month's payment register
 // (same bonusViews field the register uses), so it calculates automatically
 // and never has to be typed by hand. Tiers come from the editable bonusTiers
-// global (see loadBonusTiers / saveBonusTiers) — never hardcoded here.
+// global (see loadBonusTiers / saveBonusTiers), never hardcoded here.
 
 // The month the bonus column is currently pointed at. Defaults to this month,
 // so nothing changes until an admin deliberately picks an earlier one.
@@ -2456,7 +2538,7 @@ function toWaNumber(raw) {
   return d;
 }
 
-// A creator can be contacted for several different reasons — contract
+// A creator can be contacted for several different reasons, contract
 // follow-up, account details, a general check-in, or (for anyone no longer
 // active) a plain "you've left" message. Each builds its own pre-filled
 // wa.me link off the same phone number; picking one is what used to be a
@@ -2468,8 +2550,8 @@ function waMessages(c) {
   msgs.push({
     label: 'Contract follow-up',
     text: c.contractSigned
-      ? 'Hi ' + first + ', this is the NorthQuest team. We have your contract signature on file but haven\'t received the signed PDF copy yet — could you upload it when you get a chance? Let us know if you\'re stuck on any of the signing steps.'
-      : 'Hi ' + first + ', this is the NorthQuest team. We don\'t see your signed contract yet — could you complete the signing steps and upload it when you get a chance? Let us know if you need any help.'
+      ? 'Hi ' + first + ', this is the NorthQuest team. We have your contract signature on file but haven\'t received the signed PDF copy yet, could you upload it when you get a chance? Let us know if you\'re stuck on any of the signing steps.'
+      : 'Hi ' + first + ', this is the NorthQuest team. We don\'t see your signed contract yet, could you complete the signing steps and upload it when you get a chance? Let us know if you need any help.'
   });
   msgs.push({
     label: 'Request account details',
@@ -2477,7 +2559,7 @@ function waMessages(c) {
   });
   msgs.push({
     label: 'General check-in',
-    text: 'Hi ' + first + ', this is the NorthQuest team, just checking in — how are things going? Let us know if you need anything.'
+    text: 'Hi ' + first + ', this is the NorthQuest team, just checking in, how are things going? Let us know if you need anything.'
   });
   if (!isActive) {
     msgs.push({
@@ -2505,15 +2587,15 @@ function contractDriveSearchLink(c) {
 // Contract column: one neutral document icon (never color-coded by status —
 // only its destination changes) plus a short, muted status line. Once an
 // outstanding item is marked "resolved" it stops reading as an open flag,
-// even though the underlying file still hasn't landed — that override is
+// even though the underlying file still hasn't landed, that override is
 // the point, so this doesn't keep nagging about something already handled.
 function contractCell(c) {
   const st = contractStatus(c);
   const isResolved = String(c.contractResolved || '').toLowerCase() === 'true';
   const iconHref = st === 'filed' ? escH(c.contractFileLink) : contractDriveSearchLink(c);
   const iconTitle = st === 'filed'
-    ? (c.contractFiledAt ? 'Filed ' + new Date(c.contractFiledAt).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}) + ' — click to open and check the signature' : 'Filed — click to open and check the signature')
-    : 'No signed PDF on file yet — click to search your Drive for one under this name';
+    ? (c.contractFiledAt ? 'Filed ' + new Date(c.contractFiledAt).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}) + ', click to open and check the signature' : 'Filed, click to open and check the signature')
+    : 'No signed PDF on file yet, click to search your Drive for one under this name';
   const icon = '<a href="' + iconHref + '" target="_blank" rel="noopener" class="contract-icon-link" title="' + iconTitle + '">&#128196;</a>';
 
   let note;
@@ -2528,7 +2610,7 @@ function contractCell(c) {
   return '<div class="contract-cell">' + icon + note + '</div>';
 }
 
-// Contact column: same neutral chat icon regardless of status — active or
+// Contact column: same neutral chat icon regardless of status, active or
 // fired, reaching them works the same way. Opens a small menu of message
 // templates instead of firing one fixed message straight away.
 function contactCell(c) {
@@ -2559,7 +2641,7 @@ function updateBonusLegendText() {
   const el = document.getElementById('bonus-legend-text');
   if (!el) return;
   el.innerHTML = 'pick the views milestone a creator hit and the bonus is entered into this month\'s payment register automatically (' +
-    bonusTierLegendText() + '). Add as many as they earn; use "Remove last" or "Clear all" to fix mistakes. Same tiers for everybody — ' +
+    bonusTierLegendText() + '). Add as many as they earn; use "Remove last" or "Clear all" to fix mistakes. Same tiers for everybody, ' +
     '<a href="#" onclick="openBonusTiersModal();return false;">edit the tiers</a> whenever the bonus structure changes.';
 }
 
@@ -2643,13 +2725,13 @@ function renderManageTabs() {
   if (at) at.classList.toggle('active', manageTab === 'active');
   if (it) it.classList.toggle('active', manageTab === 'inactive');
   // "Add to this month" offers creators with no row yet that month (see
-  // monthAddCandidates) — e.g. a late joiner who logged nothing.
+  // monthAddCandidates), e.g. a late joiner who logged nothing.
   fillAddPicker('manage-add-name', ym);
   syncManageAddTier();
 }
 
 // Keep the tier dropdown showing the SELECTED creator's own default base pay
-// (not a fixed guess) — otherwise adding someone silently used the wrong tier.
+// (not a fixed guess), otherwise adding someone silently used the wrong tier.
 function syncManageAddTier() {
   const nameSel = document.getElementById('manage-add-name');
   const tierSel = document.getElementById('manage-add-tier');
@@ -2674,7 +2756,7 @@ function addCreatorToMonth() {
   manageTab = 'active';
   showToast('success', 'Added to ' + monthLabel(ym),
     name.split(' ')[0] + ' now appears in ' + monthLabel(ym) + ' at ₦' + tier.toLocaleString('en-NG') +
-    '/month. Set their bonus in the row — they show in the payment register too.');
+    '/month. Set their bonus in the row, they show in the payment register too.');
   renderManageCreators();
   renderPayments();
 }
@@ -2753,8 +2835,8 @@ function calcBonus(viewsList) {
 // carries a per-month "rateOverride". This returns the base pay for a given
 // month: that month's own override if one is set, otherwise the creator's
 // default base pay from the Creators sheet. Each month is independent —
-// setting one month never changes another. With no overrides anywhere — the
-// state of every existing record — this is exactly the old behaviour (always
+// setting one month never changes another. With no overrides anywhere, the
+// state of every existing record, this is exactly the old behaviour (always
 // the default), so nothing is re-priced until you deliberately set a month.
 function creatorDefaultRate(name) {
   const c = allCreators.find(x => String(x.name).toLowerCase() === String(name).toLowerCase());
@@ -2770,7 +2852,7 @@ function effMonthlyRate(name, ym) {
   return creatorDefaultRate(name);
 }
 
-// ── BONUS TIERS — editable from Manage Creators / Payments, no code changes ──
+// ── BONUS TIERS, editable from Manage Creators / Payments, no code changes ──
 function loadBonusTiers() {
   jsonp({ action:'getBonusTiers' }, (data) => {
     bonusTiersLoaded = true;
@@ -2841,7 +2923,7 @@ function saveBonusTiers() {
     if (d && d.status === 'success') {
       bonusTiers = tiers;
       closeBonusTiersModal();
-      showToast('success', 'Bonus tiers updated', 'New bonuses now apply everywhere — Manage creators, the payment register, and the legend.');
+      showToast('success', 'Bonus tiers updated', 'New bonuses now apply everywhere, Manage creators, the payment register, and the legend.');
       if (currentPage === 'manage') renderManageCreators();
       if (currentPage === 'payments') renderPayments();
     } else {
@@ -2853,7 +2935,7 @@ function saveBonusTiers() {
 function loadPayments() {
   jsonp({ action:'getPayments' }, (data) => {
     paysLoaded = true;
-    // Don't overwrite local edits — if user edited within the last 8s, keep their data
+    // Don't overwrite local edits, if user edited within the last 8s, keep their data
     if (data && data.payments && Date.now() - lastPayEditTime > 8000) {
       allPayments = data.payments;
     }
@@ -3019,9 +3101,9 @@ function payLegendHtml(tiers) {
     .map(t => '&#8358;' + Number(t).toLocaleString('en-NG') + '/month base pay = &#8358;' + fmtMoney2(t / 62) + ' per video')
     .join('<br>');
   return '<h4>Assumptions &amp; Legend</h4>' +
-    'Every creator has their own monthly base pay — set it under <strong>Manage creators</strong> (Base Pay column) or by editing the Rate column here. Default for new creators: &#8358;150,000/month.<br>' +
-    'Per-video rate = monthly base pay &divide; 62 (flat — same divisor every month). Base pay tiers in this month\'s register:<br>' + tierLines + '<br>' +
-    'Pay = (videos posted that month) &times; per-video rate. &nbsp;Bonuses are the same for everybody regardless of base pay. &nbsp;Staff rows show a fixed monthly salary — not calculated from posts.' +
+    'Every creator has their own monthly base pay, set it under <strong>Manage creators</strong> (Base Pay column) or by editing the Rate column here. Default for new creators: &#8358;150,000/month.<br>' +
+    'Per-video rate = monthly base pay &divide; 62 (flat, same divisor every month). Base pay tiers in this month\'s register:<br>' + tierLines + '<br>' +
+    'Pay = (videos posted that month) &times; per-video rate. &nbsp;Bonuses are the same for everybody regardless of base pay. &nbsp;Staff rows show a fixed monthly salary, not calculated from posts.' +
     '<h4>Performance Bonus Tiers (same for all creators) <button type="button" class="btn btn-sm" style="margin-left:8px;padding:3px 10px;font-size:11px" onclick="openBonusTiersModal()">Edit tiers</button></h4>' +
     [...bonusTiers].sort((a,b) => a[0]-b[0]).map(t => t[0].toLocaleString('en-NG') + ' views = &#8358;' + t[1].toLocaleString('en-NG')).join('<br>') +
     '<h4>How to enter multiple bonuses</h4>' +
@@ -3066,7 +3148,7 @@ function renderPayments() {
   const counts = {};
   monthRows.forEach(r => { counts[r.name] = (counts[r.name] || 0) + 1; });
   // Also include anyone added to this month by hand (they have a payment record
-  // for it) even with zero logged posts — late joiners who never logged still
+  // for it) even with zero logged posts, late joiners who never logged still
   // need to be paid. Staff are handled in their own section, so skip them.
   allPayments.forEach(p => {
     if (p.month !== selectedPayMonth || !p.name) return;
@@ -3089,10 +3171,10 @@ function renderPayments() {
   // Base pay for THIS register's month (per-month override wins, else default).
   const tierOf = n => effMonthlyRate(n, selectedPayMonth);
 
-  // Segment creators by base-pay tier — highest earners first, A–Z inside each tier.
+  // Segment creators by base-pay tier, highest earners first, A–Z inside each tier.
   const names = Object.keys(counts).sort((a, b) => tierOf(b) - tierOf(a) || a.localeCompare(b));
   payRowNames = names;
-  // Fill the "add creator to this month" picker — see monthAddCandidates.
+  // Fill the "add creator to this month" picker, see monthAddCandidates.
   fillAddPicker('paymonth-add-name', selectedPayMonth);
 
   let tPosts = 0, tBase = 0, tPerf = 0, tSpecial = 0, tTotal = 0;
@@ -3113,7 +3195,7 @@ function renderPayments() {
     const stColor = status === 'Paid' ? 'background:#e6f4ec;color:#1a6b4a' : 'background:#fdf6e3;color:#b7770d';
     return '<tr class="pay-staff">' +
       '<td class="pay-num" style="color:#b7770d">S' + (si+1) + '</td>' +
-      '<td><strong>' + escH(s.display) + '</strong><br><span style="font-size:9px;color:var(--text3);font-weight:400">' + s.role + '</span></td>' +
+      '<td><strong>' + escH(s.display) + '</strong><br><span style="font-size:11px;color:var(--text3);font-weight:400">' + s.role + '</span></td>' +
       '<td><input class="pay-input" style="max-width:120px;text-align:right" value="' + (salary||'') + '" placeholder="Salary &#8358;" onchange="onStaffSalaryEdit(' + si + ',this.value)"></td>' +
       '<td style="color:var(--text3);text-align:center">—</td>' +
       '<td style="color:var(--text3);text-align:center">—</td>' +
@@ -3160,7 +3242,7 @@ function renderPayments() {
       const effPosts = hasLegacyOverride ? parseFloat(overrideRaw) : (posts + credit);
       const postsTitle = hasLegacyOverride
         ? 'Fixed override (legacy). Edit to switch to credit-based: actual + credit.'
-        : (posts + ' actual logged + ' + credit + ' credited. Type a new total — system tracks the credit automatically, so new logs still add to it.');
+        : (posts + ' actual logged + ' + credit + ' credited. Type a new total, system tracks the credit automatically, so new logs still add to it.');
       const base = Math.round(effPosts * monthlySalary / maxVideos);
       const bonusViews = man.bonusViews || '';
       const perf = calcBonus(bonusViews);
@@ -3177,7 +3259,7 @@ function renderPayments() {
         '<td class="pay-num" style="white-space:nowrap">' + (i+1) + ' <button class="pay-row-del" onclick="deletePaymentRow(' + i + ')" title="Remove ' + escH(name) + ' from ' + escH(monthLabel(selectedPayMonth)) + '">&times;</button></td>' +
         '<td>' + escH(name) + '</td>' +
         '<td><input class="pay-input" style="max-width:62px;text-align:right" value="' + effPosts + '" title="' + escH(postsTitle) + '" onchange="onPostsEdit(' + i + ',' + posts + ',this.value)"></td>' +
-        '<td><input class="pay-input" style="max-width:100px;text-align:right" value="' + fmtMoney2(monthlySalary / maxVideos) + '" onchange="onRateEdit(' + i + ',this.value)" title="Rate per video = monthly base pay ÷ 62. To change base pay: type the monthly amount (e.g. 200000) and press Enter — or use the Base Pay column under Manage creators. You can also type a per-video amount directly (e.g. 3226)." placeholder="150000"></td>' +
+        '<td><input class="pay-input" style="max-width:100px;text-align:right" value="' + fmtMoney2(monthlySalary / maxVideos) + '" onchange="onRateEdit(' + i + ',this.value)" title="Rate per video = monthly base pay ÷ 62. To change base pay: type the monthly amount (e.g. 200000) and press Enter, or use the Base Pay column under Manage creators. You can also type a per-video amount directly (e.g. 3226)." placeholder="150000"></td>' +
         '<td class="pay-num">' + fmtMoney2(base) + '</td>' +
         '<td><input class="pay-input" value="' + escH(bonusViews) + '" placeholder="100000,50000" onchange="onPayEdit(' + i + ',\'bonusViews\',this.value,true)"></td>' +
         '<td class="pay-num">' + fmtMoney2(perf) + '</td>' +
@@ -3210,7 +3292,7 @@ function renderPayments() {
   document.getElementById('pay-legend').innerHTML = payLegendHtml(tiersInUse.length ? tiersInUse : [defaultMonthlySalary]);
 }
 
-// Bulk fix for the comma-formatting bug (21 July 2026) — lets admin wipe
+// Bulk fix for the comma-formatting bug (21 July 2026), lets admin wipe
 // every bonus entry for the selected month in one go, so they can safely
 // re-enter everything clean rather than fixing each creator by hand.
 function clearAllBonusesThisMonth(btn) {
@@ -3221,7 +3303,7 @@ function clearAllBonusesThisMonth(btn) {
     return rec && rec.bonusViews;
   });
   if (!withBonus.length) { showToast('error', 'Nothing to clear', 'No bonuses are entered for ' + monthName + ' yet.'); return; }
-  if (!confirm('Clear ALL bonus entries for ' + withBonus.length + ' creator(s) in ' + monthName + '? This cannot be undone — you will need to re-enter them.')) return;
+  if (!confirm('Clear ALL bonus entries for ' + withBonus.length + ' creator(s) in ' + monthName + '? This cannot be undone, you will need to re-enter them.')) return;
   withBonus.forEach(name => savePaymentField(selectedPayMonth, name, 'bonusViews', '', false));
   renderPayments();
   showToast('success', 'Bonuses cleared', 'All bonus entries for ' + monthName + ' have been cleared. Re-enter them from Manage Creators or the register.');
@@ -3240,7 +3322,7 @@ function exportPaymentsCSV() {
   const cmap = {};
   allCreators.forEach(c => { cmap[String(c.name).toLowerCase()] = { rate: parseFloat(c.rate)||defMonthlySalary, bankName:c.bankName||'', acctNum:c.acctNum||'', acctName:c.acctName||'' }; });
   const tierOf = n => (cmap[n.toLowerCase()] || { rate: defMonthlySalary }).rate;
-  // Segment by base-pay tier — highest first — so the exported sheet groups
+  // Segment by base-pay tier, highest first, so the exported sheet groups
   // ₦300k creators, then ₦200k, then ₦150k, and so on, all in one sheet.
   const names = Object.keys(counts).sort((a, b) => tierOf(b) - tierOf(a) || a.localeCompare(b));
   const q = v => { v = String(v == null ? '' : v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g,'""') + '"' : v; };
@@ -3267,7 +3349,7 @@ function exportPaymentsCSV() {
     const rowTier = tierOf(name);
     if (rowTier !== lastTierCSV) {
       lastTierCSV = rowTier;
-      L.push(q('CREATORS — ₦' + Number(rowTier).toLocaleString('en-NG') + ' BASE PAY'));
+      L.push(q('CREATORS, ₦' + Number(rowTier).toLocaleString('en-NG') + ' BASE PAY'));
     }
     const rawPosts = counts[name];
     const ci = cmap[name.toLowerCase()] || { rate:defMonthlySalary, bankName:'', acctNum:'', acctName:'' };
@@ -3311,7 +3393,7 @@ function exportPaymentsCSV() {
 }
 
 // ══════════════════════════════════════════════════════════
-// LOG MY VIEWS — creator self-reported views (reference log only,
+// LOG MY VIEWS, creator self-reported views (reference log only,
 // does NOT feed CALC_BONUS or any payment calculation)
 // ══════════════════════════════════════════════════════════
 function populateViewsNameDropdown() {
@@ -3351,7 +3433,7 @@ function renderViewsList(videos) {
     const rows = [];
     if (v.tiktok) rows.push(viewsRowHtml(v, 'tiktok', 'TikTok', v.tiktokViews));
     if (v.insta) rows.push(viewsRowHtml(v, 'insta', 'Insta', v.instaViews));
-    return '<div class="views-video-card"><div class="vv-date">' + dayLabel(v.date) + ' — Video ' + escH(v.post) + '</div>' + rows.join('') + '</div>';
+    return '<div class="views-video-card"><div class="vv-date">' + dayLabel(v.date) + ', Video ' + escH(v.post) + '</div>' + rows.join('') + '</div>';
   }).join('');
   listEl.innerHTML = cards +
     '<button class="btn btn-primary" id="views-save-all" style="width:100%;margin-top:6px" onclick="submitAllViews(this)">Save all views</button>';
@@ -3367,7 +3449,7 @@ function viewsRowHtml(v, platform, label, currentViews) {
 // One button saves every filled-in field at once. There's no batch endpoint
 // on the backend (submitViews only ever wrote one row per call), so this
 // fires one call per filled field behind the scenes and waits for all of
-// them — the creator only ever sees one button and one result.
+// them, the creator only ever sees one button and one result.
 function submitAllViews(btn) {
   const name = document.getElementById('v-name').value.trim();
   const inputs = [...document.querySelectorAll('#views-list .vv-input')].filter(i => i.value !== '');
@@ -3388,13 +3470,13 @@ function submitAllViews(btn) {
     if (remaining > 0) return;
     btn.disabled = false; btn.textContent = orig;
     if (failed === 0) showToast('success', 'Saved', 'All views updated.');
-    else if (failed < inputs.length) showToast('error', 'Partly saved', failed + ' of ' + inputs.length + ' did not save — try again.');
+    else if (failed < inputs.length) showToast('error', 'Partly saved', failed + ' of ' + inputs.length + ' did not save, try again.');
     else showToast('error', 'Could not save', 'Please try again.');
   }
 }
 
 // ══════════════════════════════════════════════════════════
-// VIEW LOG (admin) — full history, month-tabbed, CSV export at three grains
+// VIEW LOG (admin), full history, month-tabbed, CSV export at three grains
 // ══════════════════════════════════════════════════════════
 let allViewLogRows = [], viewLogLoaded = false, selectedViewLogMonth = null;
 
@@ -3476,83 +3558,6 @@ function exportViewLogCSV(grain) {
   URL.revokeObjectURL(url);
 }
 
-// ── CREATOR INTAKE / ONBOARDING ──
-
-// The content a creator makes decides their monthly base pay, so the tier is
-// captured at onboarding rather than corrected by hand in the payment register
-// afterwards. Amounts are deliberately not shown on the form — the question is
-// about the work, not the money. ₦200,000 is absent on purpose: it is the
-// discretionary bump for exceptional creators and stays admin-only.
-const CREATOR_TIERS = {
-  whatsapp: { label: 'WhatsApp & picture creator', rate: 100000 },
-  video:    { label: 'Video creator',              rate: 150000 }
-};
-function intakeTier() {
-  const el = document.querySelector('input[name="i-ctype"]:checked');
-  return el ? CREATOR_TIERS[el.value] : null;
-}
-
-function setupIntake() {
-  const dt = document.getElementById('i-signdate');
-  if (dt) dt.value = todayStr();
-  const link = document.getElementById('i-contract-link');
-  if (link) {
-    if (CONTRACT_URL) { link.href = CONTRACT_URL; }
-    else {
-      link.style.display = 'none';
-      const n = document.getElementById('i-contract-note');
-      if (n) n.textContent = 'A team member will share the full contract with you and follow up personally. Please confirm below that you agree to its terms.';
-    }
-  }
-  if ((location.hash || '').toLowerCase().indexOf('intake') >= 0) showPage('intake');
-}
-
-function submitIntake() {
-  const g = id => (document.getElementById(id).value || '').trim();
-  const name = g('i-name'), phone = g('i-phone'), email = g('i-email');
-  const bank = g('i-bank'), acctNum = g('i-acctnum'), acctName = g('i-acctname');
-  const agree = document.getElementById('i-agree').checked;
-  const sign = g('i-sign'), signDate = g('i-signdate');
-  const alertEl = document.getElementById('intake-alert');
-  alertEl.classList.remove('show');
-  const fail = m => { alertEl.className = 'alert alert-error show'; alertEl.textContent = m; alertEl.scrollIntoView({ behavior:'smooth', block:'center' }); };
-  if (!name)  { fail('Please enter your full name.'); return; }
-  if (!phone) { fail('Please enter your phone number.'); return; }
-  if (!email) { fail('Please enter your email.'); return; }
-  if (!bank || !acctNum || !acctName) { fail('Please complete your bank details so you can be paid.'); return; }
-  const tier = intakeTier();
-  if (!tier) { fail('Please pick the kind of content you create.'); return; }
-  if (!agree) { fail('Please read and tick the box to agree to the contract.'); return; }
-  if (!sign)  { fail('Please type your full name as your signature.'); return; }
-
-  const btn = document.getElementById('intake-btn');
-  btn.disabled = true; btn.textContent = 'Submitting...';
-  const payload = {
-    action:'intake', name, phone, email,
-    nqEmail:g('i-nqemail'), nqEmailPass:g('i-nqemailpass'),
-    igUser:g('i-iguser'), igPass:g('i-igpass'),
-    ttUser:g('i-ttuser'), ttPass:g('i-ttpass'),
-    bankName:bank, acctNum, acctName,
-    creatorType:tier.label, rate:tier.rate,
-    signature:sign, signDate:signDate || todayStr()
-  };
-  jsonp(payload, (data) => {
-    btn.disabled = false; btn.textContent = 'Complete onboarding';
-    if (data && data.status === 'success') {
-      document.getElementById('intake-confirm-msg').innerHTML = 'You are now set up as an active creator. You can start logging your posts straight away. Welcome to NorthQuest!';
-      document.getElementById('intake-confirm').classList.add('show');
-      showToast('success', 'Welcome, ' + name.split(' ')[0] + '! 🎉', 'Your onboarding is complete.');
-      ['i-name','i-phone','i-email','i-nqemail','i-nqemailpass','i-iguser','i-igpass','i-ttuser','i-ttpass','i-bank','i-acctnum','i-acctname','i-sign'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
-      document.getElementById('i-agree').checked = false;
-      document.querySelectorAll('input[name="i-ctype"]').forEach(r => { r.checked = false; });
-      loadCreators();
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    } else {
-      fail((data && data.message) || 'Something went wrong. Please try again.');
-    }
-  }, 20000);
-}
-
 function togglePassword() {
   const input = document.getElementById('login-pass');
   const icon = document.getElementById('eye-icon');
@@ -3583,8 +3588,8 @@ function grantAdmin(key) {
 
 // Server-first login: the password is checked by the Apps Script (where it is
 // stored as a Script Property, invisible to visitors). Only if the backend
-// does not know 'adminLogin' yet — i.e. the security patch from
-// SECURITY-UPGRADE.md is not installed — do we fall back to the old local
+// does not know 'adminLogin' yet, i.e. the security patch from
+// SECURITY-UPGRADE.md is not installed, do we fall back to the old local
 // check, so nothing breaks during the transition.
 function checkLogin() {
   const val = document.getElementById('login-pass').value;
@@ -3653,7 +3658,7 @@ function showPage(name) {
   window.scrollTo({ top: 0, behavior: 'instant' });
 }
 
-// ── PAGE-NATIVE SEARCH — each admin table filters its own rows only ──
+// ── PAGE-NATIVE SEARCH, each admin table filters its own rows only ──
 // Every generated <tr> for a creator carries data-creator="<name>"; this
 // just hides/shows by substring match against whichever table the search
 // box on the current page is wired to.
