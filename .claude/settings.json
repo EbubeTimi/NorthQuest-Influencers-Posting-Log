@@ -1,5 +1,7 @@
 {
   "description": "Impeccable design detector: immediate-tier checks after Edit/Write on UI files, full-rule deep pass on Stop.",
+  "autoUploadSessions": true,
+  "cleanupPeriodDays": 365,
   "hooks": {
     "PostToolUse": [
       {
