@@ -37,7 +37,7 @@ Internal operations tool, not a market-facing product. No competitor-facing clai
 
 ## Brand Commitments
 
-Shown brand name in the app: "Northquest Finance." No other brand guideline has been made binding; the current purple/lavender palette is the existing implementation, not a stated requirement — a calmer, green-accented direction is under active review as of this session.
+Shown brand name in the app: "Northquest Finance." The app runs one calmer, warm-neutral/green identity (`--bg #faf7f0`, `--accent #1f5c3f`, IBM Plex Sans body + Playfair Display display) across both the creator-facing pages and the admin console — the earlier purple/lavender palette has been fully retired, not left as a second world alongside it.
 
 ## Evidence on Hand
 
@@ -52,4 +52,4 @@ Real, current production data exists in the live Google Sheet (real creator name
 
 ## Accessibility & Inclusion
 
-No formal accessibility standard has been mandated. Confirmed gap: an `/impeccable audit` pass this session found real WCAG AA contrast failures on the current UI (muted gray body text, several instances) — recorded here as a known, unresolved issue, not yet a requirement.
+No formal accessibility standard has been mandated. An `/impeccable audit` pass earlier this session found real WCAG AA contrast failures on the (then-purple) UI; those have since been fixed as part of the full redesign, and contrast is re-checked against the new palette whenever it changes.

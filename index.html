@@ -7,52 +7,15 @@
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
-<meta name="theme-color" content="#6d4ce0" />
+<meta name="theme-color" content="#1f5c3f" />
 <title>Northquest Posting Log</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap');
 
   :root {
-    --bg: #f8f6fc;
-    --surface: #ffffff;
-    --surface2: #f3effa;
-    --surface3: #e8e1f4;
-    --border: #e2dceb;
-    --border2: #cdc3dc;
-    --accent: #6d4ce0;
-    --accent2: #5839c4;
-    --accent3: #4a2eab;
-    --accent-light: #f0eaff;
-    --accent-mid: rgba(109,76,224,0.14);
-    --accent-soft: #ede5ff;
-    --text: #1a1525;
-    --text2: #5c5470;
-    --text3: #645d76;
-    --red: #c0392b;
-    --red-light: #fdf0ee;
-    --amber: #8f5e10;
-    --amber-light: #fdf6e3;
-    --blue: #2d6cbf;
-    --blue-light: #eaf2fb;
-    --pink: #ad3a5c;
-    --pink-light: #fae8ee;
-    --green: #1a6b4a;
-    --green-light: #e6f4ec;
-    --radius: 12px;
-    --radius-sm: 8px;
-    --shadow: 0 1px 4px rgba(74,46,171,0.06), 0 4px 16px rgba(74,46,171,0.05);
-    --shadow-sm: 0 1px 3px rgba(74,46,171,0.06);
-    --accent-rgb: 109,76,224;
-  }
-
-  /* CREATOR-FACING SURFACES — calmer warm-neutral/green palette from the
-     approved dashboard redesign. Scoped to these containers only so the
-     admin side keeps its existing purple look untouched. */
-  #page-chooser, #page-views, #page-submit, #page-intake {
-    background: #faf7f0;
-    min-height: 100vh;
-  }
-  #page-chooser, #page-views, #page-submit, #page-intake, #creator-modal {
+    /* Calmer warm-neutral/green system, approved on the creator-facing pages
+       and now the app's one identity — the admin side no longer carries a
+       separate purple world alongside it. */
     --bg: #faf7f0;
     --surface: #ffffff;
     --surface2: #f1eee3;
@@ -67,8 +30,18 @@
     --accent-soft: #e7efe7;
     --accent-rgb: 31,92,63;
     --text: #1c1a16;
-    --text2: #6b6558;
-    --text3: #6b6558;
+    --text2: #615c53;
+    --text3: #615c53;
+    --red: #c0392b;
+    --red-light: #fdf0ee;
+    --amber: #8f5e10;
+    --amber-light: #fdf6e3;
+    --blue: #2d6cbf;
+    --blue-light: #eaf2fb;
+    --pink: #ad3a5c;
+    --pink-light: #fae8ee;
+    --green: #1a6b4a;
+    --green-light: #e6f4ec;
     --radius: 10px;
     --radius-sm: 6px;
     --shadow: 0 1px 2px rgba(28,26,22,0.05), 0 3px 10px rgba(28,26,22,0.05);
@@ -547,7 +520,7 @@
   }
   .alert.show { display: block; }
   .alert-error { background: var(--red-light); border: 1.5px solid #e0b4b4; color: var(--red); }
-  .alert-success { background: var(--accent-light); border: 1.5px solid #c8b5f4; color: var(--accent3); }
+  .alert-success { background: var(--accent-light); border: 1.5px solid var(--border2); color: var(--accent3); }
 
   /* WEEKLY GRID */
   .grid-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow-sm); }
@@ -612,7 +585,7 @@
     background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%);
     border-color: var(--accent);
     color: white; font-weight: 600;
-    box-shadow: 0 2px 6px rgba(109,76,224,0.25);
+    box-shadow: 0 2px 6px rgba(var(--accent-rgb),0.25);
   }
   .month-tab .count {
     background: rgba(0,0,0,0.1);
@@ -732,7 +705,7 @@
     border-radius: 8px;
     display: flex; align-items: center; justify-content: center;
     color: white; font-weight: 700; font-size: 12px;
-    box-shadow: 0 2px 6px rgba(109,76,224,0.25);
+    box-shadow: 0 2px 6px rgba(var(--accent-rgb),0.25);
   }
   .login-brand-name { font-family: 'Playfair Display', serif; font-size: 15px; font-weight: 700; letter-spacing: -0.2px; }
   .login-divider { width: 40px; height: 2px; background: var(--accent); border-radius: 2px; margin: 0 auto 18px; opacity: 0.4; }
@@ -803,7 +776,7 @@
   .pay-staff:hover td { background:#fef3cb; }
   .pay-row-del { display:inline-flex; align-items:center; justify-content:center; width:18px; height:18px; padding:0; margin-left:4px; border:none; background:transparent; color:#c0392b; font-size:14px; font-weight:bold; line-height:1; cursor:pointer; border-radius:4px; vertical-align:middle; opacity:0.55; transition:all 0.15s; }
   .pay-row-del:hover { opacity:1; background:#c0392b; color:#fff; }
-  .pay-section-label td { background:#f0eaff; color:#4a2eab; font-size:11px; font-weight:800; letter-spacing:0.1em; text-transform:uppercase; border:none; padding:5px 10px; }
+  .pay-section-label td { background:var(--accent-light); color:var(--accent3); font-size:11px; font-weight:800; letter-spacing:0.1em; text-transform:uppercase; border:none; padding:5px 10px; }
   .manage-tabs { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin:0 0 12px; }
   .manage-tab { padding:8px 16px; border:1.5px solid var(--border); border-radius:9px; background:var(--surface); color:var(--text2); font-weight:600; font-size:13px; cursor:pointer; font-family:inherit; }
   .manage-tab.active { background:var(--accent); border-color:var(--accent); color:#fff; }
