@@ -280,15 +280,47 @@
   }
   .form-hint { font-size: 12px; color: var(--text3); margin-top: 5px; }
 
-  /* DATE LOCK DISPLAY */
-  .date-locked-display {
-    display: flex; align-items: center; gap: 8px;
-    background: var(--surface2); border: 1.5px solid var(--border);
-    border-radius: var(--radius-sm); padding: 10px 14px;
-    font-size: 14px; font-weight: 600; color: var(--text);
+  /* DATE TOGGLE, one control split Today | Yesterday, replaces the old
+     separate locked-date display + grace banner + "log yesterday's videos"
+     button + solid yesterday-mode banner. Yesterday is greyed out and
+     locked (padlock icon) until a video was actually missed; once a video
+     is missing, it lights up and becomes tappable; tapping it fills only
+     the Yesterday half solid deep green (not the whole bar), so backdating
+     is impossible to mistake for logging today. */
+  .date-toggle {
+    display: flex; border: 1.5px solid var(--border); border-radius: var(--radius-sm);
+    overflow: hidden; background: var(--surface2);
   }
-  .date-locked-display .lock-icon { font-size: 13px; opacity: 0.5; }
-  .date-locked-display .lock-note { font-size: 11px; color: var(--text3); font-weight: 400; margin-left: auto; }
+  .date-seg {
+    flex: 1; display: flex; flex-direction: column; align-items: flex-start; gap: 2px;
+    padding: 11px 14px; background: none; border: none; font: inherit; text-align: left;
+    cursor: pointer; color: var(--text); position: relative;
+  }
+  .date-seg + .date-seg { border-left: 1.5px solid var(--border); }
+  .date-seg .seg-label { font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text3); }
+  .date-seg .seg-date { font-size: 14.5px; font-weight: 600; }
+  .seg-today.is-active { background: var(--surface); }
+  .seg-yesterday[disabled] { cursor: not-allowed; color: var(--text3); }
+  .seg-yesterday[disabled] .seg-date { color: var(--text3); }
+  .seg-yesterday[disabled] .seg-lock { opacity: 0.45; }
+  .seg-lock { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); display: flex; }
+  .seg-lock svg { width: 14px; height: 14px; stroke: var(--text3); fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .seg-yesterday.is-enabled { color: var(--text); }
+  .seg-yesterday.is-enabled .seg-date { color: var(--text); }
+  .seg-yesterday.is-enabled .seg-lock { display: none; }
+  .seg-yesterday.is-enabled .seg-dot {
+    position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+    width: 7px; height: 7px; border-radius: 50%; background: var(--amber);
+  }
+  .date-toggle.is-yesterday .seg-yesterday {
+    background: var(--accent3); color: #fff; margin: -1px;
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  }
+  .date-toggle.is-yesterday .seg-yesterday .seg-label { color: rgba(255,255,255,0.75); }
+  .date-toggle.is-yesterday .seg-yesterday .seg-lock,
+  .date-toggle.is-yesterday .seg-yesterday .seg-dot { display: none; }
+  .date-toggle-hint { font-size: 12px; color: var(--text3); margin-top: 6px; display: flex; align-items: center; gap: 6px; }
+  .date-toggle-hint .hint-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--amber); flex-shrink: 0; }
 
   /* POST AUTO-DISPLAY */
   .post-auto-display {
@@ -318,36 +350,6 @@
     background: none; border: none; padding: 4px 0 0; margin-top: 4px; display: block;
     font: inherit; font-weight: 700; color: inherit; text-decoration: underline; cursor: pointer;
   }
-
-  /* GRACE BANNER, "you missed yesterday, log it before 2 PM" */
-  .grace-banner {
-    margin-top: 10px; border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
-    padding: 12px 14px; font-size: 13px; font-weight: 500;
-    background: var(--amber-light); color: var(--text); border-left: 3px solid var(--amber);
-  }
-  .grace-banner .btn-log-yesterday {
-    display: block; margin-top: 8px; border: none; border-radius: var(--radius-sm);
-    background: var(--amber); color: #fff; font: inherit; font-weight: 700;
-    padding: 8px 12px; cursor: pointer;
-  }
-
-  /* YESTERDAY MODE, persistent reminder while backdating a missed video.
-     Deliberately solid/saturated, not a light tint like every other banner
-     on this page (today-status, grace-banner), this is a MODE, and must be
-     impossible to mistake for "today" at a glance. */
-  .yesterday-mode-banner {
-    margin-top: 10px; border-radius: var(--radius-sm);
-    padding: 10px 14px; font-size: 13px; font-weight: 700;
-    background: var(--accent3); color: #fff;
-  }
-  .yesterday-mode-banner .back-row { display: block; margin-bottom: 4px; }
-  .yesterday-mode-banner .btn-back-today {
-    background: rgba(255,255,255,0.16); border: none; padding: 4px 10px; border-radius: 6px;
-    font: inherit; font-weight: 700; color: #fff; cursor: pointer;
-  }
-  .yesterday-mode-banner .btn-back-today:hover { background: rgba(255,255,255,0.26); }
-  /* Same signal reinforced on the form card itself. */
-  .form-card.yesterday-mode { border-top: 4px solid var(--accent3); }
 
   /* FORM DONE STATE */
   .form-done-banner {
@@ -679,6 +681,17 @@
   }
   .back-link:hover { color: var(--accent); }
 
+  /* EXIT BUTTON, icon-only "leave this flow, back to the menu" control,
+     replaces the plain "← Back" text link on the submit and views pages. */
+  .top-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+  .exit-btn {
+    width: 34px; height: 34px; border: 1.5px solid var(--border2); border-radius: 8px;
+    background: transparent; color: var(--text2); display: flex; align-items: center;
+    justify-content: center; cursor: pointer; transition: all 0.18s;
+  }
+  .exit-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-light); }
+  .exit-btn svg { width: 17px; height: 17px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
   /* DASHBOARD */
   .creator-table-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow-x: auto; overflow-y: hidden; box-shadow: var(--shadow-sm); margin-top: 16px; -webkit-overflow-scrolling: touch; }
   .creator-table-wrap table { min-width: 1450px; }
@@ -800,6 +813,14 @@
   .chooser-btn .cb-icon svg { width:26px; height:26px; }
   .chooser-btn .cb-title { font-size:15px; font-weight:700; margin-bottom:2px; }
   .chooser-btn .cb-sub { font-size:12px; color:var(--text3); }
+  /* "Log my views" is paused while the views feature is not yet in use. */
+  .chooser-btn.is-paused { cursor:not-allowed; background:var(--surface2); border-color:var(--border); opacity:0.6; }
+  .chooser-btn.is-paused .cb-icon { color:var(--text3); }
+  .chooser-btn .cb-paused-tag {
+    margin-left:auto; flex-shrink:0; font-size:11px; font-weight:700; letter-spacing:0.06em;
+    text-transform:uppercase; color:var(--text3); border:1px solid var(--border2);
+    padding:3px 9px; border-radius:20px;
+  }
   .views-video-card { border:1px solid var(--border); border-radius:var(--radius-sm); padding:14px; margin-bottom:12px; background:var(--surface2); }
   .views-video-card .vv-date { font-weight:700; font-size:13px; margin-bottom:10px; }
   .views-video-row { display:flex; align-items:center; gap:10px; margin-bottom:8px; }
@@ -872,12 +893,13 @@
         <div class="cb-sub">Log today's TikTok/Instagram posts and see your posting history</div>
       </span>
     </button>
-    <button class="chooser-btn" onclick="showPage('views')">
+    <button class="chooser-btn is-paused" type="button" disabled>
       <span class="cb-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg></span>
       <span>
         <div class="cb-title">Log my views</div>
         <div class="cb-sub">Enter tonight's view count for your recent videos</div>
       </span>
+      <span class="cb-paused-tag">Paused</span>
     </button>
   </div>
 </div>
@@ -890,7 +912,11 @@
     <div class="welcome-sub">Enter tonight's view count for today's and yesterday's videos.</div>
   </div>
   <div class="form-card">
-    <div class="back-link" onclick="showPage('chooser')">&larr; Back</div>
+    <div class="top-row">
+      <button class="exit-btn" type="button" onclick="showPage('chooser')" title="Back to menu" aria-label="Back to menu">
+        <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      </button>
+    </div>
     <div class="form-group">
       <label class="form-label">Your name</label>
       <select class="form-input" id="v-name" onchange="onViewsNameChange()">
@@ -913,7 +939,11 @@
   </div>
 
   <div class="form-card" id="submit-form-card">
-    <div class="back-link" onclick="showPage('chooser')">&larr; Back</div>
+    <div class="top-row">
+      <button class="exit-btn" type="button" onclick="showPage('chooser')" title="Back to menu" aria-label="Back to menu">
+        <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      </button>
+    </div>
     <!-- Inline confirmation (visible right above form after submit) -->
     <div class="inline-confirm" id="inline-confirm">
       <strong id="inline-confirm-title">Post logged successfully!</strong>
@@ -933,24 +963,28 @@
         <span class="s-icon" id="today-status-icon"></span>
         <span id="today-status-msg"></span>
       </div>
-      <div class="grace-banner" id="grace-yesterday" style="display:none">
-        <span class="grace-msg"></span>
-        <button type="button" class="btn-log-yesterday" onclick="startLogYesterday()">Log yesterday's videos</button>
-      </div>
-      <div class="yesterday-mode-banner" id="yesterday-mode-banner" style="display:none">
-        <span class="back-row"><button type="button" class="btn-back-today" onclick="exitLogYesterday()">&larr; Back to today</button></span>
-        Logging for <strong>yesterday</strong> (<span id="yesterday-mode-date"></span>)
-      </div>
-      <button class="view-logs-btn" id="view-logs-btn" onclick="openMyLogs()" type="button">View my logs for this month &rarr;</button>
+      <button class="view-logs-btn" id="view-logs-btn" onclick="openMyLogs()" type="button">View my logs for this month</button>
     </div>
 
-    <!-- Date: locked to today (or yesterday, only inside the grace window), not editable -->
+    <!-- Date: one control, Today | Yesterday. Yesterday stays locked (padlock)
+         until a video is actually missing, then lights up and becomes
+         tappable; tapping it fills only the Yesterday half solid green. -->
     <div class="form-group">
       <label class="form-label">Date</label>
-      <div class="date-locked-display">
-        <span class="lock-icon">&#128274;</span>
-        <span id="today-date-display">—</span>
-        <span class="lock-note" id="date-lock-note">Today only</span>
+      <div class="date-toggle" id="date-toggle">
+        <button type="button" class="date-seg seg-today" id="seg-today" onclick="exitLogYesterday()">
+          <span class="seg-label">Today</span>
+          <span class="seg-date" id="seg-today-date">—</span>
+        </button>
+        <button type="button" class="date-seg seg-yesterday" id="seg-yesterday" onclick="startLogYesterday()" disabled>
+          <span class="seg-label">Yesterday</span>
+          <span class="seg-date" id="seg-yesterday-date">—</span>
+          <span class="seg-lock"><svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span>
+          <span class="seg-dot"></span>
+        </button>
+      </div>
+      <div class="date-toggle-hint" id="date-toggle-hint" style="display:none">
+        <span class="hint-dot"></span><span id="date-toggle-hint-msg"></span>
       </div>
       <input type="hidden" id="f-date" />
     </div>
@@ -1393,11 +1427,10 @@ try {
 } catch(e) { offlineQueue = []; }
 
 document.addEventListener('DOMContentLoaded', () => {
-  // Lock the date display to today, no picker, no backdating
-  const today = todayStr();
-  document.getElementById('f-date').value = today;
-  const formatted = new Date(today + 'T00:00:00').toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
-  document.getElementById('today-date-display').textContent = formatted;
+  // Lock the date display to today, no picker, no backdating. Yesterday
+  // starts disabled until onNameChange() finds a name with something missed.
+  updateDateLockDisplay();
+  document.getElementById('seg-yesterday').setAttribute('disabled', '');
   if (safeStorage.getSession(SESSION_KEY) === '1') {
     isAdmin = true;
     adminKey = safeStorage.getSession(ADMIN_KEY_SESSION) || '';
@@ -1666,20 +1699,22 @@ function onNameChange(fetchFresh) {
   const statusEl = document.getElementById('today-status');
   const sIcon    = document.getElementById('today-status-icon');
   const sMsg     = document.getElementById('today-status-msg');
-  const graceEl  = document.getElementById('grace-yesterday');
+  const segYesterday = document.getElementById('seg-yesterday');
+  const hintEl   = document.getElementById('date-toggle-hint');
+  const hintMsg  = document.getElementById('date-toggle-hint-msg');
 
   // A name change (picked from the dropdown, or cleared) always means "start
   // over as today", carrying yesterday-mode across a different creator would
   // silently backdate the wrong person's video.
   loggingYesterday = false;
-  const ymBanner = document.getElementById('yesterday-mode-banner');
-  if (ymBanner) ymBanner.style.display = 'none';
   updateDateLockDisplay();
 
   const viewBtn = document.getElementById('view-logs-btn');
   if (!name) {
     statusEl.style.display = 'none';
-    if (graceEl) graceEl.style.display = 'none';
+    segYesterday.setAttribute('disabled', '');
+    segYesterday.classList.remove('is-enabled');
+    hintEl.style.display = 'none';
     if (viewBtn) viewBtn.style.display = 'none';
     updatePostCards(null);
     return;
@@ -1698,7 +1733,9 @@ function onNameChange(fetchFresh) {
     sIcon.textContent = '⚠';
     sMsg.innerHTML = 'We could not check today\'s logs. Your connection dropped, so we do not know whether you have already logged a video today.' +
       '<button type="button" class="s-retry" onclick="retryLoadRows(this)">Try checking again</button>';
-    if (graceEl) graceEl.style.display = 'none';
+    segYesterday.setAttribute('disabled', '');
+    segYesterday.classList.remove('is-enabled');
+    hintEl.style.display = 'none';
     updatePostCards('unknown');
     return;
   }
@@ -1726,48 +1763,52 @@ function onNameChange(fetchFresh) {
 
   // Grace window: missed yesterday (or only logged 1 of 2) and it is still
   // before the 2 PM cutoff, offer to backdate. The server has the real,
-  // authoritative cutoff; this only decides whether to show the button.
-  if (graceEl) {
-    const yCount = allRows.filter(function(r) {
-      return r.name.toLowerCase() === name.toLowerCase() && r.date === yesterdayStr();
-    }).length;
-    if (yCount < 2 && graceWindowOpen()) {
-      graceEl.style.display = '';
-      graceEl.querySelector('.grace-msg').textContent = yCount === 0
-        ? 'You did not log your videos yesterday. Log them before 2 PM.'
-        : 'You logged 1 of 2 videos yesterday. Log the second before 2 PM.';
-    } else {
-      graceEl.style.display = 'none';
-    }
+  // authoritative cutoff; this only decides whether to light up the Yesterday
+  // segment and let the creator tap into it.
+  const yCount = allRows.filter(function(r) {
+    return r.name.toLowerCase() === name.toLowerCase() && r.date === yesterdayStr();
+  }).length;
+  if (yCount < 2 && graceWindowOpen()) {
+    segYesterday.removeAttribute('disabled');
+    segYesterday.classList.add('is-enabled');
+    hintEl.style.display = '';
+    hintMsg.textContent = yCount === 0
+      ? 'You did not log your videos yesterday. Log them before 2 PM.'
+      : 'You logged 1 of 2 videos yesterday. Log the second before 2 PM.';
+  } else {
+    segYesterday.setAttribute('disabled', '');
+    segYesterday.classList.remove('is-enabled');
+    hintEl.style.display = 'none';
   }
 }
 
 // ── LOG YESTERDAY, grace window for a missed video ──
 function updateDateLockDisplay() {
   const ds = loggingYesterday ? yesterdayStr() : todayStr();
-  const formatted = new Date(ds + 'T00:00:00').toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
   document.getElementById('f-date').value = ds;
-  document.getElementById('today-date-display').textContent = formatted;
-  const note = document.getElementById('date-lock-note');
-  if (note) note.textContent = loggingYesterday ? 'Yesterday: grace window' : 'Today only';
-  const card = document.getElementById('submit-form-card');
-  if (card) card.classList.toggle('yesterday-mode', loggingYesterday);
+  document.getElementById('seg-today-date').textContent =
+    new Date(todayStr() + 'T00:00:00').toLocaleDateString('en-GB', { weekday:'short', day:'numeric', month:'short' });
+  document.getElementById('seg-yesterday-date').textContent =
+    new Date(yesterdayStr() + 'T00:00:00').toLocaleDateString('en-GB', { weekday:'short', day:'numeric', month:'short' });
+  const toggle = document.getElementById('date-toggle');
+  toggle.classList.toggle('is-yesterday', loggingYesterday);
+  document.getElementById('seg-today').classList.toggle('is-active', !loggingYesterday);
+  document.getElementById('seg-yesterday').classList.toggle('is-active', loggingYesterday);
+  // The hint text ("you missed yesterday, log before 2 PM") only makes sense
+  // while deciding whether to switch — once yesterday is actually selected,
+  // the solid green segment itself is the signal.
+  if (loggingYesterday) document.getElementById('date-toggle-hint').style.display = 'none';
 }
 
 function startLogYesterday() {
   loggingYesterday = true;
-  document.getElementById('grace-yesterday').style.display = 'none';
-  const ymBanner = document.getElementById('yesterday-mode-banner');
-  document.getElementById('yesterday-mode-date').textContent =
-    new Date(yesterdayStr() + 'T00:00:00').toLocaleDateString('en-GB', { day:'numeric', month:'long' });
-  ymBanner.style.display = '';
   updateDateLockDisplay();
   renderYesterdayCards();
 }
 
 function exitLogYesterday() {
+  if (!loggingYesterday) return;
   loggingYesterday = false;
-  document.getElementById('yesterday-mode-banner').style.display = 'none';
   updateDateLockDisplay();
   onNameChange();
 }
@@ -1981,7 +2022,6 @@ function finalizeSuccess(name, date, post, tiktok, insta, issues, firstName, isS
     const yCount = allRows.filter(function(r) { return r.name.toLowerCase() === name.toLowerCase() && r.date === date; }).length;
     if (yCount >= 2) {
       loggingYesterday = false;
-      const b = document.getElementById('yesterday-mode-banner'); if (b) b.style.display = 'none';
       updateDateLockDisplay();
     }
   }
@@ -2020,7 +2060,6 @@ function verifySubmission(name, date, post, tiktok, insta, firstName, isSecond, 
         const yCount = allRows.filter(function(r) { return r.name.toLowerCase() === name.toLowerCase() && r.date === date; }).length;
         if (yCount >= 2) {
           loggingYesterday = false;
-          const b = document.getElementById('yesterday-mode-banner'); if (b) b.style.display = 'none';
           updateDateLockDisplay();
         }
       }
@@ -3632,7 +3671,7 @@ function renderNav() {
       '<button class="nav-tab ' + (currentPage==='submit'?'active':'') + '" onclick="showPage(\'submit\')">Submit form</button>' +
       '<button class="logout-btn" onclick="logout()">Logout</button>';
   } else {
-    c.innerHTML = '<button class="admin-btn" onclick="showPage(\'login\')">Admin login &rarr;</button>';
+    c.innerHTML = '<button class="admin-btn" onclick="showPage(\'login\')">Admin login</button>';
   }
 }
 

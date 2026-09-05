@@ -3,27 +3,27 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-<meta name="theme-color" content="#6d4ce0" />
+<meta name="theme-color" content="#1f5c3f" />
 <title>NorthQuest Creators · Onboarding</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700;800;900&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Playfair+Display:wght@600;700;800;900&display=swap');
   :root{
-    --accent:#6d4ce0; --accent2:#5839c4; --accent3:#4a2eab;
-    --bg:#f7f4fd; --surface:#ffffff; --border:#e7e0f3;
-    --gold:#f5b841; --gold-deep:#b9831a; --gold-soft:#fdf3dd;
+    --accent:#1f5c3f; --accent2:#1a4f36; --accent3:#163f2c; --accent-rgb:31,92,63;
+    --bg:#faf7f0; --surface:#ffffff; --border:#e4dfd0; --border2:#d6cfba;
+    --gold:#f5b841; --gold-deep:#8f5e10; --gold-soft:#fdf6e3;
     --wa:#1fa855; --wa-soft:#e7f8ee;
-    --text:#1a1525; --text2:#5c5470; --text3:#9389a6; --lav:#f0eaff;
+    --text:#1c1a16; --text2:#615c53; --text3:#615c53; --lav:#e7efe7;
   }
   *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
-  body{font-family:'Inter',-apple-system,sans-serif;color:var(--text);min-height:100dvh;font-size:15px;line-height:1.6;
+  body{font-family:'IBM Plex Sans',-apple-system,sans-serif;color:var(--text);min-height:100dvh;font-size:15px;line-height:1.6;
     -webkit-font-smoothing:antialiased;display:flex;justify-content:center;
-    background:radial-gradient(circle at 12% -5%, #e9dcff 0%, transparent 45%),
-      radial-gradient(circle at 95% 105%, #efe4ff 0%, transparent 45%), var(--bg);
+    background:var(--bg);
     padding:env(safe-area-inset-top) 16px calc(16px + env(safe-area-inset-bottom));}
+  .skip-link{position:absolute;left:-9999px;top:0;background:var(--accent3);color:#fff;padding:10px 16px;border-radius:0 0 8px 0;z-index:1000;font-size:13px;font-weight:600;}
+  .skip-link:focus{left:0;}
   .wrap{width:100%;max-width:480px;display:flex;flex-direction:column;min-height:100dvh;}
   .topbar{position:sticky;top:0;padding:16px 2px 12px;z-index:5;background:linear-gradient(var(--bg),var(--bg) 70%,transparent);}
   .brand{display:flex;align-items:center;gap:9px;margin-bottom:12px;}
-  .logo{width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:12px;}
   .brand-name{font-weight:700;font-size:14px;letter-spacing:-.2px;}
   .pv-badge{margin-left:auto;font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--gold-deep);background:var(--gold-soft);padding:4px 9px;border-radius:20px;display:none;}
   .progress{height:5px;background:var(--lav);border-radius:3px;overflow:hidden;}
@@ -31,74 +31,61 @@
   .stage{flex:1;display:flex;flex-direction:column;justify-content:center;padding:8px 2px 26px;}
   .step{display:none;} .step.active{display:block;}
   @keyframes riseIn{from{opacity:0;transform:translateY(18px);}to{opacity:1;transform:none;}}
-  @keyframes slideIn{from{opacity:0;transform:translateX(-22px);}to{opacity:1;transform:none;}}
   @keyframes pop{0%{transform:scale(.5);opacity:0;}65%{transform:scale(1.12);}100%{transform:scale(1);opacity:1;}}
   @keyframes blink{0%,100%{opacity:1;}50%{opacity:0;}}
   @keyframes glow{0%,100%{box-shadow:0 2px 10px rgba(245,184,65,.15);}50%{box-shadow:0 4px 24px rgba(245,184,65,.55);}}
   .step.active .rv{opacity:0;animation:riseIn .55s cubic-bezier(.2,.7,.3,1) forwards;}
-  .step.active .sv{opacity:0;animation:slideIn .55s cubic-bezier(.2,.7,.3,1) forwards;}
   .eyebrow{font-size:11px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--accent);margin-bottom:10px;}
-  h1{font-family:'Playfair Display',serif;font-size:30px;line-height:1.12;font-weight:800;letter-spacing:-.6px;margin-bottom:12px;}
+  h1{font-family:'Playfair Display',serif;font-size:30px;line-height:1.12;font-weight:800;letter-spacing:-.6px;margin-bottom:12px;text-wrap:balance;}
   .tw{min-height:68px;} .tw.center{min-height:auto;}
   .cur{display:inline-block;width:.5ch;color:var(--accent);animation:blink .8s step-end infinite;font-weight:400;}
-  p.lead{font-size:16px;color:var(--text2);line-height:1.66;}
-  .icon-badge{width:54px;height:54px;border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:27px;margin-bottom:16px;animation:pop .55s ease both;}
-  .ib-purple{background:var(--lav);} .ib-gold{background:var(--gold-soft);}
-  .hero{width:100%;height:172px;border-radius:20px;margin-bottom:20px;background:linear-gradient(135deg,#7b5be8,#4a2eab 85%);display:flex;align-items:center;justify-content:center;color:#fff;font-family:'Playfair Display',serif;font-size:22px;font-weight:700;position:relative;overflow:hidden;}
-  .hero::after{content:'NQ';position:absolute;right:-8px;bottom:-26px;font-size:120px;font-weight:900;opacity:.14;}
-  .hero::before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 30% 20%, rgba(255,255,255,.25), transparent 55%);}
-  .hero-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:1;}
-  .imgslot{position:relative;width:100%;min-height:150px;border-radius:18px;margin:0 0 18px;overflow:hidden;background:linear-gradient(135deg,#efe7ff,#e3d4ff);}
-  .imgslot img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:2;}
-  .imgslot svg.art,.hero-art{position:absolute;inset:0;width:100%;height:100%;}
-  .hero>span{position:relative;z-index:2;}
-  .steps-box{background:var(--surface);border:1.5px solid var(--border);border-radius:14px;padding:16px 18px;margin:18px 0 14px;}
+  p.lead{font-size:16px;color:var(--text2);line-height:1.66;text-wrap:pretty;}
+  .steps-box{background:var(--surface);border:1.5px solid var(--border);border-radius:12px;padding:16px 18px;margin:18px 0 14px;}
   .steps-title{font-size:13px;font-weight:700;color:var(--accent3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;}
   .steps-box ol{padding-left:20px;font-size:13.5px;color:var(--text2);line-height:1.7;} .steps-box li{margin-bottom:8px;}
   .steps-box ul{padding-left:20px;font-size:13.5px;color:var(--text2);line-height:1.7;list-style:none;} .steps-box ul li{margin-bottom:9px;position:relative;}
   .steps-box ul li::before{content:'\2610';position:absolute;left:-20px;color:var(--accent);font-size:15px;}
   .note{background:var(--lav);border-radius:12px;padding:14px 16px;font-size:14px;color:var(--accent3);margin-top:16px;}
-  .quote{border-left:3px solid var(--gold);background:var(--gold-soft);padding:14px 16px;border-radius:0 12px 12px 0;font-style:italic;color:#6b4e10;margin-top:16px;font-size:14.5px;}
-  .bignum{font-family:'Playfair Display',serif;font-size:54px;font-weight:900;color:var(--gold-deep);line-height:1;letter-spacing:-1px;}
+  .bignum{font-family:'Playfair Display',serif;font-size:54px;font-weight:900;color:var(--gold-deep);line-height:1;letter-spacing:-1px;font-variant-numeric:tabular-nums;}
   .field{margin-bottom:16px;} .field:last-of-type{margin-bottom:0;}
   .field label{display:block;font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--text2);margin-bottom:6px;}
-  input[type=text],input[type=email],input[type=tel],input[type=date]{width:100%;background:var(--surface);border:1.5px solid var(--border);border-radius:12px;padding:13px 15px;font-family:inherit;font-size:16px;color:var(--text);outline:none;transition:border-color .15s,box-shadow .15s;}
-  input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(109,76,224,.13);}
-  .group{background:var(--surface);border:1.5px solid var(--border);border-radius:14px;padding:16px;margin-bottom:16px;}
+  input[type=text],input[type=email],input[type=tel],input[type=date]{width:100%;background:var(--surface);border:1.5px solid var(--border);border-radius:10px;padding:13px 15px;font-family:inherit;font-size:16px;color:var(--text);outline:none;transition:border-color .15s,box-shadow .15s;}
+  input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(var(--accent-rgb),.13);}
+  .group{background:var(--surface);border:1.5px solid var(--border);border-radius:12px;padding:16px;margin-bottom:16px;}
   .group-title{font-size:13px;font-weight:700;color:var(--accent3);margin-bottom:12px;}
-  .btn{width:100%;padding:15px;border:none;border-radius:13px;font-family:inherit;font-size:16px;font-weight:600;cursor:pointer;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;box-shadow:0 6px 18px rgba(109,76,224,.28);transition:transform .12s,box-shadow .12s;}
-  .btn:active{transform:scale(.985);} .btn:disabled{opacity:.55;box-shadow:none;}
+  .btn{width:100%;padding:15px;border:none;border-radius:13px;font-family:inherit;font-size:16px;font-weight:600;cursor:pointer;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;box-shadow:0 8px 20px rgba(28,26,22,.05);transition:transform .12s,box-shadow .12s,filter .12s;}
+  .btn:hover{filter:brightness(1.06);}
+  .btn:active{transform:scale(.985);} .btn:disabled{opacity:.55;box-shadow:none;filter:none;}
+  .btn:focus-visible,.back:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+  .pick input:focus-visible,.check input:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+  .action:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
   .nav{display:flex;gap:10px;align-items:center;margin-top:22px;} .nav .btn{flex:1;}
-  .back{background:none;border:none;color:var(--text3);font-family:inherit;font-size:14px;font-weight:500;cursor:pointer;padding:8px 4px;white-space:nowrap;}
+  .back{background:none;border:none;color:var(--text3);font-family:inherit;font-size:14px;font-weight:500;cursor:pointer;padding:8px 4px;white-space:nowrap;border-radius:8px;}
   .badge-circle{width:64px;height:64px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:30px;margin:0 auto 16px;animation:pop .6s ease both;}
   .ladder{display:flex;flex-direction:column;gap:8px;margin-top:6px;}
-  .rung{display:flex;justify-content:space-between;align-items:center;padding:12px 15px;border-radius:12px;background:var(--surface);border:1.5px solid var(--border);font-size:14px;}
+  .rung{display:flex;justify-content:space-between;align-items:center;padding:12px 15px;border-radius:10px;background:var(--surface);border:1.5px solid var(--border);font-size:14px;}
   .rung.top{background:var(--gold-soft);border-color:var(--gold);animation:glow 2.6s ease-in-out infinite;}
-  .rung .views{color:var(--text2);font-weight:500;} .rung .cash{font-weight:700;color:var(--accent3);} .rung.top .cash{color:var(--gold-deep);}
+  .rung .views{color:var(--text2);font-weight:500;} .rung .cash{font-weight:700;color:var(--accent3);font-variant-numeric:tabular-nums;} .rung.top .cash{color:var(--gold-deep);}
   .action{display:flex;align-items:center;gap:13px;width:100%;text-align:left;padding:15px 16px;border-radius:14px;text-decoration:none;font-size:15px;font-weight:600;margin-bottom:11px;cursor:pointer;border:2px solid transparent;transition:transform .12s;}
   .action:active{transform:scale(.98);}
   .action .ic{width:38px;height:38px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:19px;flex-shrink:0;background:rgba(255,255,255,.6);}
   .action .chev{margin-left:auto;font-size:22px;opacity:.65;}
   .act-wa{background:var(--wa-soft);color:#0f5c30;border-color:#bce8cf;}
-  .act-dl{background:var(--lav);color:var(--accent3);border-color:#d6c8f6;}
+  .act-dl{background:var(--lav);color:var(--accent3);border-color:#c9ddd0;}
   .act-vid{background:var(--gold-soft);color:var(--gold-deep);border-color:#f0d79a;}
-  details{margin:6px 0 16px;border:1.5px solid var(--border);border-radius:12px;background:var(--surface);}
-  summary{padding:14px 15px;font-weight:600;font-size:14px;cursor:pointer;color:var(--accent3);}
-  details ol{padding:4px 18px 16px 32px;font-size:13.5px;color:var(--text2);line-height:1.7;} details li{margin-bottom:8px;}
   .tip{background:var(--lav);border-radius:10px;padding:10px 13px;font-size:13px;color:var(--accent3);margin:10px 0;}
   .warn{background:var(--gold-soft);border:1.5px solid var(--gold);border-radius:12px;padding:13px 15px;font-size:14px;color:var(--gold-deep);margin:16px 0 4px;line-height:1.55;}
   .warn .wt{display:block;font-weight:700;margin-bottom:4px;}
   .steps-box + .steps-box{margin-top:12px;}
   .part{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--gold-deep);background:var(--gold-soft);display:inline-block;padding:3px 8px;border-radius:6px;margin-bottom:8px;}
-  .steps-box ol.cont{counter-reset:none;}
-  .pick{display:flex;align-items:flex-start;gap:11px;background:var(--surface);border:2px solid var(--border);border-radius:12px;padding:13px 14px;margin-bottom:10px;cursor:pointer;transition:border-color .15s,background .15s;}
+  .pick{display:flex;align-items:flex-start;gap:11px;background:var(--surface);border:2px solid var(--border);border-radius:10px;padding:13px 14px;margin-bottom:10px;cursor:pointer;transition:border-color .15s,background .15s;}
   /* Custom radio: native rendering on some platforms shows the UNCHECKED
      dot as a solid filled circle, indistinguishable from checked. This one
      is unambiguous — empty ring until picked, then ring + solid dot. */
   .pick input{
     -webkit-appearance:none;appearance:none;
     width:20px;height:20px;border-radius:50%;
-    border:2px solid #c9b4f5;background:#fff;
+    border:2px solid var(--border2);background:#fff;
     margin-top:1px;flex-shrink:0;cursor:pointer;
     display:grid;place-content:center;transition:border-color .15s;
   }
@@ -111,9 +98,15 @@
   .pick:has(input:checked){border-color:var(--accent);background:var(--lav);}
   .pick .pick-t{display:block;font-weight:600;font-size:14.5px;color:var(--text);}
   .pick .pick-d{display:block;font-size:12.5px;color:var(--text2);margin-top:2px;line-height:1.45;}
-  .check{display:flex;align-items:flex-start;gap:11px;background:var(--surface);border:1.5px solid var(--border);border-radius:12px;padding:14px 15px;margin:14px 0;}
-  .check input{width:20px;height:20px;margin-top:1px;flex-shrink:0;accent-color:var(--accent);}
-  .check label{font-size:13.5px;color:var(--text2);line-height:1.5;}
+  .check{display:flex;align-items:flex-start;gap:11px;background:var(--surface);border:1.5px solid var(--border);border-radius:10px;padding:14px 15px;margin:14px 0;}
+  /* Custom checkbox: the old native accent-color checkbox picked up the
+     accent color even before it was ticked, reading as pre-agreed. This one
+     is an empty white box until checked, then fills with the check mark. */
+  .check input{-webkit-appearance:none;appearance:none;width:20px;height:20px;border-radius:5px;border:2px solid var(--border2);background:#fff;margin-top:1px;flex-shrink:0;cursor:pointer;display:grid;place-content:center;transition:border-color .15s,background .15s;}
+  .check input::before{content:'\2713';font-size:13px;line-height:1;color:#fff;opacity:0;transform:scale(.5);transition:opacity .12s,transform .12s ease-in-out;}
+  .check input:checked{border-color:var(--accent);background:var(--accent);}
+  .check input:checked::before{opacity:1;transform:scale(1);}
+  .check label{font-size:13.5px;color:var(--text2);line-height:1.5;cursor:pointer;}
   .filechip{font-size:13px;color:var(--text2);margin-top:8px;}
   .rev-row{display:flex;justify-content:space-between;gap:14px;padding:10px 0;border-bottom:1px solid var(--border);font-size:14px;}
   .rev-row:last-child{border-bottom:none;}
@@ -125,35 +118,30 @@
   .confetti span{position:absolute;width:9px;height:14px;opacity:0;animation:fall 2.3s ease-in forwards;}
   @keyframes fall{0%{opacity:1;transform:translateY(-20px) rotate(0);}100%{opacity:0;transform:translateY(105vh) rotate(560deg);}}
   .small{font-size:13px;color:var(--text3);} .center{text-align:center;}
-  .icon-badge svg{width:26px;height:26px;stroke:var(--accent3);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
-  .ib-gold svg{stroke:var(--gold-deep);}
   .badge-circle svg{width:30px;height:30px;stroke:var(--gold-deep);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
-  .logo svg{width:16px;height:16px;fill:#fff;stroke:none;}
+  .example-card{background:var(--surface);border:1.5px solid var(--border);border-radius:12px;padding:14px 15px;margin-top:16px;}
+  .example-card .ex-label{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--text3);margin-bottom:10px;}
+  .example-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px dashed var(--border);}
+  .example-row:last-child{border-bottom:none;}
+  .example-row .ex-num{width:22px;height:22px;border-radius:50%;background:var(--lav);color:var(--accent3);font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .example-row .ex-txt{font-size:13.5px;color:var(--text2);}
+  .example-row .ex-txt strong{color:var(--text);}
 </style>
 </head>
 <body>
+<a class="skip-link" href="#stage">Skip to content</a>
 <div class="confetti" id="confetti"></div>
 <div class="wrap">
   <div class="topbar">
-    <div class="brand"><div class="logo"><svg viewBox="0 0 24 24"><path d="M12 1.5l2.6 7.9 7.9 2.6-7.9 2.6L12 22.5l-2.6-7.9-7.9-2.6 7.9-2.6z"/></svg></div><div class="brand-name">NorthQuest Creators</div><span class="pv-badge" id="pv-badge">Preview</span></div>
+    <div class="brand"><div class="brand-name">Creator Onboarding</div><span class="pv-badge" id="pv-badge">Preview</span></div>
     <div class="progress"><div class="progress-fill" id="pfill"></div></div>
   </div>
-  <div class="stage" id="stage">
+  <main class="stage" id="stage">
 
     <section class="step active" data-key="welcome">
-      <div class="hero rv"><svg class="hero-art" viewBox="0 0 480 172" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
-        <defs><linearGradient id="hgrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#7b5be8"/><stop offset="1" stop-color="#43289e"/></linearGradient></defs>
-        <rect width="480" height="172" fill="url(#hgrad)"/>
-        <circle cx="52" cy="26" r="1.6" fill="#fff" opacity=".8"/><circle cx="128" cy="14" r="1.2" fill="#fff" opacity=".6"/><circle cx="212" cy="30" r="1.4" fill="#fff" opacity=".7"/><circle cx="300" cy="12" r="1.2" fill="#fff" opacity=".55"/><circle cx="360" cy="34" r="1.5" fill="#fff" opacity=".7"/><circle cx="452" cy="18" r="1.3" fill="#fff" opacity=".6"/><circle cx="88" cy="52" r="1.1" fill="#fff" opacity=".5"/><circle cx="255" cy="48" r="1.1" fill="#fff" opacity=".5"/>
-        <path d="M424 16l1.9 6.1 6.1 1.9-6.1 1.9-1.9 6.1-1.9-6.1-6.1-1.9 6.1-1.9z" fill="#f5b841"/>
-        <path d="M0 172v-52h28v-16h24v28h28v-40h26v20h30v-32h30v38h26v-24h30v34h28v-26h26v24h30v-34h28v44h26v-18h30v50H0z" fill="#33206e" opacity=".75"/>
-        <polyline points="42,138 132,114 222,122 312,84 424,54" stroke="#f5b841" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-        <circle cx="132" cy="114" r="4" fill="#f5b841"/><circle cx="222" cy="122" r="4" fill="#f5b841"/><circle cx="312" cy="84" r="4" fill="#f5b841"/>
-        <circle cx="424" cy="54" r="6.5" fill="#f5b841"/><circle cx="424" cy="54" r="11" fill="#f5b841" opacity=".3"/>
-      </svg><span>A home for creators</span><img class="hero-img" src="hero.jpg" alt="" onerror="this.remove()"></div>
-      <div class="eyebrow rv">Made by Smith and Ella</div>
+      <div class="eyebrow rv">Made by Smith</div>
       <h1 class="tw" id="tw-welcome"></h1>
-      <p class="lead rv">This is your onboarding. Stay with it to the very end, because you will learn how everything works, set up your details, and sign your contract right here. About five minutes.</p>
+      <p class="lead rv">This is your onboarding. Stay with it to the end: set up your details and sign your contract, then you begin.</p>
       <div class="nav rv"><button class="btn" onclick="next()">Begin &rarr;</button></div>
     </section>
 
@@ -168,100 +156,36 @@
     <section class="step center" data-key="congrats">
       <div class="badge-circle rv" style="background:var(--gold-soft)"><svg viewBox="0 0 24 24"><path d="M8 21h8M12 17v4"/><path d="M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M7 5H4.5a1 1 0 0 0-1 1c0 2 1.5 3.5 3.5 3.5M17 5h2.5a1 1 0 0 1 1 1c0 2-1.5 3.5-3.5 3.5"/></svg></div>
       <h1 class="tw center" id="tw-congrats"></h1>
-      <p class="lead rv">Reaching <strong style="color:var(--gold-deep)"><span id="cu-5k">0</span> views</strong> is no small thing. That milestone is exactly why you are here. Let me show you what being a NorthQuest creator looks like.</p>
-      <div class="imgslot rv" style="margin-top:18px"><svg class="art" viewBox="0 0 480 150" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
-        <rect width="480" height="150" fill="#f3edff"/>
-        <circle cx="52" cy="34" r="3" fill="#f5b841"/><rect x="98" y="98" width="6" height="6" rx="1" fill="#6d4ce0" transform="rotate(24 101 101)"/><circle cx="140" cy="26" r="2.5" fill="#a98bf0"/><rect x="368" y="30" width="6" height="6" rx="1" fill="#f5b841" transform="rotate(-18 371 33)"/><circle cx="416" cy="104" r="3" fill="#6d4ce0"/><circle cx="446" cy="46" r="2.5" fill="#a98bf0"/><rect x="60" y="112" width="5" height="5" rx="1" fill="#f5b841" transform="rotate(40 62 114)"/>
-        <path d="M240 12l2.2 7 7 2.2-7 2.2-2.2 7-2.2-7-7-2.2 7-2.2z" fill="#f5b841"/>
-        <path d="M150 96c-14-8-22-24-20-42M330 96c14-8 22-24 20-42" stroke="#b9831a" stroke-width="3" fill="none" stroke-linecap="round"/>
-        <rect x="168" y="52" width="144" height="52" rx="14" fill="#fff" stroke="#f0d79a" stroke-width="2"/>
-        <text x="240" y="80" text-anchor="middle" font-family="Inter,sans-serif" font-size="21" font-weight="800" fill="#b9831a">10,000</text>
-        <text x="240" y="95" text-anchor="middle" font-family="Inter,sans-serif" font-size="9" font-weight="700" letter-spacing="2.5" fill="#9389a6">VIEWS</text>
-        <path d="M182 123l4.5 4.5 8-9" stroke="#1a6b4a" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-        <text x="246" y="130" text-anchor="middle" font-family="Inter,sans-serif" font-size="10" font-weight="600" fill="#5c5470">Milestone reached</text>
-      </svg><img src="congrats.jpg" alt="" onerror="this.remove()"></div>
+      <p class="lead rv">Reaching <strong style="color:var(--gold-deep)"><span id="cu-5k">0</span> views</strong> is no small thing. Let me show you what being a NorthQuest creator looks like.</p>
       <div class="nav rv"><button class="back" onclick="prev()">Back</button><button class="btn" onclick="next()">Let's go &rarr;</button></div>
     </section>
 
-    <section class="step" data-key="about">
-      <div class="icon-badge ib-purple rv"><svg viewBox="0 0 24 24"><path d="M3 21h18M5 21v-9M9 21v-9M15 21v-9M19 21v-9M12 3L3 8.5h18z"/></svg></div>
-      <div class="eyebrow rv">Know what you're talking about</div>
-      <h1 class="rv">What is NorthQuest?</h1>
-      <p class="lead rv">NorthQuest Finance is a CBN-regulated savings and investment platform that helps Nigerians earn real returns instead of letting money lose value in low-interest accounts.</p>
-      <div class="group" style="margin-top:18px;padding:8px 16px;">
-        <div class="sv" style="display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--border)"><span>Q-Lock · fixed savings</span><strong style="color:var(--accent3)">up to 24%</strong></div>
-        <div class="sv" style="display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--border)"><span>Q-Flex · withdraw anytime</span><strong style="color:var(--accent3)">up to 15%</strong></div>
-        <div class="sv" style="display:flex;justify-content:space-between;padding:9px 0"><span>Auto-Save · save to a target</span><strong style="color:var(--accent3)">20%</strong></div>
-      </div>
-      <div class="imgslot rv" style="margin-top:18px"><svg class="art" viewBox="0 0 480 150" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
-        <rect width="480" height="150" fill="#efe7ff"/>
-        <circle cx="428" cy="18" r="46" fill="#e3d4ff"/><circle cx="36" cy="136" r="34" fill="#e6d9fd"/>
-        <rect x="186" y="16" width="108" height="150" rx="16" fill="#fff" stroke="#d6c8f6" stroke-width="2"/>
-        <rect x="198" y="32" width="84" height="36" rx="9" fill="#6d4ce0"/>
-        <text x="206" y="47" font-family="Inter,sans-serif" font-size="8" font-weight="600" fill="#cdbcf7">Total savings</text>
-        <text x="206" y="61" font-family="Inter,sans-serif" font-size="13" font-weight="800" fill="#fff">&#8358;540,000</text>
-        <rect x="198" y="78" width="84" height="8" rx="4" fill="#f0eaff"/><rect x="198" y="78" width="58" height="8" rx="4" fill="#f5b841"/>
-        <rect x="200" y="120" width="14" height="26" rx="3" fill="#e3d4ff"/><rect x="220" y="108" width="14" height="38" rx="3" fill="#c9b4f5"/><rect x="240" y="96" width="14" height="50" rx="3" fill="#a98bf0"/><rect x="260" y="82" width="14" height="64" rx="3" fill="#6d4ce0"/>
-        <circle cx="128" cy="58" r="20" fill="#f5b841"/><circle cx="128" cy="58" r="20" fill="none" stroke="#b9831a" stroke-width="2" opacity=".4"/>
-        <text x="128" y="64" text-anchor="middle" font-family="Inter,sans-serif" font-size="15" font-weight="800" fill="#7a5410">&#8358;</text>
-        <circle cx="352" cy="96" r="15" fill="#f5b841"/><text x="352" y="101" text-anchor="middle" font-family="Inter,sans-serif" font-size="11" font-weight="800" fill="#7a5410">&#8358;</text>
-        <path d="M118 96c-8 14-4 30 10 38M362 58c8-14 4-30-10-38" stroke="#a98bf0" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-dasharray="1 7"/>
-        <text x="352" y="42" text-anchor="middle" font-family="Inter,sans-serif" font-size="10" font-weight="700" fill="#4a2eab">up to 24%</text>
-      </svg><img src="about.jpg" alt="" onerror="this.remove()"></div>
-      <div class="quote rv">Sound like a real person talking to a friend, not a brand talking to a customer. Would you say this to your best friend at lunch?</div>
-      <div class="nav rv"><button class="back" onclick="prev()">Back</button><button class="btn" onclick="next()">Continue &rarr;</button></div>
-    </section>
-
     <section class="step" data-key="rhythm">
-      <div class="icon-badge ib-purple rv"><svg viewBox="0 0 24 24"><rect x="3" y="4.5" width="18" height="17" rx="2.5"/><line x1="16" y1="2.5" x2="16" y2="6.5"/><line x1="8" y1="2.5" x2="8" y2="6.5"/><line x1="3" y1="10.5" x2="21" y2="10.5"/></svg></div>
-      <div class="eyebrow rv">Your daily rhythm</div>
       <h1 class="rv">Two a day, both platforms</h1>
-      <p class="lead rv">Shoot two videos every day, and post the <strong>same two</strong> on both TikTok and Instagram. Not two per platform. The same two, cross-posted. The second one before 9 PM.</p>
-      <div class="imgslot rv" style="margin-top:16px"><svg class="art" viewBox="0 0 480 150" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
-        <rect width="480" height="150" fill="#efe7ff"/>
-        <circle cx="446" cy="128" r="40" fill="#e3d4ff"/><circle cx="30" cy="22" r="30" fill="#e6d9fd"/>
-        <rect x="126" y="18" width="228" height="132" rx="14" fill="#fff" stroke="#d6c8f6" stroke-width="2"/>
-        <path d="M126 32c0-8 6-14 14-14h200c8 0 14 6 14 14v14H126z" fill="#6d4ce0"/>
-        <text x="240" y="37" text-anchor="middle" font-family="Inter,sans-serif" font-size="10" font-weight="700" fill="#fff">2 VIDEOS &#183; EVERY DAY</text>
-        <g font-family="Inter,sans-serif" font-size="8" font-weight="600" fill="#9389a6" text-anchor="middle"><text x="152" y="62">M</text><text x="181" y="62">T</text><text x="210" y="62">W</text><text x="239" y="62">T</text><text x="268" y="62">F</text><text x="297" y="62">S</text><text x="326" y="62">S</text></g>
-        <g>
-          <rect x="140" y="70" width="24" height="30" rx="6" fill="#f0eaff"/><path d="M148 76l6 4-6 4zM148 88l6 4-6 4z" fill="#6d4ce0"/>
-          <rect x="169" y="70" width="24" height="30" rx="6" fill="#f0eaff"/><path d="M177 76l6 4-6 4zM177 88l6 4-6 4z" fill="#6d4ce0"/>
-          <rect x="198" y="70" width="24" height="30" rx="6" fill="#f0eaff"/><path d="M206 76l6 4-6 4zM206 88l6 4-6 4z" fill="#6d4ce0"/>
-          <rect x="227" y="70" width="24" height="30" rx="6" fill="#f0eaff"/><path d="M235 76l6 4-6 4zM235 88l6 4-6 4z" fill="#6d4ce0"/>
-          <rect x="256" y="70" width="24" height="30" rx="6" fill="#f0eaff"/><path d="M264 76l6 4-6 4zM264 88l6 4-6 4z" fill="#6d4ce0"/>
-          <rect x="285" y="70" width="24" height="30" rx="6" fill="#fdf3dd"/><path d="M293 76l6 4-6 4zM293 88l6 4-6 4z" fill="#b9831a"/>
-          <rect x="314" y="70" width="24" height="30" rx="6" fill="#fdf3dd"/><path d="M322 76l6 4-6 4zM322 88l6 4-6 4z" fill="#b9831a"/>
-        </g>
-        <g font-family="Inter,sans-serif" font-size="9" font-weight="700">
-          <rect x="140" y="110" width="94" height="26" rx="13" fill="#e6f4ec"/><path d="M152 123l4 4 7-8" stroke="#1a6b4a" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/><text x="170" y="126" fill="#1a6b4a">TikTok</text>
-          <rect x="244" y="110" width="94" height="26" rx="13" fill="#fae8ee"/><path d="M256 123l4 4 7-8" stroke="#c44569" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/><text x="274" y="126" fill="#c44569">Instagram</text>
-        </g>
-        <circle cx="392" cy="52" r="22" fill="#fff" stroke="#d6c8f6" stroke-width="2"/><path d="M392 40v12l8 5" stroke="#6d4ce0" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-        <text x="392" y="88" text-anchor="middle" font-family="Inter,sans-serif" font-size="8.5" font-weight="700" fill="#4a2eab">2nd before 9 PM</text>
-      </svg><img src="rhythm.jpg" alt="" onerror="this.remove()"></div>
-      <div class="note rv"><span class="gname">there</span>, that is 14 a week and <strong>62 a month</strong> — our standard monthly count. The more you post, the better your chances. Don't wait for a perfect video. Post, learn, post again.</div>
+      <p class="lead rv">Shoot two videos every day, and post the same two on both TikTok and Instagram. The second one before 11:30 PM.</p>
+      <div class="note rv"><span class="gname">there</span>, that is 14 a week and <strong>62 a month</strong>, our standard monthly count. The more you post, the better your chances. Don't wait for a perfect video, post, learn, post again.</div>
       <div class="nav rv"><button class="back" onclick="prev()">Back</button><button class="btn" onclick="next()">Continue &rarr;</button></div>
     </section>
 
     <section class="step" data-key="logging">
-      <div class="icon-badge ib-purple rv"><svg viewBox="0 0 24 24"><polygon points="13 2 3 14 11.5 14 11 22 21 10 12.5 10 13 2"/></svg></div>
-      <div class="eyebrow rv">How you log your posts</div>
       <h1 class="rv">Logging takes seconds</h1>
-      <p class="lead rv">Every day, after you post, you drop your TikTok and Instagram links into our tracker — the same video, both links. That is how your work is counted. <strong>A video not logged the same day may not count</strong>, so make it a habit.</p>
-      <div class="note rv"><strong>The tracker link is always in the group description.</strong> Check there first — please do not ask in the group where the link is; it never moves. It opens on your phone, you paste your two links, and you are done.</div>
+      <p class="lead rv">Every day, after you post, drop your TikTok and Instagram links into our tracker. That is how your work is counted. A video not logged the same day may not count, so make it a habit.</p>
+      <div class="example-card rv">
+        <div class="ex-label">What it looks like</div>
+        <div class="example-row"><span class="ex-num">1</span><span class="ex-txt">Open the tracker link (always in the main group's description)</span></div>
+        <div class="example-row"><span class="ex-num">2</span><span class="ex-txt">Pick your name, it tells you which video you're on</span></div>
+        <div class="example-row"><span class="ex-num">3</span><span class="ex-txt">Paste your <strong>TikTok link</strong> and your <strong>Instagram link</strong></span></div>
+        <div class="example-row"><span class="ex-num">4</span><span class="ex-txt">Tap <strong>Submit</strong>, that's it, you're logged</span></div>
+      </div>
       <div class="nav rv"><button class="back" onclick="prev()">Back</button><button class="btn" onclick="next()">Continue &rarr;</button></div>
     </section>
 
     <section class="step center" data-key="pay">
-      <div class="icon-badge ib-gold rv" style="margin-left:auto;margin-right:auto"><svg viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="2.5"/><circle cx="12" cy="12" r="3"/><path d="M6 12h.01M18 12h.01"/></svg></div>
-      <div class="eyebrow rv">How you get paid</div>
       <div class="bignum rv" style="margin-bottom:4px;">&#8358;100,000 &ndash; &#8358;300,000</div>
       <p class="lead rv">a month in base pay. Every creator has their own base pay — it is set when you join and reviewed as you perform, and creators who perform well get bumped up. Your rate per video is your base pay &divide; 62, earned on every video you log towards your full <strong>62 videos a month</strong>. You are paid once a month, on or before the last day.</p>
       <p class="lead rv" style="margin-top:14px;">And when you go viral, real bonuses stack on top:</p>
       <div class="ladder rv" style="margin-top:8px;text-align:left;">
-        <div class="rung top"><span class="views">10,000,000 views</span><span class="cash">&#8358;2,000,000</span></div>
-        <div class="rung"><span class="views">5,000,000 views</span><span class="cash">&#8358;1,000,000</span></div>
+        <div class="rung top"><span class="views">5,000,000 views</span><span class="cash">&#8358;1,000,000</span></div>
         <div class="rung"><span class="views">2,000,000 views</span><span class="cash">&#8358;500,000</span></div>
         <div class="rung"><span class="views">1,000,000 views</span><span class="cash">&#8358;250,000</span></div>
         <div class="rung"><span class="views">500,000 views</span><span class="cash">&#8358;100,000</span></div>
@@ -271,18 +195,14 @@
     </section>
 
     <section class="step" data-key="rules">
-      <div class="icon-badge ib-purple rv"><svg viewBox="0 0 24 24"><path d="M12 22s8-3.6 8-10V5.2L12 2 4 5.2V12c0 6.4 8 10 8 10z"/><polyline points="9 11.5 11.2 13.7 15.5 9.4"/></svg></div>
-      <div class="eyebrow rv">How content works here</div>
       <h1 class="rv">Ella approves everything</h1>
-      <p class="lead rv"><strong>Nothing goes up without Ella's approval.</strong> She is our Quality Control Officer. Every video goes to her before posting. Follow her on TikTok at <strong>@ellaikipo</strong> to stay in the loop.</p>
-      <p class="lead rv" style="margin-top:12px;">Four formats that keep working: the relatable joke, the soft flex, the money drama, and the casual mention. Don't sell the app. Sell the feeling of having your money sorted.</p>
-      <p class="lead rv" style="margin-top:12px;">And aside from Ella — if you ever face <strong>account issues, login issues or posting issues</strong>, reach out to Smith directly:</p>
-      <a class="action act-wa rv" id="wa-help" target="_blank" rel="noopener" style="margin-top:6px"><span class="ic">&#128241;</span><span>Account, login or posting issues? Message Smith on WhatsApp</span><span class="chev">&rsaquo;</span></a>
+      <p class="lead rv">No content goes up without approval from Ella, or anyone she appoints. Follow her on TikTok at <strong>@ellaikipo</strong> to stay in the loop.</p>
+      <p class="lead rv" style="margin-top:12px;">Account, login, or posting issues? Reach out to Smith directly:</p>
+      <a class="action act-wa rv" id="wa-help" target="_blank" rel="noopener" style="margin-top:6px"><span class="ic">&#128241;</span><span>Message Smith on WhatsApp</span><span class="chev">&rsaquo;</span></a>
       <div class="nav rv"><button class="back" onclick="prev()">Back</button><button class="btn" onclick="next()">I'm ready &rarr;</button></div>
     </section>
 
     <section class="step" data-key="details1">
-      <div class="eyebrow rv">Almost there</div>
       <h1 class="rv">Your details, <span class="gname">there</span></h1>
       <p class="lead rv">All private, used only to set you up and pay you.</p>
       <div class="group rv" style="margin-top:18px;">
@@ -304,17 +224,16 @@
     </section>
 
     <section class="step" data-key="details2">
-      <div class="eyebrow rv">Almost there</div>
       <h1 class="rv">Accounts &amp; pay</h1>
       <p class="lead rv">The accounts you run for NorthQuest, and where your pay is sent.</p>
       <div class="group rv" style="margin-top:18px;">
         <div class="group-title">Your NorthQuest accounts</div>
         <div class="field"><label>NorthQuest email</label><input type="text" id="f-nqemail" placeholder="thenqemail@gmail.com" /></div>
         <div class="field"><label>NorthQuest email password</label><input type="text" id="f-nqpass" placeholder="Password" /></div>
-        <div class="field"><label>Instagram username <span style="font-weight:400;text-transform:none;letter-spacing:0;">(at least one of Instagram or TikTok required)</span></label><input type="text" id="f-iguser" placeholder="@username, or leave blank if blocked" /></div>
-        <div class="field"><label>Instagram password <span style="font-weight:400;text-transform:none;letter-spacing:0;">optional</span></label><input type="text" id="f-igpass" placeholder="Password" /></div>
-        <div class="field"><label>TikTok username <span style="font-weight:400;text-transform:none;letter-spacing:0;">(at least one of Instagram or TikTok required)</span></label><input type="text" id="f-ttuser" placeholder="@username, or leave blank if blocked" /></div>
-        <div class="field"><label>TikTok password <span style="font-weight:400;text-transform:none;letter-spacing:0;">optional</span></label><input type="text" id="f-ttpass" placeholder="Password" /></div>
+        <div class="field"><label>Instagram username</label><input type="text" id="f-iguser" placeholder="@username" /></div>
+        <div class="field"><label>Instagram password</label><input type="text" id="f-igpass" placeholder="Password" /></div>
+        <div class="field"><label>TikTok username</label><input type="text" id="f-ttuser" placeholder="@username" /></div>
+        <div class="field"><label>TikTok password</label><input type="text" id="f-ttpass" placeholder="Password" /></div>
       </div>
       <div class="group rv">
         <div class="group-title">Get paid</div>
@@ -327,8 +246,6 @@
     </section>
 
     <section class="step" data-key="review">
-      <div class="icon-badge ib-purple rv"><svg viewBox="0 0 24 24"><path d="M1 12s4-7.5 11-7.5S23 12 23 12s-4 7.5-11 7.5S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg></div>
-      <div class="eyebrow rv">One quick check</div>
       <h1 class="rv">Does this all look right?</h1>
       <p class="lead rv">Please read through what you entered. If anything is wrong, tap Back to fix it.</p>
       <div class="group rv" id="review-box" style="margin-top:18px;"></div>
@@ -336,8 +253,6 @@
     </section>
 
     <section class="step" data-key="contract">
-      <div class="icon-badge ib-purple rv"><svg viewBox="0 0 24 24"><path d="M14 2H6.5A2.5 2.5 0 0 0 4 4.5v15A2.5 2.5 0 0 0 6.5 22H17.5a2.5 2.5 0 0 0 2.5-2.5V8z"/><polyline points="14 2 14 8 20 8"/><path d="M8.5 16.5l1-3 5-5 2 2-5 5z"/></svg></div>
-      <div class="eyebrow rv">Last step</div>
       <h1 class="rv">How to sign your contract</h1>
       <p class="lead rv">This takes about ten minutes. You will use three things: the contract in Google Drive, the Adobe Acrobat app, and this page. Read to the end before you tap anything.</p>
 
@@ -429,7 +344,7 @@
       <div class="tip rv" id="mirror-tip" style="display:none;">Button not opening on your network? <a id="mirror-link" href="#" target="_blank" rel="noopener"><strong>Use the backup address</strong></a> instead — same tracker, different host.</div>
     </section>
 
-  </div>
+  </main>
 </div>
 <script>
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwLrQ6h0XAOKIxYw_r2uMbb_FtBq_ZBBFdBAQpeLHo9Z9ZKkzISuje9CvuTF-RcWgFgmQ/exec';
@@ -475,10 +390,10 @@ function countUp(el, to, dur, prefix){
   })(start);
 }
 function animateRv(el){
-  el.querySelectorAll('.rv, .sv').forEach((n,i)=>{ n.style.animation='none'; void n.offsetHeight; n.style.animation=''; n.style.animationDelay=(i*0.08)+'s'; });
+  el.querySelectorAll('.rv').forEach((n,i)=>{ n.style.animation='none'; void n.offsetHeight; n.style.animation=''; n.style.animationDelay=(i*0.08)+'s'; });
 }
 function playFor(k){
-  if (k==='welcome') typeOut(document.getElementById('tw-welcome'), 'Welcome to NorthQuest', 48);
+  if (k==='welcome') typeOut(document.getElementById('tw-welcome'), 'Welcome to your onboarding', 45);
   else if (k==='name') typeOut(document.getElementById('tw-name'), 'What should I call you?', 45);
   else if (k==='congrats'){ burst(); typeOut(document.getElementById('tw-congrats'), 'Hey ' + nick + ', congratulations!', 45); countUp(document.getElementById('cu-5k'), 10000, 1100, ''); }
   else if (k==='done'){ burst(); typeOut(document.getElementById('tw-done'), 'Welcome aboard, ' + nick + '!', 45); }
@@ -506,7 +421,7 @@ function buildWa(){
 }
 function burst(){
   const c=document.getElementById('confetti'); c.innerHTML='';
-  const cols=['#6d4ce0','#f5b841','#5839c4','#b9831a','#a98bf0'];
+  const cols=['#1f5c3f','#f5b841','#1a4f36','#8f5e10','#7fae93'];
   for(let i=0;i<48;i++){ const s=document.createElement('span'); s.style.left=Math.random()*100+'%'; s.style.background=cols[i%cols.length]; s.style.animationDelay=(Math.random()*.5)+'s'; c.appendChild(s); }
   setTimeout(()=>{c.innerHTML='';},2900);
 }
@@ -544,12 +459,9 @@ function validateDetails2(){
   const a=document.getElementById('details2-alert');
   const need=[['f-nqemail','the NorthQuest email address'],['f-nqpass','the NorthQuest email password'],['f-bank','your bank name'],['f-acctnum','your account number'],['f-acctname','your account name']];
   for(const item of need){ if(!val(item[0])){ a.textContent='Please enter '+item[1]+' before continuing.'; a.classList.add('show'); document.getElementById(item[0]).focus(); return false; } }
-  if(!val('f-iguser') && !val('f-ttuser')){
-    a.textContent='Please enter at least one: your Instagram username or your TikTok username. (If one platform has blocked your account, the other is enough.)';
-    a.classList.add('show');
-    document.getElementById('f-iguser').scrollIntoView({behavior:'smooth',block:'center'});
-    return false;
-  }
+  // Instagram and TikTok are plainly optional, independently of each other:
+  // if a creator has the account they fill it in, if not they leave it
+  // blank. No "at least one required" coupling.
   a.classList.remove('show'); return true;
 }
 function fillReview(){
