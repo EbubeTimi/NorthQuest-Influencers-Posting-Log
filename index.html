@@ -1458,13 +1458,32 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 });
 
-function todayStr() { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); }
-function yesterdayStr() { const d = new Date(); d.setDate(d.getDate() - 1); return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); }
-// Client-side estimate only, for showing/hiding the "log yesterday" banner.
-// The server enforces the real 2 PM (Africa/Lagos) cutoff independently, so a
-// wrong device clock/timezone can only hide or show the button early, it can
-// never let a submission through the server would otherwise reject.
-function graceWindowOpen() { return new Date().getHours() < 14; }
+// Anchored to Africa/Lagos explicitly, not the device's own clock/timezone.
+// A creator's or admin's device can be set to the wrong timezone, or just
+// have a drifting clock — that must not make "today"/"yesterday" or the
+// grace window wrong. The server still independently recomputes the real
+// Lagos date and cutoff on submit and is the true authority either way;
+// this only decides what the UI shows before that.
+function lagosParts() {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Africa/Lagos', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', hour12: false
+  }).formatToParts(new Date());
+  const get = t => parts.find(p => p.type === t).value;
+  let hour = parseInt(get('hour'), 10);
+  if (hour === 24) hour = 0; // some engines report midnight as "24" with hour12:false
+  return { year: parseInt(get('year'),10), month: parseInt(get('month'),10), day: parseInt(get('day'),10), hour: hour };
+}
+function todayStr() {
+  const d = lagosParts();
+  return d.year + '-' + String(d.month).padStart(2,'0') + '-' + String(d.day).padStart(2,'0');
+}
+function yesterdayStr() {
+  const d = lagosParts();
+  const dt = new Date(Date.UTC(d.year, d.month - 1, d.day));
+  dt.setUTCDate(dt.getUTCDate() - 1);
+  return dt.getUTCFullYear() + '-' + String(dt.getUTCMonth()+1).padStart(2,'0') + '-' + String(dt.getUTCDate()).padStart(2,'0');
+}
+function graceWindowOpen() { return lagosParts().hour < 14; }
 
 // Every date comparison in this file assumes a plain 'YYYY-MM-DD' string.
 // A Google Sheets date cell does not always come back that way, if the cell
