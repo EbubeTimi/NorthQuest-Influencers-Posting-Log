@@ -92,7 +92,22 @@
   .part{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--gold-deep);background:var(--gold-soft);display:inline-block;padding:3px 8px;border-radius:6px;margin-bottom:8px;}
   .steps-box ol.cont{counter-reset:none;}
   .pick{display:flex;align-items:flex-start;gap:11px;background:var(--surface);border:2px solid var(--border);border-radius:12px;padding:13px 14px;margin-bottom:10px;cursor:pointer;transition:border-color .15s,background .15s;}
-  .pick input{width:20px;height:20px;margin-top:1px;flex-shrink:0;accent-color:var(--accent);}
+  /* Custom radio: native rendering on some platforms shows the UNCHECKED
+     dot as a solid filled circle, indistinguishable from checked. This one
+     is unambiguous — empty ring until picked, then ring + solid dot. */
+  .pick input{
+    -webkit-appearance:none;appearance:none;
+    width:20px;height:20px;border-radius:50%;
+    border:2px solid #c9b4f5;background:#fff;
+    margin-top:1px;flex-shrink:0;cursor:pointer;
+    display:grid;place-content:center;transition:border-color .15s;
+  }
+  .pick input::before{
+    content:'';width:10px;height:10px;border-radius:50%;
+    background:var(--accent);transform:scale(0);transition:transform .12s ease-in-out;
+  }
+  .pick input:checked{border-color:var(--accent);}
+  .pick input:checked::before{transform:scale(1);}
   .pick:has(input:checked){border-color:var(--accent);background:var(--lav);}
   .pick .pick-t{display:block;font-weight:600;font-size:14.5px;color:var(--text);}
   .pick .pick-d{display:block;font-size:12.5px;color:var(--text2);margin-top:2px;line-height:1.45;}
@@ -266,7 +281,7 @@
       <div class="nav rv"><button class="back" onclick="prev()">Back</button><button class="btn" onclick="next()">I'm ready &rarr;</button></div>
     </section>
 
-    <section class="step" data-key="details">
+    <section class="step" data-key="details1">
       <div class="eyebrow rv">Almost there</div>
       <h1 class="rv">Your details, <span class="gname">there</span></h1>
       <p class="lead rv">All private, used only to set you up and pay you.</p>
@@ -284,14 +299,22 @@
         <label class="pick"><input type="radio" name="ctype" value="video" />
           <span><span class="pick-t">Video content</span><span class="pick-d">TikTok and Instagram videos</span></span></label>
       </div>
-      <div class="group rv">
+      <div class="alert" id="details1-alert"></div>
+      <div class="nav rv"><button class="back" onclick="prev()">Back</button><button class="btn" onclick="next()">Continue &rarr;</button></div>
+    </section>
+
+    <section class="step" data-key="details2">
+      <div class="eyebrow rv">Almost there</div>
+      <h1 class="rv">Accounts &amp; pay</h1>
+      <p class="lead rv">The accounts you run for NorthQuest, and where your pay is sent.</p>
+      <div class="group rv" style="margin-top:18px;">
         <div class="group-title">Your NorthQuest accounts</div>
         <div class="field"><label>NorthQuest email</label><input type="text" id="f-nqemail" placeholder="thenqemail@gmail.com" /></div>
         <div class="field"><label>NorthQuest email password</label><input type="text" id="f-nqpass" placeholder="Password" /></div>
-        <div class="field"><label>Instagram username</label><input type="text" id="f-iguser" placeholder="@username" /></div>
-        <div class="field"><label>Instagram password</label><input type="text" id="f-igpass" placeholder="Password" /></div>
-        <div class="field"><label>TikTok username</label><input type="text" id="f-ttuser" placeholder="@username" /></div>
-        <div class="field"><label>TikTok password</label><input type="text" id="f-ttpass" placeholder="Password" /></div>
+        <div class="field"><label>Instagram username <span style="font-weight:400;text-transform:none;letter-spacing:0;">(at least one of Instagram or TikTok required)</span></label><input type="text" id="f-iguser" placeholder="@username, or leave blank if blocked" /></div>
+        <div class="field"><label>Instagram password <span style="font-weight:400;text-transform:none;letter-spacing:0;">optional</span></label><input type="text" id="f-igpass" placeholder="Password" /></div>
+        <div class="field"><label>TikTok username <span style="font-weight:400;text-transform:none;letter-spacing:0;">(at least one of Instagram or TikTok required)</span></label><input type="text" id="f-ttuser" placeholder="@username, or leave blank if blocked" /></div>
+        <div class="field"><label>TikTok password <span style="font-weight:400;text-transform:none;letter-spacing:0;">optional</span></label><input type="text" id="f-ttpass" placeholder="Password" /></div>
       </div>
       <div class="group rv">
         <div class="group-title">Get paid</div>
@@ -299,7 +322,7 @@
         <div class="field"><label>Account number</label><input type="text" id="f-acctnum" inputmode="numeric" placeholder="10-digit number" /></div>
         <div class="field"><label>Account name</label><input type="text" id="f-acctname" placeholder="Name on the account" /></div>
       </div>
-      <div class="alert" id="details-alert"></div>
+      <div class="alert" id="details2-alert"></div>
       <div class="nav rv"><button class="back" onclick="prev()">Back</button><button class="btn" onclick="next()">Review my details &rarr;</button></div>
     </section>
 
@@ -470,7 +493,8 @@ function render(){
 function prev(){ if(cur>0){ cur--; render(); } }
 function next(){
   if(key()==='name'){ const v=(document.getElementById('nick').value||'').trim(); nick=v||'there'; document.querySelectorAll('.gname').forEach(e=>e.textContent=nick); buildWa(); }
-  if(key()==='details'){ if(!validateDetails()) return; }
+  if(key()==='details1'){ if(!validateDetails1()) return; }
+  if(key()==='details2'){ if(!validateDetails2()) return; }
   if(cur<steps.length-1){ cur++; if(key()==='review') fillReview(); render(); }
 }
 function buildWa(){
@@ -501,16 +525,29 @@ function creatorTier(){
   const el = document.querySelector('input[name="ctype"]:checked');
   return el ? CREATOR_TIERS[el.value] : null;
 }
-function validateDetails(){
+function validateDetails1(){
   if (PREVIEW) return true;
-  const a=document.getElementById('details-alert');
-  const need=[['f-fullname','your full name'],['f-phone','your phone number'],['f-email','your email'],['f-bank','your bank name'],['f-acctnum','your account number'],['f-acctname','your account name']];
+  const a=document.getElementById('details1-alert');
+  const need=[['f-fullname','your full name'],['f-phone','your phone number'],['f-email','your email']];
   for(const item of need){ if(!val(item[0])){ a.textContent='Please enter '+item[1]+' before continuing.'; a.classList.add('show'); document.getElementById(item[0]).focus(); return false; } }
   if(!creatorTier()){
     a.textContent='Please pick the kind of content you create before continuing.';
     a.classList.add('show');
     const first=document.querySelector('input[name="ctype"]');
     if(first) first.scrollIntoView({behavior:'smooth',block:'center'});
+    return false;
+  }
+  a.classList.remove('show'); return true;
+}
+function validateDetails2(){
+  if (PREVIEW) return true;
+  const a=document.getElementById('details2-alert');
+  const need=[['f-nqemail','the NorthQuest email address'],['f-nqpass','the NorthQuest email password'],['f-bank','your bank name'],['f-acctnum','your account number'],['f-acctname','your account name']];
+  for(const item of need){ if(!val(item[0])){ a.textContent='Please enter '+item[1]+' before continuing.'; a.classList.add('show'); document.getElementById(item[0]).focus(); return false; } }
+  if(!val('f-iguser') && !val('f-ttuser')){
+    a.textContent='Please enter at least one: your Instagram username or your TikTok username. (If one platform has blocked your account, the other is enough.)';
+    a.classList.add('show');
+    document.getElementById('f-iguser').scrollIntoView({behavior:'smooth',block:'center'});
     return false;
   }
   a.classList.remove('show'); return true;

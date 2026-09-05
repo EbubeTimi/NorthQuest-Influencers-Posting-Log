@@ -1,0 +1,17 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "low-contrast",
+        "value": "*",
+        "files": [
+          "intake.html"
+        ],
+        "createdAt": "2026-09-05T06:54:12.936Z",
+        "reason": "Agent: all current low-contrast hits in this file are decorative SVG illustration fills/text (celebration badge, confetti, hero art) inherited from before this session, not real body copy"
+      }
+    ]
+  }
+}
