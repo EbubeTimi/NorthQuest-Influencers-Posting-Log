@@ -27,7 +27,7 @@
   .brand-name{font-weight:700;font-size:14px;letter-spacing:-.2px;}
   .pv-badge{margin-left:auto;font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--gold-deep);background:var(--gold-soft);padding:4px 9px;border-radius:20px;display:none;}
   .progress{height:5px;background:var(--lav);border-radius:3px;overflow:hidden;}
-  .progress-fill{height:100%;width:0;background:linear-gradient(90deg,var(--accent),var(--gold));border-radius:3px;transition:width .5s cubic-bezier(.4,1.3,.5,1);}
+  .progress-fill{height:100%;width:100%;transform:scaleX(0);transform-origin:left;background:linear-gradient(90deg,var(--accent),var(--gold));border-radius:3px;transition:transform .5s cubic-bezier(.4,1.3,.5,1);}
   .stage{flex:1;display:flex;flex-direction:column;justify-content:center;padding:8px 2px 26px;}
   .step{display:none;} .step.active{display:block;}
   @keyframes riseIn{from{opacity:0;transform:translateY(18px);}to{opacity:1;transform:none;}}
@@ -485,7 +485,7 @@ function playFor(k){
 }
 function render(){
   steps.forEach((s,i)=>s.classList.toggle('active', i===cur));
-  document.getElementById('pfill').style.width = Math.round(cur/(steps.length-1)*100) + '%';
+  document.getElementById('pfill').style.transform = 'scaleX(' + (cur/(steps.length-1)) + ')';
   animateRv(steps[cur]);
   playFor(key());
   window.scrollTo({top:0,behavior:'smooth'});

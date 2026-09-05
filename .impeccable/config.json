@@ -11,6 +11,12 @@
         ],
         "createdAt": "2026-09-05T06:54:12.936Z",
         "reason": "Agent: all current low-contrast hits in this file are decorative SVG illustration fills/text (celebration badge, confetti, hero art) inherited from before this session, not real body copy"
+      },
+      {
+        "rule": "bounce-easing",
+        "value": "cubic-bezier(.4, 1.3, .5, 1)",
+        "createdAt": "2026-09-05T06:59:07.180Z",
+        "reason": "Agent: intentional playful overshoot on the onboarding progress bar, pre-existing in intake.html; matches the warm/celebratory tone the user asked to keep (confetti, milestone moment)"
       }
     ]
   }
