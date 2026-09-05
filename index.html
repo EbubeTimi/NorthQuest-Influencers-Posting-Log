@@ -284,9 +284,10 @@
      separate locked-date display + grace banner + "log yesterday's videos"
      button + solid yesterday-mode banner. Yesterday is greyed out and
      locked (padlock icon) until a video was actually missed; once a video
-     is missing, it lights up and becomes tappable; tapping it fills only
-     the Yesterday half solid deep green (not the whole bar), so backdating
-     is impossible to mistake for logging today. */
+     is missing, it lights up with a gold dot and becomes tappable. The day
+     actually being logged carries an outline-plus-tint marker that moves
+     between the two halves — never both — so backdating is impossible to
+     mistake for logging today. */
   .date-toggle {
     display: flex; border: 1.5px solid var(--border); border-radius: var(--radius-sm);
     overflow: hidden; background: var(--surface2);
@@ -299,7 +300,6 @@
   .date-seg + .date-seg { border-left: 1.5px solid var(--border); }
   .date-seg .seg-label { font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text3); }
   .date-seg .seg-date { font-size: 14.5px; font-weight: 600; }
-  .seg-today.is-active { background: var(--surface); }
   .seg-yesterday[disabled] { cursor: not-allowed; color: var(--text3); }
   .seg-yesterday[disabled] .seg-date { color: var(--text3); }
   .seg-yesterday[disabled] .seg-lock { opacity: 0.45; }
@@ -312,15 +312,16 @@
     position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
     width: 7px; height: 7px; border-radius: 50%; background: var(--amber);
   }
-  .date-toggle.is-yesterday .seg-yesterday {
-    background: var(--accent3); color: #fff; margin: -1px;
-    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
-  }
-  .date-toggle.is-yesterday .seg-yesterday .seg-label { color: rgba(255,255,255,0.75); }
-  .date-toggle.is-yesterday .seg-yesterday .seg-lock,
-  .date-toggle.is-yesterday .seg-yesterday .seg-dot { display: none; }
+  /* The day being logged — Today by default, Yesterday once the creator
+     switches. Only ever one of the two carries it, and it is the same
+     outline-plus-tint used on the video card below, so "this is the one"
+     reads identically everywhere on the form. */
+  .date-seg.is-target { background: var(--accent-light); box-shadow: inset 0 0 0 2px var(--accent3); }
+  .date-seg.is-target .seg-label, .date-seg.is-target .seg-date { color: var(--accent3); }
+  .date-seg.is-target .seg-lock, .date-seg.is-target .seg-dot { display: none; }
   .date-toggle-hint { font-size: 12px; color: var(--text3); margin-top: 6px; display: flex; align-items: center; gap: 6px; }
   .date-toggle-hint .hint-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--amber); flex-shrink: 0; }
+  .date-toggle-hint strong { color: var(--text2); font-weight: 700; }
 
   /* POST AUTO-DISPLAY */
   .post-auto-display {
@@ -375,8 +376,13 @@
   .post-card.pc-initial { border-left-color: var(--border); opacity: 0.7; }
   .post-card.pc-initial .pc-num, .post-card.pc-initial .pc-title { color: var(--text3); }
 
-  .post-card.pc-active { border-left-color: var(--accent); }
-  .post-card.pc-active .pc-num { color: var(--accent); }
+  /* The video being submitted right now. Same outline-plus-tint as the
+     selected day above — no ribbon, no tag, just the one clear marker. */
+  .post-card.pc-active {
+    border-color: var(--accent3); background: var(--accent-light);
+    box-shadow: inset 0 0 0 1px var(--accent3);
+  }
+  .post-card.pc-active .pc-num { color: var(--accent3); }
 
   .post-card.pc-locked { border-left-color: var(--border); opacity: 0.55; }
   .post-card.pc-locked .pc-num, .post-card.pc-locked .pc-title { color: var(--text3); }
@@ -1791,9 +1797,10 @@ function onNameChange(fetchFresh) {
     segYesterday.removeAttribute('disabled');
     segYesterday.classList.add('is-enabled');
     hintEl.style.display = '';
-    hintMsg.textContent = yCount === 0
-      ? 'You did not log your videos yesterday. Log them before 2 PM.'
-      : 'You logged 1 of 2 videos yesterday. Log the second before 2 PM.';
+    hintMsg.innerHTML = (yCount === 0
+      ? 'You did not log your videos yesterday. '
+      : 'You logged 1 of 2 videos yesterday. ') +
+      'Yesterday stays open until <strong>2:00 PM</strong> today.';
   } else {
     segYesterday.setAttribute('disabled', '');
     segYesterday.classList.remove('is-enabled');
@@ -1809,14 +1816,20 @@ function updateDateLockDisplay() {
     new Date(todayStr() + 'T00:00:00').toLocaleDateString('en-GB', { weekday:'short', day:'numeric', month:'short' });
   document.getElementById('seg-yesterday-date').textContent =
     new Date(yesterdayStr() + 'T00:00:00').toLocaleDateString('en-GB', { weekday:'short', day:'numeric', month:'short' });
-  const toggle = document.getElementById('date-toggle');
-  toggle.classList.toggle('is-yesterday', loggingYesterday);
-  document.getElementById('seg-today').classList.toggle('is-active', !loggingYesterday);
-  document.getElementById('seg-yesterday').classList.toggle('is-active', loggingYesterday);
-  // The hint text ("you missed yesterday, log before 2 PM") only makes sense
-  // while deciding whether to switch — once yesterday is actually selected,
-  // the solid green segment itself is the signal.
-  if (loggingYesterday) document.getElementById('date-toggle-hint').style.display = 'none';
+  // The outline-plus-tint marker sits on exactly one segment: the day being
+  // logged. It starts on Today and moves to Yesterday when the creator
+  // switches, so the form always shows one unambiguous "this is the one".
+  document.getElementById('seg-today').classList.toggle('is-target', !loggingYesterday);
+  document.getElementById('seg-yesterday').classList.toggle('is-target', loggingYesterday);
+  // Once Yesterday is selected the "you missed yesterday" wording is stale,
+  // but the 2 PM cutoff still matters — it is the thing that can strand a
+  // half-finished backdate — so restate it rather than hiding the line.
+  if (loggingYesterday) {
+    const hintEl = document.getElementById('date-toggle-hint');
+    hintEl.style.display = '';
+    document.getElementById('date-toggle-hint-msg').innerHTML =
+      'Logging for yesterday. This closes at <strong>2:00 PM</strong> today.';
+  }
 }
 
 function startLogYesterday() {
