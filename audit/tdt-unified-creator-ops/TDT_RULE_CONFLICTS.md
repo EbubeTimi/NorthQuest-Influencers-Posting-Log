@@ -176,6 +176,13 @@ The uncommitted active dashboard draft is preserved while recruitment takes prio
 | 17 | Phone-first creator experience | Earlier prototype retained desktop columns, verbose copy, a date picker, a separate skippable walkthrough, and recent-video clutter | Use one-column mobile layout, locked Today/conditional Yesterday choices, short copy, no recent-video panel, and a mandatory spotlight walkthrough over the real dashboard |
 | 18 | Production UI requires explicit approval | Repository and flow rules already require this gate | Continue with read-only prototype only; no production UI or deployment |
 | 19 | Show success only after the backend confirms persistence | Legacy intake ignores the upload result; some old paths trust a first response or local state | Require idempotent writes plus read-back/returned-record confirmation before showing success |
+| 20 | Management needs one connected operational view | Existing work is split across recruitment, trial, onboarding, creator, bonus and payment surfaces with no single scoped queue | Use one management projection over the same business-scoped records; do not create duplicate creator or payment data |
+| 21 | One-business pause differs from whole-person suspension | Older deactivation language can imply that every business is disabled together | Keep membership pause business-scoped; reserve whole-person suspension for an explicit Smith-only action and audit both |
+| 22 | Trial evidence approval must retain creator and business context | A prototype transition could display a different sample creator/business after approval | Carry the selected creator, evidence and business through onboarding; tests must reject cross-business or cross-person transitions |
+
+Contract re-signing selection is row-level: management may tap the creator's name or anywhere in that creator row, not only the small checkbox. Select all/Clear all remains available for bulk selection.
+
+Management/admin surfaces are PC-first while creator surfaces remain phone-first. This changes layout priority, not feature or permission scope: every management action must still reflow and remain usable on a phone.
 
 ## Historical conflict provenance
 

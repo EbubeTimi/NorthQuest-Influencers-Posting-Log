@@ -9,6 +9,7 @@ const prototypes = [
   'onboarding.html',
   'active-creator-dashboard.html',
   'contract-management.html',
+  'management-dashboard.html',
 ];
 
 const read = name => fs.readFileSync(path.join(__dirname, '..', 'prototypes', name), 'utf8');
@@ -35,7 +36,16 @@ test('the visual pass keeps phone controls and keyboard focus accessible', () =>
 });
 
 test('button-like quiet actions are not presented as text links', () => {
-  for (const name of ['recruitment.html', 'onboarding.html', 'active-creator-dashboard.html', 'contract-management.html']) {
+  for (const name of ['recruitment.html', 'onboarding.html', 'active-creator-dashboard.html', 'contract-management.html', 'management-dashboard.html']) {
     assert.match(read(name), /button\.quiet\{[^}]*text-decoration:none|\.quiet\{[^}]*text-decoration:none/);
   }
+});
+
+test('management uses a desktop workspace with a phone-safe fallback', () => {
+  const html = read('management-dashboard.html');
+  assert.match(html, /PC-first management workspace/);
+  assert.match(html, /@media\(min-width:800px\)/);
+  assert.match(html, /grid-template-columns:220px minmax\(0,1fr\)/);
+  assert.match(html, /@media\(max-width:799px\)/);
+  assert.match(html, /Management navigation/);
 });

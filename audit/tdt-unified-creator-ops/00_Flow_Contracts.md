@@ -2,6 +2,18 @@
 
 Current instructions through 2026-09-03 override every earlier repository rule. Trial revision 7 visual design is approved; recruitment and active-dashboard additions still require their own prototype approval. This is not production approval.
 
+## Unified management dashboard contract — 4 September 2026
+
+- Management and administration are PC-first because most operating work happens on a laptop. Desktop uses a persistent left navigation, wider lists and side-by-side evidence/action areas. The same actions, focus order and records must reflow to a single-column phone interface without horizontal scrolling or reduced permissions.
+- Management enters one agency dashboard, sees a compact needs-attention queue, and then opens business-scoped work; trial evidence, onboarding review, bonus review and payment preparation remain distinct tasks.
+- NorthQuest, CashDrive and Aura share one person/identity model without sharing operational records. Every creator, review, payment, audit event and action carries an explicit business scope.
+- A creator record shows the person's identity, photo placeholder, joined/deactivated lifecycle dates, business memberships and linked video, view, bonus, payment, access and audit records. It does not create a second management-only creator database.
+- Trial evidence approval follows the same creator and business into onboarding. The reviewed item includes the exact recorded video/platform, claimed count and screenshot. Keeping a creator in trial preserves the evidence and history.
+- Completing onboarding creates the active membership idempotently. A correction names the exact section and reopens only that section; the signed agreement remains privately reviewable.
+- An approved bonus creates a business-scoped payment-ledger item. Payment preparation keeps expected video pay, approved bonuses, total owed and settled payment distinct.
+- Pausing one business membership stops new operational work only for that business and preserves read-only payment/history access. Suspending the whole person is a separate Smith-only action affecting every membership.
+- Every management decision records actor, action, business, subject and time. Unauthorized roles receive no management records. Prototype revision 1 is local/read-only and does not authorize production writes or deployment.
+
 ## Identity, invitation, and membership contract
 
 ```text

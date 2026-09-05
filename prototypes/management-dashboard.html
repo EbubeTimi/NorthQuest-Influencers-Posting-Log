@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>GrowthCooks management dashboard prototype</title>
+  <style>
+    /* TypeUI mobile-first polish retained for phones. TypeUI responsive admin polish: PC-first management workspace with accessible reflow. */
+    :root{--ui-canvas:#f3f5f2;--ui-paper:#fffefa;--ui-accent:#0b6248;--ui-focus:#69b99d;--canvas:var(--ui-canvas);--paper:var(--ui-paper);--accent:var(--ui-accent);--focus:var(--ui-focus);--ink:#10251f;--muted:#60716b;--line:#d8dfda;--soft:#e8f3ee;--warm:#fff3d4;--danger:#8c2f2f;--danger-soft:#fff0ef;--shadow:0 12px 34px rgba(17,37,30,.08)}
+    *{box-sizing:border-box}html,body{margin:0;background:var(--canvas);color:var(--ink);font:16px/1.42 Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}button,input,select,textarea{font:inherit}button{touch-action:manipulation}button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid var(--focus);outline-offset:3px}h1[tabindex="-1"]:focus{outline:none}.workspace{min-height:100dvh}.device{width:min(100%,430px);min-height:100dvh;margin:auto;background:var(--paper);box-shadow:var(--shadow)}.appbar{min-height:58px;padding:calc(11px + env(safe-area-inset-top)) 18px 11px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:12px}.brand{font-weight:850;letter-spacing:-.025em}.actor{font-size:13px;color:var(--muted)}main{padding:19px 18px calc(86px + env(safe-area-inset-bottom))}.screen{display:none}.screen.active{display:block;animation:enter .15s ease-out}@keyframes enter{from{opacity:.25;transform:translateY(3px)}}h1{margin:0;font-size:1.58rem;line-height:1.15;letter-spacing:-.035em;text-wrap:balance}h2{margin:0;font-size:1.02rem;line-height:1.3}p{margin:6px 0 0;color:var(--muted)}.eyebrow{margin:0 0 6px;color:var(--accent);font-size:11px;font-weight:850;letter-spacing:.09em;text-transform:uppercase}.section-title{margin-top:25px;display:flex;align-items:end;justify-content:space-between;gap:14px}.section-title h2{font-size:1.12rem}.count{font-size:12px;color:var(--muted)}.list{margin-top:11px;border-top:1px solid var(--line)}.row{width:100%;min-height:64px;border:0;border-bottom:1px solid var(--line);background:transparent;padding:11px 0;display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:14px;text-align:left;color:var(--ink);cursor:pointer}.row:hover{background:#f8faf8}.row-main{min-width:0}.row-title{display:block;font-size:14px;font-weight:800}.row-meta{display:block;margin-top:3px;color:var(--muted);font-size:12px;white-space:normal}.number{min-width:28px;height:28px;padding:4px 8px;border-radius:999px;background:var(--soft);color:var(--accent);display:grid;place-items:center;font-size:12px;font-weight:850}.number.warm{background:var(--warm);color:#6f4d00}.status{font-size:12px;font-weight:800;color:var(--accent)}.topline{display:flex;align-items:center;gap:8px;margin-bottom:18px}.exit{width:46px;height:46px;border:0;border-radius:10px;background:transparent;color:var(--ink);display:grid;place-items:center;cursor:pointer;flex:0 0 auto}.exit svg{width:27px;height:27px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}.scope{margin-top:14px;display:grid;gap:6px}.scope label{font-size:12px;font-weight:800;color:var(--muted)}select,input[type="search"],textarea{width:100%;min-height:46px;border:1px solid #9caca5;border-radius:9px;background:#fff;color:var(--ink);padding:10px 12px}.filters{display:flex;gap:7px;overflow:auto;padding:12px 0 2px}.chip{min-height:40px;border:1px solid #9eb0a8;border-radius:999px;background:transparent;color:var(--ink);padding:7px 12px;white-space:nowrap;cursor:pointer}.chip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff}.summary{margin-top:20px;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}.summary-row{display:flex;justify-content:space-between;gap:14px;padding:10px 0;border-bottom:1px solid var(--line);font-size:13px}.summary-row:last-child{border-bottom:0}.summary-row span{color:var(--muted)}.summary-row strong{text-align:right}.person-head{display:flex;align-items:center;gap:13px}.avatar{width:52px;height:52px;border-radius:50%;background:var(--soft);color:var(--accent);display:grid;place-items:center;font-weight:900}.person-head h1{font-size:1.42rem}.action-list{margin-top:18px}.action-list .row{min-height:58px}.actions{display:grid;gap:9px;margin-top:22px}.actions.two{grid-template-columns:1fr 1fr}.btn{min-height:48px;border:0;border-radius:9px;padding:11px 14px;font-weight:850;cursor:pointer;display:flex;align-items:center;justify-content:center;text-align:center}.primary{background:var(--accent);color:#fff}.secondary{background:transparent;border:1px solid #8ca79c;color:var(--accent)}.danger{background:transparent;border:1px solid #c79898;color:var(--danger)}button.quiet{min-height:44px;border:0;background:transparent;color:var(--accent);font-weight:800;padding:8px 0;text-align:left;cursor:pointer;text-decoration:none}.evidence{margin-top:19px;padding:14px;background:#f7f9f7;border-radius:10px}.evidence-shot{height:142px;border-radius:8px;background:linear-gradient(145deg,#17251f,#335347);display:grid;place-items:center;color:#fff;font-size:1.28rem;font-weight:900}.notice{margin-top:18px;padding:13px 14px;border-radius:9px;background:var(--soft);font-size:14px}.notice.warn{background:var(--warm);color:#604600}.notice.error{background:var(--danger-soft);color:#6d2525}.check-list{margin-top:14px;border-top:1px solid var(--line)}.check{display:flex;align-items:center;gap:10px;min-height:50px;padding:11px 4px;border-bottom:1px solid var(--line);cursor:pointer}.check input{width:22px;height:22px;margin:0}.check span{font-size:14px}.audit-row{padding:13px 0;border-bottom:1px solid var(--line)}.audit-row strong{display:block;font-size:14px}.audit-row span{font-size:12px;color:var(--muted)}.empty{padding:54px 12px;text-align:center}.empty h1{font-size:1.35rem}.bottom-nav{position:sticky;bottom:0;z-index:4;min-height:64px;padding:6px 8px calc(6px + env(safe-area-inset-bottom));border-top:1px solid var(--line);background:rgba(255,254,250,.97);display:grid;grid-template-columns:repeat(4,1fr)}.bottom-nav button{min-height:48px;border:0;background:transparent;color:var(--muted);display:grid;place-items:center;gap:2px;font-size:10px;cursor:pointer}.bottom-nav button[aria-current="page"]{color:var(--accent);font-weight:850}.bottom-nav svg{width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}.prototype{position:fixed;z-index:10;left:8px;right:8px;bottom:8px;background:#18362c;color:#fff;border-radius:13px;box-shadow:0 12px 36px rgba(0,0,0,.24)}.prototype summary{min-height:48px;padding:12px 14px;cursor:pointer;list-style:none;font-weight:800}.prototype summary::-webkit-details-marker{display:none}.prototype-panel{padding:0 10px 10px;display:grid;grid-template-columns:1fr 1fr;gap:7px;max-height:50dvh;overflow:auto}.prototype button{min-height:44px;border:1px solid #58756a;border-radius:8px;background:#214339;color:#fff;padding:8px;font-size:12px}.prototype button.current{background:#dff1ea;color:#143329;border-color:#dff1ea}.prototype small{grid-column:1/-1;color:#d1ddd8;padding:5px 3px}.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+    @media(max-width:699px){.device{box-shadow:none}.actions.two{grid-template-columns:1fr}}
+    @media(min-width:700px){body{padding:26px}.device{min-height:820px;border-radius:20px;overflow:hidden}}
+    @media(min-width:850px){.workspace{display:grid;grid-template-columns:430px 330px;gap:24px;justify-content:center;align-items:start}.device{margin:0}.prototype{position:sticky;top:26px;left:auto;right:auto;bottom:auto;width:330px;max-height:calc(100dvh - 52px);overflow:auto}.prototype-panel{grid-template-columns:1fr;max-height:none}.prototype summary{cursor:default}}
+    @media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;scroll-behavior:auto!important}}
+  </style>
+  <style>
+    .skip-link{position:fixed;z-index:30;top:8px;left:8px;transform:translateY(-160%);padding:10px 14px;border-radius:8px;background:var(--ink);color:#fff;font-weight:800}
+    .skip-link:focus{transform:none}
+
+    @media(max-width:799px){
+      .workspace{min-height:100dvh}
+      .device{width:min(100%,430px);min-height:100dvh;margin:auto}
+      .actions.two{grid-template-columns:1fr}
+    }
+
+    @media(min-width:800px){
+      body{padding:18px}
+      .workspace{max-width:1500px;margin:0 auto}
+      .device{width:100%;min-height:calc(100dvh - 36px);margin:0;border-radius:16px;overflow:hidden;display:grid;grid-template-columns:220px minmax(0,1fr);grid-template-rows:64px minmax(0,1fr);box-shadow:var(--shadow)}
+      .appbar{grid-column:1/-1;grid-row:1;padding:13px 22px}
+      .brand{font-size:1.08rem}
+      .actor{font-size:.82rem}
+      main{grid-column:2;grid-row:2;min-width:0;padding:30px 36px 48px}
+      .screen{max-width:1040px}
+      h1{font-size:1.75rem}
+      .section-title{margin-top:24px}
+      .row{min-height:58px;padding:9px 10px}
+      .row-title{font-size:.9rem}
+      .row-meta{font-size:.78rem}
+      .bottom-nav{grid-column:1;grid-row:2;position:relative;bottom:auto;z-index:1;min-height:100%;align-self:stretch;align-content:start;grid-template-columns:1fr;grid-auto-rows:min-content;gap:6px;padding:20px 12px;border-top:0;border-right:1px solid var(--line);background:#f8faf8}
+      .bottom-nav button{min-height:48px;display:grid;grid-template-columns:24px 1fr;place-items:center start;gap:12px;padding:0 12px;border-radius:8px;font-size:.82rem;text-align:left}
+      .bottom-nav button[aria-current="page"]{background:var(--soft)}
+      .bottom-nav svg{width:20px;height:20px}
+
+      .screen[data-screen="home"].active{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);column-gap:36px;align-items:start}
+      .screen[data-screen="home"].active>.eyebrow,.screen[data-screen="home"].active>h1{grid-column:1/-1}
+      .screen[data-screen="home"].active>.section-title:nth-of-type(1){grid-column:1;grid-row:3}
+      .screen[data-screen="home"].active>.list:nth-of-type(2){grid-column:1;grid-row:4}
+      .screen[data-screen="home"].active>.section-title:nth-of-type(3){grid-column:2;grid-row:3}
+      .screen[data-screen="home"].active>.list:nth-of-type(4){grid-column:2;grid-row:4}
+
+      .screen[data-screen="evidence"].active,.screen[data-screen="bonus"].active,.screen[data-screen="onboarding"].active,.screen[data-screen="payments"].active{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(280px,.65fr);column-gap:32px;align-items:start}
+      .screen[data-screen="evidence"].active>.topline,.screen[data-screen="bonus"].active>.topline,.screen[data-screen="onboarding"].active>.topline,.screen[data-screen="payments"].active>.topline{grid-column:1/-1}
+      .screen[data-screen="evidence"].active>.evidence,.screen[data-screen="bonus"].active>.evidence{grid-column:1;grid-row:2}
+      .screen[data-screen="evidence"].active>.actions,.screen[data-screen="bonus"].active>.actions,.screen[data-screen="onboarding"].active>.actions{grid-column:2;grid-row:2;align-self:start;margin-top:19px}
+      .screen[data-screen="bonus"].active>.notice{grid-column:1;grid-row:3}
+      .screen[data-screen="onboarding"].active>.summary{grid-column:1;grid-row:2}
+      .screen[data-screen="onboarding"].active>button.quiet{grid-column:1;grid-row:3}
+      .screen[data-screen="payments"].active>.scope,.screen[data-screen="payments"].active>.summary{grid-column:1}
+      .screen[data-screen="payments"].active>.actions{grid-column:2;grid-row:2/4;align-self:start;margin-top:14px}
+      .screen[data-screen="payments"].active>.notice{grid-column:2;grid-row:4}
+      .evidence-shot{height:220px}
+      .prototype{left:auto;right:18px;width:310px}
+    }
+
+    @media(min-width:1200px){
+      .workspace{display:grid;grid-template-columns:minmax(0,1120px) 300px;gap:20px;align-items:start}
+      .prototype{position:sticky;top:18px;right:auto;bottom:auto;width:300px;max-height:calc(100dvh - 36px);overflow:auto}
+      .prototype-panel{grid-template-columns:1fr;max-height:none}
+      .prototype summary{cursor:default}
+    }
+  </style>
+</head>
+<body>
+<a class="skip-link" href="#mainContent">Skip to management content</a>
+<div class="workspace">
+  <div class="device">
+    <header class="appbar"><span class="brand">Smithstem</span><span class="actor">Smith · Management</span></header>
+    <main id="mainContent">
+      <section class="screen" data-screen="home">
+        <p class="eyebrow">4 September 2026</p><h1>Good morning, Smith.</h1>
+        <div class="section-title"><h2>Needs attention</h2><span class="count">80 items</span></div>
+        <div class="list"><button class="row" data-go="evidence"><span class="row-main"><span class="row-title">Trial videos</span><span class="row-meta">Check submitted 10,000-view evidence</span></span><span class="number">3</span></button><button class="row" data-go="onboarding"><span class="row-main"><span class="row-title">Onboarding</span><span class="row-meta">Review details and signed contracts</span></span><span class="number">2</span></button><button class="row" data-go="bonus"><span class="row-main"><span class="row-title">Bonus claims</span><span class="row-meta">Verify screenshots and links</span></span><span class="number">5</span></button><button class="row" data-go="payments"><span class="row-main"><span class="row-title">Payments</span><span class="row-meta">Prepare September statements</span></span><span class="number warm">70</span></button></div>
+        <div class="section-title"><h2>Businesses</h2><button class="quiet" data-go="businesses">View all</button></div>
+        <div class="list"><button class="row" data-business="NorthQuest"><span class="row-main"><span class="row-title">NorthQuest</span><span class="row-meta">68 active · 3 trial</span></span><span class="status">Open</span></button><button class="row" data-business="CashDrive"><span class="row-main"><span class="row-title">CashDrive</span><span class="row-meta">12 active · 1 trial</span></span><span class="status">Open</span></button><button class="row" data-business="Aura"><span class="row-main"><span class="row-title">Aura</span><span class="row-meta">9 active · 2 trial</span></span><span class="status">Open</span></button></div>
+      </section>
+
+      <section class="screen" data-screen="work">
+        <p class="eyebrow">Management</p><h1>Work</h1>
+        <div class="scope"><label for="workScope">Business scope</label><select id="workScope"><option>All assigned businesses</option><option>NorthQuest</option><option>CashDrive</option><option>Aura</option></select></div>
+        <div class="filters" aria-label="Work type"><button class="chip" aria-pressed="true">All 10</button><button class="chip" aria-pressed="false">Trials 3</button><button class="chip" aria-pressed="false">Onboarding 2</button><button class="chip" aria-pressed="false">Bonuses 5</button></div>
+        <div class="list"><button class="row" data-go="evidence"><span class="row-main"><span class="row-title">Amara Okafor</span><span class="row-meta">NorthQuest · Trial evidence</span></span><span class="number">1</span></button><button class="row" data-go="onboarding"><span class="row-main"><span class="row-title">Amara Okafor</span><span class="row-meta">NorthQuest · Onboarding review</span></span><span class="status">Review</span></button><button class="row" data-go="bonus"><span class="row-main"><span class="row-title">Ada Nwosu</span><span class="row-meta">Aura · Bonus claim</span></span><span class="status">Review</span></button></div>
+      </section>
+
+      <section class="screen" data-screen="businesses">
+        <p class="eyebrow">Management</p><h1>Businesses</h1><div class="list"><button class="row" data-business="NorthQuest"><span class="row-main"><span class="row-title">NorthQuest</span><span class="row-meta">68 active · 3 trial · 4 items due</span></span><span class="status">Open</span></button><button class="row" data-business="CashDrive"><span class="row-main"><span class="row-title">CashDrive</span><span class="row-meta">12 active · 1 trial · 3 items due</span></span><span class="status">Open</span></button><button class="row" data-business="Aura"><span class="row-main"><span class="row-title">Aura</span><span class="row-meta">9 active · 2 trial · 3 items due</span></span><span class="status">Open</span></button></div>
+      </section>
+
+      <section class="screen" data-screen="business">
+        <div class="topline"><button class="exit" data-go="businesses" aria-label="Back to businesses"><svg viewBox="0 0 24 24"><path d="M14 4h5v16h-5"/><path d="M11 8 7 12l4 4"/><path d="M7 12h10"/></svg></button><div><p class="eyebrow">Business</p><h1 class="businessName">NorthQuest</h1></div></div>
+        <div class="summary"><div class="summary-row"><span>Active creators</span><strong id="activeCount">68</strong></div><div class="summary-row"><span>Trial creators</span><strong id="trialCount">3</strong></div><div class="summary-row"><span>Items to review</span><strong id="dueCount">4</strong></div><div class="summary-row"><span>Expected September pay</span><strong id="businessPay">₦8,420,000</strong></div></div>
+        <div class="action-list"><button class="row" data-go="creators"><span class="row-main"><span class="row-title">Creators</span><span class="row-meta">Active, trial, paused and deactivated</span></span><span class="status">Open</span></button><button class="row" data-go="work"><span class="row-main"><span class="row-title">Reviews</span><span class="row-meta">Trial, onboarding and bonus work</span></span><span class="status">Open</span></button><button class="row" data-go="payments"><span class="row-main"><span class="row-title">Payments</span><span class="row-meta">Expected, approved and paid records</span></span><span class="status">Open</span></button><button class="row" data-go="audit"><span class="row-main"><span class="row-title">History</span><span class="row-meta">Changes made in this business</span></span><span class="status">Open</span></button></div>
+      </section>
+
+      <section class="screen" data-screen="creators">
+        <div class="topline"><button class="exit" data-go="business" aria-label="Back to business"><svg viewBox="0 0 24 24"><path d="M14 4h5v16h-5"/><path d="M11 8 7 12l4 4"/><path d="M7 12h10"/></svg></button><div><p class="eyebrow businessName">NorthQuest</p><h1>Creators</h1></div></div>
+        <label class="sr-only" for="creatorSearch">Search creators</label><input id="creatorSearch" type="search" placeholder="Search name" />
+        <div class="filters" aria-label="Creator status"><button class="chip" aria-pressed="true">All</button><button class="chip" aria-pressed="false">Active</button><button class="chip" aria-pressed="false">Trial</button><button class="chip" aria-pressed="false">Paused</button></div>
+        <div class="list"><button class="row" data-go="creator"><span class="row-main"><span class="row-title">Amara Okafor</span><span class="row-meta">Active · Joined 12 August 2026</span></span><span class="status">Open</span></button><button class="row" data-go="creator"><span class="row-main"><span class="row-title">Ada Nwosu</span><span class="row-meta">Trial · Joined 2 September 2026</span></span><span class="status">Open</span></button><button class="row" data-go="creator"><span class="row-main"><span class="row-title">Noah Adeyemi</span><span class="row-meta">Paused · Joined 4 July 2026</span></span><span class="status">Open</span></button></div>
+      </section>
+
+      <section class="screen" data-screen="creator">
+        <div class="topline"><button class="exit" data-go="creators" aria-label="Back to creators"><svg viewBox="0 0 24 24"><path d="M14 4h5v16h-5"/><path d="M11 8 7 12l4 4"/><path d="M7 12h10"/></svg></button><div class="person-head"><span class="avatar" aria-hidden="true">AO</span><div><h1>Amara Okafor</h1><p class="businessName">NorthQuest</p></div></div></div>
+        <div class="summary"><div class="summary-row"><span>Status</span><strong>Active</strong></div><div class="summary-row"><span>Joined</span><strong>12 August 2026</strong></div><div class="summary-row"><span>WhatsApp</span><strong>+234••••7386</strong></div><div class="summary-row"><span>Other membership</span><strong>Aura · Active</strong></div></div>
+        <div class="action-list"><button class="row" data-go="empty"><span class="row-title">Videos</span><span class="number">42</span></button><button class="row" data-go="empty"><span class="row-title">View reports</span><span class="number">38</span></button><button class="row" data-go="bonus"><span class="row-title">Bonuses</span><span class="number">1</span></button><button class="row" data-go="payments"><span class="row-title">Payments</span><span class="status">₦225,000 paid</span></button><button class="row" data-go="access"><span class="row-title">Manage access</span><span class="status">Open</span></button><button class="row" data-go="audit"><span class="row-title">History</span><span class="status">Open</span></button></div>
+      </section>
+
+      <section class="screen" data-screen="evidence">
+        <div class="topline"><button class="exit" data-go="work" aria-label="Back to work"><svg viewBox="0 0 24 24"><path d="M14 4h5v16h-5"/><path d="M11 8 7 12l4 4"/><path d="M7 12h10"/></svg></button><div><p class="eyebrow">NorthQuest · Trial</p><h1>Amara Okafor</h1></div></div>
+        <div class="evidence"><div class="evidence-shot">10,240 views</div><div class="summary"><div class="summary-row"><span>Video</span><strong>Video 1 · TikTok</strong></div><div class="summary-row"><span>Reported</span><strong>10,240 views</strong></div><div class="summary-row"><span>Evidence</span><strong>Screenshot submitted</strong></div></div><button class="quiet" id="openVideo">Open TikTok video</button></div>
+        <div class="actions"><button class="btn primary" data-go="onboarding">Approve onboarding</button><button class="btn secondary" data-go="work">Keep in trial</button></div>
+      </section>
+
+      <section class="screen" data-screen="onboarding">
+        <div class="topline"><button class="exit" data-go="work" aria-label="Back to work"><svg viewBox="0 0 24 24"><path d="M14 4h5v16h-5"/><path d="M11 8 7 12l4 4"/><path d="M7 12h10"/></svg></button><div><p class="eyebrow">NorthQuest · Onboarding</p><h1>Amara Okafor</h1></div></div>
+        <div class="summary"><div class="summary-row"><span>Identity and contact</span><strong>Checked</strong></div><div class="summary-row"><span>Creator profiles</span><strong>Checked</strong></div><div class="summary-row"><span>Payment details</span><strong>Checked</strong></div><div class="summary-row"><span>Contract</span><strong>Signed</strong></div></div><button class="quiet" data-go="empty">Review signed contract</button>
+        <div class="actions"><button class="btn primary" data-go="creator">Complete onboarding</button><button class="btn secondary" data-go="empty">Request correction</button></div>
+      </section>
+
+      <section class="screen" data-screen="bonus">
+        <div class="topline"><button class="exit" data-go="work" aria-label="Back to work"><svg viewBox="0 0 24 24"><path d="M14 4h5v16h-5"/><path d="M11 8 7 12l4 4"/><path d="M7 12h10"/></svg></button><div><p class="eyebrow">Aura · Bonus claim</p><h1>Ada Nwosu</h1></div></div>
+        <div class="evidence"><div class="evidence-shot">112,630 views</div><div class="summary"><div class="summary-row"><span>Video</span><strong>Video 2 · Instagram</strong></div><div class="summary-row"><span>Bonus rule</span><strong>100,000 views</strong></div><div class="summary-row"><span>Value</span><strong>₦25,000</strong></div></div></div>
+        <p class="notice">Approved bonus creates one payment item. It does not change weekly view reports.</p><div class="actions"><button class="btn primary" data-go="payments">Approve bonus</button><button class="btn danger" data-go="work">Reject claim</button></div>
+      </section>
+
+      <section class="screen" data-screen="payments">
+        <div class="topline"><button class="exit" data-go="home" aria-label="Back to management home"><svg viewBox="0 0 24 24"><path d="M14 4h5v16h-5"/><path d="M11 8 7 12l4 4"/><path d="M7 12h10"/></svg></button><div><p class="eyebrow">September 2026</p><h1>Payments</h1></div></div>
+        <div class="scope"><label for="paymentScope">Business scope</label><select id="paymentScope"><option>NorthQuest</option><option>CashDrive</option><option>Aura</option></select></div>
+        <div class="summary"><div class="summary-row"><span>Expected video pay</span><strong>₦8,120,000</strong></div><div class="summary-row"><span>Approved bonuses</span><strong>₦300,000</strong></div><div class="summary-row"><span>Total owed</span><strong>₦8,420,000</strong></div><div class="summary-row"><span>Already paid</span><strong>₦0</strong></div></div>
+        <div class="actions"><button class="btn primary" id="prepareStatements">Prepare statements</button><button class="btn secondary" data-go="empty">View creator breakdown</button></div><p class="notice">Prototype only. Nothing is paid or exported.</p>
+      </section>
+
+      <section class="screen" data-screen="access">
+        <div class="topline"><button class="exit" data-go="creator" aria-label="Back to creator record"><svg viewBox="0 0 24 24"><path d="M14 4h5v16h-5"/><path d="M11 8 7 12l4 4"/><path d="M7 12h10"/></svg></button><div><p class="eyebrow">Amara Okafor</p><h1>Manage access</h1></div></div>
+        <div class="list"><button class="row" data-go="pause-confirm"><span class="row-main"><span class="row-title">Pause NorthQuest only</span><span class="row-meta">Stops new operational work for NorthQuest</span></span><span class="status">Review</span></button><button class="row" data-go="denied"><span class="row-main"><span class="row-title">Suspend this person</span><span class="row-meta">Stops access across every business · Smith only</span></span><span class="status">Review</span></button></div>
+        <p class="notice">Other business access is unchanged when one membership is paused. Payment and record history stay readable.</p>
+      </section>
+
+      <section class="screen" data-screen="pause-confirm"><p class="eyebrow">Amara Okafor · NorthQuest</p><h1>Pause this membership?</h1><p>Amara will not be able to log new NorthQuest work. Aura access and all existing records remain unchanged.</p><div class="actions"><button class="btn danger" data-go="paused">Pause NorthQuest</button><button class="btn secondary" data-go="access">Cancel</button></div></section>
+      <section class="screen" data-screen="paused"><p class="eyebrow">NorthQuest</p><h1>Access paused</h1><p>Amara’s NorthQuest membership is paused. The action is recorded in History.</p><div class="actions"><button class="btn primary" data-go="creator">Return to creator</button></div></section>
+
+      <section class="screen" data-screen="audit">
+        <div class="topline"><button class="exit" data-go="creator" aria-label="Back to creator record"><svg viewBox="0 0 24 24"><path d="M14 4h5v16h-5"/><path d="M11 8 7 12l4 4"/><path d="M7 12h10"/></svg></button><div><p class="eyebrow">Amara Okafor</p><h1>History</h1></div></div>
+        <div class="list"><div class="audit-row"><strong>Payment statement viewed</strong><span>Smith · 4 September 2026 · 10:42 AM</span></div><div class="audit-row"><strong>Bonus claim approved</strong><span>Ella · 3 September 2026 · 4:18 PM</span></div><div class="audit-row"><strong>NorthQuest onboarding completed</strong><span>Smith · 12 August 2026 · 2:03 PM</span></div></div>
+      </section>
+
+      <section class="screen" data-screen="loading"><div class="empty"><p class="eyebrow">Management</p><h1>Loading records…</h1><p>Keeping your current business and filters.</p></div></section>
+      <section class="screen" data-screen="empty"><div class="empty"><p class="eyebrow">Management</p><h1>No records here yet</h1><p>New records will appear here when they are submitted.</p><div class="actions"><button class="btn secondary" data-go="home">Return home</button></div></div></section>
+      <section class="screen" data-screen="error"><div class="empty"><p class="eyebrow">Management</p><h1>Records did not load</h1><p>Check your connection and try again.</p><div class="actions"><button class="btn primary" data-go="home">Try again</button></div></div></section>
+      <section class="screen" data-screen="denied"><div class="empty"><p class="eyebrow">Restricted access</p><h1>You cannot open management</h1><p>No creator names, counts or records are shown.</p><div class="actions"><button class="btn primary" data-go="home">Return</button></div></div></section>
+    </main>
+    <nav class="bottom-nav" aria-label="Management navigation"><button data-go="home" data-nav="home"><svg viewBox="0 0 24 24"><path d="M3 11.5 12 4l9 7.5V21h-6v-6H9v6H3z"/></svg><span>Home</span></button><button data-go="work" data-nav="work"><svg viewBox="0 0 24 24"><path d="M5 5h14v14H5z"/><path d="m8 12 2.5 2.5L16 9"/></svg><span>Work</span></button><button data-go="creators" data-nav="creators"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><path d="M3 20c0-4 2-6 6-6s6 2 6 6"/><path d="M16 5c2 .2 3 1.2 3 3s-1 2.8-3 3M17 14c2.7.5 4 2.5 4 6"/></svg><span>Creators</span></button><button data-go="businesses" data-nav="businesses"><svg viewBox="0 0 24 24"><path d="M4 21V5l8-3 8 3v16"/><path d="M9 9h.01M15 9h.01M9 13h.01M15 13h.01M9 17h6"/></svg><span>Businesses</span></button></nav>
+  </div>
+  <details class="prototype" open><summary>Management prototype states</summary><div class="prototype-panel"><button data-demo="home">Home</button><button data-demo="work">Work queue</button><button data-demo="businesses">Businesses</button><button data-demo="business">Business</button><button data-demo="creators">Creators</button><button data-demo="creator">Creator record</button><button data-demo="evidence">Trial evidence</button><button data-demo="onboarding">Onboarding</button><button data-demo="bonus">Bonus review</button><button data-demo="payments">Payments</button><button data-demo="access">Access</button><button data-demo="pause-confirm">Pause confirmation</button><button data-demo="paused">Paused</button><button data-demo="audit">History</button><button data-demo="loading">Loading</button><button data-demo="empty">Empty</button><button data-demo="error">Load failed</button><button data-demo="denied">Restricted</button><small id="transition">Prototype only. No approval, payment, message, export, access change or database write occurs.</small></div></details>
+</div>
+<script>
+  const screens=new Set(['home','work','businesses','business','creators','creator','evidence','onboarding','bonus','payments','access','pause-confirm','paused','audit','loading','empty','error','denied']);
+  const businessData={NorthQuest:{active:68,trial:3,due:4,pay:'₦8,420,000'},CashDrive:{active:12,trial:1,due:3,pay:'₦1,860,000'},Aura:{active:9,trial:2,due:3,pay:'₦1,240,000'}};
+  const model={screen:'home',business:'NorthQuest'};const params=new URLSearchParams(location.search);if(screens.has(params.get('screen')))model.screen=params.get('screen');if(businessData[params.get('business')])model.business=params.get('business');
+  function render(){const info=businessData[model.business];document.querySelectorAll('[data-screen]').forEach(el=>el.classList.toggle('active',el.dataset.screen===model.screen));document.querySelectorAll('[data-demo]').forEach(el=>el.classList.toggle('current',el.dataset.demo===model.screen));document.querySelectorAll('.businessName').forEach(el=>el.textContent=model.business);document.getElementById('activeCount').textContent=info.active;document.getElementById('trialCount').textContent=info.trial;document.getElementById('dueCount').textContent=info.due;document.getElementById('businessPay').textContent=info.pay;document.querySelectorAll('[data-nav]').forEach(el=>{const current=el.dataset.nav===model.screen||(el.dataset.nav==='businesses'&&model.screen==='business');current?el.setAttribute('aria-current','page'):el.removeAttribute('aria-current')});document.getElementById('transition').textContent=`Page: ${model.screen}. Business scope: ${model.business}. Prototype only; no external write. Page changes move focus to the heading; native haptics are not used.`;const heading=document.querySelector('[data-screen].active h1');if(heading){heading.tabIndex=-1;heading.focus({preventScroll:true})}}
+  function go(screen){if(!screens.has(screen))return;model.screen=screen;history.replaceState(null,'',`?screen=${screen}&business=${encodeURIComponent(model.business)}&v=2`);render();scrollTo({top:0,behavior:'smooth'})}
+  document.addEventListener('click',event=>{const demo=event.target.closest('[data-demo]');if(demo){go(demo.dataset.demo);return}const business=event.target.closest('[data-business]');if(business){model.business=business.dataset.business;go('business');return}const target=event.target.closest('[data-go]');if(target){go(target.dataset.go);return}const chip=event.target.closest('.chip');if(chip){chip.parentElement.querySelectorAll('.chip').forEach(x=>x.setAttribute('aria-pressed',String(x===chip)))}});
+  document.getElementById('openVideo').addEventListener('click',()=>document.getElementById('transition').textContent='Prototype: the real system opens this exact TikTok post in a new tab. No external page opened here.');document.getElementById('prepareStatements').addEventListener('click',()=>document.getElementById('transition').textContent='Prototype: statements were prepared locally. No payment or export occurred.');
+  render();
+</script>
+</body>
+</html>
