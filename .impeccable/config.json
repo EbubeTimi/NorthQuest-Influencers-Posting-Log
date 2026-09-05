@@ -17,6 +17,15 @@
         "value": "cubic-bezier(.4, 1.3, .5, 1)",
         "createdAt": "2026-09-05T06:59:07.180Z",
         "reason": "Agent: intentional playful overshoot on the onboarding progress bar, pre-existing in intake.html; matches the warm/celebratory tone the user asked to keep (confetti, milestone moment)"
+      },
+      {
+        "rule": "cream-palette",
+        "value": "*",
+        "files": [
+          "intake.html"
+        ],
+        "createdAt": "2026-09-05T13:12:49.299Z",
+        "reason": "User confirmed: this warm-cream/green identity was explicitly requested and approved across the whole product this session, including index.html which shares the same --bg:#faf7f0 token"
       }
     ]
   }
