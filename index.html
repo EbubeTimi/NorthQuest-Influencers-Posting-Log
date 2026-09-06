@@ -460,6 +460,8 @@
     cursor: pointer; border: none; transition: all 0.18s;
     -webkit-appearance: none; appearance: none;
   }
+  /* A disabled action must look unavailable, not merely refuse when pressed. */
+  .btn:disabled { opacity: 0.45; cursor: not-allowed; filter: grayscale(0.35); }
   .btn-primary {
     background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%);
     color: white;
@@ -1212,7 +1214,7 @@
     <span class="manage-add">
       <select class="pay-input" id="manage-add-name" style="max-width:180px" onchange="onManageAddNameChange(this.value)"></select>
       <select class="pay-input" id="manage-add-tier" style="max-width:120px"></select>
-      <button class="btn btn-sm btn-primary" onclick="addCreatorToMonth()" style="white-space:nowrap">+ Add to this month</button>
+      <button class="btn btn-sm btn-primary" id="manage-add-btn" onclick="addCreatorToMonth()" style="white-space:nowrap">+ Add to this month</button>
     </span>
   </div>
   <div class="creator-table-wrap">
@@ -1239,9 +1241,9 @@
     <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
       <span class="page-search-wrap"><input class="page-search-input" id="pay-search" type="text" placeholder="Search creators..." oninput="filterTableRows('pay-search','pay-body')" autocomplete="off"></span>
       <select class="pay-input" id="paymonth-add-name" style="max-width:180px"></select>
-      <button class="btn btn-sm btn-primary" onclick="addCreatorToPayMonth()" style="white-space:nowrap">+ Add creator to this month</button>
+      <button class="btn btn-sm btn-primary" id="paymonth-add-btn" onclick="addCreatorToPayMonth()" style="white-space:nowrap">+ Add creator to this month</button>
       <button id="pay-refresh-btn" class="btn btn-sm" onclick="refreshPaymentsData(this)">&#x21BB; Refresh</button>
-      <button class="btn btn-sm" onclick="exportPaymentsCSV()">&#x2913; Download CSV</button>
+      <button class="btn btn-sm" onclick="exportPaymentsCSV()">&#x2913; Download XLSX</button>
       <button id="pay-clear-bonuses-btn" class="btn btn-sm" onclick="clearAllBonusesThisMonth(this)" style="color:var(--red)">&#x2715; Clear all bonuses (this month)</button>
     </div>
   </div>
@@ -2830,6 +2832,13 @@ function fillAddPicker(selId, ym) {
     ? '<option value="">Add a creator to ' + escH(monthShort(ym)) + '…</option>' +
         cands.map(c => '<option value="' + escH(c.name) + '">' + escH(c.name) + '</option>').join('')
     : '<option value="">Everyone active already has a row in ' + escH(monthShort(ym)) + '</option>';
+  // The button used to stay live with an empty list, so pressing it demanded
+  // you "pick a creator from the dropdown" when the dropdown held nobody.
+  const btn = document.getElementById(selId.replace('-name', '-btn'));
+  if (btn) {
+    btn.disabled = !cands.length;
+    btn.title = cands.length ? '' : 'Everyone active already has a row in ' + monthShort(ym);
+  }
 }
 
 function renderManageTabs() {
@@ -3470,72 +3479,255 @@ function exportPaymentsCSV() {
   const cmap = {};
   allCreators.forEach(c => { cmap[String(c.name).toLowerCase()] = { rate: parseFloat(c.rate)||defMonthlySalary, bankName:c.bankName||'', acctNum:c.acctNum||'', acctName:c.acctName||'' }; });
   const tierOf = n => (cmap[n.toLowerCase()] || { rate: defMonthlySalary }).rate;
-  // Segment by base-pay tier, highest first, so the exported sheet groups
-  // ₦300k creators, then ₦200k, then ₦150k, and so on, all in one sheet.
   const names = Object.keys(counts).sort((a, b) => tierOf(b) - tierOf(a) || a.localeCompare(b));
-  const q = v => { v = String(v == null ? '' : v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g,'""') + '"' : v; };
-  const L = [];
-  L.push('NORTHQUEST FINANCE  ·  CREATOR PAYMENT REGISTER');
-  L.push('Payment Period:  ' + ord(1) + ' ' + mName + ' ' + y + ' – ' + ord(last) + ' ' + mName + ' ' + y);
-  L.push('');
-  L.push(['S/N','Name','No. of Posts / Salary','Rate per Post (₦)','Base Amount (₦)','Bonus Views','Perf. Bonus (₦)','Special Bonus / Ice Cream (₦)','Total Payable (₦)','Bank Name','Account Number','Account Name','Payment Status','Payment Date','Remarks'].map(q).join(','));
-  let tPosts=0,tBase=0,tPerf=0,tSpecial=0,tTotal=0;
-  // Staff rows first
+
+  // Columns: A S/N, B Name, C Posts, D Rate, E Base, F Bonus Views,
+  // G Perf, H Special, I Total, J..L bank, M status, N date, O remarks.
+  // Base and Total are written as live formulas, so editing a post count or a
+  // bonus in the exported file re-does the arithmetic instead of leaving a
+  // stale number sitting next to the edited one.
+  const R = [];
+  R.push([{ v:'NORTHQUEST FINANCE  ·  CREATOR PAYMENT REGISTER', s:1 }]);
+  R.push(['Payment Period:  ' + ord(1) + ' ' + mName + ' ' + y + ' – ' + ord(last) + ' ' + mName + ' ' + y]);
+  R.push([]);
+  R.push(['S/N','Name','No. of Posts / Salary','Rate per Post (₦)','Base Amount (₦)','Bonus Views',
+          'Perf. Bonus (₦)','Special Bonus (₦)','Total Payable (₦)','Bank Name','Account Number',
+          'Account Name','Payment Status','Payment Date','Remarks'].map(v => ({ v:v, s:2 })));
+
+  const moneyRows = [];
   STAFF.forEach((s, si) => {
     const man = allPayments.find(p => p.month === selectedPayMonth && String(p.name) === s.key) || {};
     const salary = parseFloat(String(man.postsOverride||'').replace(/[^\d.]/g,'')) || 0;
-    const special = parseFloat(String(man.specialBonus||'').replace(/[^\d.]/g,'')) || 0;
+    const special = parseExtraBonuses(man.specialBonus || '').reduce((t,e) => t + e.amount, 0);
     const totalOv = String(man.totalOverride||'').replace(/[^\d.]/g,'');
-    const total = (totalOv !== '' && !isNaN(parseFloat(totalOv))) ? parseFloat(totalOv) : salary + special;
     const bankData = JSON.parse(safeStorage.getItem('nq_sb_' + si) || '{}');
-    tSpecial+=special; tTotal+=total;
-    L.push(['S'+(si+1), s.display + ' (' + s.role + ')', fmtMoney2(salary), '—', '—', '—', '—', fmtMoney2(special), fmtMoney2(total), bankData.bankName||'', bankData.acctNum||'', bankData.acctName||'', man.paymentStatus||'Pending', man.paymentDate||'', man.remarks||''].map(q).join(','));
+    const rn = R.length + 1;
+    const total = (totalOv !== '' && !isNaN(parseFloat(totalOv)))
+      ? { v: parseFloat(totalOv), s:3 } : { f:'C'+rn+'+H'+rn, s:3 };
+    R.push(['S'+(si+1), s.display + ' (' + s.role + ')', { v:salary, s:3 }, '', '', '', '',
+            { v:special, s:3 }, total, bankData.bankName||'', bankData.acctNum||'',
+            bankData.acctName||'', man.paymentStatus||'Pending', man.paymentDate||'', man.remarks||'']);
+    moneyRows.push(rn);
   });
-  // Creator rows, grouped under a header line per base-pay tier
-  let lastTierCSV = null;
-  names.forEach((name,i) => {
+
+  let lastTier = null;
+  names.forEach((name, i) => {
     const rowTier = tierOf(name);
-    if (rowTier !== lastTierCSV) {
-      lastTierCSV = rowTier;
-      L.push(q('CREATORS, ₦' + Number(rowTier).toLocaleString('en-NG') + ' BASE PAY'));
+    if (rowTier !== lastTier) {
+      lastTier = rowTier;
+      R.push([{ v:'CREATORS, ₦' + Number(rowTier).toLocaleString('en-NG') + ' BASE PAY', s:4 }]);
     }
     const rawPosts = counts[name];
     const ci = cmap[name.toLowerCase()] || { rate:defMonthlySalary, bankName:'', acctNum:'', acctName:'' };
     const perVideo = ci.rate / maxVideosCSV;
     const man = allPayments.find(p => p.month === selectedPayMonth && String(p.name).toLowerCase() === name.toLowerCase()) || {};
-    // Same credit-based logic as the on-screen register.
     const creditRaw = String(man.postsCredit || '');
     const overrideRaw = String(man.postsOverride || '');
     const hasCredit = creditRaw !== '' && !isNaN(parseFloat(creditRaw));
     const hasLegacyOverride = !hasCredit && overrideRaw !== '' && !isNaN(parseFloat(overrideRaw));
     const credit = hasCredit ? parseFloat(creditRaw) : 0;
     const effPosts = hasLegacyOverride ? parseFloat(overrideRaw) : (rawPosts + credit);
-    const base = Math.round(effPosts * perVideo);
     const perf = calcBonus(man.bonusViews || '');
-    const special = parseFloat(String(man.specialBonus || '').replace(/[^\d.]/g,'')) || 0;
-    const computedTotal = base + perf + special;
-    const totalOv = String(man.totalOverride || '').replace(/[^\d.]/g,'');
-    const effTotal = (totalOv !== '' && !isNaN(parseFloat(totalOv))) ? parseFloat(totalOv) : computedTotal;
-    tPosts+=effPosts; tBase+=base; tPerf+=perf; tSpecial+=special; tTotal+=effTotal;
-    L.push([i+1,name,effPosts,fmtMoney2(perVideo),fmtMoney2(base),man.bonusViews||'',fmtMoney2(perf),fmtMoney2(special),fmtMoney2(effTotal),ci.bankName,ci.acctNum,ci.acctName,man.paymentStatus||'Pending',man.paymentDate||'',man.remarks||''].map(q).join(','));
+    // Each named bonus parsed on its own. Stripping the digits out of the
+    // whole cell turned "50000, 20000" into 5000020000 in the old export.
+    const special = parseExtraBonuses(man.specialBonus || '').reduce((t,e) => t + e.amount, 0);
+    const totalOv = String(man.totalOverride||'').replace(/[^\d.]/g,'');
+    const rn = R.length + 1;
+    const total = (totalOv !== '' && !isNaN(parseFloat(totalOv)))
+      ? { v: parseFloat(totalOv), s:3 } : { f:'E'+rn+'+G'+rn+'+H'+rn, s:3 };
+    R.push([i+1, name, effPosts, { v:Math.round(perVideo*100)/100, s:3 },
+            { f:'C'+rn+'*D'+rn, s:3 }, man.bonusViews||'', { v:perf, s:3 }, { v:special, s:3 }, total,
+            ci.bankName, ci.acctNum, ci.acctName, man.paymentStatus||'Pending',
+            man.paymentDate||'', man.remarks||'']);
+    moneyRows.push(rn);
   });
-  L.push(['','TOTAL',tPosts,'',fmtMoney2(tBase),'',fmtMoney2(tPerf),fmtMoney2(tSpecial),fmtMoney2(tTotal),'','','','','',''].map(q).join(','));
-  L.push(''); L.push('ASSUMPTIONS & LEGEND'); L.push('');
-  L.push(q('Every creator has their own monthly base pay (default for new creators: ₦150,000/month)'));
-  L.push(q('Rate per post = Monthly base pay ÷ 62 (flat divisor, regardless of month length)'));
+
+  // Totals as real SUMs over exactly the rows written above.
+  const sumOf = col => moneyRows.length
+    ? { f: moneyRows.map(r => col + r).join('+'), s:4 } : { v:0, s:4 };
+  R.push([]);
+  R.push(['', { v:'TOTAL', s:4 }, sumOf('C'), '', sumOf('E'), '', sumOf('G'), sumOf('H'), sumOf('I')]);
+
+  R.push([]); R.push([{ v:'ASSUMPTIONS & LEGEND', s:4 }]);
+  R.push(['Every creator has their own monthly base pay (default for new creators: ₦150,000/month)']);
+  R.push(['Rate per post = Monthly base pay ÷ 62 (flat divisor, regardless of month length)']);
   [...new Set(names.map(tierOf))].sort((a,b)=>b-a).forEach(t => {
-    L.push(q('₦' + Number(t).toLocaleString('en-NG') + '/month base pay = ₦' + fmtMoney2(t/62) + ' per video'));
+    R.push(['₦' + Number(t).toLocaleString('en-NG') + '/month base pay = ₦' + fmtMoney2(t/62) + ' per video']);
   });
-  L.push(q('Pay = (videos posted that month) × per-video rate.  Bonuses are the same for everybody regardless of base pay.  In ' + mName + ' ' + y + ' there are ' + (last * 2) + ' possible video slots (' + last + ' days × 2/day).'));
-  L.push(''); L.push('PERFORMANCE BONUS TIERS:');
+  R.push(['Pay = (videos posted that month) × per-video rate. Bonuses are the same for everybody regardless of base pay. In ' + mName + ' ' + y + ' there are ' + (last*2) + ' possible video slots (' + last + ' days × 2/day).']);
+  R.push([]); R.push([{ v:'PERFORMANCE BONUS TIERS', s:4 }]);
   [...bonusTiers].sort((a,b) => a[0]-b[0]).forEach(t => {
-    L.push(q('• ' + t[0].toLocaleString('en-NG') + ' views = ₦' + t[1].toLocaleString('en-NG')));
+    R.push(['• ' + t[0].toLocaleString('en-NG') + ' views = ₦' + t[1].toLocaleString('en-NG')]);
   });
-  const csv = '﻿' + L.join('\n');
-  const blob = new Blob([csv], { type:'text/csv;charset=utf-8' });
+
+  nqDownloadXlsx(
+    'NQ Payment Register - ' + monthLabel(selectedPayMonth) + '.xlsx',
+    monthLabel(selectedPayMonth),
+    R,
+    [6, 28, 12, 14, 16, 16, 14, 16, 16, 18, 18, 22, 14, 14, 24]);
+}
+
+// ══════════════════════════════════════════════════════════
+// XLSX WRITER
+//
+// A .xlsx is a zip of XML files. Writing one by hand keeps this a
+// no-build-step static page — pulling in a spreadsheet library would be the
+// only dependency in the whole project.
+//
+// Cells accept a string, a number, or { f:'B2*C2' } for a live formula, so
+// the exported register recalculates in Excel or Sheets when a figure is
+// edited, instead of being frozen numbers the way the CSV was.
+// ══════════════════════════════════════════════════════════
+const NQ_CRC_TABLE = (() => {
+  const t = new Uint32Array(256);
+  for (let i = 0; i < 256; i++) {
+    let c = i;
+    for (let k = 0; k < 8; k++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+    t[i] = c >>> 0;
+  }
+  return t;
+})();
+function nqCrc32(bytes) {
+  let c = 0xFFFFFFFF;
+  for (let i = 0; i < bytes.length; i++) c = NQ_CRC_TABLE[(c ^ bytes[i]) & 0xFF] ^ (c >>> 8);
+  return (c ^ 0xFFFFFFFF) >>> 0;
+}
+// Stored (uncompressed) zip. These files are small, and skipping deflate
+// keeps this short enough to read and check.
+function nqZip(files) {
+  const enc = new TextEncoder();
+  const parts = [], central = [];
+  let offset = 0;
+  const u16 = n => [n & 0xFF, (n >>> 8) & 0xFF];
+  const u32 = n => [n & 0xFF, (n >>> 8) & 0xFF, (n >>> 16) & 0xFF, (n >>> 24) & 0xFF];
+  files.forEach(f => {
+    const nameBytes = enc.encode(f.name);
+    const data = enc.encode(f.data);
+    const crc = nqCrc32(data);
+    const local = [].concat(
+      u32(0x04034b50), u16(20), u16(0), u16(0), u16(0), u16(0),
+      u32(crc), u32(data.length), u32(data.length),
+      u16(nameBytes.length), u16(0));
+    parts.push(new Uint8Array(local), nameBytes, data);
+    central.push([].concat(
+      u32(0x02014b50), u16(20), u16(20), u16(0), u16(0), u16(0), u16(0),
+      u32(crc), u32(data.length), u32(data.length),
+      u16(nameBytes.length), u16(0), u16(0), u16(0), u16(0), u32(0),
+      u32(offset)), nameBytes);
+    offset += local.length + nameBytes.length + data.length;
+  });
+  const cdParts = [];
+  let cdLen = 0;
+  for (let i = 0; i < central.length; i += 2) {
+    const head = new Uint8Array(central[i]);
+    cdParts.push(head, central[i + 1]);
+    cdLen += head.length + central[i + 1].length;
+  }
+  const end = new Uint8Array([].concat(
+    u32(0x06054b50), u16(0), u16(0), u16(files.length), u16(files.length),
+    u32(cdLen), u32(offset), u16(0)));
+  const all = parts.concat(cdParts, [end]);
+  const total = all.reduce((s, a) => s + a.length, 0);
+  const out = new Uint8Array(total);
+  let p = 0;
+  all.forEach(a => { out.set(a, p); p += a.length; });
+  return out;
+}
+function nqXmlEsc(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&apos;')
+    .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, '');
+}
+function nqColName(i) {
+  let s = '';
+  i += 1;
+  while (i > 0) { const m = (i - 1) % 26; s = String.fromCharCode(65 + m) + s; i = ((i - m) / 26) | 0; }
+  return s;
+}
+// rows: array of arrays. A cell may be a string, a number, or:
+//   { f:'SUM(C2:C9)' }        live formula
+//   { v:'text', s:1 }         styled (1 = title, 2 = header, 3 = money, 4 = bold)
+function nqBuildXlsx(sheetName, rows, colWidths) {
+  const xmlRows = rows.map((row, r) => {
+    const cells = (row || []).map((cell, c) => {
+      const ref = nqColName(c) + (r + 1);
+      if (cell == null || cell === '') return '';
+      if (typeof cell === 'object' && cell.f)
+        return '<c r="' + ref + '"' + (cell.s ? ' s="' + cell.s + '"' : '') + '><f>' + nqXmlEsc(cell.f) + '</f></c>';
+      const val = (typeof cell === 'object') ? cell.v : cell;
+      const style = (typeof cell === 'object' && cell.s) ? ' s="' + cell.s + '"' : '';
+      if (typeof val === 'number' && isFinite(val))
+        return '<c r="' + ref + '"' + style + '><v>' + val + '</v></c>';
+      return '<c r="' + ref + '" t="inlineStr"' + style + '><is><t xml:space="preserve">' +
+             nqXmlEsc(val) + '</t></is></c>';
+    }).join('');
+    return '<row r="' + (r + 1) + '">' + cells + '</row>';
+  }).join('');
+  const cols = (colWidths || []).map((w, i) =>
+    '<col min="' + (i + 1) + '" max="' + (i + 1) + '" width="' + w + '" customWidth="1"/>').join('');
+  const sheet =
+    '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+    '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">' +
+    (cols ? '<cols>' + cols + '</cols>' : '') +
+    '<sheetData>' + xmlRows + '</sheetData></worksheet>';
+  // 0 default, 1 title, 2 header, 3 money, 4 bold total
+  const styles =
+    '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+    '<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">' +
+    '<numFmts count="1"><numFmt numFmtId="164" formatCode="&quot;₦&quot;#,##0"/></numFmts>' +
+    '<fonts count="3"><font><sz val="11"/><name val="Calibri"/></font>' +
+    '<font><b/><sz val="14"/><name val="Calibri"/></font>' +
+    '<font><b/><sz val="11"/><color rgb="FFFFFFFF"/><name val="Calibri"/></font></fonts>' +
+    '<fills count="3"><fill><patternFill patternType="none"/></fill>' +
+    '<fill><patternFill patternType="gray125"/></fill>' +
+    '<fill><patternFill patternType="solid"><fgColor rgb="FF1A6B4A"/><bgColor indexed="64"/></patternFill></fill></fills>' +
+    '<borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders>' +
+    '<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>' +
+    '<cellXfs count="5">' +
+    '<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>' +
+    '<xf numFmtId="0" fontId="1" fillId="0" borderId="0" xfId="0" applyFont="1"/>' +
+    '<xf numFmtId="0" fontId="2" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1"/>' +
+    '<xf numFmtId="164" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/>' +
+    '<xf numFmtId="164" fontId="1" fillId="0" borderId="0" xfId="0" applyNumberFormat="1" applyFont="1"/>' +
+    '</cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles>' +
+    '</styleSheet>';
+  return nqZip([
+    { name: '[Content_Types].xml', data:
+      '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+      '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">' +
+      '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>' +
+      '<Default Extension="xml" ContentType="application/xml"/>' +
+      '<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>' +
+      '<Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>' +
+      '<Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>' +
+      '</Types>' },
+    { name: '_rels/.rels', data:
+      '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+      '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+      '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/>' +
+      '</Relationships>' },
+    { name: 'xl/workbook.xml', data:
+      '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+      '<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" ' +
+      'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">' +
+      '<sheets><sheet name="' + nqXmlEsc(sheetName).slice(0, 31) + '" sheetId="1" r:id="rId1"/></sheets></workbook>' },
+    { name: 'xl/_rels/workbook.xml.rels', data:
+      '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+      '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+      '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/>' +
+      '<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>' +
+      '</Relationships>' },
+    { name: 'xl/styles.xml', data: styles },
+    { name: 'xl/worksheets/sheet1.xml', data: sheet }
+  ]);
+}
+function nqDownloadXlsx(filename, sheetName, rows, colWidths) {
+  const bytes = nqBuildXlsx(sheetName, rows, colWidths);
+  const blob = new Blob([bytes], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
-  a.href = url; a.download = 'NQ Payment Register - ' + monthLabel(selectedPayMonth) + '.csv';
+  a.href = url; a.download = filename;
   document.body.appendChild(a); a.click(); document.body.removeChild(a);
   URL.revokeObjectURL(url);
 }
