@@ -66,8 +66,11 @@ function check(label, actual, expected) {
   check('marker still on Today', (await marker('#seg-today')).startsWith('marked'), true);
   check('gold dot visible on Yesterday',
     await page.evaluate(() => getComputedStyle(document.querySelector('#seg-yesterday .seg-dot')).display !== 'none'), true);
-  check('2 PM cutoff is stated',
-    (await page.textContent('#date-toggle-hint')).includes('2:00 PM'), true);
+  // Assert the cutoff the app actually has, not a hardcoded 2 PM — a one-off
+  // extension can move it, and the hint is supposed to follow.
+  check('the real cutoff is stated',
+    (await page.textContent('#date-toggle-hint'))
+      .includes(await page.evaluate(() => graceCutoffLabel())), true);
   await page.screenshot({ path: OUT + '/shot-2-available.png' });
 
   console.log('\n=== STATE 3: creator taps Yesterday ===');
@@ -80,8 +83,9 @@ function check(label, actual, expected) {
     'rgb(231, 239, 231)');
   check('date field switched to yesterday',
     await page.inputValue('#f-date'), state.yest);
-  check('2 PM cutoff still stated',
-    (await page.textContent('#date-toggle-hint')).includes('2:00 PM'), true);
+  check('the real cutoff still stated',
+    (await page.textContent('#date-toggle-hint'))
+      .includes(await page.evaluate(() => graceCutoffLabel())), true);
   await page.screenshot({ path: OUT + '/shot-3-yesterday.png' });
 
   console.log('\n=== STATE 4: switch back to Today ===');
