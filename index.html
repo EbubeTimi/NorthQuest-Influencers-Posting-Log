@@ -1535,7 +1535,27 @@ function yesterdayStr() {
   dt.setUTCDate(dt.getUTCDate() - 1);
   return dt.getUTCFullYear() + '-' + String(dt.getUTCMonth()+1).padStart(2,'0') + '-' + String(dt.getUTCDate()).padStart(2,'0');
 }
-function graceWindowOpen() { return lagosParts().hour < 14; }
+// Yesterday's videos can normally be backfilled until 2 PM Lagos. A one-off
+// extension can be granted for a SINGLE date: set the date and hour below and
+// it lifts itself once that date passes, so nobody has to remember to undo
+// it. These two lines must match the same two in Code.gs — the server has the
+// real say, this only decides what the creator is offered.
+const GRACE_CUTOFF_HOUR = 14;
+const GRACE_EXTENSION_DATE = '2026-09-06';
+const GRACE_EXTENSION_HOUR = 24; // 24 = midnight, i.e. the whole of that day
+
+function graceCutoffHour() {
+  return (GRACE_EXTENSION_DATE && GRACE_EXTENSION_DATE === todayStr())
+    ? GRACE_EXTENSION_HOUR
+    : GRACE_CUTOFF_HOUR;
+}
+function graceCutoffLabel() {
+  const h = graceCutoffHour();
+  if (h >= 24) return 'midnight tonight';
+  if (h === 12) return 'noon';
+  return (h > 12 ? (h - 12) : h) + ':00 ' + (h >= 12 ? 'PM' : 'AM');
+}
+function graceWindowOpen() { return lagosParts().hour < graceCutoffHour(); }
 
 // Every date comparison in this file assumes a plain 'YYYY-MM-DD' string.
 // A Google Sheets date cell does not always come back that way, if the cell
@@ -1846,7 +1866,8 @@ function onNameChange(fetchFresh) {
     hintMsg.innerHTML = (yCount === 0
       ? 'You did not log your videos yesterday. '
       : 'You logged 1 of 2 videos yesterday. ') +
-      'Yesterday stays open until <strong>2:00 PM</strong> today.';
+      'Yesterday stays open until <strong>' + graceCutoffLabel() + '</strong>' +
+      (graceCutoffHour() >= 24 ? '.' : ' today.');
   } else {
     segYesterday.setAttribute('disabled', '');
     segYesterday.classList.remove('is-enabled');
@@ -1874,7 +1895,8 @@ function updateDateLockDisplay() {
     const hintEl = document.getElementById('date-toggle-hint');
     hintEl.style.display = '';
     document.getElementById('date-toggle-hint-msg').innerHTML =
-      'Logging for yesterday. This closes at <strong>2:00 PM</strong> today.';
+      'Logging for yesterday. This closes at <strong>' + graceCutoffLabel() + '</strong>' +
+      (graceCutoffHour() >= 24 ? '.' : ' today.');
   }
 }
 
@@ -2423,8 +2445,8 @@ function renderMyLogs(name) {
   const yCount = mine.filter(r => r.date === yesterdayStr()).length;
   const graceHtml = (yCount < 2 && graceWindowOpen())
     ? '<div class="mylog-grace">' + (yCount === 0
-        ? 'You did not log your videos yesterday. Log them before 2 PM.'
-        : 'You logged 1 of 2 videos yesterday. Log the second before 2 PM.') +
+        ? 'You did not log your videos yesterday. Log them before ' + graceCutoffLabel() + '.'
+        : 'You logged 1 of 2 videos yesterday. Log the second before ' + graceCutoffLabel() + '.') +
       '<button type="button" onclick="closeModalDirect(); startLogYesterday();">Log yesterday\'s videos</button></div>'
     : '';
 
