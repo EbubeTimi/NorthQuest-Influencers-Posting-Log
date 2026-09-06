@@ -2,14 +2,16 @@
 
 Current instructions through 2026-09-03 override every earlier repository rule. Trial revision 7 visual design is approved; recruitment and active-dashboard additions still require their own prototype approval. This is not production approval.
 
-## Unified management dashboard contract — 4 September 2026
+## Unified management dashboard contract — updated 6 September 2026
 
 - Management and administration are PC-first because most operating work happens on a laptop. Desktop uses a persistent left navigation, wider lists and side-by-side evidence/action areas. The same actions, focus order and records must reflow to a single-column phone interface without horizontal scrolling or reduced permissions.
-- Management enters one agency dashboard, sees a compact needs-attention queue, and then opens business-scoped work; trial evidence, onboarding review, bonus review and payment preparation remain distinct tasks.
+- Management enters one agency dashboard, sees a compact needs-attention queue, and then opens business-scoped work. The visible task groups are Trial results, Onboarding submissions, Bonus claims and Payments; none is a shortcut into a different stage.
 - NorthQuest, CashDrive and Aura share one person/identity model without sharing operational records. Every creator, review, payment, audit event and action carries an explicit business scope.
 - A creator record shows the person's identity, photo placeholder, joined/deactivated lifecycle dates, business memberships and linked video, view, bonus, payment, access and audit records. It does not create a second management-only creator database.
-- Trial evidence approval follows the same creator and business into onboarding. The reviewed item includes the exact recorded video/platform, claimed count and screenshot. Keeping a creator in trial preserves the evidence and history.
-- Completing onboarding creates the active membership idempotently. A correction names the exact section and reopens only that section; the signed agreement remains privately reviewable.
+- Trial evidence review shows the submitted screenshot as the primary evidence, exact recorded video/platform, reported count and an inline link to that post. “Approve trial” unlocks onboarding for the same person/business; it does not complete onboarding or activate the creator. “Keep in trial” preserves the evidence and history.
+- A creator appears in Onboarding submissions only after the onboarding form and agreement have been signed and durably submitted. Management sees every identity, contact, profile and payment field plus the generated signed agreement. Missing creator name, signature or signing date blocks submission upstream.
+- Completing onboarding creates the active membership idempotently and leads to an explicit completion state. A correction names the exact section and reopens only that section; the signed agreement remains privately reviewable.
+- Back returns to the exact prior queue/page held in the local navigation stack. A safe flow-specific fallback is used only for a direct URL entry.
 - An approved bonus creates a business-scoped payment-ledger item. Payment preparation keeps expected video pay, approved bonuses, total owed and settled payment distinct.
 - Pausing one business membership stops new operational work only for that business and preserves read-only payment/history access. Suspending the whole person is a separate Smith-only action affecting every membership.
 - Every management decision records actor, action, business, subject and time. Unauthorized roles receive no management records. Prototype revision 1 is local/read-only and does not authorize production writes or deployment.

@@ -184,6 +184,13 @@ Contract re-signing selection is row-level: management may tap the creator's nam
 
 Management/admin surfaces are PC-first while creator surfaces remain phone-first. This changes layout priority, not feature or permission scope: every management action must still reflow and remain usable on a phone.
 
+## Unified management dashboard correction — 6 September 2026
+
+- The earlier prototype collapsed three different records into direct home shortcuts and labelled trial verification “Approve onboarding.” That wording and route are superseded.
+- Home now opens separate Trial results, Onboarding submissions and Bonus claims queues. Trial evidence review can only Approve trial or Keep in trial. Approval unlocks onboarding for the same person/business; it does not make the creator active.
+- Onboarding completion is a later management decision after the creator has submitted every required detail and a signed agreement. Management must see the full record and exact generated agreement. Name, date and signature placement are submission guards.
+- Successful trial approval, keeping in trial, onboarding completion and correction request each have a distinct result state. Back returns to the actual originating page rather than always jumping to Work.
+
 ## Historical conflict provenance
 
 - `d14acd9` — Aura Monday–Sunday behavior. Current instruction confirms this Aura-specific rule.

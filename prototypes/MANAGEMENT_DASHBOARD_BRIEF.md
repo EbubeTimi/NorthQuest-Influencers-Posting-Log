@@ -1,6 +1,6 @@
 # Unified management dashboard prototype brief
 
-Status: revision 2 for user review. Prototype only.
+Status: revision 3 for user review. Prototype only.
 
 ## Compact design brief
 
@@ -18,9 +18,9 @@ Variants: desktop is the primary management workspace; phone collapses to one co
 ```text
 Management home
   -> Needs attention
-     -> trial evidence review
-     -> onboarding review/correction
-     -> bonus review
+     -> Trial results queue -> evidence review -> trial approved / kept in trial
+     -> Onboarding submissions queue -> full record + signed agreement -> completed / correction requested
+     -> Bonus claims queue -> bonus review
      -> payment preparation
   -> Businesses
      -> NorthQuest / CashDrive / Aura
@@ -35,10 +35,14 @@ Management home
 
 | From | Trigger | Guard | To | Result/recovery |
 | --- | --- | --- | --- | --- |
-| Home | Open work count | authorized operator | Work queue | Business-scoped pending items |
-| Work queue | Open trial evidence | assigned business | Evidence review | Approve onboarding or keep in trial |
-| Work queue | Open onboarding | assigned business | Onboarding review | Complete or request exact corrections |
-| Work queue | Open bonus | assigned business | Bonus review | Approve/reject; approved value feeds payment ledger |
+| Home | Open Trial results | authorized operator | Trial results queue | Business-scoped qualifying evidence |
+| Trial results | Open creator | assigned business | Evidence review | Approve trial or keep in trial |
+| Evidence review | Approve trial | valid link + screenshot + verified count | Trial approved | Creator onboarding is unlocked; creator is not active yet |
+| Home | Open Onboarding submissions | authorized operator | Onboarding queue | Signed submissions only |
+| Onboarding queue | Open creator | assigned business | Full onboarding review | Inspect every field and the generated signed agreement |
+| Onboarding review | Complete | signature/name/date valid and all checks pass | Onboarding completed | Active membership created exactly once |
+| Onboarding review | Request correction | exact field selected | Correction requested | Only the selected field reopens |
+| Home | Open Bonus claims | assigned business | Bonus queue | Open one claim for review |
 | Home/business | Open creator | readable membership | Creator record | One joined record with operational and financial links |
 | Creator record | Manage access | manager | Access | Pause one membership; higher authority required for whole person |
 | Any load | unavailable | retained context | Error | Retry or return |
@@ -48,7 +52,9 @@ Management home
 
 - The dashboard is a projection over existing application, trial, onboarding, membership, video, view, bonus, payment and audit records; it does not duplicate them into a separate management database.
 - Every count, queue item and creator record is agency/business scoped server-side. Search and filtering do not reveal inaccessible records.
-- Trial evidence approval creates one onboarding case. Onboarding completion creates one active membership. Bonus approval creates one payment-ledger item. Each operation is idempotent and audited.
+- Trial approval creates/unlocks one onboarding case; it never activates membership. Only a later signed onboarding submission reviewed and completed by management creates one active membership. Bonus approval creates one payment-ledger item. Each operation is idempotent and audited.
+- The agreement cannot enter the onboarding queue without creator name, signing date and signature placed in the required document fields and a durable signed-PDF record.
+- Back follows the operator's actual navigation stack. Direct-linked states use a safe task-specific fallback rather than sending every exit to Work.
 - Pausing one business membership does not erase creator history or affect another business. Whole-person suspension is a separate Smith-only action.
 - Full bank numbers and private evidence appear only in the exact authorized review. Lists, notifications and audit payloads remain masked.
 - Prototype buttons are local simulations. No approval, payment, message, export, access change, upload or database write occurs.

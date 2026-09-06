@@ -16,7 +16,7 @@ audit history.
 | 3 | Brand onboarding | Revised prototype ready for review | In-app contract signing, targeted correction, management check, one idempotent active membership |
 | 3A | Management business contracts | Revision 2 ready for review | Complete Word/PDF upload, Smith confirmation, immutable signed PDFs, private history and re-signing |
 | 4 | Active creator dashboard and business switching | Revision 16 behavior/flow approved; production UI remains blocked | Daily/weekly/bonus/payment flows and membership isolation |
-| 5 | Unified management dashboard | Revision 2 ready for review; PC-first and phone-responsive | Businesses, creators, access, evidence, onboarding, lifecycle and audit |
+| 5 | Unified management dashboard | Revision 3 ready for review; PC-first and phone-responsive | Separate trial-result, onboarding-submission and bonus queues; full signed record; explicit outcomes and origin-aware Back |
 | 6 | CashDrive enquiries | Source fields inspected; not yet prototyped | Creator submission, management stages, CashDrive-only access and history |
 | 7 | CashDrive inventory | Not yet prototyped | Vehicle/media/status records linked safely to enquiries and content |
 | 8 | Sheets and Apify operations | Historical code conflicts with current rules | Weekly Sheets plus cumulative 1–14, 1–21 and month-end jobs using one isolated Apify account per business |
