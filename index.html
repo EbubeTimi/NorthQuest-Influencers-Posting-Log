@@ -834,9 +834,20 @@
   .views-video-row .vv-platform { min-width:64px; font-size:12px; font-weight:600; color:var(--text3); }
   .views-video-row input { flex:1; padding:9px 10px; border:1px solid var(--border2); border-radius:var(--radius-sm); font-family:inherit; font-size:14px; }
   .mylog-summary { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:18px; }
-  .mylog-stat { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-sm); padding:12px 14px; text-align:left; }
+  .mylog-stat { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-sm); padding:12px 14px; text-align:left; position:relative; }
   .mylog-stat .v { font-size:19px; font-weight:700; color:var(--text); margin-bottom:4px; }
   .mylog-stat .l { font-size:11px; text-transform:uppercase; letter-spacing:0.05em; color:var(--text2); }
+  /* "+2" — how many of the videos in this count were added by an admin. */
+  .admin-chip {
+    position:absolute; top:8px; right:10px;
+    font-size:11px; font-weight:700; letter-spacing:0.02em;
+    color:var(--accent3); background:var(--accent-light);
+    border:1px solid var(--accent); border-radius:20px; padding:1px 7px;
+  }
+  /* A one-off bonus that only exists while it is running, tinted so it does
+     not read as one of the standing figures. */
+  .mylog-stat.extra-bonus { background:var(--amber-light); border-color:#e6d9ae; }
+  .mylog-stat.extra-bonus .v { color:var(--amber); }
   .mylog-day { display:flex; align-items:flex-start; gap:12px; padding:9px 12px; border-bottom:1px solid var(--border); font-size:13px; }
   .mylog-day:last-child { border-bottom:none; }
   .mylog-day.today-row { background:var(--accent-light); border-radius:var(--radius-sm); }
@@ -2336,11 +2347,18 @@ function renderMyLogs(name) {
   // have earned that across four separate bonuses — one figure answers "how
   // many", the other "how much".
   const bonusCount = calcBonusCount(man.bonusViews || '');
-  const special = parseFloat(String(man.specialBonus || '').replace(/[^\d.]/g, '')) || 0;
+  const extraBonuses = parseExtraBonuses(man.specialBonus || '');
+  const special = extraBonuses.reduce((sum, e) => sum + e.amount, 0);
   const totalOv = String(man.totalOverride || '').replace(/[^\d.]/g, '');
   const amountExpected = (totalOv !== '' && !isNaN(parseFloat(totalOv))) ? parseFloat(totalOv) : (baseAmount + perf + special);
-  const adminNote = (credit > 0 || hasLegacyOverride)
-    ? '<div class="mylog-pay-note">' + (hasLegacyOverride ? 'Set by admin.' : (Math.round(credit) + ' logged by admin.')) + '</div>'
+  // Videos the admin added show as a "+2" chip in the corner of the count.
+  // The legacy override REPLACES the count rather than adding to it, so there
+  // is no honest "+N" for it — that case keeps its wording instead.
+  const adminChip = credit > 0
+    ? '<span class="admin-chip">+' + Math.round(credit) + '</span>'
+    : '';
+  const adminNote = hasLegacyOverride
+    ? '<div class="mylog-pay-note">Set by admin.</div>'
     : '';
 
   // Grace banner, same missed-yesterday check as the submit page, so it
@@ -2358,12 +2376,17 @@ function renderMyLogs(name) {
   document.getElementById('modal-body').innerHTML =
     graceHtml +
     '<div class="mylog-summary">' +
-      '<div class="mylog-stat"><div class="v">' + effPosts + '</div><div class="l">Videos logged</div>' + adminNote + '</div>' +
+      '<div class="mylog-stat">' + adminChip + '<div class="v">' + effPosts + '</div><div class="l">Videos logged</div>' + adminNote + '</div>' +
       '<div class="mylog-stat"><div class="v">' + maxVideos + '</div><div class="l">Monthly target</div></div>' +
       '<div class="mylog-stat"><div class="v">&#8358;' + Math.round(ratePerVideo).toLocaleString('en-NG') + '</div><div class="l">Rate per video</div></div>' +
       '<div class="mylog-stat"><div class="v">&#8358;' + Math.round(amountExpected).toLocaleString('en-NG') + '</div><div class="l">Amount expected</div></div>' +
       '<div class="mylog-stat"><div class="v">' + bonusCount + '</div><div class="l">Bonuses so far</div></div>' +
       '<div class="mylog-stat"><div class="v">&#8358;' + Math.round(perf).toLocaleString('en-NG') + '</div><div class="l">Bonus amount</div></div>' +
+      // One tile per ad-hoc bonus actually running this month, and none at
+      // all when the Special Bonus cell is empty.
+      extraBonuses.map(e =>
+        '<div class="mylog-stat extra-bonus"><div class="v">&#8358;' + Math.round(e.amount).toLocaleString('en-NG') + '</div>' +
+        '<div class="l">' + escH(e.name) + ' amount</div></div>').join('') +
     '</div>' +
     '<div class="month-block"><div class="month-block-header"><span class="month-block-name">' + monthLabel(ym) + '</span><span class="month-block-total">' + monthRows.length + ' of 62 videos</span></div>' + dayRowsHtml.join('') + '</div>';
   document.getElementById('creator-modal').classList.add('open');
@@ -2898,6 +2921,27 @@ function calcBonus(viewsList) {
     for (let i = 0; i < bonusTiers.length; i++) { if (n >= bonusTiers[i][0]) { total += bonusTiers[i][1]; break; } }
   });
   return total;
+}
+
+// The Special Bonus cell holds one-off bonuses that come and go month to
+// month — a budget-video bonus, a talking-head bonus, whatever is running.
+// Format is "Name:amount", comma separated for more than one. An empty cell
+// means no such bonus exists, which is the normal case.
+//
+// This also fixes a real bug: the old code stripped every non-digit out of
+// the whole cell, so two bonuses "50000, 20000" became the single number
+// 5000020000 and massively overstated what a creator was owed. Each entry is
+// now parsed on its own and summed.
+function parseExtraBonuses(cell) {
+  if (!cell) return [];
+  return String(cell).split(',').map(part => {
+    const s = part.trim();
+    if (!s) return null;
+    const i = s.lastIndexOf(':');
+    const name = i > -1 ? s.slice(0, i).trim() : '';
+    const amount = parseFloat((i > -1 ? s.slice(i + 1) : s).replace(/[^\d.]/g, '')) || 0;
+    return amount > 0 ? { name: name || 'Extra bonus', amount: amount } : null;
+  }).filter(Boolean);
 }
 
 // How many bonuses were actually earned, walking the same list and the same
