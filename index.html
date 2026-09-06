@@ -1656,7 +1656,17 @@ function flushQueue() {
 function loadRows(attempt) {
   attempt = attempt || 0;
   const timeoutMs = Math.min(15000 + attempt * 10000, 45000);
-  jsonp({ action:'get' }, (data, err) => {
+  // A creator only ever looks at this month and last. Asking for the entire
+  // log — every creator, every day, since the beginning — is what times out
+  // on a phone, and a timed-out load is what locks the grace window and
+  // blames the connection. The admin console still receives everything.
+  const q = { action:'get' };
+  if (!isAdmin) {
+    const d = new Date();
+    d.setMonth(d.getMonth() - 1);
+    q.since = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-01';
+  }
+  jsonp(q, (data, err) => {
     if (data && data.rows) {
       dataLoaded = true;
       rowsLoadFailed = false;
@@ -2374,6 +2384,7 @@ function loadMyPay(name) {
     if (!data || data.status !== 'success' || !data.payments) return;
     const others = allPayments.filter(p => String(p.name).toLowerCase() !== name.toLowerCase());
     allPayments = others.concat(data.payments);
+    if (data.rate && parseFloat(data.rate) > 0) myOwnRate = { name: name, rate: parseFloat(data.rate) };
     // Only redraw if this creator's modal is still the one on screen.
     const openFor = document.getElementById('modal-name');
     if (document.getElementById('creator-modal').classList.contains('open') &&
@@ -3196,9 +3207,19 @@ function calcBonusCount(viewsList) {
 // setting one month never changes another. With no overrides anywhere, the
 // state of every existing record, this is exactly the old behaviour (always
 // the default), so nothing is re-priced until you deliberately set a month.
+// A creator's own base pay, sent by getMyPay for the signed-in creator only.
+// The roster withholds every creator's rate from non-admins, so without this
+// a creator's own card fell back to the 150,000 default and showed them the
+// wrong rate per video.
+let myOwnRate = { name: '', rate: 0 };
+
 function creatorDefaultRate(name) {
   const c = allCreators.find(x => String(x.name).toLowerCase() === String(name).toLowerCase());
-  return (c && parseFloat(c.rate)) ? parseFloat(c.rate) : 150000;
+  if (c && parseFloat(c.rate)) return parseFloat(c.rate);
+  if (myOwnRate.rate && String(myOwnRate.name).toLowerCase() === String(name).toLowerCase()) {
+    return myOwnRate.rate;
+  }
+  return 150000;
 }
 function effMonthlyRate(name, ym) {
   const nl = String(name).toLowerCase();
