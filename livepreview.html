@@ -4264,5 +4264,112 @@ function filterTableRows(inputId, tbodyId) {
   });
 }
 </script>
+<style>
+  .pv-bar{position:sticky;top:0;z-index:9999;background:#211f19;color:#e9e4d8;padding:9px 14px;
+    font-family:'SF Mono',Menlo,monospace;font-size:11.5px;border-bottom:3px dashed #1f5c3f;}
+  .pv-bar .pv-l{color:#9fceb0;font-weight:700;letter-spacing:.06em;text-transform:uppercase;margin-right:8px;}
+  .pv-row{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:6px;}
+  .pv-row:first-child{margin-top:0;}
+  .pv-b{background:#332f26;border:1px solid #4d4736;color:#e9e4d8;border-radius:5px;padding:5px 11px;
+    font:inherit;font-size:11.5px;cursor:pointer;}
+  .pv-b:hover{background:#413c2f;}
+  .pv-b.on{background:#1f5c3f;border-color:#1f5c3f;color:#fff;font-weight:700;}
+  .pv-note{color:#b9b2a2;margin-left:6px;}
+</style>
+<div class="pv-bar">
+  <div class="pv-row"><span class="pv-l">Preview</span>
+    <span class="pv-note">The real page, on sample data. Nothing here touches your sheet.</span></div>
+  <div class="pv-row"><span class="pv-l">Look as</span>
+    <button class="pv-b on" data-who="creator">A creator (Tammy)</button>
+    <button class="pv-b" data-who="admin">You &mdash; Manage creators</button>
+    <button class="pv-b" data-who="pay">You &mdash; Payments</button>
+  </div>
+  <div class="pv-row" id="pv-creator-row"><span class="pv-l">Her month</span>
+    <button class="pv-b on" data-scn="full">Referrals, budget videos, views bonus</button>
+    <button class="pv-b" data-scn="someadmin">Only videos, 2 added by you</button>
+    <button class="pv-b" data-scn="plain">Nothing extra at all</button>
+  </div>
+</div>
+<script>
+(function(){
+  var YM = todayStr().slice(0,7);
+  var SCN = {
+    full:      { specialBonus:'Referral:2, Budget video:3', bonusViews:'2000000,1000000', postsCredit:'2' },
+    someadmin: { specialBonus:'',                           bonusViews:'',                postsCredit:'2' },
+    plain:     { specialBonus:'',                           bonusViews:'',                postsCredit:''  }
+  };
+  var scn = 'full', who = 'creator';
+
+  function rowsArr(){
+    var out = [];
+    for (var d=1; d<=6; d++){
+      var ds = YM + '-' + String(d).padStart(2,'0');
+      out.push(['', 'Tammy Okafor', ds, '1', 'https://tiktok.com/x', '', '']);
+      if (d < 4) out.push(['', 'Tammy Okafor', ds, '2', '', 'https://instagram.com/y', '']);
+    }
+    return out;
+  }
+  // Answer every call the page makes, in the shape it really expects — a bad
+  // stub is why the cards read "Not known yet" in the last preview.
+  window.jsonp = function(params, cb){
+    var a = params && params.action;
+    if (a === 'get') return cb({status:'success', rows: rowsArr()});
+    if (a === 'getCreators') return cb({status:'success', creators: allCreators});
+    if (a === 'getBonusTiers') return cb({status:'success', tiers: bonusTiers});
+    if (a === 'getBonusCategories') return cb({status:'success', categories: bonusCats});
+    if (a === 'getMyPay') return cb({status:'success', payments: allPayments.filter(function(p){
+      return String(p.name).toLowerCase() === String(params.name).toLowerCase(); })});
+    if (a === 'getPayments') return cb({status:'success', payments: allPayments});
+    return cb({status:'success'});
+  };
+
+  function seed(){
+    bonusCats = [ {month:YM,name:'Referral',amount:30000}, {month:YM,name:'Budget video',amount:10000} ];
+    bonusCatsLoaded = true; creatorsLoaded = true; paysLoaded = true; dataLoaded = true; rowsLoadFailed = false;
+    allCreators = [
+      {name:'Tammy Okafor', status:'Active', rate:300000, added:'2026-01-05'},
+      {name:'Ada Nwosu',    status:'Active', rate:150000, added:'2026-02-11'},
+      {name:'Lawrence Emmanuella Inikio', status:'Active', rate:300000, added:'2026-03-02'}
+    ];
+    allPayments = [
+      Object.assign({month:YM, name:'Tammy Okafor'}, SCN[scn]),
+      {month:YM, name:'Ada Nwosu', specialBonus:'Budget video:3'},
+      {month:YM, name:'Lawrence Emmanuella Inikio', specialBonus:'Referral:1'}
+    ];
+    allRows = rowsArr().map(function(r){ return {submitted:r[0],name:r[1],date:r[2],post:r[3],tiktok:r[4],insta:r[5],issues:r[6]}; });
+    selectedPayMonth = YM; selectedManageMonth = YM;
+  }
+
+  function show(){
+    seed();
+    if (who === 'creator'){
+      isAdmin = false; renderNav(); showPage('submit');
+      var sel = document.getElementById('f-name');
+      sel.innerHTML = allCreators.map(function(c){ return '<option>'+c.name+'</option>'; }).join('');
+      sel.value = 'Tammy Okafor';
+      onNameChange();
+      renderMyLogs('Tammy Okafor');
+      document.getElementById('creator-modal').classList.add('open');
+    } else {
+      isAdmin = true; renderNav();
+      document.getElementById('creator-modal').classList.remove('open');
+      showPage(who === 'pay' ? 'payments' : 'manage');
+    }
+    document.getElementById('pv-creator-row').style.display = who === 'creator' ? '' : 'none';
+  }
+  ['who','scn'].forEach(function(k){
+    document.querySelectorAll('[data-'+k+']').forEach(function(b){
+      b.onclick = function(){
+        if (k === 'who') who = b.dataset.who; else scn = b.dataset.scn;
+        document.querySelectorAll('[data-'+k+']').forEach(function(x){ x.classList.toggle('on', x===b); });
+        show();
+      };
+    });
+  });
+  setTimeout(show, 500);
+})();
+</script>
+
+
 </body>
 </html>
