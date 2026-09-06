@@ -2286,6 +2286,28 @@ function openMyLogs() {
   if (!name) return;
   loadRows(); // refresh in the background so the view is as current as possible
   renderMyLogs(name);
+  // Full payment data is admin-only, so without this a creator saw zero for
+  // every bonus, no "+N" for videos an admin added, and an expected amount
+  // missing all of it. This pulls THEIR row only, then re-renders in place.
+  loadMyPay(name);
+}
+
+// One creator's own pay figures. Never the whole register — that stays
+// admin-only. Silently gives up on failure: the logs are still worth showing,
+// and the bonus figures simply stay as they were.
+function loadMyPay(name) {
+  if (isAdmin) return; // admin already has everyone loaded
+  jsonp({ action:'getMyPay', name:name, _bust: Date.now() }, (data) => {
+    if (!data || data.status !== 'success' || !data.payments) return;
+    const others = allPayments.filter(p => String(p.name).toLowerCase() !== name.toLowerCase());
+    allPayments = others.concat(data.payments);
+    // Only redraw if this creator's modal is still the one on screen.
+    const openFor = document.getElementById('modal-name');
+    if (document.getElementById('creator-modal').classList.contains('open') &&
+        openFor && openFor.textContent === name) {
+      renderMyLogs(name);
+    }
+  });
 }
 
 function renderMyLogs(name) {
