@@ -1762,6 +1762,10 @@ function updatePostCards(count) {
     postInput.value = ''; formFields.style.display = 'none'; formDone.style.display = 'none';
     return;
   }
+  // Which day these cards are describing. Saying "today" while the creator is
+  // deliberately backfilling yesterday reads as the app losing track of what
+  // it is doing, right at the moment it is asking them to trust it.
+  const dayWord = loggingYesterday ? 'yesterday' : 'today';
   if (count === 0) {
     c1.className = 'post-card pc-active';
     n1.textContent = 'This is the video you are submitting now';
@@ -1770,14 +1774,24 @@ function updatePostCards(count) {
     postInput.value = '1'; formFields.style.display = ''; formDone.style.display = 'none';
   } else if (count === 1) {
     c1.className = 'post-card pc-done';
-    n1.textContent = '✓ Don\'t worry, your first video for today is already logged';
+    n1.textContent = '\u2713 Don\'t worry, your first video for ' + dayWord + ' is already logged';
     c2.className = 'post-card pc-active';
     n2.textContent = 'This is the video you are submitting now';
     postInput.value = '2'; formFields.style.display = ''; formDone.style.display = 'none';
   } else {
-    c1.className = 'post-card pc-done'; n1.textContent = '✓ Logged';
-    c2.className = 'post-card pc-done'; n2.textContent = '✓ Both videos done. See you tomorrow!';
+    c1.className = 'post-card pc-done'; n1.textContent = '\u2713 Logged';
+    c2.className = 'post-card pc-done';
+    n2.textContent = loggingYesterday
+      ? '\u2713 Both of yesterday\'s videos are in.'
+      : '\u2713 Both videos done. See you tomorrow!';
     postInput.value = ''; formFields.style.display = 'none'; formDone.style.display = '';
+    const dt = document.querySelector('#form-done .done-title');
+    const dsub = document.querySelector('#form-done .done-sub');
+    if (dt) dt.textContent = loggingYesterday
+      ? 'Both videos logged for yesterday!' : 'Both videos logged for today!';
+    if (dsub) dsub.textContent = loggingYesterday
+      ? 'Yesterday is fully caught up. Switch to Today to log today\'s videos.'
+      : 'Great work. You can log again tomorrow.';
   }
 }
 
@@ -1843,12 +1857,14 @@ function onNameChange(fetchFresh) {
     statusEl.style.display = '';
     statusEl.className = 'today-status s-one';
     sIcon.textContent = '✓';
-    sMsg.textContent = 'Your first video is logged for today. Submit your second video below.';
+    sMsg.textContent = 'Your first video is logged for ' + (loggingYesterday ? 'yesterday' : 'today') + '. Submit your second video below.';
   } else {
     statusEl.style.display = '';
     statusEl.className = 'today-status s-done';
     sIcon.textContent = '✓✓';
-    sMsg.textContent = 'Both videos logged for today. You\'re all done, see you tomorrow!';
+    sMsg.textContent = loggingYesterday
+      ? 'Both of yesterday\'s videos are logged. Switch to Today for today\'s videos.'
+      : 'Both videos logged for today. You\'re all done, see you tomorrow!';
   }
   updatePostCards(count);
 
@@ -2082,7 +2098,7 @@ function showConfirm(title, msg, okLabel, onOk) {
 // is genuinely in the sheet. Only a confirmed video greys out its card;
 // a video that did not land keeps the card open so it can be resubmitted.
 function confirmSaved(name, date, post, tiktok, insta, issues, firstName, isSecond, attempt) {
-  jsonp({ action:'checkPost', name:name, tiktok:tiktok, insta:insta }, function(data, err) {
+  jsonp({ action:'checkPost', name:name, tiktok:tiktok, insta:insta, date:date }, function(data, err) {
     if (data && data.status === 'success' && data.found) {
       finalizeSuccess(name, date, String(data.post || post), tiktok, insta, issues, firstName, isSecond);
     } else if (data && data.status === 'success' && !data.found) {
@@ -2146,7 +2162,7 @@ function finalizeSuccess(name, date, post, tiktok, insta, issues, firstName, isS
 // Retries up to 4 times (~30 seconds) before giving a final answer, so a brief
 // network blip never produces a wrong failure message.
 function verifySubmission(name, date, post, tiktok, insta, firstName, isSecond, attempt) {
-  jsonp({ action:'checkPost', name:name, tiktok:tiktok, insta:insta }, function(data, err) {
+  jsonp({ action:'checkPost', name:name, tiktok:tiktok, insta:insta, date:date }, function(data, err) {
     if (data && data.status === 'success' && data.found) {
       // It saved! Show the normal success experience.
       setSubmitting(false);
@@ -4210,18 +4226,31 @@ function checkLogin() {
   const btn = document.querySelector('.login-form .btn-primary');
   if (!val) { err.classList.add('show'); return; }
   if (btn) { btn.disabled = true; btn.textContent = 'Checking…'; }
-  jsonp({ action: 'adminLogin', pass: val }, function(d) {
+  jsonp({ action: 'adminLogin', pass: val }, function(d, netErr) {
     if (btn) { btn.disabled = false; btn.textContent = 'Sign in'; }
     if (d && d.status === 'success' && d.adminKey) {
       grantAdmin(d.adminKey);
     } else if (d && d.status === 'denied') {
-      err.classList.add('show');
+      loginFail('Incorrect password. Please try again.');
     } else if (LEGACY_LOGIN_FALLBACK && val === ADMIN_PASS) {
       grantAdmin('');
+    } else if (!d) {
+      // No answer at all — a timeout or a dropped connection. The password
+      // was never checked, so saying it is wrong is a plain lie, and it sends
+      // you hunting for a typo that is not there. Apps Script waking up cold
+      // regularly takes longer than the old 15-second limit allowed.
+      loginFail('Could not reach the server, so your password was not checked. ' +
+                'This is usually the server waking up. Please tap Sign in again.');
     } else {
-      err.classList.add('show');
+      loginFail('The server gave an answer we did not understand. Please try again.');
     }
-  }, 15000);
+  }, 40000);
+}
+
+function loginFail(msg) {
+  const err = document.getElementById('login-err');
+  err.textContent = msg;
+  err.classList.add('show');
 }
 
 function logout() {
