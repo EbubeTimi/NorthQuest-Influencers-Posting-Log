@@ -1,0 +1,11 @@
+{
+  "name": "northquest-posting-log",
+  "private": true,
+  "description": "Creator posting log. Static HTML + Google Apps Script; no build step. The tests drive index.html in a real browser.",
+  "scripts": {
+    "test": "./tests/run-all-tests.sh"
+  },
+  "devDependencies": {
+    "playwright": "^1.48.0"
+  }
+}

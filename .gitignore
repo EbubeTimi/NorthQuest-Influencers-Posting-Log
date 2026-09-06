@@ -1,3 +1,4 @@
 
 # personal per-machine overrides, not shared
 .claude/settings.local.json
+node_modules/
