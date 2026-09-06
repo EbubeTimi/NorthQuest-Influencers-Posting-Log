@@ -2286,13 +2286,6 @@ function renderMyLogs(name) {
   const byDate = {};
   monthRows.forEach(r => { if (!byDate[r.date]) byDate[r.date] = []; byDate[r.date].push(r); });
   const dayOfMonth = parseInt(today.split('-')[2]);
-  let fullDays = 0, missedDays = 0;
-  for (let d = 1; d <= dayOfMonth; d++) {
-    const ds = ym + '-' + String(d).padStart(2, '0');
-    const n = (byDate[ds] || []).length;
-    if (n >= 2) fullDays++;
-    else if (n === 0 && ds !== today) missedDays++;
-  }
 
   // One video = one fixed-width row: [chip][TikTok slot][Instagram slot].
   // A platform without a link shows a dash in its slot, so Video 1 and
@@ -2338,6 +2331,11 @@ function renderMyLogs(name) {
   const ratePerVideo = monthlySalary / maxVideos;
   const baseAmount = Math.round(effPosts * ratePerVideo);
   const perf = calcBonus(man.bonusViews || '');
+  // How MANY bonuses, not how much. bonusViews is a comma-separated list with
+  // one entry per video the admin awarded, so a creator on ₦1,300,000 may
+  // have earned that across four separate bonuses — one figure answers "how
+  // many", the other "how much".
+  const bonusCount = calcBonusCount(man.bonusViews || '');
   const special = parseFloat(String(man.specialBonus || '').replace(/[^\d.]/g, '')) || 0;
   const totalOv = String(man.totalOverride || '').replace(/[^\d.]/g, '');
   const amountExpected = (totalOv !== '' && !isNaN(parseFloat(totalOv))) ? parseFloat(totalOv) : (baseAmount + perf + special);
@@ -2364,8 +2362,8 @@ function renderMyLogs(name) {
       '<div class="mylog-stat"><div class="v">' + maxVideos + '</div><div class="l">Monthly target</div></div>' +
       '<div class="mylog-stat"><div class="v">&#8358;' + Math.round(ratePerVideo).toLocaleString('en-NG') + '</div><div class="l">Rate per video</div></div>' +
       '<div class="mylog-stat"><div class="v">&#8358;' + Math.round(amountExpected).toLocaleString('en-NG') + '</div><div class="l">Amount expected</div></div>' +
-      '<div class="mylog-stat"><div class="v">&#8358;' + Math.round(perf).toLocaleString('en-NG') + '</div><div class="l">Bonuses so far</div></div>' +
-      '<div class="mylog-stat"><div class="v">' + fullDays + '</div><div class="l">Days fully done</div></div>' +
+      '<div class="mylog-stat"><div class="v">' + bonusCount + '</div><div class="l">Bonuses so far</div></div>' +
+      '<div class="mylog-stat"><div class="v">&#8358;' + Math.round(perf).toLocaleString('en-NG') + '</div><div class="l">Bonus amount</div></div>' +
     '</div>' +
     '<div class="month-block"><div class="month-block-header"><span class="month-block-name">' + monthLabel(ym) + '</span><span class="month-block-total">' + monthRows.length + ' of 62 videos</span></div>' + dayRowsHtml.join('') + '</div>';
   document.getElementById('creator-modal').classList.add('open');
@@ -2900,6 +2898,19 @@ function calcBonus(viewsList) {
     for (let i = 0; i < bonusTiers.length; i++) { if (n >= bonusTiers[i][0]) { total += bonusTiers[i][1]; break; } }
   });
   return total;
+}
+
+// How many bonuses were actually earned, walking the same list and the same
+// tiers as calcBonus so the count and the total can never disagree. An entry
+// that cleared no tier earned nothing, so it is not counted.
+function calcBonusCount(viewsList) {
+  if (!viewsList) return 0;
+  let count = 0;
+  String(viewsList).split(',').forEach(v => {
+    const n = parseInt(v.trim().replace(/[^\d]/g, '')) || 0;
+    for (let i = 0; i < bonusTiers.length; i++) { if (n >= bonusTiers[i][0]) { count++; break; } }
+  });
+  return count;
 }
 
 // A creator's monthly base pay CAN differ month to month. Payment Manual now
