@@ -465,6 +465,9 @@
   /* Extra-bonus columns: type a count, see what it pays underneath. */
   .eb-th { white-space: nowrap; }
   .eb-th-rate { display: block; font-weight: 500; font-size: 11px; color: var(--text3); text-transform: none; letter-spacing: 0; }
+  /* The register's header band is dark green, so the rate needs light text
+     there rather than the table default. */
+  .pay-eb-th .eb-th-rate { color: rgba(255,255,255,0.8); }
   .eb-count { max-width: 72px; text-align: center; }
   .eb-paid { font-size: 11.5px; font-weight: 700; color: var(--green); margin-top: 3px; text-align: center; }
   .btn-primary {
@@ -855,6 +858,13 @@
      not read as one of the standing figures. */
   .mylog-stat.extra-bonus { background:var(--amber-light); border-color:#e6d9ae; }
   .mylog-stat.extra-bonus .v { color:var(--amber); }
+  .mylog-total {
+    display:flex; align-items:center; justify-content:space-between; gap:14px;
+    margin-bottom:18px; padding:15px 18px; border-radius:var(--radius-sm);
+    background:var(--accent); color:#fff;
+  }
+  .mylog-total .mt-l { font-size:12px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; opacity:0.8; }
+  .mylog-total .mt-v { font-family:'Playfair Display',serif; font-size:27px; font-weight:700; line-height:1; }
   .mylog-day { display:flex; align-items:flex-start; gap:12px; padding:9px 12px; border-bottom:1px solid var(--border); font-size:13px; }
   .mylog-day:last-child { border-bottom:none; }
   .mylog-day.today-row { background:var(--accent-light); border-radius:var(--radius-sm); }
@@ -2440,6 +2450,9 @@ function renderMyLogs(name) {
         '<div class="mylog-stat extra-bonus"><div class="v">&#8358;' + Math.round(e.amount).toLocaleString('en-NG') + '</div>' +
         '<div class="l">' + escH(e.name) + ' amount</div></div>').join('') +
     '</div>' +
+    // Everything above added up, stated once so it needs no working out.
+    '<div class="mylog-total"><span class="mt-l">Total</span>' +
+      '<span class="mt-v">&#8358;' + Math.round(amountExpected).toLocaleString('en-NG') + '</span></div>' +
     '<div class="month-block"><div class="month-block-header"><span class="month-block-name">' + monthLabel(ym) + '</span><span class="month-block-total">' + monthRows.length + ' of 62 videos</span></div>' + dayRowsHtml.join('') + '</div>';
   document.getElementById('creator-modal').classList.add('open');
 }
@@ -2999,6 +3012,45 @@ function extraBonusCells(name, ym) {
   }).join('');
 }
 
+// Same count boxes, on the payment register. Whatever is set up under Extra
+// bonuses appears in both places — there is one list per month, not one per
+// screen.
+function payExtraBonusCells(name) {
+  return bonusCatsFor(selectedPayMonth).map(cat => {
+    const man = allPayments.find(p => p.month === selectedPayMonth &&
+      String(p.name).toLowerCase() === String(name).toLowerCase()) || {};
+    const count = getBonusCount(man.specialBonus || '', cat.name);
+    const n = parseFloat(count) || 0;
+    const paid = n > 0
+      ? '<div class="eb-paid">&#8358;' + Math.round(n * cat.amount).toLocaleString('en-NG') + '</div>' : '';
+    return '<td><input class="pay-input eb-count" type="text" inputmode="numeric" value="' + escH(count) + '"' +
+      ' placeholder="0" title="How many ' + escH(cat.name) + ' in ' + escH(monthLabel(selectedPayMonth)) + '"' +
+      ' onchange="onPayExtraBonusCount(\'' + escH(name) + '\', \'' + escH(cat.name) + '\', this.value)">' + paid + '</td>';
+  }).join('');
+}
+function onPayExtraBonusCount(name, catName, value) {
+  const man = allPayments.find(p => p.month === selectedPayMonth &&
+    String(p.name).toLowerCase() === String(name).toLowerCase()) || {};
+  savePaymentField(selectedPayMonth, name, 'specialBonus',
+    setBonusCount(man.specialBonus || '', catName, value), true);
+}
+// Keeps the register's header row in step with the month's bonus list.
+function syncPayExtraHeaders() {
+  const th = document.getElementById('ph-special');
+  if (!th) return;
+  [...th.parentNode.querySelectorAll('.pay-eb-th')].forEach(e => e.remove());
+  let after = th;
+  bonusCatsFor(selectedPayMonth).forEach(cat => {
+    const el = document.createElement('th');
+    el.className = 'eb-th pay-eb-th';
+    el.innerHTML = escH(cat.name) + '<span class="eb-th-rate">&#8358;' +
+      Number(cat.amount).toLocaleString('en-NG') + ' each</span>';
+    after.parentNode.insertBefore(el, after.nextSibling);
+    after = el;
+  });
+}
+function payColSpan() { return 15 + bonusCatsFor(selectedPayMonth).length; }
+
 function onExtraBonusCount(name, catName, value) {
   const ym = manageMonthOrToday();
   const man = allPayments.find(p => p.month === ym &&
@@ -3469,15 +3521,16 @@ function renderPayments() {
     renderPaymentsPending = true;
     return;
   }
+  syncPayExtraHeaders();
   renderPaymentsPending = false;
   const tabsEl = document.getElementById('pay-tabs');
   const body = document.getElementById('pay-body');
   if (!tabsEl || !body) return;
-  if (!dataLoaded || !creatorsLoaded) { body.innerHTML = '<tr><td colspan="15" class="empty-state"><span class="spinner"></span></td></tr>'; return; }
+  if (!dataLoaded || !creatorsLoaded) { body.innerHTML = '<tr><td colspan="' + payColSpan() + '" class="empty-state"><span class="spinner"></span></td></tr>'; return; }
   const months = getMonths();
   if (!months.length) {
     tabsEl.innerHTML = '<span style="color:var(--text3);font-size:13px">No data yet</span>';
-    body.innerHTML = '<tr><td colspan="15" class="empty-state"><strong>No posts logged yet</strong></td></tr>';
+    body.innerHTML = '<tr><td colspan="' + payColSpan() + '" class="empty-state"><strong>No posts logged yet</strong></td></tr>';
     document.getElementById('pay-period').textContent = '';
     document.getElementById('pay-legend').innerHTML = '';
     return;
@@ -3552,6 +3605,8 @@ function renderPayments() {
       '<td style="color:var(--text3);text-align:center">—</td>' +
       '<td style="color:var(--text3);text-align:center">—</td>' +
       '<td><input class="pay-input" style="max-width:100px;text-align:right" value="' + (special||'') + '" placeholder="0" onchange="onStaffEdit(' + si + ',\'specialBonus\',this.value,true)"></td>' +
+      // Staff do not earn creator bonuses, but the columns must still line up.
+      bonusCatsFor(selectedPayMonth).map(() => '<td></td>').join('') +
       '<td><input class="pay-input" style="max-width:120px;text-align:right" value="' + fmtMoney2(effTotal) + '" onchange="onStaffEdit(' + si + ',\'totalOverride\',this.value,true)"></td>' +
       '<td><input class="pay-input" value="' + escH(bankData.bankName||'') + '" onchange="onStaffBankEdit(' + si + ',\'bankName\',this.value)"></td>' +
       '<td><input class="pay-input" value="' + escH(bankData.acctNum||'') + '" onchange="onStaffBankEdit(' + si + ',\'acctNum\',this.value)"></td>' +
@@ -3562,13 +3617,13 @@ function renderPayments() {
       '</tr>';
   }).join('');
 
-  const staffLabel = '<tr class="pay-section-label"><td colspan="15">&#11088;&nbsp; Staff / Management</td></tr>';
-  const creatorLabel = '<tr class="pay-section-label"><td colspan="15">&#127909;&nbsp; Creators</td></tr>';
+  const staffLabel = '<tr class="pay-section-label"><td colspan="' + payColSpan() + '">&#11088;&nbsp; Staff / Management</td></tr>';
+  const creatorLabel = '<tr class="pay-section-label"><td colspan="' + payColSpan() + '">&#127909;&nbsp; Creators</td></tr>';
 
   // ── CREATOR ROWS ──
   let creatorsHtml = '';
   if (!names.length) {
-    creatorsHtml = '<tr><td colspan="15" class="empty-state" style="color:var(--text3);font-size:12px;padding:14px">No creator posts logged for ' + monthLabel(selectedPayMonth) + '</td></tr>';
+    creatorsHtml = '<tr><td colspan="' + payColSpan() + '" class="empty-state" style="color:var(--text3);font-size:12px;padding:14px">No creator posts logged for ' + monthLabel(selectedPayMonth) + '</td></tr>';
   } else {
     let lastTier = null;
     creatorsHtml = names.map((name, i) => {
@@ -3577,7 +3632,7 @@ function renderPayments() {
       let tierLabel = '';
       if (rowTier !== lastTier) {
         lastTier = rowTier;
-        tierLabel = '<tr class="pay-section-label"><td colspan="15">&#8358;' + Number(rowTier).toLocaleString('en-NG') + ' base pay</td></tr>';
+        tierLabel = '<tr class="pay-section-label"><td colspan="' + payColSpan() + '">&#8358;' + Number(rowTier).toLocaleString('en-NG') + ' base pay</td></tr>';
       }
       const ci = cmap[name.toLowerCase()] || { rate: defaultMonthlySalary, bankName:'', acctNum:'', acctName:'' };
       const monthlySalary = effMonthlyRate(name, selectedPayMonth);
@@ -3596,7 +3651,7 @@ function renderPayments() {
       const base = Math.round(effPosts * monthlySalary / maxVideos);
       const bonusViews = man.bonusViews || '';
       const perf = calcBonus(bonusViews);
-      const special = parseFloat(String(man.specialBonus || '').replace(/[^\d.]/g,'')) || 0;
+      const special = parseExtraBonuses(man.specialBonus || '', selectedPayMonth).reduce((t,e) => t + e.amount, 0);
       const computedTotal = base + perf + special;
       const totalOv = String(man.totalOverride || '').replace(/[^\d.]/g,'');
       const effTotal = (totalOv !== '' && !isNaN(parseFloat(totalOv))) ? parseFloat(totalOv) : computedTotal;
@@ -3613,7 +3668,9 @@ function renderPayments() {
         '<td class="pay-num">' + fmtMoney2(base) + '</td>' +
         '<td><input class="pay-input" value="' + escH(bonusViews) + '" placeholder="100000,50000" onchange="onPayEdit(' + i + ',\'bonusViews\',this.value,true)"></td>' +
         '<td class="pay-num">' + fmtMoney2(perf) + '</td>' +
-        '<td><input class="pay-input" style="max-width:100px;text-align:right" value="' + (special ? special : '') + '" placeholder="0" onchange="onPayEdit(' + i + ',\'specialBonus\',this.value,true)"></td>' +
+        '<td><input class="pay-input" style="max-width:150px" value="' + escH(man.specialBonus || '') + '" placeholder="Ice cream:20000" title="Free-form one-offs. Named bonuses set up under Extra bonuses have their own columns to the right." onchange="onPayEdit(' + i + ',\'specialBonus\',this.value,true)">' +
+          (special ? '<div class="eb-paid">&#8358;' + Math.round(special).toLocaleString('en-NG') + '</div>' : '') + '</td>' +
+        payExtraBonusCells(name) +
         '<td><input class="pay-input" style="max-width:110px;text-align:right" value="' + fmtMoney2(effTotal) + '" onchange="onPayEdit(' + i + ',\'totalOverride\',this.value,true)"></td>' +
         '<td><input class="pay-input" value="' + escH(ci.bankName) + '" onchange="onBankEdit(' + i + ',\'bankName\',this.value)"></td>' +
         '<td><input class="pay-input" value="' + escH(ci.acctNum) + '" onchange="onBankEdit(' + i + ',\'acctNum\',this.value)"></td>' +
@@ -3633,6 +3690,7 @@ function renderPayments() {
     '<td></td>' +
     '<td class="pay-num">' + fmtMoney2(tPerf) + '</td>' +
     '<td class="pay-num">' + fmtMoney2(tSpecial) + '</td>' +
+    bonusCatsFor(selectedPayMonth).map(() => '<td></td>').join('') +
     '<td class="pay-num">' + fmtMoney2(tTotal) + '</td>' +
     '<td></td><td></td><td></td><td></td><td></td><td></td>' +
     '</tr>';
