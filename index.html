@@ -462,6 +462,11 @@
   }
   /* A disabled action must look unavailable, not merely refuse when pressed. */
   .btn:disabled { opacity: 0.45; cursor: not-allowed; filter: grayscale(0.35); }
+  /* Extra-bonus columns: type a count, see what it pays underneath. */
+  .eb-th { white-space: nowrap; }
+  .eb-th-rate { display: block; font-weight: 500; font-size: 11px; color: var(--text3); text-transform: none; letter-spacing: 0; }
+  .eb-count { max-width: 72px; text-align: center; }
+  .eb-paid { font-size: 11.5px; font-weight: 700; color: var(--green); margin-top: 3px; text-align: center; }
   .btn-primary {
     background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%);
     color: white;
@@ -1206,6 +1211,7 @@
     </div>
     <div class="mmb-hint">The <strong>Base Pay</strong> and <strong>Bonus</strong> columns below apply to this month. To fix an earlier month, pick it here (e.g.&nbsp;June), changes save to that month's register only. Each month is independent, so fixing one never changes another.</div>
     <button class="btn btn-sm mmb-edit" onclick="openBonusTiersModal();return false;">Edit bonus amounts</button>
+    <button class="btn btn-sm mmb-edit" onclick="openExtraBonusModal();return false;">Extra bonuses</button>
   </div>
 
   <div class="manage-tabs">
@@ -1342,6 +1348,22 @@
   </div>
 </div>
 
+<div class="modal-overlay" id="extra-bonus-modal">
+  <div class="modal bt-box">
+    <div class="confirm-title">Extra bonuses for <span id="eb-month">this month</span></div>
+    <div class="confirm-msg">Name a bonus and set what <strong>one</strong> of them is worth. Against each creator you then type only how many they got &mdash; 2 referrals at &#8358;30,000 pays &#8358;60,000. Change the amount and every creator's total for this month follows it. Each month keeps its own list, so editing this one never changes another.</div>
+    <div id="extra-bonus-rows"></div>
+    <button type="button" class="btn btn-sm" style="width:auto;margin:6px 0 0" onclick="addExtraBonusRow()">+ Add another bonus</button>
+    <div class="bt-actions">
+      <span style="font-size:12px;color:var(--text3)">Remove a bonus to stop it applying.</span>
+      <div style="display:flex;gap:8px">
+        <button type="button" class="btn btn-sm" onclick="closeExtraBonusModal()">Cancel</button>
+        <button type="button" class="btn btn-primary" id="extra-bonus-save-btn" onclick="saveExtraBonuses()">Save bonuses</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script>
 const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwLrQ6h0XAOKIxYw_r2uMbb_FtBq_ZBBFdBAQpeLHo9Z9ZKkzISuje9CvuTF-RcWgFgmQ/exec';
 // The admin password lives ONLY in the Apps Script's Script Properties and is
@@ -1459,6 +1481,7 @@ document.addEventListener('DOMContentLoaded', () => {
   loadRows();
   loadCreators();
   loadBonusTiers();
+  loadBonusCategories();
   // Payment data is admin-only, never requested for regular creators
   if (isAdmin) loadPayments();
   flushQueue();
@@ -2371,7 +2394,7 @@ function renderMyLogs(name) {
   // have earned that across four separate bonuses — one figure answers "how
   // many", the other "how much".
   const bonusCount = calcBonusCount(man.bonusViews || '');
-  const extraBonuses = parseExtraBonuses(man.specialBonus || '');
+  const extraBonuses = parseExtraBonuses(man.specialBonus || '', ym);
   const special = extraBonuses.reduce((sum, e) => sum + e.amount, 0);
   const totalOv = String(man.totalOverride || '').replace(/[^\d.]/g, '');
   const amountExpected = (totalOv !== '' && !isNaN(parseFloat(totalOv))) ? parseFloat(totalOv) : (baseAmount + perf + special);
@@ -2406,9 +2429,14 @@ function renderMyLogs(name) {
       '<div class="mylog-stat"><div class="v">&#8358;' + Math.round(amountExpected).toLocaleString('en-NG') + '</div><div class="l">Amount expected</div></div>' +
       '<div class="mylog-stat"><div class="v">' + bonusCount + '</div><div class="l">Bonuses so far</div></div>' +
       '<div class="mylog-stat"><div class="v">&#8358;' + Math.round(perf).toLocaleString('en-NG') + '</div><div class="l">Bonus amount</div></div>' +
-      // One tile per ad-hoc bonus actually running this month, and none at
-      // all when the Special Bonus cell is empty.
+      // One pair per extra bonus this creator actually earned — how many,
+      // then how much — and nothing at all when they earned none. A flat
+      // one-off with no count shows the amount alone.
       extraBonuses.map(e =>
+        (e.count !== null
+          ? '<div class="mylog-stat extra-bonus"><div class="v">' + e.count + '</div>' +
+            '<div class="l">' + escH(e.name) + '</div></div>'
+          : '') +
         '<div class="mylog-stat extra-bonus"><div class="v">&#8358;' + Math.round(e.amount).toLocaleString('en-NG') + '</div>' +
         '<div class="l">' + escH(e.name) + ' amount</div></div>').join('') +
     '</div>' +
@@ -2790,8 +2818,25 @@ function renderManageMonthPicker() {
     const isCurrent = ym === todayStr().substring(0, 7);
     th.textContent = isCurrent ? 'Bonus (This Month)' : 'Bonus (' + monthShort(ym) + ')';
     th.style.color = isCurrent ? '' : 'var(--amber, #b7791f)';
+    // A column appears for each extra bonus running in this month, and none
+    // when there are none, so the table never carries an empty column.
+    [...th.parentNode.querySelectorAll('.eb-th')].forEach(e => e.remove());
+    const cats = bonusCatsFor(ym);
+    let after = th;
+    cats.forEach(cat => {
+      const el = document.createElement('th');
+      el.className = 'eb-th';
+      el.innerHTML = escH(cat.name) + '<span class="eb-th-rate">&#8358;' +
+        Number(cat.amount).toLocaleString('en-NG') + ' each</span>';
+      after.parentNode.insertBefore(el, after.nextSibling);
+      after = el;
+    });
   }
 }
+
+// Columns vary with how many extra bonuses this month has, so the
+// empty/loading rows have to span the real width rather than a fixed 10.
+function manageColSpan() { return 10 + bonusCatsFor(manageMonthOrToday()).length; }
 
 // Month-scoped roster: what state a creator is in for a given month.
 // addedYM = the month they joined; leftYM = the month they were deactivated
@@ -2888,7 +2933,7 @@ function renderManageCreators() {
   const tbody = document.getElementById('manage-body');
   const counts = document.getElementById('manage-counts');
   renderManageMonthPicker();
-  if (!creatorsLoaded) { tbody.innerHTML = '<tr><td colspan="10" class="empty-state"><span class="spinner"></span></td></tr>'; return; }
+  if (!creatorsLoaded) { tbody.innerHTML = '<tr><td colspan="' + manageColSpan() + '" class="empty-state"><span class="spinner"></span></td></tr>'; return; }
   renderManageTabs();
   renderOnboardingOverview();
   updateBonusLegendText();
@@ -2901,9 +2946,9 @@ function renderManageCreators() {
   });
   const list = (manageTab === 'inactive' ? inactiveList : activeList).sort((a,b) => a.name.localeCompare(b.name));
   counts.textContent = activeList.length + ' active · ' + inactiveList.length + ' left · in ' + monthShort(ym);
-  if (!allCreators.length) { tbody.innerHTML = '<tr><td colspan="10" class="empty-state"><strong>No creators yet</strong></td></tr>'; return; }
+  if (!allCreators.length) { tbody.innerHTML = '<tr><td colspan="' + manageColSpan() + '" class="empty-state"><strong>No creators yet</strong></td></tr>'; return; }
   if (!list.length) {
-    tbody.innerHTML = '<tr><td colspan="10" class="empty-state"><strong>' +
+    tbody.innerHTML = '<tr><td colspan="' + manageColSpan() + '" class="empty-state"><strong>' +
       (manageTab === 'inactive' ? 'No one was deactivated in ' + escH(monthLabel(ym)) : 'No active creators in ' + escH(monthLabel(ym))) +
       '</strong></td></tr>';
     return;
@@ -2926,6 +2971,7 @@ function renderManageCreators() {
       '<td>' + contactCell(c) + '</td>' +
       '<td>' + basePaySelect(c) + '</td>' +
       '<td>' + bonusControl(c.name) + '</td>' +
+      extraBonusCells(c.name, ym) +
       '<td style="color:var(--text3)">' + added + '</td>' +
       '<td style="color:var(--text3)">' + left + '</td>' +
       '<td style="color:var(--text2)">' + posts + '</td>' +
@@ -2934,6 +2980,31 @@ function renderManageCreators() {
       '<button class="btn btn-sm btn-delete" onclick="deleteCreator(\'' + escH(c.name) + '\')">Delete</button>' +
       '</div></td></tr>';
   }).join('');
+}
+
+// One cell per extra bonus running this month: type how many, see what it
+// pays. Nothing is shown at all in a month with no extra bonuses defined.
+function extraBonusCells(name, ym) {
+  return bonusCatsFor(ym).map(cat => {
+    const man = allPayments.find(p => p.month === ym &&
+      String(p.name).toLowerCase() === String(name).toLowerCase()) || {};
+    const count = getBonusCount(man.specialBonus || '', cat.name);
+    const n = parseFloat(count) || 0;
+    const paid = n > 0
+      ? '<div class="eb-paid">&#8358;' + Math.round(n * cat.amount).toLocaleString('en-NG') + '</div>'
+      : '';
+    return '<td><input class="pay-input eb-count" type="text" inputmode="numeric" value="' + escH(count) + '"' +
+      ' placeholder="0" title="How many ' + escH(cat.name) + ' this month"' +
+      ' onchange="onExtraBonusCount(\'' + escH(name) + '\', \'' + escH(cat.name) + '\', this.value)">' + paid + '</td>';
+  }).join('');
+}
+
+function onExtraBonusCount(name, catName, value) {
+  const ym = manageMonthOrToday();
+  const man = allPayments.find(p => p.month === ym &&
+    String(p.name).toLowerCase() === String(name).toLowerCase()) || {};
+  const next = setBonusCount(man.specialBonus || '', catName, value);
+  savePaymentField(ym, name, 'specialBonus', next, true);
 }
 
 // ── PAYMENTS REGISTER ──
@@ -2954,25 +3025,65 @@ function calcBonus(viewsList) {
   return total;
 }
 
-// The Special Bonus cell holds one-off bonuses that come and go month to
-// month — a budget-video bonus, a talking-head bonus, whatever is running.
-// Format is "Name:amount", comma separated for more than one. An empty cell
-// means no such bonus exists, which is the normal case.
+// Extra bonuses defined by the admin for a given month: [{month,name,amount}]
+let bonusCats = [], bonusCatsLoaded = false;
+
+// What ONE of this bonus is worth in that month, or null if the admin has
+// not defined a bonus by that name for the month.
+function bonusCatAmount(ym, name) {
+  const hit = bonusCats.find(c => c.month === ym &&
+    String(c.name).toLowerCase() === String(name).toLowerCase());
+  return hit ? hit.amount : null;
+}
+function bonusCatsFor(ym) { return bonusCats.filter(c => c.month === ym); }
+
+// The Special Bonus cell records what a creator earned outside base pay,
+// written as "Name:number", comma separated for more than one.
 //
-// This also fixes a real bug: the old code stripped every non-digit out of
-// the whole cell, so two bonuses "50000, 20000" became the single number
-// 5000020000 and massively overstated what a creator was owed. Each entry is
-// now parsed on its own and summed.
-function parseExtraBonuses(cell) {
+// The number means one of two things, decided by whether the admin has
+// defined a bonus of that name for the month:
+//   defined     "Referral:2"      → 2 of them, worth 2 × the month's amount
+//   not defined "Ice cream:20000" → a flat one-off of ₦20,000, no count
+// That keeps every figure already typed into the sheet working untouched,
+// while new named bonuses only need a count.
+//
+// It also fixes a real bug: the old code stripped every non-digit from the
+// whole cell, so "50000, 20000" became 5000020000 and massively overstated
+// what a creator was owed. Each entry is parsed on its own and summed.
+function parseExtraBonuses(cell, ym) {
   if (!cell) return [];
   return String(cell).split(',').map(part => {
     const s = part.trim();
     if (!s) return null;
     const i = s.lastIndexOf(':');
-    const name = i > -1 ? s.slice(0, i).trim() : '';
-    const amount = parseFloat((i > -1 ? s.slice(i + 1) : s).replace(/[^\d.]/g, '')) || 0;
-    return amount > 0 ? { name: name || 'Extra bonus', amount: amount } : null;
+    const name = (i > -1 ? s.slice(0, i) : '').trim();
+    const num = parseFloat((i > -1 ? s.slice(i + 1) : s).replace(/[^\d.]/g, '')) || 0;
+    if (num <= 0) return null;
+    const each = name && ym ? bonusCatAmount(ym, name) : null;
+    if (each !== null) return { name: name, count: num, each: each, amount: num * each };
+    return { name: name || 'Extra bonus', count: null, each: null, amount: num };
   }).filter(Boolean);
+}
+
+// Read/write one creator's count for one named bonus, leaving the rest of
+// the cell alone.
+function getBonusCount(cell, name) {
+  const hit = String(cell || '').split(',').map(s => s.trim()).find(s => {
+    const i = s.lastIndexOf(':');
+    return i > -1 && s.slice(0, i).trim().toLowerCase() === String(name).toLowerCase();
+  });
+  if (!hit) return '';
+  return hit.slice(hit.lastIndexOf(':') + 1).replace(/[^\d.]/g, '');
+}
+function setBonusCount(cell, name, count) {
+  const parts = String(cell || '').split(',').map(s => s.trim()).filter(Boolean)
+    .filter(s => {
+      const i = s.lastIndexOf(':');
+      return !(i > -1 && s.slice(0, i).trim().toLowerCase() === String(name).toLowerCase());
+    });
+  const n = parseFloat(String(count).replace(/[^\d.]/g, ''));
+  if (!isNaN(n) && n > 0) parts.push(name + ':' + n);
+  return parts.join(', ');
 }
 
 // How many bonuses were actually earned, walking the same list and the same
@@ -3021,6 +3132,26 @@ function loadBonusTiers() {
   });
 }
 
+// Names and amounts only — no personal data — so creators load these too and
+// their own card can turn "2 referrals" into a naira figure.
+function loadBonusCategories() {
+  jsonp({ action:'getBonusCategories', _bust: Date.now() }, (data) => {
+    bonusCatsLoaded = true;
+    if (data && data.status === 'success' && Array.isArray(data.categories)) {
+      bonusCats = data.categories.map(c => ({
+        month: String(c.month || ''), name: String(c.name || ''), amount: Number(c.amount) || 0
+      })).filter(c => c.month && c.name);
+    }
+    if (currentPage === 'manage') renderManageCreators();
+    if (currentPage === 'payments') renderPayments();
+    const modal = document.getElementById('creator-modal');
+    const openFor = document.getElementById('modal-name');
+    if (modal && modal.classList.contains('open') && openFor && openFor.textContent) {
+      renderMyLogs(openFor.textContent);
+    }
+  });
+}
+
 function bonusTierLegendText() {
   return bonusTiers.map(t => t[0].toLocaleString('en-NG') + ' views = &#8358;' + t[1].toLocaleString('en-NG')).join(' &middot; ');
 }
@@ -3036,6 +3167,68 @@ function openBonusTiersModal() {
     '</div>'
   ).join('');
   document.getElementById('bonus-tiers-modal').classList.add('open');
+}
+
+// ── EXTRA BONUSES, per month: name + what one is worth ──
+function openExtraBonusModal() {
+  const ym = manageMonthOrToday();
+  document.getElementById('eb-month').textContent = monthLabel(ym);
+  const rows = bonusCatsFor(ym);
+  const body = document.getElementById('extra-bonus-rows');
+  body.innerHTML = rows.length
+    ? rows.map(c => extraBonusRowHtml(c.name, c.amount)).join('')
+    : extraBonusRowHtml('', '');
+  document.getElementById('extra-bonus-modal').classList.add('open');
+}
+function extraBonusRowHtml(name, amount) {
+  return '<div class="bt-row">' +
+    '<input type="text" class="pay-input eb-name" value="' + escH(name) + '" placeholder="Referral">' +
+    '<span style="color:var(--text3)">&#8358; each</span>' +
+    '<input type="text" inputmode="numeric" class="pay-input eb-amt" value="' + escH(amount === '' ? '' : amount) + '" placeholder="30000">' +
+    '<button type="button" class="pay-row-del" onclick="this.closest(\'.bt-row\').remove()" title="Remove this bonus">&times;</button>' +
+  '</div>';
+}
+function addExtraBonusRow() {
+  const div = document.createElement('div');
+  div.innerHTML = extraBonusRowHtml('', '');
+  document.getElementById('extra-bonus-rows').appendChild(div.firstChild);
+}
+function closeExtraBonusModal() {
+  document.getElementById('extra-bonus-modal').classList.remove('open');
+}
+function saveExtraBonuses() {
+  const ym = manageMonthOrToday();
+  const rows = [...document.querySelectorAll('#extra-bonus-rows .bt-row')];
+  const list = [];
+  const seen = {};
+  for (const r of rows) {
+    const name = r.querySelector('.eb-name').value.trim();
+    const amtRaw = r.querySelector('.eb-amt').value.replace(/[^\d.]/g, '');
+    if (!name && !amtRaw) continue; // a blank row is just an unused slot
+    if (!name) { showToast('error', 'Name missing', 'Give every bonus a name, or clear the row.'); return; }
+    const amount = parseFloat(amtRaw);
+    if (isNaN(amount) || amount < 0) { showToast('error', 'Amount missing', '"' + name + '" needs an amount.'); return; }
+    if (seen[name.toLowerCase()]) { showToast('error', 'Same name twice', 'Two bonuses are both called "' + name + '".'); return; }
+    seen[name.toLowerCase()] = true;
+    list.push({ name: name, amount: amount });
+  }
+  const btn = document.getElementById('extra-bonus-save-btn');
+  btn.disabled = true; btn.textContent = 'Saving…';
+  jsonp({ action:'setBonusCategories', month: ym, categories: JSON.stringify(list) }, (d) => {
+    btn.disabled = false; btn.textContent = 'Save bonuses';
+    if (d && d.status === 'success') {
+      bonusCats = bonusCats.filter(c => c.month !== ym)
+        .concat(list.map(c => ({ month: ym, name: c.name, amount: c.amount })));
+      closeExtraBonusModal();
+      renderManageCreators();
+      if (currentPage === 'payments') renderPayments();
+      showToast('success', 'Saved', list.length
+        ? list.map(c => c.name + ' at ₦' + c.amount.toLocaleString('en-NG')).join(' · ')
+        : 'No extra bonuses for ' + monthLabel(ym) + '.');
+    } else {
+      showToast('error', 'Not saved', (d && d.message) || 'Could not save. Check your connection and try again.');
+    }
+  });
 }
 
 function closeBonusTiersModal() {
@@ -3498,7 +3691,7 @@ function exportPaymentsCSV() {
   STAFF.forEach((s, si) => {
     const man = allPayments.find(p => p.month === selectedPayMonth && String(p.name) === s.key) || {};
     const salary = parseFloat(String(man.postsOverride||'').replace(/[^\d.]/g,'')) || 0;
-    const special = parseExtraBonuses(man.specialBonus || '').reduce((t,e) => t + e.amount, 0);
+    const special = parseExtraBonuses(man.specialBonus || '', selectedPayMonth).reduce((t,e) => t + e.amount, 0);
     const totalOv = String(man.totalOverride||'').replace(/[^\d.]/g,'');
     const bankData = JSON.parse(safeStorage.getItem('nq_sb_' + si) || '{}');
     const rn = R.length + 1;
@@ -3530,7 +3723,7 @@ function exportPaymentsCSV() {
     const perf = calcBonus(man.bonusViews || '');
     // Each named bonus parsed on its own. Stripping the digits out of the
     // whole cell turned "50000, 20000" into 5000020000 in the old export.
-    const special = parseExtraBonuses(man.specialBonus || '').reduce((t,e) => t + e.amount, 0);
+    const special = parseExtraBonuses(man.specialBonus || '', selectedPayMonth).reduce((t,e) => t + e.amount, 0);
     const totalOv = String(man.totalOverride||'').replace(/[^\d.]/g,'');
     const rn = R.length + 1;
     const total = (totalOv !== '' && !isNaN(parseFloat(totalOv)))
