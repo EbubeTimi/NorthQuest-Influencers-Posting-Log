@@ -3,11 +3,15 @@
 //      month as "not logged", with pay collapsing to zero — because the
 //      "View my logs" screen (and the admin dashboards) trusted allRows even
 //      when the fetch that fills it had actually failed.
-//   2. Admin adds "+2" for a creator who already logged videos, and the
-//      credit doubles up with what was already logged — because the Posts
-//      box showed the TOTAL and asked the admin to retype a new total, doing
-//      the subtraction invisibly. A phone never shows the tooltip that
-//      explained this, so there was no way to know.
+//   2. Admin adds credit for a creator who already logged videos, and it
+//      doubles up with what was already there. The Posts box used to show
+//      the TOTAL and ask the admin to retype a new total, doing the
+//      subtraction invisibly — a phone never shows the tooltip that
+//      explained it. Now the big number is always the raw logged count
+//      (never edited here), and a separate "+N" chip is the running credit
+//      total; tapping it asks how many MORE to add and stacks that onto
+//      whatever credit already exists, so two separate top-ups on two
+//      different days add up instead of overwriting each other.
 const { chromium } = require('playwright');
 const INDEX = require('path').resolve(__dirname, '..', 'index.html');
 let fails = 0;
@@ -82,38 +86,47 @@ function backend(page, opts) {
     await ctx.close();
   }
 
-  console.log('\n=== Admin adds +2 credit for someone who already logged 19 ===');
+  console.log('\n=== Admin adds credit for someone who already logged 19, twice, on different occasions ===');
   {
     const ctx = await browser.newContext({ timezoneId: 'Africa/Lagos' });
     const page = await ctx.newPage();
     await backend(page);
+    // onAddCredit uses a real browser prompt() — answer it with whatever
+    // number the test queues next, same as a real admin typing into it.
+    let nextPromptAnswer = null;
+    page.on('dialog', async d => { await d.accept(String(nextPromptAnswer)); });
     await page.goto('file://' + INDEX);
     await page.waitForTimeout(700);
-    const r = await page.evaluate(async () => {
+    await page.evaluate(async () => {
       isAdmin = true; adminKey = 'k';
       loadRows(); loadCreators();
       await new Promise(r => setTimeout(r, 1200));
       currentPage = 'payments';
       renderPayments();
-      // The credit box is typed directly — no total to reverse-engineer.
-      onCreditEdit(0, '2');
+    });
+
+    nextPromptAnswer = 2; // "add 2 today"
+    const r = await page.evaluate(async () => {
+      onAddCredit(0);
       await new Promise(r => setTimeout(r, 300));
       const man = allPayments.find(p => String(p.name).toLowerCase() === 'jessica lawal');
       return { credit: man ? man.postsCredit : null, rawLogged: allRows.filter(x => x.name === 'Jessica Lawal').length };
     });
-    console.log('   raw logged:', r.rawLogged, '· saved credit:', r.credit);
+    console.log('   raw logged:', r.rawLogged, '· credit after adding 2:', r.credit);
     ck('19 real videos stay 19, untouched by the credit edit', r.rawLogged, 19);
-    ck('the credit saved is exactly what was typed, not a delta', r.credit, '2');
+    ck('the credit is exactly the 2 just added', r.credit, '2');
 
-    // Now edit the credit AGAIN, later, once more real videos have been logged —
-    // the old bug: retyping "the total" silently multiplied the credit.
+    // A week later, 5 MORE are added — this must stack on the 2 already
+    // there (the exact scenario Smith described), never replace it.
+    nextPromptAnswer = 5;
     const r2 = await page.evaluate(async () => {
-      onCreditEdit(0, '5'); // admin decides the credit should be 5, not 2
+      onAddCredit(0);
       await new Promise(r => setTimeout(r, 300));
       const man = allPayments.find(p => String(p.name).toLowerCase() === 'jessica lawal');
       return { credit: man ? man.postsCredit : null };
     });
-    ck('a second edit sets the credit to exactly what was typed, no compounding', r2.credit, '5');
+    console.log('   credit after adding 5 more:', r2.credit);
+    ck('adding 5 more on top of 2 leaves 7, not 5', r2.credit, '7');
     await ctx.close();
   }
 

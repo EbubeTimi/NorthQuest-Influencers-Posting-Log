@@ -470,10 +470,20 @@
   .pay-eb-th .eb-th-rate { color: rgba(255,255,255,0.8); }
   .eb-count { max-width: 72px; text-align: center; }
   .eb-paid { font-size: 11.5px; font-weight: 700; color: var(--green); margin-top: 3px; text-align: center; }
-  .posts-cell { min-width: 108px; }
-  .posts-total { font-weight: 700; font-size: 13px; text-align: right; }
-  .posts-note { font-size: 10.5px; color: var(--text3); text-align: right; margin-top: 2px; white-space: nowrap; }
-  .posts-note .pay-input { display: inline-block; width: 34px; min-width: 0; padding: 2px 3px; font-size: 11px; text-align: center; margin: 0 2px; }
+  /* Same idea as the creator's own "+2" chip: the big number is what they
+     actually logged, the corner chip is what an admin added by hand — so
+     the two are never merged into one figure to reverse-engineer. */
+  .posts-cell { position: relative; min-width: 56px; padding-top: 12px !important; }
+  .posts-logged { font-weight: 700; font-size: 13px; text-align: right; }
+  .posts-credit-chip {
+    position: absolute; top: 0; right: 2px;
+    min-width: 26px; padding: 1px 5px; margin: 0;
+    font: inherit; font-size: 10.5px; font-weight: 700; text-align: center;
+    color: var(--accent3); background: var(--accent-light); cursor: pointer;
+    border: 1px solid var(--accent); border-radius: 20px;
+  }
+  .posts-credit-chip:hover { filter: brightness(0.97); }
+  .posts-credit-chip.zero { color: var(--text3); background: var(--surface2); border-color: var(--border2); }
   .btn-primary {
     background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%);
     color: white;
@@ -3547,20 +3557,23 @@ function savePaymentField(month, name, field, value, rerender) {
   if (rerender) renderPayments();
 }
 
-// The credit box holds ONLY the extra videos being added by hand — never a
-// total to reverse-engineer. This used to be the other way round: the box
-// showed the TOTAL (logged + credit already given), and typing a new total
-// meant doing the subtraction in your head. On a phone, the tooltip
-// explaining that never shows at all, so a "+2" typed straight over a "20"
-// read as "20 logged plus 2 more", i.e. 22 credited when only 2 were meant —
-// the exact double count reported. Typing the credit directly removes the
-// arithmetic instead of explaining it better.
-function onCreditEdit(idx, typedValue) {
+// Tapping the "+N" chip asks how many MORE to add right now, and that
+// number is added on top of whatever credit is already there — it never
+// replaces it. So crediting 2 today and 5 next week leaves 7 showing, not 5.
+// The chip itself always shows the running total, which is the number an
+// admin can check against what they know they added, in one place, on a
+// phone, no arithmetic required.
+function onAddCredit(idx) {
   const name = payRowNames[idx];
   if (!name) return;
-  const typed = parseFloat(String(typedValue).replace(/[^\d.]/g, '')) || 0;
-  const credit = Math.max(0, Math.round(typed));
-  let rec = allPayments.find(p => p.month === selectedPayMonth && String(p.name).toLowerCase() === name.toLowerCase());
+  const existing = allPayments.find(p => p.month === selectedPayMonth && String(p.name).toLowerCase() === name.toLowerCase());
+  const currentCredit = existing && !isNaN(parseFloat(existing.postsCredit)) ? parseFloat(existing.postsCredit) : 0;
+  const typedRaw = prompt('How many extra videos for ' + name + ' this month?\n\nCurrently credited: ' + currentCredit + '. This adds to that — it does not replace it.', '');
+  if (typedRaw === null) return; // cancelled
+  const delta = Math.round(parseFloat(String(typedRaw).replace(/[^\d.-]/g, '')) || 0);
+  if (delta === 0) return;
+  const credit = Math.max(0, currentCredit + delta);
+  let rec = existing;
   if (!rec) { rec = { month: selectedPayMonth, name, bonusViews:'', specialBonus:'', paymentStatus:'Pending', paymentDate:'', remarks:'', postsOverride:'', postsCredit:'', totalOverride:'', rateOverride:'' }; allPayments.push(rec); }
   rec.postsOverride = '';      // wipe any legacy fixed override
   rec.postsCredit = String(credit);
@@ -3790,17 +3803,17 @@ function renderPayments() {
       const hasLegacyOverride = !hasCredit && overrideRaw !== '' && !isNaN(parseFloat(overrideRaw));
       const credit = hasCredit ? parseFloat(creditRaw) : 0;
       const effPosts = hasLegacyOverride ? parseFloat(overrideRaw) : (posts + credit);
-      // Visible text, not a hover tooltip — a tooltip never shows on a phone,
-      // which is how "20 logged, type 22 to add 2" was read as "type the new
-      // total" and ended up crediting the wrong amount. The split below
-      // shows the logged count and the credit as two separate numbers that
-      // always add up to the total, so there is nothing to work out.
+      // Same shape as the creator's own dashboard: the big number is what
+      // they actually logged (never edited here, it is a fact from the
+      // sheet), and the credit an admin adds by hand sits in its own "+N"
+      // chip in the corner, same as the chip a creator sees on their own
+      // page. Never merged into one number to reverse-engineer — you can
+      // check it against what you already know they posted.
       const postsCellHtml = hasLegacyOverride
         ? '<input class="pay-input" style="max-width:62px;text-align:right" value="' + effPosts + '" title="Fixed override (legacy). Edit to set a new fixed total." onchange="onLegacyOverrideEdit(' + i + ',this.value)">'
-        : '<div class="posts-cell"><div class="posts-total">' + effPosts + '</div>' +
-          '<div class="posts-note">' + posts + ' logged +' +
-          '<input class="pay-input" type="text" inputmode="numeric" value="' + credit + '" title="Extra videos credited by hand, on top of what was actually logged" onchange="onCreditEdit(' + i + ',this.value)">' +
-          'credit</div></div>';
+        : '<div class="posts-cell">' +
+          '<button type="button" class="posts-credit-chip' + (credit === 0 ? ' zero' : '') + '" title="Tap to add more credit for ' + escH(name) + '" onclick="onAddCredit(' + i + ')">+' + credit + '</button>' +
+          '<div class="posts-logged">' + posts + '</div></div>';
       const base = Math.round(effPosts * monthlySalary / maxVideos);
       const bonusViews = man.bonusViews || '';
       const perf = calcBonus(bonusViews);
