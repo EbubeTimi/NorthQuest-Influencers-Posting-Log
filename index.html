@@ -470,6 +470,20 @@
   .pay-eb-th .eb-th-rate { color: rgba(255,255,255,0.8); }
   .eb-count { max-width: 72px; text-align: center; }
   .eb-paid { font-size: 11.5px; font-weight: 700; color: var(--green); margin-top: 3px; text-align: center; }
+  /* Same idea as the creator's own "+2" chip: the big number is what they
+     actually logged, the corner chip is what an admin added by hand — so
+     the two are never merged into one figure to reverse-engineer. */
+  .posts-cell { position: relative; min-width: 56px; padding-top: 12px !important; }
+  .posts-logged { font-weight: 700; font-size: 13px; text-align: right; }
+  .posts-credit-chip {
+    position: absolute; top: 0; right: 2px;
+    min-width: 26px; padding: 1px 5px; margin: 0;
+    font: inherit; font-size: 10.5px; font-weight: 700; text-align: center;
+    color: var(--accent3); background: var(--accent-light); cursor: pointer;
+    border: 1px solid var(--accent); border-radius: 20px;
+  }
+  .posts-credit-chip:hover { filter: brightness(0.97); }
+  .posts-credit-chip.zero { color: var(--text3); background: var(--surface2); border-color: var(--border2); }
   .btn-primary {
     background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%);
     color: white;
@@ -1958,6 +1972,26 @@ function retryLoadRows(btn) {
   loadRows();
 }
 
+// Every screen below draws its numbers from allRows. dataLoaded turns true
+// even when every fetch attempt failed (that is what stops the spinner), so
+// a screen that only checks dataLoaded cannot tell "nobody logged anything"
+// apart from "we never found out". Before this, a failed load on a weak
+// connection quietly rendered as if every video, every bonus and every
+// creator's own pay were zero — the exact fault reported: a video that
+// saved fine later "shows as not logged" the next time the page loads.
+// Anything that reads allRows for a real number must check rowsLoadFailed
+// first and say so plainly instead.
+function loadFailedBannerHtml() {
+  return '<div class="today-status s-unknown"><span class="s-icon">&#9888;</span>' +
+    '<span>Could not load the posting log, so the numbers on this screen cannot be trusted right now. ' +
+    '<button type="button" class="s-retry" onclick="retryLoadRows(this)">Try again</button></span></div>';
+}
+function loadFailedRowHtml(colspan) {
+  return '<tr><td colspan="' + colspan + '" class="empty-state">' +
+    '<strong>&#9888; Could not load the posting log.</strong><br>' +
+    '<button type="button" class="btn btn-sm" style="margin-top:8px" onclick="retryLoadRows(this)">Try again</button></td></tr>';
+}
+
 // ── LOADING STATE, show/hide spinner on submit button ──
 function setSubmitting(on, msg) {
   const btn = document.getElementById('submit-btn');
@@ -2238,6 +2272,14 @@ function refreshAll() {
   if (document.getElementById('f-name') && document.getElementById('f-name').value) {
     if (loggingYesterday) renderYesterdayCards(); else onNameChange();
   }
+  // If "View my logs" is open, keep it in step with whatever allRows just
+  // became — including a load that just failed while the creator was
+  // looking at it, which must show the warning, not a suddenly empty month.
+  const openFor = document.getElementById('modal-name');
+  if (!isAdmin && document.getElementById('creator-modal').classList.contains('open') &&
+      openFor && openFor.textContent) {
+    renderMyLogs(openFor.textContent);
+  }
 }
 
 function populateNameDropdown() {
@@ -2280,6 +2322,7 @@ function renderWeeklyGrid() {
   const creators = getActiveCreators();
   const tbody = document.getElementById('weekly-body');
   if (!dataLoaded || !creatorsLoaded) { tbody.innerHTML = '<tr><td colspan="9" class="empty-state"><span class="spinner"></span></td></tr>'; return; }
+  if (rowsLoadFailed) { tbody.innerHTML = loadFailedRowHtml(9); return; }
   if (!creators.length) { tbody.innerHTML = '<tr><td colspan="9" class="empty-state"><strong>No active creators</strong></td></tr>'; return; }
   tbody.innerHTML = creators.map(creator => {
     const rows = allRows.filter(r => r.name === creator);
@@ -2305,6 +2348,7 @@ function renderMonthTabs() {
   const months = getMonths();
   const el = document.getElementById('month-tabs');
   if (!dataLoaded) { el.innerHTML = '<span class="spinner"></span>'; return; }
+  if (rowsLoadFailed) { el.innerHTML = '<span style="color:var(--amber);font-size:13px">&#9888; Could not load — <button type="button" class="s-retry" style="font-size:13px" onclick="retryLoadRows(this)">try again</button></span>'; return; }
   if (!months.length) { el.innerHTML = '<span style="color:var(--text3);font-size:13px">No data yet</span>'; return; }
   if (!selectedMonth || !months.includes(selectedMonth)) selectedMonth = months[0];
   el.innerHTML = months.map(ym => {
@@ -2320,6 +2364,7 @@ function renderDetailedLog() {
   const tbody = document.getElementById('detailed-body');
   const statsEl = document.getElementById('month-stats');
   if (!dataLoaded) { tbody.innerHTML = '<tr><td colspan="6" class="empty-state"><span class="spinner"></span></td></tr>'; statsEl.style.display='none'; return; }
+  if (rowsLoadFailed) { tbody.innerHTML = loadFailedRowHtml(6); statsEl.style.display='none'; return; }
   if (!selectedMonth) { tbody.innerHTML = '<tr><td colspan="6" class="empty-state"><strong>No submissions yet</strong></td></tr>'; statsEl.style.display='none'; return; }
   const mRows = allRows.filter(r => monthYM(r.date) === selectedMonth);
   const mCreators = [...new Set(mRows.map(r => r.name))];
@@ -2395,6 +2440,17 @@ function loadMyPay(name) {
 }
 
 function renderMyLogs(name) {
+  // Show what we actually know, not a guess dressed up as fact. Without this,
+  // a failed load on a weak connection renders every day this month as "not
+  // logged" and every pay figure as zero — indistinguishable from a creator
+  // who genuinely did nothing, which is exactly the false alarm reported.
+  if (rowsLoadFailed) {
+    document.getElementById('modal-name').textContent = name;
+    document.getElementById('modal-sub').textContent = 'Your posting record';
+    document.getElementById('modal-body').innerHTML = loadFailedBannerHtml();
+    document.getElementById('creator-modal').classList.add('open');
+    return;
+  }
   const today = todayStr();
   const ym = today.substring(0, 7);
   const mine = allRows.filter(r => r.name.toLowerCase() === name.toLowerCase());
@@ -2515,11 +2571,19 @@ function renderDashboard() {
   const dashHeader = document.getElementById('dash-progress-header');
   if (dashHeader) dashHeader.textContent = 'Progress (' + dashMaxVideos + ')';
   const creators = getActiveCreators();
+  const tbody = document.getElementById('dash-body');
+  if (rowsLoadFailed) {
+    document.getElementById('d-total').textContent = '—';
+    document.getElementById('d-month').textContent = '—';
+    document.getElementById('d-creators').textContent = creators.length;
+    document.getElementById('d-today').textContent = '—';
+    tbody.innerHTML = loadFailedRowHtml(6);
+    return;
+  }
   document.getElementById('d-total').textContent    = allRows.length;
   document.getElementById('d-month').textContent    = allRows.filter(r => r.date.startsWith(curMYM)).length;
   document.getElementById('d-creators').textContent = creators.length;
   document.getElementById('d-today').textContent    = allRows.filter(r => r.date === today).length;
-  const tbody = document.getElementById('dash-body');
   if (!creators.length) { tbody.innerHTML = '<tr><td colspan="6" class="empty-state"><strong>No active creators</strong></td></tr>'; return; }
   const sorted = creators.map(name => {
     const rows = allRows.filter(r => r.name === name);
@@ -3026,7 +3090,11 @@ function renderManageCreators() {
     const left = leftRaw
       ? '<span title="Recorded when the creator was deactivated (or their last logged post for older records)">' + new Date(leftRaw + 'T00:00:00').toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}) + '</span>'
       : '—';
-    const posts = allRows.filter(r => r.name===c.name && monthYM(r.date)===ym).length;
+    // rowsLoadFailed means we genuinely do not know this month's count —
+    // show that honestly rather than a 0 that reads as "nobody posted".
+    const postsCell = rowsLoadFailed
+      ? '<span title="Could not load the posting log" style="color:var(--amber)">&#9888;</span>'
+      : allRows.filter(r => r.name===c.name && monthYM(r.date)===ym).length;
     return '<tr data-creator="' + escH(c.name) + '"><td><span class="creator-link" onclick="openModal(\'' + escH(c.name) + '\')">' + escH(c.name) + '</span></td>' +
       '<td>' + badge + '</td>' +
       '<td>' + contractCell(c) + '</td>' +
@@ -3036,7 +3104,7 @@ function renderManageCreators() {
       extraBonusCells(c.name, ym) +
       '<td style="color:var(--text3)">' + added + '</td>' +
       '<td style="color:var(--text3)">' + left + '</td>' +
-      '<td style="color:var(--text2)">' + posts + '</td>' +
+      '<td style="color:var(--text2)">' + postsCell + '</td>' +
       '<td><div style="display:flex;gap:6px;flex-wrap:wrap">' +
       '<button class="btn btn-sm ' + (isActiveNow?'btn-danger':'') + '" onclick="toggleCreator(\'' + escH(c.name) + '\')">' + (isActiveNow?'Deactivate':'Reactivate') + '</button>' +
       '<button class="btn btn-sm btn-delete" onclick="deleteCreator(\'' + escH(c.name) + '\')">Delete</button>' +
@@ -3489,20 +3557,42 @@ function savePaymentField(month, name, field, value, rerender) {
   if (rerender) renderPayments();
 }
 
-// Posts field: typed value = total user wants to see.
-// We save the DIFFERENCE between typed and actual as postsCredit.
-// When new posts are logged later, actual auto-increments → display rises naturally.
-function onPostsEdit(idx, actualPosts, typedValue) {
+// Tapping the "+N" chip asks how many MORE to add right now, and that
+// number is added on top of whatever credit is already there — it never
+// replaces it. So crediting 2 today and 5 next week leaves 7 showing, not 5.
+// The chip itself always shows the running total, which is the number an
+// admin can check against what they know they added, in one place, on a
+// phone, no arithmetic required.
+function onAddCredit(idx) {
   const name = payRowNames[idx];
   if (!name) return;
-  const typed = parseFloat(String(typedValue).replace(/[^\d.]/g, ''));
-  if (isNaN(typed) || typed < 0) { renderPayments(); return; }
-  const credit = Math.round(typed - actualPosts);
-  let rec = allPayments.find(p => p.month === selectedPayMonth && String(p.name).toLowerCase() === name.toLowerCase());
+  const existing = allPayments.find(p => p.month === selectedPayMonth && String(p.name).toLowerCase() === name.toLowerCase());
+  const currentCredit = existing && !isNaN(parseFloat(existing.postsCredit)) ? parseFloat(existing.postsCredit) : 0;
+  const typedRaw = prompt('How many extra videos for ' + name + ' this month?\n\nCurrently credited: ' + currentCredit + '. This adds to that — it does not replace it.', '');
+  if (typedRaw === null) return; // cancelled
+  const delta = Math.round(parseFloat(String(typedRaw).replace(/[^\d.-]/g, '')) || 0);
+  if (delta === 0) return;
+  const credit = Math.max(0, currentCredit + delta);
+  let rec = existing;
   if (!rec) { rec = { month: selectedPayMonth, name, bonusViews:'', specialBonus:'', paymentStatus:'Pending', paymentDate:'', remarks:'', postsOverride:'', postsCredit:'', totalOverride:'', rateOverride:'' }; allPayments.push(rec); }
   rec.postsOverride = '';      // wipe any legacy fixed override
   rec.postsCredit = String(credit);
   savePaymentField(selectedPayMonth, name, 'postsCredit', String(credit), true);
+}
+
+// Rare fallback for a record still carrying the old fixed-total override
+// from before credit-based editing existed. Edits the fixed number directly;
+// clear it and edit the credit field instead to switch a creator back onto
+// the normal actual-plus-credit path.
+function onLegacyOverrideEdit(idx, typedValue) {
+  const name = payRowNames[idx];
+  if (!name) return;
+  const typed = parseFloat(String(typedValue).replace(/[^\d.]/g, ''));
+  if (isNaN(typed) || typed < 0) { renderPayments(); return; }
+  let rec = allPayments.find(p => p.month === selectedPayMonth && String(p.name).toLowerCase() === name.toLowerCase());
+  if (!rec) { rec = { month: selectedPayMonth, name, bonusViews:'', specialBonus:'', paymentStatus:'Pending', paymentDate:'', remarks:'', postsOverride:'', postsCredit:'', totalOverride:'', rateOverride:'' }; allPayments.push(rec); }
+  rec.postsOverride = String(Math.round(typed));
+  savePaymentField(selectedPayMonth, name, 'postsOverride', rec.postsOverride, true);
 }
 
 // Remove a creator from this month entirely: deletes their post rows + payment record.
@@ -3586,6 +3676,15 @@ function renderPayments() {
   const body = document.getElementById('pay-body');
   if (!tabsEl || !body) return;
   if (!dataLoaded || !creatorsLoaded) { body.innerHTML = '<tr><td colspan="' + payColSpan() + '" class="empty-state"><span class="spinner"></span></td></tr>'; return; }
+  // Every figure on this table is money. Refusing to show it is safer than
+  // showing a total built on a posting log we know failed to load.
+  if (rowsLoadFailed) {
+    tabsEl.innerHTML = '';
+    body.innerHTML = loadFailedRowHtml(payColSpan());
+    document.getElementById('pay-period').textContent = '';
+    document.getElementById('pay-legend').innerHTML = '';
+    return;
+  }
   const months = getMonths();
   if (!months.length) {
     tabsEl.innerHTML = '<span style="color:var(--text3);font-size:13px">No data yet</span>';
@@ -3704,9 +3803,17 @@ function renderPayments() {
       const hasLegacyOverride = !hasCredit && overrideRaw !== '' && !isNaN(parseFloat(overrideRaw));
       const credit = hasCredit ? parseFloat(creditRaw) : 0;
       const effPosts = hasLegacyOverride ? parseFloat(overrideRaw) : (posts + credit);
-      const postsTitle = hasLegacyOverride
-        ? 'Fixed override (legacy). Edit to switch to credit-based: actual + credit.'
-        : (posts + ' actual logged + ' + credit + ' credited. Type a new total, system tracks the credit automatically, so new logs still add to it.');
+      // Same shape as the creator's own dashboard: the big number is what
+      // they actually logged (never edited here, it is a fact from the
+      // sheet), and the credit an admin adds by hand sits in its own "+N"
+      // chip in the corner, same as the chip a creator sees on their own
+      // page. Never merged into one number to reverse-engineer — you can
+      // check it against what you already know they posted.
+      const postsCellHtml = hasLegacyOverride
+        ? '<input class="pay-input" style="max-width:62px;text-align:right" value="' + effPosts + '" title="Fixed override (legacy). Edit to set a new fixed total." onchange="onLegacyOverrideEdit(' + i + ',this.value)">'
+        : '<div class="posts-cell">' +
+          '<button type="button" class="posts-credit-chip' + (credit === 0 ? ' zero' : '') + '" title="Tap to add more credit for ' + escH(name) + '" onclick="onAddCredit(' + i + ')">+' + credit + '</button>' +
+          '<div class="posts-logged">' + posts + '</div></div>';
       const base = Math.round(effPosts * monthlySalary / maxVideos);
       const bonusViews = man.bonusViews || '';
       const perf = calcBonus(bonusViews);
@@ -3722,7 +3829,7 @@ function renderPayments() {
       return tierLabel + '<tr data-creator="' + escH(name) + '">' +
         '<td class="pay-num" style="white-space:nowrap">' + (i+1) + ' <button class="pay-row-del" onclick="deletePaymentRow(' + i + ')" title="Remove ' + escH(name) + ' from ' + escH(monthLabel(selectedPayMonth)) + '">&times;</button></td>' +
         '<td>' + escH(name) + '</td>' +
-        '<td><input class="pay-input" style="max-width:62px;text-align:right" value="' + effPosts + '" title="' + escH(postsTitle) + '" onchange="onPostsEdit(' + i + ',' + posts + ',this.value)"></td>' +
+        '<td>' + postsCellHtml + '</td>' +
         '<td><input class="pay-input" style="max-width:100px;text-align:right" value="' + fmtMoney2(monthlySalary / maxVideos) + '" onchange="onRateEdit(' + i + ',this.value)" title="Rate per video = monthly base pay ÷ 62. To change base pay: type the monthly amount (e.g. 200000) and press Enter, or use the Base Pay column under Manage creators. You can also type a per-video amount directly (e.g. 3226)." placeholder="150000"></td>' +
         '<td class="pay-num">' + fmtMoney2(base) + '</td>' +
         '<td><input class="pay-input" value="' + escH(bonusViews) + '" placeholder="100000,50000" onchange="onPayEdit(' + i + ',\'bonusViews\',this.value,true)"></td>' +
