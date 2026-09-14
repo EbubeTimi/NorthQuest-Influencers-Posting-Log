@@ -8,10 +8,12 @@
 //      the TOTAL and ask the admin to retype a new total, doing the
 //      subtraction invisibly — a phone never shows the tooltip that
 //      explained it. Now the big number is always the raw logged count
-//      (never edited here), and a separate "+N" chip is the running credit
-//      total; tapping it asks how many MORE to add and stacks that onto
-//      whatever credit already exists, so two separate top-ups on two
-//      different days add up instead of overwriting each other.
+//      (never edited here, it's a fact from the Posting Log), and a
+//      separate plain field holds the credit an admin added — a normal
+//      editable number like every other column in this table, no popup,
+//      no decorated chip (that "+N" look belongs on the creator's own
+//      dashboard only). Typing a new number in that field sets it outright,
+//      the same way editing the rate or a bonus does everywhere else.
 const { chromium } = require('playwright');
 const INDEX = require('path').resolve(__dirname, '..', 'index.html');
 let fails = 0;
@@ -86,15 +88,11 @@ function backend(page, opts) {
     await ctx.close();
   }
 
-  console.log('\n=== Admin adds credit for someone who already logged 19, twice, on different occasions ===');
+  console.log('\n=== Admin types a credit for someone who already logged 19, then corrects it later ===');
   {
     const ctx = await browser.newContext({ timezoneId: 'Africa/Lagos' });
     const page = await ctx.newPage();
     await backend(page);
-    // onAddCredit uses a real browser prompt() — answer it with whatever
-    // number the test queues next, same as a real admin typing into it.
-    let nextPromptAnswer = null;
-    page.on('dialog', async d => { await d.accept(String(nextPromptAnswer)); });
     await page.goto('file://' + INDEX);
     await page.waitForTimeout(700);
     await page.evaluate(async () => {
@@ -105,28 +103,26 @@ function backend(page, opts) {
       renderPayments();
     });
 
-    nextPromptAnswer = 2; // "add 2 today"
     const r = await page.evaluate(async () => {
-      onAddCredit(0);
+      onCreditFieldEdit(0, '2');
       await new Promise(r => setTimeout(r, 300));
       const man = allPayments.find(p => String(p.name).toLowerCase() === 'jessica lawal');
       return { credit: man ? man.postsCredit : null, rawLogged: allRows.filter(x => x.name === 'Jessica Lawal').length };
     });
-    console.log('   raw logged:', r.rawLogged, '· credit after adding 2:', r.credit);
+    console.log('   raw logged:', r.rawLogged, '· credit after typing 2:', r.credit);
     ck('19 real videos stay 19, untouched by the credit edit', r.rawLogged, 19);
-    ck('the credit is exactly the 2 just added', r.credit, '2');
+    ck('the credit is exactly the 2 just typed', r.credit, '2');
 
-    // A week later, 5 MORE are added — this must stack on the 2 already
-    // there (the exact scenario Smith described), never replace it.
-    nextPromptAnswer = 5;
+    // Editing the field again sets it outright, same as any other plain
+    // column in this table — it does not stack onto the old value.
     const r2 = await page.evaluate(async () => {
-      onAddCredit(0);
+      onCreditFieldEdit(0, '7');
       await new Promise(r => setTimeout(r, 300));
       const man = allPayments.find(p => String(p.name).toLowerCase() === 'jessica lawal');
       return { credit: man ? man.postsCredit : null };
     });
-    console.log('   credit after adding 5 more:', r2.credit);
-    ck('adding 5 more on top of 2 leaves 7, not 5', r2.credit, '7');
+    console.log('   credit after retyping 7:', r2.credit);
+    ck('retyping 7 replaces the 2, same as editing any other field', r2.credit, '7');
     await ctx.close();
   }
 

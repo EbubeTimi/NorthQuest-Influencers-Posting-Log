@@ -33,7 +33,7 @@ const check = (l, a, e) => { const ok = String(a) === String(e); if (!ok) fails+
   check('"Days fully done" is gone', tiles.some(t => t.includes('Days fully done')), false);
   check('Bonuses so far is a count', tiles.find(t => t.startsWith('Bonuses so far')), 'Bonuses so far = 4');
   check('Bonus amount is naira', tiles.find(t => t.startsWith('Bonus amount')), 'Bonus amount = ₦1,300,000');
-  check('admin credit counted in Videos logged', tiles.find(t => t.startsWith('Videos logged')), 'Videos logged = 3');
+  check('Videos logged shows only her own raw count, not merged with admin credit', tiles.find(t => t.startsWith('Videos logged')), 'Videos logged = 1');
   // The "2 logged by admin." text was replaced by a "+2" corner chip.
   check('admin credit shown as a +2 chip',
     await page.evaluate(() => (document.querySelector('.admin-chip') || {}).textContent || null), '+2');

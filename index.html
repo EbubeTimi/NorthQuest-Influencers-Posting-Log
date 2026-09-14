@@ -470,22 +470,6 @@
   .pay-eb-th .eb-th-rate { color: rgba(255,255,255,0.8); }
   .eb-count { max-width: 72px; text-align: center; }
   .eb-paid { font-size: 11.5px; font-weight: 700; color: var(--green); margin-top: 3px; text-align: center; }
-  /* Same idea as the creator's own "+2" chip: the big number is what they
-     actually logged, the chip above it is what an admin added by hand — so
-     the two are never merged into one figure to reverse-engineer. Stacked in
-     normal flow (not absolutely positioned over the number) so the chip can
-     never sit on top of and collide with the digits below it, whatever the
-     row's actual height turns out to be. */
-  .posts-cell { min-width: 56px; display: flex; flex-direction: column; align-items: flex-end; gap: 3px; }
-  .posts-logged { font-weight: 700; font-size: 13px; text-align: right; }
-  .posts-credit-chip {
-    min-width: 26px; padding: 1px 5px; margin: 0;
-    font: inherit; font-size: 10.5px; font-weight: 700; text-align: center;
-    color: var(--accent3); background: var(--accent-light); cursor: pointer;
-    border: 1px solid var(--accent); border-radius: 20px;
-  }
-  .posts-credit-chip:hover { filter: brightness(0.97); }
-  .posts-credit-chip.zero { color: var(--text3); background: var(--surface2); border-color: var(--border2); }
   .btn-primary {
     background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%);
     color: white;
@@ -1287,7 +1271,8 @@
       <thead><tr>
         <th>S/N</th>
         <th id="ph-cn" contenteditable="true" spellcheck="false" onkeydown="return event.key!=='Enter'" onblur="savePayHeader('cn',this)">Creator Name</th>
-        <th id="ph-posts" contenteditable="true" spellcheck="false" onkeydown="return event.key!=='Enter'" onblur="savePayHeader('posts',this)">No. of Posts</th>
+        <th id="ph-posts" contenteditable="true" spellcheck="false" onkeydown="return event.key!=='Enter'" onblur="savePayHeader('posts',this)">Posts (Creator)</th>
+        <th class="eb-th" title="Videos you added on a creator's behalf. Adds to what they logged — never replaces it.">Posts (You Added)</th>
         <th id="ph-rate" contenteditable="true" spellcheck="false" onkeydown="return event.key!=='Enter'" onblur="savePayHeader('rate',this)">Rate / Post (&#8358;)</th>
         <th id="ph-base" contenteditable="true" spellcheck="false" onkeydown="return event.key!=='Enter'" onblur="savePayHeader('base',this)">Base Amount (&#8358;)</th>
         <th id="ph-bv" contenteditable="true" spellcheck="false" onkeydown="return event.key!=='Enter'" onblur="savePayHeader('bv',this)">Bonus Views</th>
@@ -2571,7 +2556,7 @@ function renderMyLogs(name) {
   document.getElementById('modal-body').innerHTML =
     graceHtml +
     '<div class="mylog-summary">' +
-      '<div class="mylog-stat">' + adminChip + '<div class="v">' + effPosts + '</div><div class="l">Videos logged</div>' + adminNote + '</div>' +
+      '<div class="mylog-stat">' + adminChip + '<div class="v">' + monthRows.length + '</div><div class="l">Videos logged</div>' + adminNote + '</div>' +
       '<div class="mylog-stat"><div class="v">' + maxVideos + '</div><div class="l">Monthly target</div></div>' +
       '<div class="mylog-stat"><div class="v">&#8358;' + Math.round(ratePerVideo).toLocaleString('en-NG') + '</div><div class="l">Rate per video</div></div>' +
       '<div class="mylog-stat"><div class="v">&#8358;' + Math.round(amountExpected).toLocaleString('en-NG') + '</div><div class="l">Amount expected</div></div>' +
@@ -3199,7 +3184,7 @@ function syncPayExtraHeaders() {
     after = el;
   });
 }
-function payColSpan() { return 15 + bonusCatsFor(selectedPayMonth).length; }
+function payColSpan() { return 16 + bonusCatsFor(selectedPayMonth).length; }
 
 function onExtraBonusCount(name, catName, value) {
   const ym = manageMonthOrToday();
@@ -3590,23 +3575,15 @@ function savePaymentField(month, name, field, value, rerender) {
   if (rerender) renderPayments();
 }
 
-// Tapping the "+N" chip asks how many MORE to add right now, and that
-// number is added on top of whatever credit is already there — it never
-// replaces it. So crediting 2 today and 5 next week leaves 7 showing, not 5.
-// The chip itself always shows the running total, which is the number an
-// admin can check against what they know they added, in one place, on a
-// phone, no arithmetic required.
-function onAddCredit(idx) {
+// Plain editable field, same as every other column in this table — type the
+// number and it's set, no popup, no decorated chip. That "+N" look belongs
+// on the creator's own dashboard only; here it's just a number you added.
+function onCreditFieldEdit(idx, typedValue) {
   const name = payRowNames[idx];
   if (!name) return;
-  const existing = allPayments.find(p => p.month === selectedPayMonth && String(p.name).toLowerCase() === name.toLowerCase());
-  const currentCredit = existing && !isNaN(parseFloat(existing.postsCredit)) ? parseFloat(existing.postsCredit) : 0;
-  const typedRaw = prompt('How many extra videos for ' + name + ' this month?\n\nCurrently credited: ' + currentCredit + '. This adds to that — it does not replace it.', '');
-  if (typedRaw === null) return; // cancelled
-  const delta = Math.round(parseFloat(String(typedRaw).replace(/[^\d.-]/g, '')) || 0);
-  if (delta === 0) return;
-  const credit = Math.max(0, currentCredit + delta);
-  let rec = existing;
+  const typed = parseFloat(String(typedValue).replace(/[^\d.-]/g, ''));
+  const credit = isNaN(typed) ? 0 : Math.max(0, Math.round(typed));
+  let rec = allPayments.find(p => p.month === selectedPayMonth && String(p.name).toLowerCase() === name.toLowerCase());
   if (!rec) { rec = { month: selectedPayMonth, name, bonusViews:'', specialBonus:'', paymentStatus:'Pending', paymentDate:'', remarks:'', postsOverride:'', postsCredit:'', totalOverride:'', rateOverride:'' }; allPayments.push(rec); }
   rec.postsOverride = '';      // wipe any legacy fixed override
   rec.postsCredit = String(credit);
@@ -3771,7 +3748,7 @@ function renderPayments() {
   // Fill the "add creator to this month" picker, see monthAddCandidates.
   fillAddPicker('paymonth-add-name', selectedPayMonth);
 
-  let tPosts = 0, tBase = 0, tPerf = 0, tSpecial = 0, tTotal = 0;
+  let tPosts = 0, tCredit = 0, tBase = 0, tPerf = 0, tSpecial = 0, tTotal = 0;
 
   // ── STAFF ROWS (always shown, above creators) ──
   const staffRowsHtml = STAFF.map((s, si) => {
@@ -3791,6 +3768,7 @@ function renderPayments() {
       '<td class="pay-num" style="color:#b7770d">S' + (si+1) + '</td>' +
       '<td><strong>' + escH(s.display) + '</strong><br><span style="font-size:11px;color:var(--text3);font-weight:400">' + s.role + '</span></td>' +
       '<td><input class="pay-input" style="max-width:120px;text-align:right" value="' + (salary||'') + '" placeholder="Salary &#8358;" onchange="onStaffSalaryEdit(' + si + ',this.value)"></td>' +
+      '<td style="color:var(--text3);text-align:center">—</td>' +
       '<td style="color:var(--text3);text-align:center">—</td>' +
       '<td style="color:var(--text3);text-align:center">—</td>' +
       '<td style="color:var(--text3);text-align:center">—</td>' +
@@ -3836,17 +3814,19 @@ function renderPayments() {
       const hasLegacyOverride = !hasCredit && overrideRaw !== '' && !isNaN(parseFloat(overrideRaw));
       const credit = hasCredit ? parseFloat(creditRaw) : 0;
       const effPosts = hasLegacyOverride ? parseFloat(overrideRaw) : (posts + credit);
-      // Same shape as the creator's own dashboard: the big number is what
-      // they actually logged (never edited here, it is a fact from the
-      // sheet), and the credit an admin adds by hand sits in its own "+N"
-      // chip in the corner, same as the chip a creator sees on their own
-      // page. Never merged into one number to reverse-engineer — you can
-      // check it against what you already know they posted.
+      // Two plain columns, same as the Payment Manual sheet: what the
+      // creator actually logged (a fact from the Posting Log, not editable
+      // here) and what you added on their behalf (a plain editable number,
+      // never a decorated chip — that belongs on the creator's own
+      // dashboard, not here). The legacy fixed override still replaces the
+      // total outright, so it keeps its own input in the first column and
+      // the second column is blank for that row.
       const postsCellHtml = hasLegacyOverride
         ? '<input class="pay-input" style="max-width:62px;text-align:right" value="' + effPosts + '" title="Fixed override (legacy). Edit to set a new fixed total." onchange="onLegacyOverrideEdit(' + i + ',this.value)">'
-        : '<div class="posts-cell">' +
-          '<button type="button" class="posts-credit-chip' + (credit === 0 ? ' zero' : '') + '" title="Tap to add more credit for ' + escH(name) + '" onclick="onAddCredit(' + i + ')">+' + credit + '</button>' +
-          '<div class="posts-logged">' + posts + '</div></div>';
+        : '<span class="pay-num">' + posts + '</span>';
+      const creditCellHtml = hasLegacyOverride
+        ? '<span style="color:var(--text3);text-align:center">—</span>'
+        : '<input class="pay-input" style="max-width:56px;text-align:right" value="' + credit + '" title="Videos you added on ' + escH(name) + '\'s behalf. Adds to what they logged — this is what shows in their own +N corner, never merged into their own count." onchange="onCreditFieldEdit(' + i + ',this.value)">';
       const base = Math.round(effPosts * monthlySalary / maxVideos);
       const bonusViews = man.bonusViews || '';
       const perf = calcBonus(bonusViews);
@@ -3857,12 +3837,13 @@ function renderPayments() {
       const status = man.paymentStatus || 'Pending';
       const payDate = man.paymentDate || '';
       const remarks = man.remarks || '';
-      tPosts += effPosts; tBase += base; tPerf += perf; tSpecial += special; tTotal += effTotal;
+      tPosts += posts; tCredit += credit; tBase += base; tPerf += perf; tSpecial += special; tTotal += effTotal;
       const stColor = status === 'Paid' ? 'background:#e6f4ec;color:#1a6b4a' : 'background:#fdf6e3;color:#b7770d';
       return tierLabel + '<tr data-creator="' + escH(name) + '">' +
         '<td class="pay-num" style="white-space:nowrap">' + (i+1) + ' <button class="pay-row-del" onclick="deletePaymentRow(' + i + ')" title="Remove ' + escH(name) + ' from ' + escH(monthLabel(selectedPayMonth)) + '">&times;</button></td>' +
         '<td>' + escH(name) + '</td>' +
         '<td>' + postsCellHtml + '</td>' +
+        '<td>' + creditCellHtml + '</td>' +
         '<td><input class="pay-input" style="max-width:100px;text-align:right" value="' + fmtMoney2(monthlySalary / maxVideos) + '" onchange="onRateEdit(' + i + ',this.value)" title="Rate per video = monthly base pay ÷ 62. To change base pay: type the monthly amount (e.g. 200000) and press Enter, or use the Base Pay column under Manage creators. You can also type a per-video amount directly (e.g. 3226)." placeholder="150000"></td>' +
         '<td class="pay-num">' + fmtMoney2(base) + '</td>' +
         '<td><input class="pay-input" value="' + escH(bonusViews) + '" placeholder="100000,50000" onchange="onPayEdit(' + i + ',\'bonusViews\',this.value,true)"></td>' +
@@ -3884,6 +3865,7 @@ function renderPayments() {
   const totalHtml = '<tr class="pay-total">' +
     '<td></td><td>TOTAL</td>' +
     '<td class="pay-num">' + tPosts + '</td>' +
+    '<td class="pay-num">' + tCredit + '</td>' +
     '<td></td>' +
     '<td class="pay-num">' + fmtMoney2(tBase) + '</td>' +
     '<td></td>' +
@@ -3931,16 +3913,16 @@ function exportPaymentsCSV() {
   const tierOf = n => (cmap[n.toLowerCase()] || { rate: defMonthlySalary }).rate;
   const names = Object.keys(counts).sort((a, b) => tierOf(b) - tierOf(a) || a.localeCompare(b));
 
-  // Columns: A S/N, B Name, C Posts, D Rate, E Base, F Bonus Views,
-  // G Perf, H Special, I Total, J..L bank, M status, N date, O remarks.
-  // Base and Total are written as live formulas, so editing a post count or a
-  // bonus in the exported file re-does the arithmetic instead of leaving a
-  // stale number sitting next to the edited one.
+  // Columns: A S/N, B Name, C Posts (Creator), D Posts (You Added), E Rate,
+  // F Base, G Bonus Views, H Perf, I Special, J Total, K..M bank, N status,
+  // O date, P remarks. Base and Total are written as live formulas, so
+  // editing a post count or a bonus in the exported file re-does the
+  // arithmetic instead of leaving a stale number sitting next to the edited one.
   const R = [];
   R.push([{ v:'NORTHQUEST FINANCE  ·  CREATOR PAYMENT REGISTER', s:1 }]);
   R.push(['Payment Period:  ' + ord(1) + ' ' + mName + ' ' + y + ' – ' + ord(last) + ' ' + mName + ' ' + y]);
   R.push([]);
-  R.push(['S/N','Name','No. of Posts / Salary','Rate per Post (₦)','Base Amount (₦)','Bonus Views',
+  R.push(['S/N','Name','Posts (Creator) / Salary','Posts (You Added)','Rate per Post (₦)','Base Amount (₦)','Bonus Views',
           'Perf. Bonus (₦)','Special Bonus (₦)','Total Payable (₦)','Bank Name','Account Number',
           'Account Name','Payment Status','Payment Date','Remarks'].map(v => ({ v:v, s:2 })));
 
@@ -3953,8 +3935,8 @@ function exportPaymentsCSV() {
     const bankData = JSON.parse(safeStorage.getItem('nq_sb_' + si) || '{}');
     const rn = R.length + 1;
     const total = (totalOv !== '' && !isNaN(parseFloat(totalOv)))
-      ? { v: parseFloat(totalOv), s:3 } : { f:'C'+rn+'+H'+rn, s:3 };
-    R.push(['S'+(si+1), s.display + ' (' + s.role + ')', { v:salary, s:3 }, '', '', '', '',
+      ? { v: parseFloat(totalOv), s:3 } : { f:'C'+rn+'+I'+rn, s:3 };
+    R.push(['S'+(si+1), s.display + ' (' + s.role + ')', { v:salary, s:3 }, '', '', '', '', '',
             { v:special, s:3 }, total, bankData.bankName||'', bankData.acctNum||'',
             bankData.acctName||'', man.paymentStatus||'Pending', man.paymentDate||'', man.remarks||'']);
     moneyRows.push(rn);
@@ -3984,9 +3966,12 @@ function exportPaymentsCSV() {
     const totalOv = String(man.totalOverride||'').replace(/[^\d.]/g,'');
     const rn = R.length + 1;
     const total = (totalOv !== '' && !isNaN(parseFloat(totalOv)))
-      ? { v: parseFloat(totalOv), s:3 } : { f:'E'+rn+'+G'+rn+'+H'+rn, s:3 };
-    R.push([i+1, name, effPosts, { v:Math.round(perVideo*100)/100, s:3 },
-            { f:'C'+rn+'*D'+rn, s:3 }, man.bonusViews||'', { v:perf, s:3 }, { v:special, s:3 }, total,
+      ? { v: parseFloat(totalOv), s:3 } : { f:'F'+rn+'+H'+rn+'+I'+rn, s:3 };
+    // Legacy fixed override replaces the total outright (credit is always 0
+    // for these rows), so the override amount goes straight into the Posts
+    // (Creator) cell and the formula below still lands on the right base pay.
+    R.push([i+1, name, (hasLegacyOverride ? effPosts : rawPosts), credit, { v:Math.round(perVideo*100)/100, s:3 },
+            { f:'(C'+rn+'+D'+rn+')*E'+rn, s:3 }, man.bonusViews||'', { v:perf, s:3 }, { v:special, s:3 }, total,
             ci.bankName, ci.acctNum, ci.acctName, man.paymentStatus||'Pending',
             man.paymentDate||'', man.remarks||'']);
     moneyRows.push(rn);
@@ -3996,7 +3981,7 @@ function exportPaymentsCSV() {
   const sumOf = col => moneyRows.length
     ? { f: moneyRows.map(r => col + r).join('+'), s:4 } : { v:0, s:4 };
   R.push([]);
-  R.push(['', { v:'TOTAL', s:4 }, sumOf('C'), '', sumOf('E'), '', sumOf('G'), sumOf('H'), sumOf('I')]);
+  R.push(['', { v:'TOTAL', s:4 }, sumOf('C'), sumOf('D'), '', sumOf('F'), '', sumOf('H'), sumOf('I'), sumOf('J')]);
 
   R.push([]); R.push([{ v:'ASSUMPTIONS & LEGEND', s:4 }]);
   R.push(['Every creator has their own monthly base pay (default for new creators: ₦150,000/month)']);
@@ -4014,7 +3999,7 @@ function exportPaymentsCSV() {
     'NQ Payment Register - ' + monthLabel(selectedPayMonth) + '.xlsx',
     monthLabel(selectedPayMonth),
     R,
-    [6, 28, 12, 14, 16, 16, 14, 16, 16, 18, 18, 22, 14, 14, 24]);
+    [6, 28, 12, 14, 14, 16, 16, 14, 16, 16, 18, 18, 22, 14, 14, 24]);
 }
 
 // ══════════════════════════════════════════════════════════

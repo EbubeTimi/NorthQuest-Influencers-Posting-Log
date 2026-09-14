@@ -77,7 +77,8 @@ const ck = (l, a, e) => { const ok = String(a) === String(e); if (!ok) fails++;
   ck('bonus count is real, not zero', tiles.find(t => t.startsWith('Bonuses so far')), 'Bonuses so far = 2');
   ck('bonus amount is real, not zero', tiles.find(t => t.startsWith('Bonus amount')), 'Bonus amount = ₦750,000');
   ck('referral tile shows', tiles.includes('Referral amount = ₦30,000'), true);
-  ck('admin-added videos counted', tiles.find(t => t.startsWith('Videos logged')), 'Videos logged = 3');
+  ck('videos logged shows only what she logged herself, not merged with admin credit',
+    tiles.find(t => t.startsWith('Videos logged')), 'Videos logged = 1');
   ck('+2 chip visible to the creator',
     await page.evaluate(() => (document.querySelector('.admin-chip') || {}).textContent || null), '+2');
   ck('expected amount includes bonuses',
