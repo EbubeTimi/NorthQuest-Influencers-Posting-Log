@@ -1441,6 +1441,10 @@ let isAdmin = false, dataLoaded = false, creatorsLoaded = false, paysLoaded = fa
 // empty variable. rowsLoadFailed carries that difference: while it is true we
 // know nothing about today and must not claim otherwise.
 let rowsLoadFailed = false;
+// Set only when the server itself answered with a real error (a bug, a quota
+// limit, a bad reference) rather than the connection simply timing out.
+// Blank means "we never got an answer at all" — the ordinary dropped-connection case.
+let rowsLoadFailedReason = '';
 // True while a creator is backdating a missed video via "Log yesterday's
 // videos". Only flips true through startLogYesterday(); the server is the
 // real authority on the 2 PM cutoff and on which date is "yesterday", this
@@ -1686,21 +1690,35 @@ function loadRows(attempt) {
     if (data && data.rows) {
       dataLoaded = true;
       rowsLoadFailed = false;
+      rowsLoadFailedReason = '';
       allRows = data.rows.map(r => ({
         submitted: r[0]||'', name: (r[1]||'').trim(),
         date: normDate(r[2]), post: String(r[3]||''),
         tiktok: r[4]||'', insta: r[5]||'', issues: r[6]||''
       })).filter(r => r.name && r.date);
       refreshAll();
+    } else if (data && data.status === 'error') {
+      // The server actually answered — it just hit a real problem (a bug, a
+      // quota limit, a bad reference) rather than the connection dropping.
+      // Retrying this is pointless, it will fail the same way every time, and
+      // silently treating it like a timeout is how a real error gets buried
+      // instead of fixed. Surface the reason so it can be reported, not guessed at.
+      console.error('get failed on the server:', data.message);
+      dataLoaded = true;
+      rowsLoadFailed = true;
+      rowsLoadFailedReason = data.message || '';
+      refreshAll();
     } else if (attempt < 4) {
       setTimeout(() => loadRows(attempt + 1), 2000);
     } else {
-      // Every attempt failed. Stop the spinners, but record that allRows is
-      // unknown rather than empty, otherwise the UI tells the creator they
+      // Every attempt failed to even get an answer back — a real dropped
+      // connection or timeout, not a server-side error. Record that allRows
+      // is unknown rather than empty, otherwise the UI tells the creator they
       // have logged nothing today and the server then rejects the submission
       // they were invited to make.
       dataLoaded = true;
       rowsLoadFailed = true;
+      rowsLoadFailedReason = '';
       refreshAll();
     }
   }, timeoutMs);
@@ -1969,6 +1987,7 @@ function renderYesterdayCards() {
 function retryLoadRows(btn) {
   if (btn) { btn.disabled = true; btn.textContent = 'Checking…'; }
   rowsLoadFailed = false;
+  rowsLoadFailedReason = '';
   dataLoaded = false;
   refreshAll();
   loadRows();
@@ -1983,15 +2002,27 @@ function retryLoadRows(btn) {
 // saved fine later "shows as not logged" the next time the page loads.
 // Anything that reads allRows for a real number must check rowsLoadFailed
 // first and say so plainly instead.
+// When rowsLoadFailedReason is set, the server itself reported a real
+// problem — "try again" alone won't fix it, so say that plainly and give
+// something to relay to whoever maintains this, instead of just a retry
+// button that will fail the exact same way again.
+function loadFailedDetailHtml() {
+  if (!rowsLoadFailedReason) return '';
+  return '<div style="margin-top:6px;font-size:11.5px;opacity:0.85">This looks like a real fault, not just a slow connection — trying again probably will not help. ' +
+    'If you can, send this to whoever maintains the app: <code style="background:rgba(0,0,0,0.06);padding:1px 5px;border-radius:4px">' +
+    escH(rowsLoadFailedReason) + '</code></div>';
+}
 function loadFailedBannerHtml() {
   return '<div class="today-status s-unknown"><span class="s-icon">&#9888;</span>' +
     '<span>Could not load the posting log, so the numbers on this screen cannot be trusted right now. ' +
-    '<button type="button" class="s-retry" onclick="retryLoadRows(this)">Try again</button></span></div>';
+    '<button type="button" class="s-retry" onclick="retryLoadRows(this)">Try again</button>' +
+    loadFailedDetailHtml() + '</span></div>';
 }
 function loadFailedRowHtml(colspan) {
   return '<tr><td colspan="' + colspan + '" class="empty-state">' +
     '<strong>&#9888; Could not load the posting log.</strong><br>' +
-    '<button type="button" class="btn btn-sm" style="margin-top:8px" onclick="retryLoadRows(this)">Try again</button></td></tr>';
+    '<button type="button" class="btn btn-sm" style="margin-top:8px" onclick="retryLoadRows(this)">Try again</button>' +
+    loadFailedDetailHtml() + '</td></tr>';
 }
 
 // ── LOADING STATE, show/hide spinner on submit button ──
