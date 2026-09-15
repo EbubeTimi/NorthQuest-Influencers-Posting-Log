@@ -114,7 +114,7 @@ function makeBackend(page, sheet, opts) {
     });
     console.log('   message:', msg);
     ck('does not claim the password is wrong', /incorrect password/i.test(msg), false);
-    ck('says the server could not be reached', /could not reach the server/i.test(msg), true);
+    ck('says plainly that the password was never checked', /was not checked/i.test(msg), true);
     await ctx.close();
   }
 

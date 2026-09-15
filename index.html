@@ -1770,9 +1770,23 @@ function fetchLogWindow(params, attempt, done) {
     // every time, and burying it as "slow connection" is how a real fault
     // goes unfixed. Hand it straight back.
     if (data && (data.rows || data.status === 'error')) { done(data); return; }
-    if (attempt < 4) { setTimeout(() => fetchLogWindow(params, attempt + 1, done), 2000); return; }
+    if (attempt < 4) { retryWhenClear(() => fetchLogWindow(params, attempt + 1, done)); return; }
     done(null);
   }, timeoutMs);
+}
+
+// Google runs about two of our requests at a time and queues the rest, so a
+// background retry ladder can hold both lanes for minutes and starve whatever
+// the person is actually doing — which is how signing in could sit there long
+// enough to report the server unreachable. Signing in wins; the retry waits.
+let signingIn = false;
+function retryWhenClear(go) {
+  if (!signingIn) { setTimeout(go, 2000); return; }
+  const wait = setInterval(() => {
+    if (signingIn) return;
+    clearInterval(wait);
+    setTimeout(go, 500);
+  }, 500);
 }
 
 function currentCreatorName() {
@@ -4609,7 +4623,9 @@ function checkLogin() {
   const btn = document.querySelector('.login-form .btn-primary');
   if (!val) { err.classList.add('show'); return; }
   if (btn) { btn.disabled = true; btn.textContent = 'Checking…'; }
+  signingIn = true;
   jsonp({ action: 'adminLogin', pass: val }, function(d, netErr) {
+    signingIn = false;
     if (btn) { btn.disabled = false; btn.textContent = 'Sign in'; }
     if (d && d.status === 'success' && d.adminKey) {
       grantAdmin(d.adminKey);
@@ -4622,8 +4638,8 @@ function checkLogin() {
       // was never checked, so saying it is wrong is a plain lie, and it sends
       // you hunting for a typo that is not there. Apps Script waking up cold
       // regularly takes longer than the old 15-second limit allowed.
-      loginFail('Could not reach the server, so your password was not checked. ' +
-                'This is usually the server waking up. Please tap Sign in again.');
+      loginFail('Your password was not checked. The app was still busy fetching data, ' +
+                'so this request waited its turn and ran out of time. Please tap Sign in again.');
     } else {
       loginFail('The server gave an answer we did not understand. Please try again.');
     }
