@@ -1504,7 +1504,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Re-fetch fresh data whenever the tab becomes visible again
   // (prevents stale cached counts after backgrounding the browser)
   document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible') { loadRows(); }
+    if (document.visibilityState === 'visible') { loadRowsIfStale(); }
   });
   // When focus leaves the payments table, fire any deferred render
   document.addEventListener('focusout', function(e) {
@@ -1658,10 +1658,29 @@ function flushQueue() {
 // creators saw a dead page. Each request now tries up to 5 times with growing
 // patience (20s, 30s, 40s, 45s, 45s), which rides out slow mobile data and
 // Google's server wake-up delay.
+// Every call to the backend costs about two and a half seconds before it has
+// sent a single byte — measured 15 Sept 2026, a reply of 136 bytes still took
+// 2.5s. So what makes the app feel slow is the NUMBER of calls, not their
+// size. These two stamps let a request that was already answered a moment ago
+// be skipped instead of repeated.
+let lastRowsFetch = 0;
+const FRESH_MS = 60000;
+
+// Re-fetch only if what we hold is more than a minute old. The point of the
+// original re-fetch was to catch data that changed under us, which a minute
+// of staleness still catches — it just stops the same half-megabyte being
+// pulled three times in the ten seconds it takes to pick a name.
+function loadRowsIfStale() {
+  if (rowsLoadFailed || !dataLoaded) { loadRows(); return; }
+  if (Date.now() - lastRowsFetch < FRESH_MS) return;
+  loadRows();
+}
+
 function applyLogRows(rawRows) {
   dataLoaded = true;
   rowsLoadFailed = false;
   rowsLoadFailedReason = '';
+  lastRowsFetch = Date.now();
   allRows = rawRows.map(r => ({
     submitted: r[0]||'', name: (r[1]||'').trim(),
     date: normDate(r[2]), post: String(r[3]||''),
@@ -1924,8 +1943,10 @@ function onNameChange(fetchFresh) {
   if (viewBtn) viewBtn.style.display = 'block';
 
   // Re-pull fresh data when the user selects a name so the count is live
-  // (prevents stale cached "both videos done" when the data has actually been cleared)
-  if (fetchFresh) loadRows();
+  // (prevents stale cached "both videos done" when the data has actually been
+  // cleared). Skipped when the log was already fetched moments ago at startup,
+  // which is the usual case — picking a name should not re-download the log.
+  if (fetchFresh) loadRowsIfStale();
 
   // We could not reach the server, so we do not know what has been logged
   // today. Say that plainly instead of borrowing the empty-day message.
@@ -2498,7 +2519,7 @@ function closeModalDirect() { document.getElementById('creator-modal').classList
 function openMyLogs() {
   const name = document.getElementById('f-name').value.trim();
   if (!name) return;
-  loadRows(); // refresh in the background so the view is as current as possible
+  loadRowsIfStale(); // refresh in the background so the view is as current as possible
   renderMyLogs(name);
   // Full payment data is admin-only, so without this a creator saw zero for
   // every bonus, no "+N" for videos an admin added, and an expected amount
