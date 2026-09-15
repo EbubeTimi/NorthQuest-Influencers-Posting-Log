@@ -13,7 +13,15 @@ const saved = [];
 const toasts = [];
 const els = {};
 function el(id) {
-  if (!els[id]) els[id] = { id, innerHTML: "", textContent: "", style: {}, contains: () => false };
+  if (!els[id]) els[id] = {
+    id,
+    innerHTML: "",
+    textContent: "",
+    style: {},
+    contains: () => false,
+    parentNode: { querySelectorAll: () => [] },
+    insertAdjacentHTML: () => {},
+  };
   return els[id];
 }
 

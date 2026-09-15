@@ -1493,12 +1493,11 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   loadPayHeaders();
   renderNav();
-  // Creator mode starts with one request only. Once the roster returns,
-  // loadCreators() starts the remembered creator's recent rows. Serialising
-  // these two calls avoids the Apps Script execution queue that made a cold
-  // page fan out into several overlapping 45-76 second requests.
+  // Creator mode starts with one combined request: public roster plus the
+  // remembered creator's recent rows. This avoids the Apps Script execution
+  // queue that made a cold page fan out into overlapping 45-76 second jobs.
   if (!isAdmin) {
-    loadCreators();
+    loadCreatorBootstrap();
   } else {
     // Keep the established admin bootstrap unchanged for now.
     loadRows();
@@ -1936,6 +1935,41 @@ function monthSpans(fromYM, toYM, size) {
 }
 
 let creatorsLoadInFlight = false;
+
+let creatorBootstrapInFlight = false;
+function loadCreatorBootstrap(attempt) {
+  attempt = attempt || 0;
+  if (creatorBootstrapInFlight) return;
+  creatorBootstrapInFlight = true;
+  const me = rememberedMe();
+  const d = new Date();
+  d.setMonth(d.getMonth() - 1);
+  const since = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-01';
+  jsonp({ action:'getCreatorBootstrap', name:me, since:since }, (data, err) => {
+    creatorBootstrapInFlight = false;
+    if (data && data.status === 'success' && Array.isArray(data.creators)) {
+      creatorsLoaded = true;
+      allCreators = data.creators;
+      const activeRemembered = me && getActiveCreators().indexOf(me) !== -1;
+      if (activeRemembered && Array.isArray(data.rows)) {
+        loadedForName = me;
+        applyLogRows(data.rows);
+      } else {
+        refreshAll();
+      }
+    } else if (data && data.status === 'error' && /unknown action/i.test(String(data.message || ''))) {
+      // Coordinated rollout fallback: an older Apps Script deployment can
+      // still serve this branch through the established two-call pathway.
+      loadCreators();
+    } else if (attempt < 1) {
+      setTimeout(() => loadCreatorBootstrap(attempt + 1), 2000);
+    } else {
+      creatorsLoaded = true;
+      refreshAll();
+    }
+  }, 60000);
+}
+
 function loadCreators(attempt) {
   attempt = attempt || 0;
   if (creatorsLoadInFlight) return;

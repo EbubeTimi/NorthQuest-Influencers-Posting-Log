@@ -14,14 +14,15 @@ function between(source, start, end) {
   return source.slice(from, to);
 }
 
-test('creator startup serializes roster before creator rows', () => {
+test('creator startup requests roster and recent rows in one bootstrap call', () => {
   const startup = between(
     index,
     "document.addEventListener('DOMContentLoaded'",
     "window.addEventListener('online', flushQueue)"
   );
   const creatorBranch = between(startup, 'if (!isAdmin) {', '} else {');
-  assert.match(creatorBranch, /loadCreators\(\)/);
+  assert.match(creatorBranch, /loadCreatorBootstrap\(\)/);
+  assert.doesNotMatch(creatorBranch, /loadCreators\(\)/);
   assert.doesNotMatch(creatorBranch, /loadRows\(/);
   assert.doesNotMatch(creatorBranch, /loadBonusTiers\(/);
   assert.doesNotMatch(creatorBranch, /loadBonusCategories\(/);
