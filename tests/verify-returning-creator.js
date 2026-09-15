@@ -100,6 +100,9 @@ function backend(page, seen) {
   });
   words.forEach(w => console.log('   → ' + w));
   ck('it does not say the same thing for thirty seconds', new Set(words).size, 3);
+  ck('none of it blames her phone or her network',
+    words.some(w => /connection|network|signal|your phone\b/i.test(w) && !/not your phone/i.test(w)), false);
+  ck('and none of it talks about servers', words.some(w => /server/i.test(w)), false);
   await ctx3.close();
 
   await browser.close();

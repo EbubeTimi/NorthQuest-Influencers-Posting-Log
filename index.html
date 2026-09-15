@@ -1691,13 +1691,17 @@ function rememberMe(name) { try { safeStorage.setItem(ME_KEY, name); } catch (e)
 function rememberedMe() { try { return safeStorage.getItem(ME_KEY) || ''; } catch (e) { return ''; } }
 
 // A wait that says the same thing for thirty seconds reads as a stuck app.
-// These are honest — each one reflects how long it has actually been.
+// Each line is honest about how long it has actually been. None of them
+// mentions servers, and none of them blames the creator's phone or signal —
+// when this is slow it is our end, and telling somebody their network is bad
+// sends them off to fix something that was never broken.
 function waitingMessage() {
   const s = (Date.now() - logWaitStartedAt) / 1000;
-  if (s < 4)  return 'Getting your posts…';
-  if (s < 10) return 'Still getting them — the server is waking up…';
-  if (s < 20) return 'Nearly there. This one is slow…';
-  return 'Still trying. Your connection looks slow right now…';
+  if (s < 4)  return 'Fetching your dashboard';
+  if (s < 10) return 'Getting there';
+  if (s < 18) return 'Almost there';
+  if (s < 30) return 'Just a moment';
+  return 'Still working on it. This one is on us, not your phone.';
 }
 
 // Opening the Payments tab starts a log load, and so does opening the page —
@@ -2087,7 +2091,7 @@ function onNameChange(fetchFresh) {
     statusEl.style.display = '';
     statusEl.className = 'today-status s-unknown';
     sIcon.textContent = '⚠';
-    sMsg.innerHTML = 'We could not check today\'s logs. Your connection dropped, so we do not know whether you have already logged a video today.' +
+    sMsg.innerHTML = 'We could not load your posts just now. That is on us, not your phone. It means we cannot yet tell whether you have logged today.' +
       '<button type="button" class="s-retry" onclick="retryLoadRows(this)">Try checking again</button>';
     segYesterday.setAttribute('disabled', '');
     segYesterday.classList.remove('is-enabled');
@@ -2221,7 +2225,7 @@ function loadFailedDetailHtml() {
 }
 function loadFailedBannerHtml() {
   return '<div class="today-status s-unknown"><span class="s-icon">&#9888;</span>' +
-    '<span>Could not load the posting log, so the numbers on this screen cannot be trusted right now. ' +
+    '<span>We could not load your posts, so the figures here are not reliable yet. That is on us, not your phone. ' +
     '<button type="button" class="s-retry" onclick="retryLoadRows(this)">Try again</button>' +
     loadFailedDetailHtml() + '</span></div>';
 }
@@ -2469,7 +2473,7 @@ function verifySubmission(name, date, post, tiktok, insta, firstName, isSecond, 
       document.getElementById('f-issues').value = '';
       showToast('success',
         isSecond ? 'All done, ' + firstName + '!' : 'Video 1 logged, ' + firstName + '!',
-        'Your video went through. The connection was just slow. ' +
+        'Your video went through. It just took a moment. ' +
         (isSecond ? ('Both posts are done for ' + (wasYesterday ? 'yesterday!' : 'today!')) : 'Come back and submit your second video!')
       );
       setTimeout(function() { window.scrollTo({ top:0, behavior:'smooth' }); }, 200);
@@ -2479,7 +2483,7 @@ function verifySubmission(name, date, post, tiktok, insta, firstName, isSecond, 
       setSubmitting(false);
       showToast('error',
         'Video did not go through',
-        'The connection dropped and your video was NOT saved. Your links are still in the form. Please tap Submit again.'
+        'Your video was NOT saved. That is on us, not your phone. Your links are still in the form, please tap Submit again.'
       );
 
     } else if (attempt < 4) {
@@ -2494,7 +2498,7 @@ function verifySubmission(name, date, post, tiktok, insta, firstName, isSecond, 
       setSubmitting(false);
       showToast('error',
         'Could not confirm',
-        'Your internet connection is unstable, so we could not confirm whether the video saved. Please refresh this page when your connection is back. If Video ' + post + ' already shows as logged, do NOT submit it again.'
+        'We could not confirm whether the video saved, and that is on our side. Please refresh this page in a moment. If Video ' + post + ' already shows as logged, do NOT submit it again.'
       );
     }
   }, 15000);

@@ -83,7 +83,12 @@ function backend(page, opts) {
     console.log('   before: had real rows =', r.hadRealData);
     console.log('   after failed reload: rowsLoadFailed =', after.failed);
     ck('the app knows the reload failed', after.failed, true);
-    ck('the modal says it could not load, not that nothing was logged', after.bodyText.includes('Could not load'), true);
+    ck('the modal says it could not load, not that nothing was logged',
+      after.bodyText.toLowerCase().includes('could not load'), true);
+    // Telling somebody their network is bad sends them off to fix something
+    // that was never broken. When this fails, it is our end.
+    ck('and it takes the blame rather than pointing at her phone',
+      after.bodyText.toLowerCase().includes('on us'), true);
     ck('the modal does NOT falsely claim every video is unlogged', after.claimsNotLogged, false);
     await ctx.close();
   }
