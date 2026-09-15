@@ -16,7 +16,7 @@ if ! node -e "require('playwright')" 2>/dev/null; then
 fi
 
 pass=0; fail=0
-for t in test-quota.js verify-toggle.js verify-bonus-real.js verify-extra.js verify-extra-bonuses.js verify-grace-extension.js verify-false-alarms.js verify-creator-inconsistencies.js verify-creator-sees-pay.js verify-loadfail-and-credit.js verify-windowed-log.js verify-call-count.js verify-returning-creator.js; do
+for t in test-quota.js verify-toggle.js verify-bonus-real.js verify-extra.js verify-extra-bonuses.js verify-grace-extension.js verify-false-alarms.js verify-creator-inconsistencies.js verify-creator-sees-pay.js verify-loadfail-and-credit.js verify-windowed-log.js verify-call-count.js verify-returning-creator.js verify-admin-after-login.js; do
   name=$(basename "$t" .js)
   if out=$(node "$t" 2>&1); then
     n=$(echo "$out" | grep -c "✅")

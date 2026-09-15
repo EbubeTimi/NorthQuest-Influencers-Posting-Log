@@ -1710,6 +1710,7 @@ function waitingMessage() {
 // time: a second request for the same thing joins the first instead.
 let logLoadInFlight = false;
 let logLoadWaiting = [];
+let logLoadMode = null;   // 'admin' or 'creator': WHAT the in-flight load is fetching
 function logLoadStarting(onDone) {
   if (onDone) logLoadWaiting.push(onDone);
   if (logLoadInFlight) return false;
@@ -1813,6 +1814,7 @@ function loadRows(attempt, forName) {
   const name = forName || currentCreatorName();
   if (!name) return;
   if (!logLoadStarting()) return;
+  logLoadMode = 'creator';
   logWaitStartedAt = Date.now();
   const d = new Date();
   d.setMonth(d.getMonth() - 1);
@@ -1845,7 +1847,17 @@ function loadRows(attempt, forName) {
 // still ends up holding exactly the same thing it always did — nothing
 // downstream can see a half-loaded log. Measured 15 Sept 2026.
 function loadAdminLog(onDone) {
+  // Another admin load is already fetching exactly this, so join it rather
+  // than doubling the queue. But if what is in the air is one creator's rows
+  // — he just signed in mid-load — that is the wrong data, so wait for it and
+  // then go again, or the dashboard sits on a spinner that never resolves.
+  if (logLoadInFlight) {
+    if (logLoadMode === 'admin') { if (onDone) logLoadWaiting.push(onDone); }
+    else logLoadWaiting.push(() => loadAdminLog(onDone));
+    return;
+  }
   if (!logLoadStarting(onDone)) return;
+  logLoadMode = 'admin';
   const settled = (fn, arg) => { fn(arg); logLoadSettled(); };
   const thisMonth = todayStr().slice(0, 7);
   // Newest window first: it is what the admin is looking at, and its reply
@@ -2857,6 +2869,19 @@ function renderDashboard() {
     document.getElementById('d-creators').textContent = creators.length;
     document.getElementById('d-today').textContent = '—';
     tbody.innerHTML = loadFailedRowHtml(6);
+    return;
+  }
+  // Nothing has arrived yet. A wall of zeros against 61 names does not read
+  // as "still loading", it reads as nobody having posted all month — which
+  // is the same lie the creator screens used to tell, on a bigger screen.
+  if (!dataLoaded) {
+    document.getElementById('d-total').textContent = '—';
+    document.getElementById('d-month').textContent = '—';
+    document.getElementById('d-creators').textContent = creators.length;
+    document.getElementById('d-today').textContent = '—';
+    tbody.innerHTML = '<tr><td colspan="6" class="empty-state" style="padding:30px">' +
+      '<span class="spinner"></span><div style="margin-top:10px;font-size:13px;color:var(--text2)">' +
+      'Fetching the posting log…</div></td></tr>';
     return;
   }
   document.getElementById('d-total').textContent    = allRows.length;
@@ -4605,7 +4630,13 @@ function grantAdmin(key) {
   document.getElementById('login-pass').value = '';
   document.getElementById('login-pass').type = 'password';
   document.getElementById('eye-icon').innerHTML = '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle>';
-  // Re-pull creators and payments now that the admin key unlocks full fields
+  // Re-pull creators and payments now that the admin key unlocks full fields.
+  // The posting log too: signing in switches from one creator's own rows (or
+  // none at all, if nobody was picked) to everybody's, and without this the
+  // dashboard opened on a wall of zeros against 61 names.
+  loadedForName = null;
+  dataLoaded = false;
+  loadRows();
   loadCreators();
   loadPayments();
   loadBonusTiers();
