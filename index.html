@@ -1493,13 +1493,26 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   loadPayHeaders();
   renderNav();
-  loadRows();
+  // Start the creator's own rows at the same moment as the roster, not after
+  // they have waited for the dropdown and tapped their name.
+  if (!isAdmin) { const me = rememberedMe(); if (me) loadRows(0, me); }
+  else loadRows();
   loadCreators();
   loadBonusTiers();
   loadBonusCategories();
   // Payment data is admin-only, never requested for regular creators
   if (isAdmin) loadPayments();
   flushQueue();
+  // Keep the waiting wording moving. Text that never changes for half a
+  // minute reads as a frozen app, and the wait feels far longer than it is.
+  setInterval(() => {
+    if (isAdmin || dataLoaded || rowsLoadFailed || !currentCreatorName()) return;
+    const msg = waitingMessage();
+    const s = document.getElementById('today-status-msg');
+    if (s) s.textContent = msg;
+    const m = document.getElementById('mylog-waiting');
+    if (m) m.textContent = msg;
+  }, 1500);
   window.addEventListener('online', flushQueue);
   // Re-fetch fresh data whenever the tab becomes visible again
   // (prevents stale cached counts after backgrounding the browser)
@@ -1665,7 +1678,27 @@ function flushQueue() {
 // be skipped instead of repeated.
 let lastRowsFetch = 0;
 let loadedForName = null;   // whose rows allRows currently holds (creator mode)
+let logWaitStartedAt = 0;
 const FRESH_MS = 60000;
+const ME_KEY = 'nq_me';
+
+// Almost everybody opens this on the same phone as the same person every day.
+// Remembering who they are means their rows can be on their way at startup,
+// in parallel with the roster, instead of waiting for the dropdown to arrive
+// and be tapped — which is a serial wait of several seconds before the fetch
+// has even begun.
+function rememberMe(name) { try { safeStorage.setItem(ME_KEY, name); } catch (e) {} }
+function rememberedMe() { try { return safeStorage.getItem(ME_KEY) || ''; } catch (e) { return ''; } }
+
+// A wait that says the same thing for thirty seconds reads as a stuck app.
+// These are honest — each one reflects how long it has actually been.
+function waitingMessage() {
+  const s = (Date.now() - logWaitStartedAt) / 1000;
+  if (s < 4)  return 'Getting your posts…';
+  if (s < 10) return 'Still getting them — the server is waking up…';
+  if (s < 20) return 'Nearly there. This one is slow…';
+  return 'Still trying. Your connection looks slow right now…';
+}
 
 // Opening the Payments tab starts a log load, and so does opening the page —
 // so landing straight on Payments used to run two complete loads at once,
@@ -1754,14 +1787,15 @@ function rowsAreForSomeoneElse(name) {
 // were being sent the whole roster's log to find them — 2,813 rows and 521KB
 // to read their own 89, 32 times more than they need, on a phone, before the
 // screen could say anything true. Asking by name makes it about 16KB.
-function loadRows(attempt) {
+function loadRows(attempt, forName) {
   attempt = attempt || 0;
   if (isAdmin) { loadAdminLog(); return; }
-  const name = currentCreatorName();
-  // Nothing on screen is about a particular creator until one is picked, so
-  // there is nothing worth fetching yet.
+  // forName lets the fetch start at startup from the remembered name, before
+  // the roster has arrived and the dropdown even exists to read.
+  const name = forName || currentCreatorName();
   if (!name) return;
   if (!logLoadStarting()) return;
+  logWaitStartedAt = Date.now();
   const d = new Date();
   d.setMonth(d.getMonth() - 1);
   const since = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-01';
@@ -2023,6 +2057,7 @@ function onNameChange(fetchFresh) {
     return;
   }
   if (viewBtn) viewBtn.style.display = 'block';
+  if (fetchFresh) rememberMe(name);
 
   // Re-pull fresh data when the user selects a name so the count is live
   // (prevents stale cached "both videos done" when the data has actually been
@@ -2038,7 +2073,7 @@ function onNameChange(fetchFresh) {
     statusEl.style.display = '';
     statusEl.className = 'today-status s-unknown';
     sIcon.textContent = '⏳';
-    sMsg.textContent = 'Checking what you have already logged…';
+    sMsg.textContent = waitingMessage();
     segYesterday.setAttribute('disabled', '');
     segYesterday.classList.remove('is-enabled');
     hintEl.style.display = 'none';
@@ -2504,6 +2539,12 @@ function populateNameDropdown() {
     o.value = n; o.textContent = n; sel.appendChild(o);
   });
   if (cur) sel.value = cur;
+  // Nobody should have to find their own name in an 88-row dropdown every
+  // single day. Their rows are already loading for this name at startup.
+  else if (!isAdmin) {
+    const me = rememberedMe();
+    if (me && names.indexOf(me) !== -1) { sel.value = me; onNameChange(); }
+  }
   // If loading failed, tapping the dropdown kicks off a fresh attempt.
   if (!names.length && creatorsLoaded) {
     sel.onfocus = function() {
@@ -2666,7 +2707,8 @@ function renderMyLogs(name) {
     document.getElementById('modal-sub').textContent = 'Your posting record';
     document.getElementById('modal-body').innerHTML =
       '<div class="empty-state" style="padding:36px 16px"><span class="spinner"></span>' +
-      '<div style="margin-top:12px;color:var(--text2);font-size:13px">Loading your posts…</div></div>';
+      '<div id="mylog-waiting" style="margin-top:12px;color:var(--text2);font-size:13px">' +
+      escH(waitingMessage()) + '</div></div>';
     document.getElementById('creator-modal').classList.add('open');
     return;
   }
