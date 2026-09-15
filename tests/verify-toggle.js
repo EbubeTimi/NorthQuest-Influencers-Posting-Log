@@ -29,6 +29,7 @@ function check(label, actual, expected) {
     window.graceWindowOpen = () => false;
     allRows = [];
     rowsLoadFailed = false;
+    dataLoaded = true; loadedForName = 'Tammy';
     const sel = document.getElementById('f-name');
     sel.innerHTML = '<option value="Tammy">Tammy</option>';
     sel.value = 'Tammy';

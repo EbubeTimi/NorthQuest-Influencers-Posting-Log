@@ -62,6 +62,7 @@ const ck = (l, a, e) => { const ok = String(a) === String(e); if (!ok) fails++;
     allPayments = [{ month: ym, name: 'Tammy', specialBonus: 'Referral:2, Ice cream:20000', postsCredit: '1' }];
     allRows = [{ name: 'Tammy', date: t, post: '1', tiktok: 'x', insta: '', issues: '' }];
     rowsLoadFailed = false;
+    dataLoaded = true; loadedForName = 'Tammy';
     renderMyLogs('Tammy');
     return [...document.querySelectorAll('.mylog-stat')].map(el =>
       el.querySelector('.l').textContent + ' = ' + el.querySelector('.v').textContent);

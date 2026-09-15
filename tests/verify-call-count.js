@@ -54,11 +54,18 @@ const lagosToday = () => new Date().toLocaleDateString('en-CA', { timeZone: 'Afr
   const onOpen = calls.slice();
   console.log('\n=== Creator opens the page ===');
   onOpen.forEach(c => console.log('   → ' + c));
-  ck('the log is fetched once at startup', onOpen.filter(c => c === 'get').length, 1);
+  // Nothing on screen is about a particular creator until one is picked, so
+  // there is nothing worth fetching yet.
+  ck('the log is NOT fetched before a name is picked', onOpen.filter(c => c === 'get').length, 0);
   ck('the roster is fetched once', onOpen.filter(c => c === 'getCreators').length, 1);
 
   console.log('\n=== Creator picks their name from the dropdown ===');
   calls.length = 0;
+  const scoped = [];
+  page.on('request', r => {
+    const u = new URL(r.url());
+    if (u.searchParams.get('action') === 'get') scoped.push(u.searchParams.get('name'));
+  });
   await page.evaluate(async () => {
     const sel = document.getElementById('f-name');
     sel.innerHTML = '<option value="Jessica Lawal">Jessica Lawal</option>';
@@ -68,7 +75,9 @@ const lagosToday = () => new Date().toLocaleDateString('en-CA', { timeZone: 'Afr
     await new Promise(r => setTimeout(r, 900));
   });
   calls.forEach(c => console.log('   → ' + c));
-  ck('picking a name does NOT re-download the whole log', calls.filter(c => c === 'get').length, 0);
+  ck('picking a name fetches the log once', calls.filter(c => c === 'get').length, 1);
+  ck('and asks for ONLY that creator\'s rows, not all 56 creators',
+    scoped[scoped.length - 1], 'Jessica Lawal');
 
   console.log('\n=== Creator taps "View my logs" ===');
   calls.length = 0;

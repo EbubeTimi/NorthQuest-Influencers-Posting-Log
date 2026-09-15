@@ -13,7 +13,8 @@ let f=0; const ck=(l,a,e)=>{const ok=String(a)===String(e); if(!ok)f++;
     allCreators=[{name:'Tammy',rate:300000,active:'yes'}];
     allPayments=[Object.assign({month:ym,name:'Tammy'},pm)];
     allRows=[{name:'Tammy',date:t,post:'1',tiktok:'x',insta:'',issues:''}];
-    rowsLoadFailed=false; renderMyLogs('Tammy');
+    rowsLoadFailed=false; dataLoaded=true; loadedForName='Tammy';
+    renderMyLogs('Tammy');
     return {
       tiles:[...document.querySelectorAll('.mylog-stat')].map(el=>
         el.querySelector('.l').textContent+' = '+el.querySelector('.v').textContent),

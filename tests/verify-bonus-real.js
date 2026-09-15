@@ -22,6 +22,7 @@ const check = (l, a, e) => { const ok = String(a) === String(e); if (!ok) fails+
     allRows = [{ name: 'Lawrence Emmanuella Inikio', date: t, post: '1',
                  tiktok: 'https://tiktok.com/x', insta: '', issues: '' }];
     rowsLoadFailed = false;
+    dataLoaded = true; loadedForName = 'Lawrence Emmanuella Inikio';
     renderMyLogs('Lawrence Emmanuella Inikio');
     return [...document.querySelectorAll('.mylog-stat')].map(el =>
       el.querySelector('.l').textContent + ' = ' + el.querySelector('.v').textContent);

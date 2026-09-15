@@ -1664,6 +1664,7 @@ function flushQueue() {
 // size. These two stamps let a request that was already answered a moment ago
 // be skipped instead of repeated.
 let lastRowsFetch = 0;
+let loadedForName = null;   // whose rows allRows currently holds (creator mode)
 const FRESH_MS = 60000;
 
 // Opening the Payments tab starts a log load, and so does opening the page —
@@ -1690,6 +1691,9 @@ function logLoadSettled() {
 // of staleness still catches — it just stops the same half-megabyte being
 // pulled three times in the ten seconds it takes to pick a name.
 function loadRowsIfStale() {
+  // What we hold belongs to whoever was selected when it was fetched. A
+  // different creator's rows are not stale, they are the wrong person's.
+  if (!isAdmin && currentCreatorName() !== loadedForName) { loadRows(); return; }
   if (rowsLoadFailed || !dataLoaded) { loadRows(); return; }
   if (Date.now() - lastRowsFetch < FRESH_MS) return;
   loadRows();
@@ -1734,22 +1738,45 @@ function fetchLogWindow(params, attempt, done) {
   }, timeoutMs);
 }
 
+function currentCreatorName() {
+  const sel = document.getElementById('f-name');
+  return sel ? sel.value.trim() : '';
+}
+
+// allRows holds one creator's rows at a time now, so "we have rows" is not
+// the same as "we have THIS person's rows". The admin holds everybody's.
+function rowsAreForSomeoneElse(name) {
+  if (isAdmin) return false;
+  return String(loadedForName || '').toLowerCase() !== String(name || '').toLowerCase();
+}
+
+// A creator only ever looks at their OWN rows, for this month and last. They
+// were being sent the whole roster's log to find them — 2,813 rows and 521KB
+// to read their own 89, 32 times more than they need, on a phone, before the
+// screen could say anything true. Asking by name makes it about 16KB.
 function loadRows(attempt) {
   attempt = attempt || 0;
   if (isAdmin) { loadAdminLog(); return; }
+  const name = currentCreatorName();
+  // Nothing on screen is about a particular creator until one is picked, so
+  // there is nothing worth fetching yet.
+  if (!name) return;
   if (!logLoadStarting()) return;
-  // A creator only ever looks at this month and last. Asking for the entire
-  // log — every creator, every day, since the beginning — is what times out
-  // on a phone, and a timed-out load is what locks the grace window and
-  // blames the connection.
   const d = new Date();
   d.setMonth(d.getMonth() - 1);
   const since = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-01';
-  fetchLogWindow({ since: since }, attempt, (data) => {
-    if (data && data.rows) applyLogRows(data.rows);
+  fetchLogWindow({ since: since, name: name }, attempt, (data) => {
+    // Whose rows these are must be recorded BEFORE applyLogRows, because it
+    // re-renders the page synchronously — and every creator screen checks
+    // this to decide whether it is looking at the right person's data.
+    if (data && data.rows) { loadedForName = name; applyLogRows(data.rows); }
     else if (data && data.status === 'error') logLoadFailed(data.message);
     else logLoadFailed('');
     logLoadSettled();
+    // They changed the dropdown while this was in the air, so what just
+    // landed belongs to somebody else. Go and get the right person's.
+    const now = currentCreatorName();
+    if (data && data.rows && now && now !== name) loadRows();
   });
 }
 
@@ -2002,6 +2029,22 @@ function onNameChange(fetchFresh) {
   // cleared). Skipped when the log was already fetched moments ago at startup,
   // which is the usual case — picking a name should not re-download the log.
   if (fetchFresh) loadRowsIfStale();
+
+  // Still fetching, or holding a different creator's rows. "Nothing logged
+  // yet" is a guess dressed up as a fact — and the wrong one for anybody who
+  // has already logged today. Say we are still looking, and leave the cards
+  // alone until we actually know.
+  if ((!dataLoaded || rowsAreForSomeoneElse(name)) && !rowsLoadFailed) {
+    statusEl.style.display = '';
+    statusEl.className = 'today-status s-unknown';
+    sIcon.textContent = '⏳';
+    sMsg.textContent = 'Checking what you have already logged…';
+    segYesterday.setAttribute('disabled', '');
+    segYesterday.classList.remove('is-enabled');
+    hintEl.style.display = 'none';
+    updatePostCards('unknown');
+    return;
+  }
 
   // We could not reach the server, so we do not know what has been logged
   // today. Say that plainly instead of borrowing the empty-day message.
@@ -2610,6 +2653,20 @@ function renderMyLogs(name) {
     document.getElementById('modal-name').textContent = name;
     document.getElementById('modal-sub').textContent = 'Your posting record';
     document.getElementById('modal-body').innerHTML = loadFailedBannerHtml();
+    document.getElementById('creator-modal').classList.add('open');
+    return;
+  }
+  // Same reasoning while the rows are still on their way — and equally when
+  // what we hold belongs to a different creator, because allRows is fetched
+  // per person now. Painting a month of "not logged" and ₦0 at somebody who
+  // has in fact logged 28 videos is the most alarming thing this screen can
+  // do, and it is not even true yet.
+  if (!dataLoaded || rowsAreForSomeoneElse(name)) {
+    document.getElementById('modal-name').textContent = name;
+    document.getElementById('modal-sub').textContent = 'Your posting record';
+    document.getElementById('modal-body').innerHTML =
+      '<div class="empty-state" style="padding:36px 16px"><span class="spinner"></span>' +
+      '<div style="margin-top:12px;color:var(--text2);font-size:13px">Loading your posts…</div></div>';
     document.getElementById('creator-modal').classList.add('open');
     return;
   }

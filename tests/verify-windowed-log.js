@@ -58,7 +58,9 @@ function backend(page, log, seen, breakMonth) {
       if (breakMonth && since.slice(0, 7) === breakMonth) {
         payload = { status: 'error', message: 'Service invoked too many times for one day' };
       } else {
-        const rows = log.filter(r => (!since || r[2] >= since) && (!until || r[2] <= until));
+        const only = (u.searchParams.get('name') || '').toLowerCase();
+        const rows = log.filter(r => (!since || r[2] >= since) && (!until || r[2] <= until)
+          && (!only || String(r[1]).toLowerCase() === only));
         payload = { status: 'success', rows, earliest };
       }
     } else if (action === 'getCreators') {
@@ -162,24 +164,37 @@ async function adminLoad(browser, log, seen, breakMonth) {
     await ctx.close();
   }
 
-  console.log('\n=== A creator still gets one small scoped request, never the whole log ===');
+  console.log('\n=== A creator gets ONE request, for their own rows only ===');
   {
     const seen = [];
     const ctx = await browser.newContext({ timezoneId: 'Africa/Lagos' });
     const page = await ctx.newPage();
     await backend(page, log, seen);
+    const asked = [];
+    page.on('request', r => {
+      const u = new URL(r.url());
+      if (u.searchParams.get('action') === 'get') asked.push(u.searchParams.get('name'));
+    });
     await page.goto('file://' + INDEX);
     await page.waitForTimeout(900);
     seen.length = 0;   // ignore the page's own boot load
     const out = await page.evaluate(async () => {
+      const sel = document.getElementById('f-name');
+      sel.innerHTML = '<option value="Jessica Lawal">Jessica Lawal</option>';
+      sel.value = 'Jessica Lawal';
       loadRows();
       await new Promise(r => setTimeout(r, 1500));
-      return { rows: allRows.length, failed: rowsLoadFailed };
+      return { rows: allRows.length, failed: rowsLoadFailed,
+               mine: allRows.every(r => r.name === 'Jessica Lawal') };
     });
-    console.log('   requests:', seen.length, '· rows held:', out.rows, 'of', log.length);
+    const hers = log.filter(r => r[1] === 'Jessica Lawal').length;
+    console.log('   requests:', seen.length, '· rows held:', out.rows, 'of', log.length, 'in the log');
     ck('one request only', seen.length, 1);
-    ck('scoped to recent months, not the whole log', out.rows < log.length, true);
-    ck('and it succeeded', out.failed, false);
+    ck('it asks the server for her rows by name', asked[asked.length - 1], 'Jessica Lawal');
+    ck('everything it holds is hers', out.mine, true);
+    ck('and it is not the whole roster\'s log', out.rows < log.length, true);
+    ck('it succeeded', out.failed, false);
+    ck('sanity: she does have rows in the log', hers > 0, true);
     await ctx.close();
   }
 
