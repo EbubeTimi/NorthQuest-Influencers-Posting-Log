@@ -1493,15 +1493,20 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   loadPayHeaders();
   renderNav();
-  // Start the creator's own rows at the same moment as the roster, not after
-  // they have waited for the dropdown and tapped their name.
-  if (!isAdmin) { const me = rememberedMe(); if (me) loadRows(0, me); }
-  else loadRows();
-  loadCreators();
-  loadBonusTiers();
-  loadBonusCategories();
-  // Payment data is admin-only, never requested for regular creators
-  if (isAdmin) loadPayments();
+  // Creator mode starts with one request only. Once the roster returns,
+  // loadCreators() starts the remembered creator's recent rows. Serialising
+  // these two calls avoids the Apps Script execution queue that made a cold
+  // page fan out into several overlapping 45-76 second requests.
+  if (!isAdmin) {
+    loadCreators();
+  } else {
+    // Keep the established admin bootstrap unchanged for now.
+    loadRows();
+    loadCreators();
+    loadBonusTiers();
+    loadBonusCategories();
+    loadPayments();
+  }
   flushQueue();
   // Keep the waiting wording moving. Text that never changes for half a
   // minute reads as a frozen app, and the wait feels far longer than it is.
@@ -1620,13 +1625,27 @@ function jsonp(params, cb, timeoutMs) {
   let done = false;
   const s = document.createElement('script');
 
-  function cleanup() {
-    try { delete window[name]; } catch(e) {}
+  function removeScript() {
     try { if (s.parentNode) s.parentNode.removeChild(s); } catch(e) {}
+  }
+  function removeCallback() {
+    try { delete window[name]; } catch(e) {}
+  }
+  function cleanup() {
+    removeCallback();
+    removeScript();
   }
 
   const timer = setTimeout(function() {
-    if (!done) { done=true; cleanup(); cb(null,'timeout'); }
+    if (done) return;
+    done = true;
+    // A timed-out Apps Script execution can still finish later. Keep a small
+    // late-response callback alive so its JSONP payload does not throw
+    // "cbN is not defined" in the browser. It only cleans up; it never calls
+    // the application callback a second time.
+    window[name] = function() { cleanup(); };
+    cb(null,'timeout');
+    setTimeout(cleanup, 120000);
   }, timeoutMs);
 
   window[name] = function(data) {
@@ -1764,13 +1783,13 @@ function logLoadFailed(reason) {
 // Calls back with the reply, or null when every attempt failed to get an
 // answer at all (a dropped connection, not a server-side error).
 function fetchLogWindow(params, attempt, done) {
-  const timeoutMs = Math.min(20000 + attempt * 10000, 45000);
+  // With creator startup serialised, a normal request no longer sits behind
+  // four other jobs. Give a cold Apps Script execution one realistic window,
+  // then retry only once instead of creating a five-request retry storm.
+  const timeoutMs = 60000;
   jsonp(Object.assign({ action:'get' }, params), (data) => {
-    // A server-side error is not worth retrying — it will fail identically
-    // every time, and burying it as "slow connection" is how a real fault
-    // goes unfixed. Hand it straight back.
     if (data && (data.rows || data.status === 'error')) { done(data); return; }
-    if (attempt < 4) { setTimeout(() => fetchLogWindow(params, attempt + 1, done), 2000); return; }
+    if (attempt < 1) { setTimeout(() => fetchLogWindow(params, attempt + 1, done), 2000); return; }
     done(null);
   }, timeoutMs);
 }
@@ -1916,21 +1935,35 @@ function monthSpans(fromYM, toYM, size) {
   return spans;
 }
 
+let creatorsLoadInFlight = false;
 function loadCreators(attempt) {
   attempt = attempt || 0;
-  const timeoutMs = Math.min(15000 + attempt * 10000, 45000);
+  if (creatorsLoadInFlight) return;
+  creatorsLoadInFlight = true;
   jsonp({ action:'getCreators' }, (data, err) => {
+    creatorsLoadInFlight = false;
     if (data && data.creators) {
       creatorsLoaded = true;
       allCreators = data.creators;
       refreshAll();
-    } else if (attempt < 4) {
+
+      // In creator mode this is deliberately the second startup request, not
+      // a parallel one. The dropdown is ready first, then the remembered
+      // creator's recent rows load without competing for the server.
+      if (!isAdmin) {
+        const me = rememberedMe();
+        if (me && getActiveCreators().indexOf(me) !== -1 &&
+            rowsAreForSomeoneElse(me) && !logLoadInFlight) {
+          loadRows(0, me);
+        }
+      }
+    } else if (attempt < 1) {
       setTimeout(() => loadCreators(attempt + 1), 2000);
     } else {
       creatorsLoaded = true;
       refreshAll();
     }
-  }, timeoutMs);
+  }, 60000);
 }
 
 function getActiveCreators() {
@@ -2326,11 +2359,10 @@ function doSubmitLog(name, date, post, tiktok, insta, issues, firstName, isSecon
     clearTimeout(patienceTimer);
 
     if (data && data.status === 'success') {
-      // Server said success, but before greying anything out, double-check
-      // the backend that the row is really there. This is what stops a video
-      // from "looking logged" when it never actually saved.
-      setSubmitting(true, 'Confirming your video was logged…');
-      confirmSaved(name, date, post, tiktok, insta, issues, firstName, isSecond, 0);
+      // A successful submit response is the server's acknowledgement that the
+      // row was appended. Update the screen immediately; checkPost is reserved
+      // for timeout/network uncertainty, where the outcome is genuinely unknown.
+      finalizeSuccess(name, date, String(data.post || post), tiktok, insta, issues, firstName, isSecond);
 
     } else if (data && data.status === 'duplicate') {
       setSubmitting(false);
@@ -2367,7 +2399,7 @@ function doSubmitLog(name, date, post, tiktok, insta, issues, firstName, isSecon
       setSubmitting(true, 'Connection was slow, double-checking with the server…');
       verifySubmission(name, date, post, tiktok, insta, firstName, isSecond, 0);
     }
-  }, 45000);
+  }, 60000);
 }
 
 // ── CONFIRM DIALOG ──
@@ -2664,29 +2696,33 @@ function openMyLogs() {
   if (!name) return;
   loadRowsIfStale(); // refresh in the background so the view is as current as possible
   renderMyLogs(name);
-  // Full payment data is admin-only, so without this a creator saw zero for
-  // every bonus, no "+N" for videos an admin added, and an expected amount
-  // missing all of it. This pulls THEIR row only, then re-renders in place.
-  loadMyPay(name);
+  // Pay and bonus reference data are not needed to submit a video, so load
+  // them only when the creator opens this payment-aware view. Keep them
+  // serial so they do not recreate the startup request queue.
+  loadMyPay(name, function() {
+    loadBonusTiers(function() { loadBonusCategories(); });
+  });
 }
 
 // One creator's own pay figures. Never the whole register — that stays
 // admin-only. Silently gives up on failure: the logs are still worth showing,
 // and the bonus figures simply stay as they were.
-function loadMyPay(name) {
-  if (isAdmin) return; // admin already has everyone loaded
+function loadMyPay(name, done) {
+  if (isAdmin) { if (done) done(); return; } // admin already has everyone loaded
   jsonp({ action:'getMyPay', name:name, _bust: Date.now() }, (data) => {
-    if (!data || data.status !== 'success' || !data.payments) return;
-    const others = allPayments.filter(p => String(p.name).toLowerCase() !== name.toLowerCase());
-    allPayments = others.concat(data.payments);
-    if (data.rate && parseFloat(data.rate) > 0) myOwnRate = { name: name, rate: parseFloat(data.rate) };
-    // Only redraw if this creator's modal is still the one on screen.
-    const openFor = document.getElementById('modal-name');
-    if (document.getElementById('creator-modal').classList.contains('open') &&
-        openFor && openFor.textContent === name) {
-      renderMyLogs(name);
+    if (data && data.status === 'success' && data.payments) {
+      const others = allPayments.filter(p => String(p.name).toLowerCase() !== name.toLowerCase());
+      allPayments = others.concat(data.payments);
+      if (data.rate && parseFloat(data.rate) > 0) myOwnRate = { name: name, rate: parseFloat(data.rate) };
+      // Only redraw if this creator's modal is still the one on screen.
+      const openFor = document.getElementById('modal-name');
+      if (document.getElementById('creator-modal').classList.contains('open') &&
+          openFor && openFor.textContent === name) {
+        renderMyLogs(name);
+      }
     }
-  });
+    if (done) done();
+  }, 60000);
 }
 
 function renderMyLogs(name) {
@@ -3565,21 +3601,32 @@ function effMonthlyRate(name, ym) {
 }
 
 // ── BONUS TIERS, editable from Manage Creators / Payments, no code changes ──
-function loadBonusTiers() {
+let bonusTiersInFlight = false;
+function loadBonusTiers(done) {
+  if (bonusTiersLoaded) { if (done) done(); return; }
+  if (bonusTiersInFlight) return;
+  bonusTiersInFlight = true;
   jsonp({ action:'getBonusTiers' }, (data) => {
+    bonusTiersInFlight = false;
     bonusTiersLoaded = true;
     if (data && data.status === 'success' && Array.isArray(data.tiers) && data.tiers.length) {
       bonusTiers = data.tiers.map(t => [Number(t[0]), Number(t[1])]).sort((a,b) => b[0]-a[0]);
     }
     if (currentPage === 'manage') renderManageCreators();
     if (currentPage === 'payments') renderPayments();
-  });
+    if (done) done();
+  }, 60000);
 }
 
 // Names and amounts only — no personal data — so creators load these too and
 // their own card can turn "2 referrals" into a naira figure.
-function loadBonusCategories() {
+let bonusCatsInFlight = false;
+function loadBonusCategories(done) {
+  if (bonusCatsLoaded) { if (done) done(); return; }
+  if (bonusCatsInFlight) return;
+  bonusCatsInFlight = true;
   jsonp({ action:'getBonusCategories', _bust: Date.now() }, (data) => {
+    bonusCatsInFlight = false;
     bonusCatsLoaded = true;
     if (data && data.status === 'success' && Array.isArray(data.categories)) {
       bonusCats = data.categories.map(c => ({
@@ -3593,7 +3640,8 @@ function loadBonusCategories() {
     if (modal && modal.classList.contains('open') && openFor && openFor.textContent) {
       renderMyLogs(openFor.textContent);
     }
-  });
+    if (done) done();
+  }, 60000);
 }
 
 function bonusTierLegendText() {
