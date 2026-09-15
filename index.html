@@ -1666,6 +1666,25 @@ function flushQueue() {
 let lastRowsFetch = 0;
 const FRESH_MS = 60000;
 
+// Opening the Payments tab starts a log load, and so does opening the page —
+// so landing straight on Payments used to run two complete loads at once,
+// doubling everything queued ahead of whatever the person did next. One at a
+// time: a second request for the same thing joins the first instead.
+let logLoadInFlight = false;
+let logLoadWaiting = [];
+function logLoadStarting(onDone) {
+  if (onDone) logLoadWaiting.push(onDone);
+  if (logLoadInFlight) return false;
+  logLoadInFlight = true;
+  return true;
+}
+function logLoadSettled() {
+  logLoadInFlight = false;
+  const waiting = logLoadWaiting;
+  logLoadWaiting = [];
+  waiting.forEach(fn => fn());
+}
+
 // Re-fetch only if what we hold is more than a minute old. The point of the
 // original re-fetch was to catch data that changed under us, which a minute
 // of staleness still catches — it just stops the same half-megabyte being
@@ -1718,6 +1737,7 @@ function fetchLogWindow(params, attempt, done) {
 function loadRows(attempt) {
   attempt = attempt || 0;
   if (isAdmin) { loadAdminLog(); return; }
+  if (!logLoadStarting()) return;
   // A creator only ever looks at this month and last. Asking for the entire
   // log — every creator, every day, since the beginning — is what times out
   // on a phone, and a timed-out load is what locks the grace window and
@@ -1729,6 +1749,7 @@ function loadRows(attempt) {
     if (data && data.rows) applyLogRows(data.rows);
     else if (data && data.status === 'error') logLoadFailed(data.message);
     else logLoadFailed('');
+    logLoadSettled();
   });
 }
 
@@ -1745,7 +1766,8 @@ function loadRows(attempt) {
 // still ends up holding exactly the same thing it always did — nothing
 // downstream can see a half-loaded log. Measured 15 Sept 2026.
 function loadAdminLog(onDone) {
-  const settled = (fn, arg) => { fn(arg); if (onDone) onDone(); };
+  if (!logLoadStarting(onDone)) return;
+  const settled = (fn, arg) => { fn(arg); logLoadSettled(); };
   const thisMonth = todayStr().slice(0, 7);
   // Newest window first: it is what the admin is looking at, and its reply
   // also reports how far back the log actually goes.
@@ -1761,39 +1783,72 @@ function loadAdminLog(onDone) {
       });
       return;
     }
-    const windows = monthsFromTo(earliest, thisMonth);
+    const windows = monthSpans(earliest, thisMonth, MONTHS_PER_WINDOW);
     if (!windows.length) { settled(applyLogRows, data.rows); return; }
     const collected = [data.rows];
-    let outstanding = windows.length;
     let failure = null;
     let hadFailure = false;
-    windows.forEach((ym, idx) => {
-      const lastDay = new Date(Number(ym.slice(0,4)), Number(ym.slice(5,7)), 0).getDate();
-      fetchLogWindow({ since: ym + '-01', until: ym + '-' + String(lastDay).padStart(2,'0') }, 0, (d2) => {
+    runPooled(windows.map((w, idx) => (whenDone) => {
+      fetchLogWindow(w, 0, (d2) => {
         if (d2 && d2.rows) collected[idx + 1] = d2.rows;
         else { hadFailure = true; failure = d2 && d2.status === 'error' ? d2.message : failure; }
-        if (--outstanding > 0) return;
-        // One missing month would quietly understate a creator's month and
-        // their pay with it, so a partial log is treated as no log at all.
-        if (hadFailure) settled(logLoadFailed, failure || '');
-        else settled(applyLogRows, [].concat.apply([], collected));
+        whenDone();
       });
+    }), MAX_PARALLEL_WINDOWS, () => {
+      // One missing stretch would quietly understate somebody's month and
+      // their pay with it, so a partial log is treated as no log at all.
+      if (hadFailure) settled(logLoadFailed, failure || '');
+      else settled(applyLogRows, [].concat.apply([], collected));
     });
   });
 }
 
-// Every month from `fromYM` up to but NOT including `toYM`, oldest first.
-function monthsFromTo(fromYM, toYM) {
-  const out = [];
+// Google does not actually serve these in parallel. Timed against the live
+// backend on 15 Sept 2026: one window took 3.5s on its own, but six fired at
+// once finished at 3.5, 3.5, 6.1, 6.5, 8.6 and 12.5 seconds — it runs about
+// two at a time and queues the rest. Worse, everything ELSE the app asks for
+// queues behind them, which is how signing in could sit there long enough to
+// time out and report the server unreachable. So only a couple of background
+// windows are ever in flight, leaving room for whatever the person is
+// actually doing, and each window covers two months to halve how many
+// there are to get through.
+const MAX_PARALLEL_WINDOWS = 2;
+const MONTHS_PER_WINDOW = 2;
+
+function runPooled(tasks, limit, onAllDone) {
+  let started = 0, finished = 0;
+  function pump() {
+    while (started - finished < limit && started < tasks.length) {
+      tasks[started++](() => {
+        finished++;
+        if (finished === tasks.length) onAllDone();
+        else pump();
+      });
+    }
+  }
+  pump();
+}
+
+// Windows of `size` months covering `fromYM` up to but NOT including `toYM`,
+// oldest first, each as the {since, until} the backend expects.
+function monthSpans(fromYM, toYM, size) {
+  const months = [];
   let y = Number(fromYM.slice(0, 4));
   let m = Number(fromYM.slice(5, 7));
   for (let guard = 0; guard < 240; guard++) {
     const ym = y + '-' + String(m).padStart(2, '0');
     if (ym >= toYM) break;
-    out.push(ym);
+    months.push(ym);
     m++; if (m > 12) { m = 1; y++; }
   }
-  return out;
+  const spans = [];
+  for (let i = 0; i < months.length; i += size) {
+    const first = months[i];
+    const last = months[Math.min(i + size - 1, months.length - 1)];
+    const lastDay = new Date(Number(last.slice(0, 4)), Number(last.slice(5, 7)), 0).getDate();
+    spans.push({ since: first + '-01', until: last + '-' + String(lastDay).padStart(2, '0') });
+  }
+  return spans;
 }
 
 function loadCreators(attempt) {

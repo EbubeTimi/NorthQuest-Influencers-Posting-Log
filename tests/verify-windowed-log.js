@@ -37,6 +37,8 @@ function buildLog() {
 // deployed Code.gs. `breakMonth` makes one window answer with a server error.
 function backend(page, log, seen, breakMonth) {
   const earliest = log.map(r => r[2]).sort()[0];
+  let inFlight = 0;
+  seen.maxInFlight = 0;
   return page.route('**://script.google.com/**', async route => {
     const u = new URL(route.request().url());
     const action = u.searchParams.get('action');
@@ -46,6 +48,13 @@ function backend(page, log, seen, breakMonth) {
       const since = u.searchParams.get('since') || '';
       const until = u.searchParams.get('until') || '';
       seen.push({ since, until });
+      // Hold the reply briefly so overlapping requests are observable —
+      // Google serves only about two at a time, so anything the app fires
+      // beyond that is just queued ahead of whatever the person does next.
+      inFlight++;
+      seen.maxInFlight = Math.max(seen.maxInFlight, inFlight);
+      await new Promise(r => setTimeout(r, 120));
+      inFlight--;
       if (breakMonth && since.slice(0, 7) === breakMonth) {
         payload = { status: 'error', message: 'Service invoked too many times for one day' };
       } else {
@@ -104,8 +113,11 @@ async function adminLoad(browser, log, seen, breakMonth) {
     ck('every row arrives — the admin still holds the complete log', out.rows, log.length);
     ck('the load is not marked failed', out.failed, false);
     ck('nothing asks for the entire log in one request', askedForEverything, 0);
-    ck('it took one request per month, not one giant one', seen.length, 6);
-    ck('no single reply carries more than one month', widest < log.length, true);
+    ck('6 months are covered in fewer than 6 requests', seen.length < 6, true);
+    ck('no single reply carries the whole log', widest < log.length, true);
+    // Google serves ~2 at a time; anything more just queues, and everything
+    // else the person does queues behind it. Signing in timed out that way.
+    ck('never more than 2 requests in flight at once', seen.maxInFlight <= 2, true);
     await ctx.close();
   }
 
@@ -122,6 +134,31 @@ async function adminLoad(browser, log, seen, breakMonth) {
       out.payBody.includes('Could not load'), true);
     ck('the real server reason is surfaced, not buried as a dropped connection',
       out.reason, 'Service invoked too many times for one day');
+    await ctx.close();
+  }
+
+  console.log('\n=== Opening Payments while the page is still loading must not run two loads ===');
+  {
+    const seen = [];
+    const ctx = await browser.newContext({ timezoneId: 'Africa/Lagos' });
+    const page = await ctx.newPage();
+    await backend(page, log, seen);
+    await page.goto('file://' + INDEX);
+    await page.waitForTimeout(900);
+    seen.length = 0;
+    const out = await page.evaluate(async () => {
+      isAdmin = true; adminKey = 'k';
+      loadRows();                     // page boot
+      refreshPaymentsData();          // and the admin lands on Payments
+      await new Promise(r => setTimeout(r, 3000));
+      return { rows: allRows.length, failed: rowsLoadFailed };
+    });
+    const single = Math.ceil(6 / 2) + 1;   // 3 spans of two months, plus the probe
+    console.log('   requests for two overlapping loads:', seen.length, '(one load alone =', single + ')');
+    ck('the second load joins the first instead of doubling the queue', seen.length, single);
+    ck('still never more than 2 in flight', seen.maxInFlight <= 2, true);
+    ck('and the log still arrives complete', out.rows, log.length);
+    ck('not marked failed', out.failed, false);
     await ctx.close();
   }
 
