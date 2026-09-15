@@ -1271,8 +1271,8 @@
       <thead><tr>
         <th>S/N</th>
         <th id="ph-cn" contenteditable="true" spellcheck="false" onkeydown="return event.key!=='Enter'" onblur="savePayHeader('cn',this)">Creator Name</th>
-        <th id="ph-posts" contenteditable="true" spellcheck="false" onkeydown="return event.key!=='Enter'" onblur="savePayHeader('posts',this)">Posts (Creator)</th>
-        <th class="eb-th" title="Videos you added on a creator's behalf. Adds to what they logged — never replaces it.">Posts (You Added)</th>
+        <th id="ph-posts" contenteditable="true" spellcheck="false" onkeydown="return event.key!=='Enter'" onblur="savePayHeader('posts',this)">No. of Posts</th>
+        <th class="eb-th" title="Videos you added on a creator's behalf. Adds to what they logged — never replaces it.">No. of Posts (Admin)</th>
         <th id="ph-rate" contenteditable="true" spellcheck="false" onkeydown="return event.key!=='Enter'" onblur="savePayHeader('rate',this)">Rate / Post (&#8358;)</th>
         <th id="ph-base" contenteditable="true" spellcheck="false" onkeydown="return event.key!=='Enter'" onblur="savePayHeader('base',this)">Base Amount (&#8358;)</th>
         <th id="ph-bv" contenteditable="true" spellcheck="false" onkeydown="return event.key!=='Enter'" onblur="savePayHeader('bv',this)">Bonus Views</th>
@@ -1653,60 +1653,128 @@ function flushQueue() {
   });
 }
 
-// Both loaders now RETRY automatically on slow connections. Before, one
-// timeout meant the name dropdown stayed empty forever until a manual
-// refresh, creators saw a dead page. Now each load tries up to 5 times
-// with growing patience (15s, 25s, 35s, 45s, 45s ≈ up to ~3 minutes),
-// which rides out slow mobile data and Google's server wake-up delay.
+// Every loader RETRIES automatically on slow connections. Before, one timeout
+// meant the name dropdown stayed empty forever until a manual refresh, and
+// creators saw a dead page. Each request now tries up to 5 times with growing
+// patience (20s, 30s, 40s, 45s, 45s), which rides out slow mobile data and
+// Google's server wake-up delay.
+function applyLogRows(rawRows) {
+  dataLoaded = true;
+  rowsLoadFailed = false;
+  rowsLoadFailedReason = '';
+  allRows = rawRows.map(r => ({
+    submitted: r[0]||'', name: (r[1]||'').trim(),
+    date: normDate(r[2]), post: String(r[3]||''),
+    tiktok: r[4]||'', insta: r[5]||'', issues: r[6]||''
+  })).filter(r => r.name && r.date);
+  refreshAll();
+}
+
+// Record that allRows is UNKNOWN rather than empty. Otherwise the UI tells a
+// creator they have logged nothing today and the server then rejects the
+// submission they were just invited to make.
+function logLoadFailed(reason) {
+  if (reason) console.error('get failed on the server:', reason);
+  dataLoaded = true;
+  rowsLoadFailed = true;
+  rowsLoadFailedReason = reason || '';
+  refreshAll();
+}
+
+// One request for one slice of the log, with its own patience ladder.
+// Calls back with the reply, or null when every attempt failed to get an
+// answer at all (a dropped connection, not a server-side error).
+function fetchLogWindow(params, attempt, done) {
+  const timeoutMs = Math.min(20000 + attempt * 10000, 45000);
+  jsonp(Object.assign({ action:'get' }, params), (data) => {
+    // A server-side error is not worth retrying — it will fail identically
+    // every time, and burying it as "slow connection" is how a real fault
+    // goes unfixed. Hand it straight back.
+    if (data && (data.rows || data.status === 'error')) { done(data); return; }
+    if (attempt < 4) { setTimeout(() => fetchLogWindow(params, attempt + 1, done), 2000); return; }
+    done(null);
+  }, timeoutMs);
+}
+
 function loadRows(attempt) {
   attempt = attempt || 0;
-  const timeoutMs = Math.min(15000 + attempt * 10000, 45000);
+  if (isAdmin) { loadAdminLog(); return; }
   // A creator only ever looks at this month and last. Asking for the entire
   // log — every creator, every day, since the beginning — is what times out
   // on a phone, and a timed-out load is what locks the grace window and
-  // blames the connection. The admin console still receives everything.
-  const q = { action:'get' };
-  if (!isAdmin) {
-    const d = new Date();
-    d.setMonth(d.getMonth() - 1);
-    q.since = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-01';
-  }
-  jsonp(q, (data, err) => {
-    if (data && data.rows) {
-      dataLoaded = true;
-      rowsLoadFailed = false;
-      rowsLoadFailedReason = '';
-      allRows = data.rows.map(r => ({
-        submitted: r[0]||'', name: (r[1]||'').trim(),
-        date: normDate(r[2]), post: String(r[3]||''),
-        tiktok: r[4]||'', insta: r[5]||'', issues: r[6]||''
-      })).filter(r => r.name && r.date);
-      refreshAll();
-    } else if (data && data.status === 'error') {
-      // The server actually answered — it just hit a real problem (a bug, a
-      // quota limit, a bad reference) rather than the connection dropping.
-      // Retrying this is pointless, it will fail the same way every time, and
-      // silently treating it like a timeout is how a real error gets buried
-      // instead of fixed. Surface the reason so it can be reported, not guessed at.
-      console.error('get failed on the server:', data.message);
-      dataLoaded = true;
-      rowsLoadFailed = true;
-      rowsLoadFailedReason = data.message || '';
-      refreshAll();
-    } else if (attempt < 4) {
-      setTimeout(() => loadRows(attempt + 1), 2000);
-    } else {
-      // Every attempt failed to even get an answer back — a real dropped
-      // connection or timeout, not a server-side error. Record that allRows
-      // is unknown rather than empty, otherwise the UI tells the creator they
-      // have logged nothing today and the server then rejects the submission
-      // they were invited to make.
-      dataLoaded = true;
-      rowsLoadFailed = true;
-      rowsLoadFailedReason = '';
-      refreshAll();
+  // blames the connection.
+  const d = new Date();
+  d.setMonth(d.getMonth() - 1);
+  const since = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-01';
+  fetchLogWindow({ since: since }, attempt, (data) => {
+    if (data && data.rows) applyLogRows(data.rows);
+    else if (data && data.status === 'error') logLoadFailed(data.message);
+    else logLoadFailed('');
+  });
+}
+
+// The admin used to ask for the whole log in a single request. Reading the
+// sheet is not what costs — that is about 5 seconds however much is in it.
+// Shipping the reply is: ~0.5MB comes back in 6 seconds, but the full ~1.1MB
+// log measured 32 seconds on one call and 95 on the very next, past any
+// timeout worth waiting out. Worse, each failed attempt made the server redo
+// that whole job, so one page load could burn minutes of the day's Apps
+// Script allowance and take the creators' own logging down with it.
+//
+// So it is fetched a month at a time, all windows at once. Every reply stays
+// inside the fast band, the slowest window sets the total wait, and allRows
+// still ends up holding exactly the same thing it always did — nothing
+// downstream can see a half-loaded log. Measured 15 Sept 2026.
+function loadAdminLog(onDone) {
+  const settled = (fn, arg) => { fn(arg); if (onDone) onDone(); };
+  const thisMonth = todayStr().slice(0, 7);
+  // Newest window first: it is what the admin is looking at, and its reply
+  // also reports how far back the log actually goes.
+  fetchLogWindow({ since: thisMonth + '-01' }, 0, (data) => {
+    if (!data || !data.rows) { settled(logLoadFailed, data && data.status === 'error' ? data.message : ''); return; }
+    const earliest = String(data.earliest || '').slice(0, 7);
+    if (!/^\d{4}-\d{2}$/.test(earliest)) {
+      // Backend predates windowed fetching. Fall back to the single full
+      // request, starting at a patience that suits how slow it really is.
+      fetchLogWindow({}, 2, (full) => {
+        if (full && full.rows) settled(applyLogRows, full.rows);
+        else settled(logLoadFailed, full && full.status === 'error' ? full.message : '');
+      });
+      return;
     }
-  }, timeoutMs);
+    const windows = monthsFromTo(earliest, thisMonth);
+    if (!windows.length) { settled(applyLogRows, data.rows); return; }
+    const collected = [data.rows];
+    let outstanding = windows.length;
+    let failure = null;
+    let hadFailure = false;
+    windows.forEach((ym, idx) => {
+      const lastDay = new Date(Number(ym.slice(0,4)), Number(ym.slice(5,7)), 0).getDate();
+      fetchLogWindow({ since: ym + '-01', until: ym + '-' + String(lastDay).padStart(2,'0') }, 0, (d2) => {
+        if (d2 && d2.rows) collected[idx + 1] = d2.rows;
+        else { hadFailure = true; failure = d2 && d2.status === 'error' ? d2.message : failure; }
+        if (--outstanding > 0) return;
+        // One missing month would quietly understate a creator's month and
+        // their pay with it, so a partial log is treated as no log at all.
+        if (hadFailure) settled(logLoadFailed, failure || '');
+        else settled(applyLogRows, [].concat.apply([], collected));
+      });
+    });
+  });
+}
+
+// Every month from `fromYM` up to but NOT including `toYM`, oldest first.
+function monthsFromTo(fromYM, toYM) {
+  const out = [];
+  let y = Number(fromYM.slice(0, 4));
+  let m = Number(fromYM.slice(5, 7));
+  for (let guard = 0; guard < 240; guard++) {
+    const ym = y + '-' + String(m).padStart(2, '0');
+    if (ym >= toYM) break;
+    out.push(ym);
+    m++; if (m > 12) { m = 1; y++; }
+  }
+  return out;
 }
 
 function loadCreators(attempt) {
@@ -3528,22 +3596,12 @@ function refreshPaymentsData(btn) {
       }, 1200);
     }
   };
-  // Wrap each load to count completion
-  jsonp({ action:'get', _bust: Date.now() }, (data) => {
-    dataLoaded = true;
-    if (data && data.rows) {
-      rowsLoadFailed = false;
-      allRows = data.rows.map(r => ({
-        submitted: r[0]||'', name: (r[1]||'').trim(),
-        date: normDate(r[2]), post: String(r[3]||''),
-        tiktok: r[4]||'', insta: r[5]||'', issues: r[6]||''
-      })).filter(r => r.name && r.date);
-    } else {
-      rowsLoadFailed = true;
-    }
-    refreshAll();
-    finish();
-  });
+  // This used to fire its own unscoped request for the entire log on a 15
+  // second timeout with no retry at all — a job the server cannot finish in
+  // 15 seconds, so opening this tab reliably painted "Could not load the
+  // posting log" and left the server grinding through the whole thing anyway.
+  // Same windowed loader as everywhere else now.
+  loadAdminLog(finish);
   jsonp({ action:'getCreators', _bust: Date.now() }, (data) => {
     creatorsLoaded = true;
     if (data && data.creators) allCreators = data.creators;
@@ -3922,7 +3980,7 @@ function exportPaymentsCSV() {
   R.push([{ v:'NORTHQUEST FINANCE  ·  CREATOR PAYMENT REGISTER', s:1 }]);
   R.push(['Payment Period:  ' + ord(1) + ' ' + mName + ' ' + y + ' – ' + ord(last) + ' ' + mName + ' ' + y]);
   R.push([]);
-  R.push(['S/N','Name','Posts (Creator) / Salary','Posts (You Added)','Rate per Post (₦)','Base Amount (₦)','Bonus Views',
+  R.push(['S/N','Name','No. of Posts / Salary','No. of Posts (Admin)','Rate per Post (₦)','Base Amount (₦)','Bonus Views',
           'Perf. Bonus (₦)','Special Bonus (₦)','Total Payable (₦)','Bank Name','Account Number',
           'Account Name','Payment Status','Payment Date','Remarks'].map(v => ({ v:v, s:2 })));
 
