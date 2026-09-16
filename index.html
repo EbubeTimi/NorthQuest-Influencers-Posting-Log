@@ -2136,15 +2136,12 @@ function onNameChange(fetchFresh) {
   // which is the usual case — picking a name should not re-download the log.
   if (fetchFresh) loadRowsIfStale();
 
-  // Still fetching, or holding a different creator's rows. "Nothing logged
-  // yet" is a guess dressed up as a fact — and the wrong one for anybody who
-  // has already logged today. Say we are still looking, and leave the cards
-  // alone until we actually know.
+  // Still fetching, or holding a different creator's rows. Keep the compact
+  // name-selection surface quiet: the creator can open View my logs, whose
+  // modal owns the visible spinner and progress wording. Leave the post cards
+  // unresolved until the rows arrive so we never present guessed log state.
   if ((!dataLoaded || rowsAreForSomeoneElse(name)) && !rowsLoadFailed) {
-    statusEl.style.display = '';
-    statusEl.className = 'today-status s-unknown';
-    sIcon.textContent = '⏳';
-    sMsg.textContent = waitingMessage();
+    statusEl.style.display = 'none';
     segYesterday.setAttribute('disabled', '');
     segYesterday.classList.remove('is-enabled');
     hintEl.style.display = 'none';
