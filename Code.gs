@@ -558,7 +558,7 @@ var NQ_ADMIN_ACTIONS = [
   'addCreator', 'toggleCreator', 'deleteCreator', 'setRate',
   'setCreatorBank', 'savePayment', 'deletePaymentRow', 'getPayments', 'setBonusTiers',
   'setContractResolved', 'getViewLog', 'getIgStatus', 'getIgInsights',
-  'setBonusCategories'
+  'setBonusCategories', 'getAdminBootstrap', 'getAdminMonth'
 ];
 
 
@@ -654,6 +654,8 @@ function doGet(e) {
     else if (action === 'checkPost') result = handleCheckPost(e.parameter);
     else if (action === 'get') result = handleGet(e.parameter);
     else if (action === 'getCreatorBootstrap') result = handleGetCreatorBootstrap(e.parameter);
+    else if (action === 'getAdminBootstrap') result = handleGetAdminBootstrap(e.parameter);
+    else if (action === 'getAdminMonth') result = handleGetAdminMonth(e.parameter);
     else if (action === 'getCreators') result = handleGetCreators(nqIsAdmin_(e));
     else if (action === 'addCreator') result = handleAddCreator(e.parameter);
     else if (action === 'toggleCreator') result = handleToggleCreator(e.parameter);
@@ -1155,8 +1157,8 @@ function handleCheckPost(params) {
 
 // Optional `since` (yyyy-MM-dd) trims the reply to recent rows. Without it
 // this returns the entire log — every creator, every day, since the
-// beginning — which is what the admin console needs, but is far too much to
-// push down a phone connection. A creator only ever looks at the last couple
+// beginning. The optimized admin console no longer does that at startup; it
+// asks for one month at a time. A creator only ever looks at the last couple
 // of months, and when this reply times out the app cannot tell whether they
 // logged yesterday, so it locks the grace window and blames the connection.
 // `until` (inclusive, same yyyy-mm-dd shape as `since`) lets the caller ask
@@ -1226,6 +1228,76 @@ function handleGetCreatorBootstrap(params) {
     rows: logs.rows || [],
     earliest: logs.earliest || ''
   };
+}
+
+
+// One admin startup request replaces five simultaneous Apps Script jobs.
+// The old browser path requested the full posting history, creators, payments,
+// bonus tiers and bonus categories independently. Apps Script queued those
+// executions behind each other, and opening Payments immediately duplicated
+// two of them. This request opens the spreadsheet once in one execution and
+// returns only the current month's posting rows; older months are fetched on
+// demand by handleGetAdminMonth.
+function handleGetAdminBootstrap(params) {
+  const currentMonth = Utilities.formatDate(new Date(), 'Africa/Lagos', 'yyyy-MM');
+  const postingData = getSheet().getDataRange().getValues();
+  const rows = [];
+  const months = {};
+  const byCreator = {};
+  let total = 0;
+
+  for (let i = 1; i < postingData.length; i++) {
+    const r = postingData[i];
+    const name = String(r[1] || '').trim();
+    if (!name) continue;
+    const ts = r[0] instanceof Date ? r[0].toISOString() : String(r[0] || '');
+    let dateStr = r[2];
+    if (dateStr instanceof Date) {
+      dateStr = dateStr.getFullYear() + '-' + String(dateStr.getMonth() + 1).padStart(2, '0') + '-' + String(dateStr.getDate()).padStart(2, '0');
+    } else {
+      dateStr = String(dateStr || '').slice(0, 10);
+    }
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) continue;
+
+    const ym = dateStr.slice(0, 7);
+    months[ym] = true;
+    total++;
+    if (!byCreator[name]) byCreator[name] = { total: 0, last: '' };
+    byCreator[name].total++;
+    if (!byCreator[name].last || dateStr > byCreator[name].last) byCreator[name].last = dateStr;
+
+    if (ym === currentMonth) {
+      rows.push([ts, name, dateStr, String(r[3] || ''), String(r[4] || ''), String(r[5] || ''), String(r[6] || '')]);
+    }
+  }
+
+  const creators = handleGetCreators(true);
+  const payments = handleGetPayments();
+  const tiers = handleGetBonusTiers();
+  const categories = handleGetBonusCategories();
+  return {
+    status: 'success',
+    currentMonth: currentMonth,
+    rows: rows,
+    months: Object.keys(months).sort().reverse(),
+    summary: { total: total, creators: byCreator },
+    creators: creators.creators || [],
+    payments: payments.payments || [],
+    tiers: tiers.tiers || [],
+    categories: categories.categories || []
+  };
+}
+
+
+// Admin history is loaded one selected month at a time. Each request still
+// reads the source sheet once, but it sends only the rows the current screen
+// needs and does not block the rest of the admin console behind old history.
+function handleGetAdminMonth(params) {
+  const month = String((params && params.month) || '').trim();
+  if (!/^\d{4}-\d{2}$/.test(month)) return { status: 'error', message: 'Month required (YYYY-MM)' };
+  const result = handleGet({ since: month + '-01', until: month + '-31' });
+  if (result.status === 'error') return result;
+  return { status: 'success', month: month, rows: result.rows || [] };
 }
 
 

@@ -21,6 +21,7 @@ function loadBackend() {
   const sandbox = {
     CacheService: { getScriptCache: () => cache },
     PropertiesService: { getScriptProperties: () => properties },
+    Utilities: { formatDate: () => '2026-09' },
     console,
     Date,
     JSON,
@@ -100,6 +101,36 @@ test('creator bootstrap returns roster and only the requested creator rows', () 
   assert.equal(result.creators.length, 2);
   assert.equal(result.rows.length, 1);
   assert.equal(result.rows[0][1], 'Ada');
+});
+
+test('admin bootstrap scans the posting log once and returns only the current month rows', () => {
+  const { sandbox } = loadBackend();
+  let postingReads = 0;
+  const postingValues = [
+    ['Timestamp', 'Name', 'Date', 'Post', 'TikTok', 'Instagram', 'Issues'],
+    ['2026-08-31T09:00:00Z', 'Ada', '2026-08-31', '1', 'tt-old', '', ''],
+    ['2026-09-14T09:00:00Z', 'Ada', '2026-09-14', '1', 'tt-a', 'ig-a', ''],
+    ['2026-09-14T10:00:00Z', 'Ben', '2026-09-14', '1', 'tt-b', 'ig-b', ''],
+  ];
+  sandbox.getSheet = () => ({
+    getDataRange: () => ({
+      getValues: () => { postingReads += 1; return postingValues; },
+    }),
+  });
+  sandbox.handleGetCreators = () => ({ status: 'success', creators: [{ name: 'Ada' }, { name: 'Ben' }] });
+  sandbox.handleGetPayments = () => ({ status: 'success', payments: [{ month: '2026-09', name: 'Ada' }] });
+  sandbox.handleGetBonusTiers = () => ({ status: 'success', tiers: [[100000, 50000]] });
+  sandbox.handleGetBonusCategories = () => ({ status: 'success', categories: [] });
+
+  const result = sandbox.handleGetAdminBootstrap({});
+  assert.equal(result.status, 'success');
+  assert.equal(postingReads, 1);
+  assert.equal(result.currentMonth, '2026-09');
+  assert.deepEqual(Array.from(result.months), ['2026-09', '2026-08']);
+  assert.equal(result.rows.length, 2);
+  assert.equal(result.summary.total, 3);
+  assert.equal(result.summary.creators.Ada.total, 2);
+  assert.equal(result.summary.creators.Ada.last, '2026-09-14');
 });
 
 test('creator pay reads are cached and explicit invalidation refreshes them', () => {

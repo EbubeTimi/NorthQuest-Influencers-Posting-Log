@@ -35,6 +35,26 @@ test('Apps Script dispatch exposes creator bootstrap without changing intake', (
   assert.match(post, /body\.action === 'uploadContract'/);
 });
 
+test('Apps Script exposes protected admin bootstrap and month endpoints', () => {
+  const adminActions = between(code, 'var NQ_ADMIN_ACTIONS = [', '];');
+  assert.match(adminActions, /'getAdminBootstrap'/);
+  assert.match(adminActions, /'getAdminMonth'/);
+
+  const dispatch = between(code, 'function doGet(e)', 'function doPost(e)');
+  assert.match(dispatch, /action === 'getAdminBootstrap'/);
+  assert.match(dispatch, /handleGetAdminBootstrap\(e\.parameter\)/);
+  assert.match(dispatch, /action === 'getAdminMonth'/);
+  assert.match(dispatch, /handleGetAdminMonth\(e\.parameter\)/);
+
+  const bootstrap = between(code, 'function handleGetAdminBootstrap(', 'function handleGetAdminMonth(');
+  assert.match(bootstrap, /handleGetCreators\(true\)/);
+  assert.match(bootstrap, /handleGetPayments\(\)/);
+  assert.match(bootstrap, /handleGetBonusTiers\(\)/);
+  assert.match(bootstrap, /handleGetBonusCategories\(\)/);
+  assert.match(bootstrap, /summary/);
+  assert.match(bootstrap, /months/);
+});
+
 test('high-frequency creator reads use Apps Script cache', () => {
   assert.match(code, /CacheService\.getScriptCache\(\)/);
   const creators = between(code, 'function handleGetCreators(', 'function handleAddCreator(');

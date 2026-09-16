@@ -29,6 +29,40 @@ test('creator startup requests roster and recent rows in one bootstrap call', ()
   assert.doesNotMatch(creatorBranch, /loadPayments\(/);
 });
 
+test('admin startup and login use one bootstrap request instead of a request fan-out', () => {
+  const startup = between(
+    index,
+    "document.addEventListener('DOMContentLoaded'",
+    "window.addEventListener('online', flushQueue)"
+  );
+  const adminBranch = startup.slice(startup.indexOf('} else {'));
+  assert.match(adminBranch, /loadAdminBootstrap\(\)/);
+  assert.doesNotMatch(adminBranch, /loadRows\(\)/);
+  assert.doesNotMatch(adminBranch, /loadCreators\(\)/);
+  assert.doesNotMatch(adminBranch, /loadBonusTiers\(\)/);
+  assert.doesNotMatch(adminBranch, /loadBonusCategories\(\)/);
+  assert.doesNotMatch(adminBranch, /loadPayments\(\)/);
+
+  const login = between(index, 'function grantAdmin(', '// Server-first login');
+  assert.match(login, /loadAdminBootstrap\(\)/);
+  assert.doesNotMatch(login, /loadCreators\(\)/);
+  assert.doesNotMatch(login, /loadPayments\(\)/);
+});
+
+test('admin history is loaded one selected month at a time', () => {
+  const monthLoader = between(index, 'function loadAdminMonth(', 'function loadCreatorBootstrap(');
+  assert.match(monthLoader, /action:'getAdminMonth'/);
+  assert.match(monthLoader, /adminLoadedMonths/);
+
+  const paymentNav = between(index, 'function selectPayMonth(', '// Add a creator to the current register month');
+  assert.match(paymentNav, /loadAdminMonth\(ym/);
+
+  const pageNav = between(index, 'function showPage(', '// ── PAGE-NATIVE SEARCH');
+  const paymentsPage = pageNav.match(/if \(name==='payments'\)[^\n]*/);
+  assert.ok(paymentsPage, 'missing payments page navigation');
+  assert.doesNotMatch(paymentsPage[0], /refreshPaymentsData/);
+});
+
 test('name selection stays quiet while logs load, but the logs modal shows progress', () => {
   const nameChange = between(index, 'function onNameChange(', 'function retryLoadRows(');
   const pendingState = between(
@@ -74,4 +108,3 @@ test('intake backend contracts remain present', () => {
   assert.match(intake, /nqEmailPass:/);
   assert.match(intake, /signature:/);
 });
-
