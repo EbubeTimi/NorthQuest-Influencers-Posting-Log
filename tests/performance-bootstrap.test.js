@@ -29,6 +29,22 @@ test('creator startup requests roster and recent rows in one bootstrap call', ()
   assert.doesNotMatch(creatorBranch, /loadPayments\(/);
 });
 
+test('name selection stays quiet while logs load, but the logs modal shows progress', () => {
+  const nameChange = between(index, 'function onNameChange(', 'function retryLoadRows(');
+  const pendingState = between(
+    nameChange,
+    'if ((!dataLoaded || rowsAreForSomeoneElse(name)) && !rowsLoadFailed) {',
+    '// We could not reach the server'
+  );
+  assert.match(pendingState, /statusEl\.style\.display = 'none'/);
+  assert.doesNotMatch(pendingState, /waitingMessage\(\)/);
+
+  const myLogs = between(index, 'function renderMyLogs(', 'const today = todayStr();');
+  assert.match(myLogs, /class="spinner"/);
+  assert.match(myLogs, /id="mylog-waiting"/);
+  assert.match(myLogs, /waitingMessage\(\)/);
+});
+
 test('slow JSONP replies retain a cleanup callback', () => {
   const jsonp = between(index, 'function jsonp(', 'function saveQueue(');
   assert.match(jsonp, /window\[name\] = function\(\) \{ cleanup\(\); \}/);
@@ -58,3 +74,4 @@ test('intake backend contracts remain present', () => {
   assert.match(intake, /nqEmailPass:/);
   assert.match(intake, /signature:/);
 });
+
