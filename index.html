@@ -1421,6 +1421,17 @@ let manageMonth = null;
 // Which tab of Manage Creators is showing: 'active' or 'inactive' (deactivated).
 let manageTab = 'active';
 let isAdmin = false, dataLoaded = false, creatorsLoaded = false, paysLoaded = false;
+// Admin state is intentionally month-scoped. Startup loads the current month
+// plus the small roster/payment/reference datasets in one Apps Script job;
+// older posting rows arrive only when that month is opened.
+let adminAvailableMonths = [];
+let adminLoadedMonths = {};
+let adminMonthLoads = {};
+let adminSummary = null;
+let adminBootstrapInFlight = false;
+let adminBootstrapWaiting = [];
+let adminBootstrapFailed = '';
+let lastAdminBootstrapFetch = 0;
 // dataLoaded only means "stop showing spinners". It is set even when every
 // fetch attempt failed, so on its own it cannot tell an empty day from an
 // empty variable. rowsLoadFailed carries that difference: while it is true we
@@ -1499,12 +1510,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (!isAdmin) {
     loadCreatorBootstrap();
   } else {
-    // Keep the established admin bootstrap unchanged for now.
-    loadRows();
-    loadCreators();
-    loadBonusTiers();
-    loadBonusCategories();
-    loadPayments();
+    loadAdminBootstrap();
   }
   flushQueue();
   // Keep the waiting wording moving. Text that never changes for half a
@@ -1746,6 +1752,10 @@ function logLoadSettled() {
 // of staleness still catches — it just stops the same half-megabyte being
 // pulled three times in the ten seconds it takes to pick a name.
 function loadRowsIfStale() {
+  if (isAdmin) {
+    if (adminBootstrapFailed || !dataLoaded || Date.now() - lastAdminBootstrapFetch >= FRESH_MS) loadAdminBootstrap();
+    return;
+  }
   // What we hold belongs to whoever was selected when it was fetched. A
   // different creator's rows are not stale, they are the wrong person's.
   if (!isAdmin && currentCreatorName() !== loadedForName) { loadRows(); return; }
@@ -1754,16 +1764,20 @@ function loadRowsIfStale() {
   loadRows();
 }
 
+function normalizeLogRows(rawRows) {
+  return (rawRows || []).map(r => ({
+    submitted: r[0]||'', name: (r[1]||'').trim(),
+    date: normDate(r[2]), post: String(r[3]||''),
+    tiktok: r[4]||'', insta: r[5]||'', issues: r[6]||''
+  })).filter(r => r.name && r.date);
+}
+
 function applyLogRows(rawRows) {
   dataLoaded = true;
   rowsLoadFailed = false;
   rowsLoadFailedReason = '';
   lastRowsFetch = Date.now();
-  allRows = rawRows.map(r => ({
-    submitted: r[0]||'', name: (r[1]||'').trim(),
-    date: normDate(r[2]), post: String(r[3]||''),
-    tiktok: r[4]||'', insta: r[5]||'', issues: r[6]||''
-  })).filter(r => r.name && r.date);
+  allRows = normalizeLogRows(rawRows);
   refreshAll();
 }
 
@@ -1811,7 +1825,7 @@ function rowsAreForSomeoneElse(name) {
 // screen could say anything true. Asking by name makes it about 16KB.
 function loadRows(attempt, forName) {
   attempt = attempt || 0;
-  if (isAdmin) { loadAdminLog(); return; }
+  if (isAdmin) { loadAdminBootstrap(); return; }
   // forName lets the fetch start at startup from the remembered name, before
   // the roster has arrived and the dropdown even exists to read.
   const name = forName || currentCreatorName();
@@ -1932,6 +1946,135 @@ function monthSpans(fromYM, toYM, size) {
     spans.push({ since: first + '-01', until: last + '-' + String(lastDay).padStart(2, '0') });
   }
   return spans;
+}
+
+function finishAdminBootstrap() {
+  adminBootstrapInFlight = false;
+  const waiting = adminBootstrapWaiting;
+  adminBootstrapWaiting = [];
+  waiting.forEach(fn => fn());
+}
+
+// One Apps Script execution supplies the current posting month, full admin
+// roster, payment records and bonus references. This replaces the old five-
+// request startup fan-out that queued behind itself and behaved differently
+// after a fresh login versus a restored session.
+function loadAdminBootstrap(attempt, onDone, force) {
+  attempt = attempt || 0;
+  if (onDone) adminBootstrapWaiting.push(onDone);
+  if (!isAdmin) { finishAdminBootstrap(); return; }
+  if (!force && dataLoaded && creatorsLoaded && paysLoaded && !adminBootstrapFailed && Date.now() - lastAdminBootstrapFetch < FRESH_MS) {
+    finishAdminBootstrap();
+    return;
+  }
+  if (adminBootstrapInFlight) return;
+  adminBootstrapInFlight = true;
+  jsonp({ action:'getAdminBootstrap' }, (data) => {
+    if (data && data.status === 'success' && Array.isArray(data.rows) && Array.isArray(data.creators) && Array.isArray(data.payments)) {
+      const currentMonth = String(data.currentMonth || todayStr().slice(0, 7));
+      const currentRows = normalizeLogRows(data.rows);
+      allRows = allRows.filter(r => monthYM(r.date) !== currentMonth).concat(currentRows);
+      allCreators = data.creators;
+      allPayments = data.payments;
+      adminAvailableMonths = Array.isArray(data.months) ? data.months.filter(m => /^\d{4}-\d{2}$/.test(String(m))) : [currentMonth];
+      if (!adminAvailableMonths.includes(currentMonth)) adminAvailableMonths.unshift(currentMonth);
+      adminAvailableMonths = [...new Set(adminAvailableMonths)].sort().reverse();
+      adminLoadedMonths[currentMonth] = 'loaded';
+      adminSummary = data.summary || null;
+      if (Array.isArray(data.tiers) && data.tiers.length) {
+        bonusTiers = data.tiers.map(t => [Number(t[0]), Number(t[1])]).sort((a,b) => b[0]-a[0]);
+      }
+      bonusTiersLoaded = true;
+      if (Array.isArray(data.categories)) {
+        bonusCats = data.categories.map(c => ({
+          month: String(c.month || ''), name: String(c.name || ''), amount: Number(c.amount) || 0
+        })).filter(c => c.month && c.name);
+      }
+      bonusCatsLoaded = true;
+      dataLoaded = true;
+      creatorsLoaded = true;
+      paysLoaded = true;
+      rowsLoadFailed = false;
+      rowsLoadFailedReason = '';
+      adminBootstrapFailed = '';
+      lastAdminBootstrapFetch = Date.now();
+      lastRowsFetch = lastAdminBootstrapFetch;
+      refreshAll();
+      finishAdminBootstrap();
+      return;
+    }
+    if (data && data.status === 'error' && /unknown action/i.test(String(data.message || ''))) {
+      // Coordinated rollout fallback only. Once the matching backend is live,
+      // normal admin startup never takes this legacy multi-request path.
+      adminBootstrapInFlight = false;
+      loadAdminLog(finishAdminBootstrap);
+      loadCreators();
+      loadBonusTiers();
+      loadBonusCategories();
+      loadPayments();
+      return;
+    }
+    if (attempt < 1) {
+      adminBootstrapInFlight = false;
+      setTimeout(() => loadAdminBootstrap(attempt + 1, null, true), 2000);
+      return;
+    }
+    dataLoaded = true;
+    creatorsLoaded = true;
+    paysLoaded = true;
+    rowsLoadFailed = true;
+    adminBootstrapFailed = (data && data.message) || 'The admin data did not load.';
+    refreshAll();
+    finishAdminBootstrap();
+  }, 60000);
+}
+
+function adminMonthStatus(ym) {
+  return adminLoadedMonths[String(ym || '')] || 'idle';
+}
+
+// Fetch one historical month only when an admin opens it. Concurrent callers
+// for the same month share one request; a failed month does not erase data
+// already loaded for other months.
+function loadAdminMonth(ym, done, force) {
+  ym = String(ym || '');
+  if (!isAdmin || !/^\d{4}-\d{2}$/.test(ym)) { if (done) done(false); return; }
+  if (!force && adminMonthStatus(ym) === 'loaded') { if (done) done(true); return; }
+  if (adminMonthLoads[ym]) { if (done) adminMonthLoads[ym].push(done); return; }
+  adminMonthLoads[ym] = done ? [done] : [];
+  adminLoadedMonths[ym] = 'loading';
+  refreshAll();
+
+  function request(attempt) {
+    jsonp({ action:'getAdminMonth', month:ym }, (data) => {
+      if (data && data.status === 'success' && Array.isArray(data.rows)) {
+        const incoming = normalizeLogRows(data.rows);
+        allRows = allRows.filter(r => monthYM(r.date) !== ym).concat(incoming);
+        adminLoadedMonths[ym] = 'loaded';
+        if (!adminAvailableMonths.includes(ym)) adminAvailableMonths.push(ym);
+        adminAvailableMonths.sort().reverse();
+        const waiting = adminMonthLoads[ym] || [];
+        delete adminMonthLoads[ym];
+        refreshAll();
+        waiting.forEach(fn => fn(true));
+        return;
+      }
+      if (attempt < 1) { setTimeout(() => request(attempt + 1), 2000); return; }
+      adminLoadedMonths[ym] = 'error';
+      const waiting = adminMonthLoads[ym] || [];
+      delete adminMonthLoads[ym];
+      refreshAll();
+      waiting.forEach(fn => fn(false));
+    }, 60000);
+  }
+  request(0);
+}
+
+function loadAdminMonths(months, done) {
+  const needed = [...new Set(months || [])].filter(ym => adminMonthStatus(ym) !== 'loaded');
+  if (!needed.length) { if (done) done(); return; }
+  let left = needed.length;
+  needed.forEach(ym => loadAdminMonth(ym, () => { left--; if (!left && done) done(); }));
 }
 
 let creatorsLoadInFlight = false;
@@ -2636,6 +2779,19 @@ function renderWeeklyGrid() {
   const tbody = document.getElementById('weekly-body');
   if (!dataLoaded || !creatorsLoaded) { tbody.innerHTML = '<tr><td colspan="9" class="empty-state"><span class="spinner"></span></td></tr>'; return; }
   if (rowsLoadFailed) { tbody.innerHTML = loadFailedRowHtml(9); return; }
+  if (isAdmin) {
+    const neededMonths = [...new Set(dates.map(d => monthYM(d)))].filter(ym => adminMonthStatus(ym) !== 'loaded');
+    if (neededMonths.length) {
+      const failed = neededMonths.find(ym => adminMonthStatus(ym) === 'error');
+      if (failed) {
+        tbody.innerHTML = '<tr><td colspan="9" class="empty-state"><strong>Could not load ' + escH(monthLabel(failed)) + '</strong><button type="button" class="s-retry" onclick="loadAdminMonth(\'' + failed + '\',null,true)">Try again</button></td></tr>';
+      } else {
+        tbody.innerHTML = '<tr><td colspan="9" class="empty-state"><span class="spinner"></span></td></tr>';
+        neededMonths.filter(ym => adminMonthStatus(ym) === 'idle').forEach(ym => loadAdminMonth(ym));
+      }
+      return;
+    }
+  }
   if (!creators.length) { tbody.innerHTML = '<tr><td colspan="9" class="empty-state"><strong>No active creators</strong></td></tr>'; return; }
   tbody.innerHTML = creators.map(creator => {
     const rows = allRows.filter(r => r.name === creator);
@@ -2655,7 +2811,17 @@ function renderWeeklyGrid() {
   }).join('');
 }
 
-function getMonths() { return [...new Set(allRows.map(r => monthYM(r.date)))].sort().reverse(); }
+function getMonths() {
+  const months = allRows.map(r => monthYM(r.date));
+  if (isAdmin) {
+    months.push.apply(months, adminAvailableMonths);
+    // A manually-added creator or staff salary can create a payment month
+    // with no posts. Keep that register reachable even though its log month
+    // is empty.
+    allPayments.forEach(p => { if (p.month) months.push(String(p.month).slice(0, 7)); });
+  }
+  return [...new Set(months.filter(m => /^\d{4}-\d{2}$/.test(String(m))))].sort().reverse();
+}
 
 function renderMonthTabs() {
   const months = getMonths();
@@ -2666,12 +2832,18 @@ function renderMonthTabs() {
   if (!selectedMonth || !months.includes(selectedMonth)) selectedMonth = months[0];
   el.innerHTML = months.map(ym => {
     const count = allRows.filter(r => monthYM(r.date) === ym).length;
+    const countLabel = isAdmin && adminMonthStatus(ym) !== 'loaded' ? '&hellip;' : count;
     return '<button class="month-tab ' + (ym===selectedMonth?'active':'') + '" onclick="selectMonth(\'' + ym + '\')">' +
-      monthShort(ym) + ' <span class="count">' + count + '</span></button>';
+      monthShort(ym) + ' <span class="count">' + countLabel + '</span></button>';
   }).join('');
 }
 
-function selectMonth(ym) { selectedMonth = ym; renderMonthTabs(); renderDetailedLog(); }
+function selectMonth(ym) {
+  selectedMonth = ym;
+  renderMonthTabs();
+  if (isAdmin && adminMonthStatus(ym) !== 'loaded') loadAdminMonth(ym);
+  renderDetailedLog();
+}
 
 function renderDetailedLog() {
   const tbody = document.getElementById('detailed-body');
@@ -2679,6 +2851,16 @@ function renderDetailedLog() {
   if (!dataLoaded) { tbody.innerHTML = '<tr><td colspan="6" class="empty-state"><span class="spinner"></span></td></tr>'; statsEl.style.display='none'; return; }
   if (rowsLoadFailed) { tbody.innerHTML = loadFailedRowHtml(6); statsEl.style.display='none'; return; }
   if (!selectedMonth) { tbody.innerHTML = '<tr><td colspan="6" class="empty-state"><strong>No submissions yet</strong></td></tr>'; statsEl.style.display='none'; return; }
+  if (isAdmin && adminMonthStatus(selectedMonth) !== 'loaded') {
+    statsEl.style.display = 'none';
+    if (adminMonthStatus(selectedMonth) === 'error') {
+      tbody.innerHTML = '<tr><td colspan="6" class="empty-state"><strong>Could not load ' + escH(monthLabel(selectedMonth)) + '</strong><button type="button" class="s-retry" onclick="loadAdminMonth(\'' + selectedMonth + '\',null,true)">Try again</button></td></tr>';
+    } else {
+      tbody.innerHTML = '<tr><td colspan="6" class="empty-state"><span class="spinner"></span></td></tr>';
+      if (adminMonthStatus(selectedMonth) === 'idle') loadAdminMonth(selectedMonth);
+    }
+    return;
+  }
   const mRows = allRows.filter(r => monthYM(r.date) === selectedMonth);
   const mCreators = [...new Set(mRows.map(r => r.name))];
   const mDays = [...new Set(mRows.map(r => r.date))];
@@ -2904,6 +3086,14 @@ function renderDashboard() {
   if (dashHeader) dashHeader.textContent = 'Progress (' + dashMaxVideos + ')';
   const creators = getActiveCreators();
   const tbody = document.getElementById('dash-body');
+  if (!dataLoaded || !creatorsLoaded) {
+    document.getElementById('d-total').textContent = '—';
+    document.getElementById('d-month').textContent = '—';
+    document.getElementById('d-creators').textContent = '—';
+    document.getElementById('d-today').textContent = '—';
+    tbody.innerHTML = '<tr><td colspan="6" class="empty-state"><span class="spinner"></span></td></tr>';
+    return;
+  }
   if (rowsLoadFailed) {
     document.getElementById('d-total').textContent = '—';
     document.getElementById('d-month').textContent = '—';
@@ -2912,7 +3102,7 @@ function renderDashboard() {
     tbody.innerHTML = loadFailedRowHtml(6);
     return;
   }
-  document.getElementById('d-total').textContent    = allRows.length;
+  document.getElementById('d-total').textContent    = adminSummary && Number.isFinite(Number(adminSummary.total)) ? Number(adminSummary.total) : allRows.length;
   document.getElementById('d-month').textContent    = allRows.filter(r => r.date.startsWith(curMYM)).length;
   document.getElementById('d-creators').textContent = creators.length;
   document.getElementById('d-today').textContent    = allRows.filter(r => r.date === today).length;
@@ -2920,8 +3110,14 @@ function renderDashboard() {
   const sorted = creators.map(name => {
     const rows = allRows.filter(r => r.name === name);
     const mc = rows.filter(r => r.date.startsWith(curMYM)).length;
+    const summary = adminSummary && adminSummary.creators ? adminSummary.creators[name] : null;
     const last = [...rows].sort((a,b) => b.date.localeCompare(a.date))[0];
-    return { name, mc, total: rows.length, last: last ? last.date : '—' };
+    return {
+      name,
+      mc,
+      total: summary && Number.isFinite(Number(summary.total)) ? Number(summary.total) : rows.length,
+      last: summary && summary.last ? summary.last : (last ? last.date : '—')
+    };
   }).sort((a,b) => b.mc - a.mc);
   tbody.innerHTML = sorted.map((r,i) => {
     const pct = Math.min(100, Math.round(r.mc/dashMaxVideos*100));
@@ -3027,6 +3223,8 @@ function leftDateFor(c) {
   if (c.left) return String(c.left).substring(0, 10);
   const recorded = safeStorage.getItem('nq_left_' + c.name);
   if (recorded) return recorded;
+  const summary = adminSummary && adminSummary.creators ? adminSummary.creators[c.name] : null;
+  if (summary && summary.last) return summary.last;
   const rows = allRows.filter(r => r.name === c.name);
   if (!rows.length) return '';
   return [...rows].sort((a, b) => b.date.localeCompare(a.date))[0].date;
@@ -3056,6 +3254,7 @@ function getManageMonths() {
 function onManageMonthChange(v) {
   if (!v) return;
   manageMonth = v;
+  if (isAdmin && adminMonthStatus(v) !== 'loaded') loadAdminMonth(v);
   renderManageCreators();
 }
 
@@ -3391,11 +3590,28 @@ function renderManageCreators() {
   const tbody = document.getElementById('manage-body');
   const counts = document.getElementById('manage-counts');
   renderManageMonthPicker();
-  if (!creatorsLoaded) { tbody.innerHTML = '<tr><td colspan="' + manageColSpan() + '" class="empty-state"><span class="spinner"></span></td></tr>'; return; }
+  if (!dataLoaded || !creatorsLoaded || !paysLoaded) {
+    tbody.innerHTML = '<tr><td colspan="' + manageColSpan() + '" class="empty-state"><span class="spinner"></span></td></tr>';
+    return;
+  }
+  if (rowsLoadFailed) {
+    tbody.innerHTML = loadFailedRowHtml(manageColSpan());
+    return;
+  }
   renderManageTabs();
   renderOnboardingOverview();
   updateBonusLegendText();
   const ym = manageMonthOrToday();
+  if (isAdmin && adminMonthStatus(ym) !== 'loaded') {
+    counts.textContent = 'Loading ' + monthShort(ym) + '…';
+    if (adminMonthStatus(ym) === 'error') {
+      tbody.innerHTML = '<tr><td colspan="' + manageColSpan() + '" class="empty-state"><strong>Could not load ' + escH(monthLabel(ym)) + '</strong><button type="button" class="s-retry" onclick="loadAdminMonth(\'' + ym + '\',null,true)">Try again</button></td></tr>';
+    } else {
+      tbody.innerHTML = '<tr><td colspan="' + manageColSpan() + '" class="empty-state"><span class="spinner"></span></td></tr>';
+      if (adminMonthStatus(ym) === 'idle') loadAdminMonth(ym);
+    }
+    return;
+  }
   const activeList = [], inactiveList = [];
   allCreators.forEach(c => {
     const st = creatorMonthStatus(c, ym);
@@ -3817,7 +4033,11 @@ function loadPayments() {
   });
 }
 
-function selectPayMonth(ym) { selectedPayMonth = ym; renderPayments(); }
+function selectPayMonth(ym) {
+  selectedPayMonth = ym;
+  if (isAdmin && adminMonthStatus(ym) !== 'loaded') loadAdminMonth(ym);
+  renderPayments();
+}
 
 // Add a creator to the current register month even if they logged nothing —
 // creates a payment record at their default base pay so the row appears.
@@ -3831,7 +4051,10 @@ function addCreatorToPayMonth() {
   renderPayments();
 }
 
-// Pull the latest posts, creators, and payment data so the register is current
+// Pull one coherent admin snapshot, then refresh only the historical month the
+// admin is looking at. The old version started three Apps Script executions at
+// once (one of them a full-history log scan), making the refresh button compete
+// with itself.
 function refreshPaymentsData(btn) {
   // Explicit user click = override the "don't overwrite during edit" guard
   lastPayEditTime = 0;
@@ -3843,35 +4066,28 @@ function refreshPaymentsData(btn) {
     refreshBtn.disabled = true;
     refreshBtn.innerHTML = '↻ Refreshing...';
   }
-  let done = 0;
-  const finish = () => {
-    done++;
-    if (done >= 3 && refreshBtn) {
-      refreshBtn.innerHTML = '✓ Refreshed';
-      setTimeout(() => {
-        refreshBtn.disabled = false;
-        refreshBtn.innerHTML = originalText || '↻ Refresh';
-      }, 1200);
-    }
+  let finished = false;
+  const finish = (ok) => {
+    if (finished) return;
+    finished = true;
+    renderPayments();
+    if (!refreshBtn) return;
+    refreshBtn.innerHTML = ok === false ? '⚠ Refresh failed' : '✓ Refreshed';
+    setTimeout(() => {
+      refreshBtn.disabled = false;
+      refreshBtn.innerHTML = originalText || '↻ Refresh';
+    }, 1200);
   };
-  // This used to fire its own unscoped request for the entire log on a 15
-  // second timeout with no retry at all — a job the server cannot finish in
-  // 15 seconds, so opening this tab reliably painted "Could not load the
-  // posting log" and left the server grinding through the whole thing anyway.
-  // Same windowed loader as everywhere else now.
-  loadAdminLog(finish);
-  jsonp({ action:'getCreators', _bust: Date.now() }, (data) => {
-    creatorsLoaded = true;
-    if (data && data.creators) allCreators = data.creators;
-    refreshAll();
-    finish();
-  });
-  jsonp({ action:'getPayments', _bust: Date.now() }, (data) => {
-    paysLoaded = true;
-    if (data && data.payments) allPayments = data.payments;
-    if (isAdmin && currentPage === 'payments') renderPayments();
-    finish();
-  });
+  loadAdminBootstrap(0, () => {
+    if (adminBootstrapFailed) { finish(false); return; }
+    const ym = selectedPayMonth;
+    const currentYM = todayStr().slice(0, 7);
+    if (ym && ym !== currentYM) {
+      loadAdminMonth(ym, ok => finish(ok), true);
+    } else {
+      finish(true);
+    }
+  }, true);
 }
 
 function onPayEdit(idx, field, value, rerender) {
@@ -4001,7 +4217,7 @@ function renderPayments() {
   const tabsEl = document.getElementById('pay-tabs');
   const body = document.getElementById('pay-body');
   if (!tabsEl || !body) return;
-  if (!dataLoaded || !creatorsLoaded) { body.innerHTML = '<tr><td colspan="' + payColSpan() + '" class="empty-state"><span class="spinner"></span></td></tr>'; return; }
+  if (!dataLoaded || !creatorsLoaded || !paysLoaded) { body.innerHTML = '<tr><td colspan="' + payColSpan() + '" class="empty-state"><span class="spinner"></span></td></tr>'; return; }
   // Every figure on this table is money. Refusing to show it is safer than
   // showing a total built on a posting log we know failed to load.
   if (rowsLoadFailed) {
@@ -4023,6 +4239,18 @@ function renderPayments() {
   tabsEl.innerHTML = months.map(ym =>
     '<button class="month-tab ' + (ym===selectedPayMonth?'active':'') + '" onclick="selectPayMonth(\'' + ym + '\')">' + monthShort(ym) + '</button>'
   ).join('');
+
+  if (isAdmin && adminMonthStatus(selectedPayMonth) !== 'loaded') {
+    document.getElementById('pay-period').textContent = '';
+    document.getElementById('pay-legend').innerHTML = '';
+    if (adminMonthStatus(selectedPayMonth) === 'error') {
+      body.innerHTML = '<tr><td colspan="' + payColSpan() + '" class="empty-state"><strong>Could not load ' + escH(monthLabel(selectedPayMonth)) + '</strong><button type="button" class="s-retry" onclick="loadAdminMonth(\'' + selectedPayMonth + '\',null,true)">Try again</button></td></tr>';
+    } else {
+      body.innerHTML = '<tr><td colspan="' + payColSpan() + '" class="empty-state"><span class="spinner"></span></td></tr>';
+      if (adminMonthStatus(selectedPayMonth) === 'idle') loadAdminMonth(selectedPayMonth);
+    }
+    return;
+  }
 
   const y = selectedPayMonth.split('-')[0];
   const mm = parseInt(selectedPayMonth.split('-')[1]);
@@ -4670,11 +4898,28 @@ function grantAdmin(key) {
   document.getElementById('login-pass').value = '';
   document.getElementById('login-pass').type = 'password';
   document.getElementById('eye-icon').innerHTML = '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle>';
-  // Re-pull creators and payments now that the admin key unlocks full fields
-  loadCreators();
-  loadPayments();
-  loadBonusTiers();
+  // Creator mode deliberately holds only one creator's recent rows. Clear that
+  // scoped state before drawing admin screens, then repopulate everything from
+  // the single protected admin bootstrap.
+  allRows = [];
+  allCreators = [];
+  allPayments = [];
+  dataLoaded = false;
+  creatorsLoaded = false;
+  paysLoaded = false;
+  rowsLoadFailed = false;
+  rowsLoadFailedReason = '';
+  adminAvailableMonths = [];
+  adminLoadedMonths = {};
+  adminMonthLoads = {};
+  adminSummary = null;
+  adminBootstrapFailed = '';
+  lastAdminBootstrapFetch = 0;
+  selectedMonth = null;
+  selectedPayMonth = null;
+  manageMonth = null;
   showPage('dashboard');
+  loadAdminBootstrap();
 }
 
 // Server-first login: the password is checked by the Apps Script (where it is
@@ -4755,7 +5000,7 @@ function showPage(name) {
   if (name==='detailed') { renderMonthTabs(); renderDetailedLog(); }
   if (name==='dashboard') renderDashboard();
   if (name==='manage') renderManageCreators();
-  if (name==='payments') { renderPayments(); refreshPaymentsData(); }
+  if (name==='payments') renderPayments();
   if (name==='views') populateViewsNameDropdown();
   if (name==='viewlog') { loadViewLogAdmin(); }
   if (name==='intake') document.title = 'NorthQuest Creator Onboarding';
@@ -4779,4 +5024,3 @@ function filterTableRows(inputId, tbodyId) {
 </script>
 </body>
 </html>
-<!-- NorthQuest performance deployment 2026-09-16 -->
