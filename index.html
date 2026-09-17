@@ -1757,12 +1757,9 @@ function logLoadSettled() {
 // of staleness still catches — it just stops the same half-megabyte being
 // pulled three times in the ten seconds it takes to pick a name.
 function beginAdminRefresh() {
-  // Render the existing loading state before requesting fresh data so a
-  // resumed phone tab never presents an old count as if it were current.
-  dataLoaded = false;
-  creatorsLoaded = false;
-  paysLoaded = false;
-  refreshAll();
+  // Keep the last confirmed result on screen while a resumed tab refreshes.
+  // This is stale-while-revalidate: a fresh response replaces the values,
+  // but a slow or dropped response never turns a working admin page blank.
 }
 
 function loadRowsIfStale() {
@@ -1972,10 +1969,10 @@ function finishAdminBootstrap() {
   waiting.forEach(fn => fn());
 }
 
-// One Apps Script execution supplies the current posting month, full admin
-// roster, payment records and bonus references. This replaces the old five-
-// request startup fan-out that queued behind itself and behaved differently
-// after a fresh login versus a restored session.
+// Start two bounded requests in parallel: a compact admin shell (summary,
+// roster, payments and references) and the current month's detailed rows.
+// Keeping the large rows separate prevents one oversized JSONP response from
+// holding every admin page until the old 60-second timeout expires.
 function loadAdminBootstrap(attempt, onDone, force) {
   attempt = attempt || 0;
   if (onDone) adminBootstrapWaiting.push(onDone);
@@ -1986,64 +1983,102 @@ function loadAdminBootstrap(attempt, onDone, force) {
   }
   if (adminBootstrapInFlight) return;
   adminBootstrapInFlight = true;
-  jsonp({ action:'getAdminBootstrap' }, (data) => {
-    if (data && data.status === 'success' && Array.isArray(data.rows) && Array.isArray(data.creators) && Array.isArray(data.payments)) {
-      const currentMonth = String(data.currentMonth || todayStr().slice(0, 7));
-      const currentRows = normalizeLogRows(data.rows);
-      allRows = allRows.filter(r => monthYM(r.date) !== currentMonth).concat(currentRows);
-      allCreators = data.creators;
-      allPayments = data.payments;
-      adminAvailableMonths = Array.isArray(data.months) ? data.months.filter(m => /^\d{4}-\d{2}$/.test(String(m))) : [currentMonth];
-      if (!adminAvailableMonths.includes(currentMonth)) adminAvailableMonths.unshift(currentMonth);
-      adminAvailableMonths = [...new Set(adminAvailableMonths)].sort().reverse();
-      adminLoadedMonths[currentMonth] = 'loaded';
-      adminSummary = data.summary || null;
-      if (Array.isArray(data.tiers) && data.tiers.length) {
-        bonusTiers = data.tiers.map(t => [Number(t[0]), Number(t[1])]).sort((a,b) => b[0]-a[0]);
-      }
-      bonusTiersLoaded = true;
-      if (Array.isArray(data.categories)) {
-        bonusCats = data.categories.map(c => ({
-          month: String(c.month || ''), name: String(c.name || ''), amount: Number(c.amount) || 0
-        })).filter(c => c.month && c.name);
-      }
-      bonusCatsLoaded = true;
-      dataLoaded = true;
-      creatorsLoaded = true;
-      paysLoaded = true;
+  const requestedMonth = todayStr().slice(0, 7);
+  const hadRows = dataLoaded;
+  const hadCreators = creatorsLoaded;
+  const hadPayments = paysLoaded;
+  let pending = 2;
+  let shellSucceeded = false;
+  let monthSucceeded = false;
+  let failureMessage = '';
+
+  function settle(part, succeeded, message) {
+    if (part === 'shell') shellSucceeded = succeeded;
+    else monthSucceeded = succeeded;
+    if (!succeeded && message && !failureMessage) failureMessage = message;
+    pending--;
+    if (pending > 0) return;
+
+    if (shellSucceeded && monthSucceeded) {
+      adminBootstrapFailed = '';
       rowsLoadFailed = false;
       rowsLoadFailedReason = '';
-      adminBootstrapFailed = '';
       lastAdminBootstrapFetch = Date.now();
       lastRowsFetch = lastAdminBootstrapFetch;
-      refreshAll();
-      finishAdminBootstrap();
-      return;
+    } else {
+      if (!shellSucceeded && !hadCreators) creatorsLoaded = true;
+      if (!shellSucceeded && !hadPayments) paysLoaded = true;
+      if (!monthSucceeded && !hadRows) {
+        dataLoaded = true;
+        rowsLoadFailed = true;
+        rowsLoadFailedReason = failureMessage;
+      }
+      adminBootstrapFailed = failureMessage || 'The admin data did not load.';
     }
-    if (data && data.status === 'error' && /unknown action/i.test(String(data.message || ''))) {
-      // Coordinated rollout fallback only. Once the matching backend is live,
-      // normal admin startup never takes this legacy multi-request path.
-      adminBootstrapInFlight = false;
-      loadAdminLog(finishAdminBootstrap);
-      loadCreators();
-      loadBonusTiers();
-      loadBonusCategories();
-      loadPayments();
-      return;
-    }
-    if (attempt < 1) {
-      adminBootstrapInFlight = false;
-      setTimeout(() => loadAdminBootstrap(attempt + 1, null, true), 2000);
-      return;
-    }
-    dataLoaded = true;
-    creatorsLoaded = true;
-    paysLoaded = true;
-    rowsLoadFailed = true;
-    adminBootstrapFailed = (data && data.message) || 'The admin data did not load.';
     refreshAll();
     finishAdminBootstrap();
-  }, 60000);
+  }
+
+  function requestShell(partAttempt) {
+    jsonp({ action:'getAdminShell' }, (data) => {
+      if (data && data.status === 'success' && Array.isArray(data.creators) && Array.isArray(data.payments)) {
+        const currentMonth = String(data.currentMonth || requestedMonth);
+        allCreators = data.creators;
+        allPayments = data.payments;
+        adminAvailableMonths = Array.isArray(data.months) ? data.months.filter(m => /^\d{4}-\d{2}$/.test(String(m))) : [currentMonth];
+        if (!adminAvailableMonths.includes(currentMonth)) adminAvailableMonths.unshift(currentMonth);
+        adminAvailableMonths = [...new Set(adminAvailableMonths)].sort().reverse();
+        adminSummary = data.summary || null;
+        if (Array.isArray(data.tiers) && data.tiers.length) {
+          bonusTiers = data.tiers.map(t => [Number(t[0]), Number(t[1])]).sort((a,b) => b[0]-a[0]);
+        }
+        bonusTiersLoaded = true;
+        if (Array.isArray(data.categories)) {
+          bonusCats = data.categories.map(c => ({
+            month: String(c.month || ''), name: String(c.name || ''), amount: Number(c.amount) || 0
+          })).filter(c => c.month && c.name);
+        }
+        bonusCatsLoaded = true;
+        creatorsLoaded = true;
+        paysLoaded = true;
+        refreshAll();
+        settle('shell', true, '');
+        return;
+      }
+      if (partAttempt < 1) {
+        setTimeout(() => requestShell(partAttempt + 1), 1000);
+        return;
+      }
+      settle('shell', false, (data && data.message) || 'The admin summary did not load.');
+    }, 15000);
+  }
+
+  function requestCurrentMonth(partAttempt) {
+    jsonp({ action:'getAdminMonth', month:requestedMonth }, (data) => {
+      if (data && data.status === 'success' && Array.isArray(data.rows)) {
+        const incoming = normalizeLogRows(data.rows);
+        allRows = allRows.filter(r => monthYM(r.date) !== requestedMonth).concat(incoming);
+        adminLoadedMonths[requestedMonth] = 'loaded';
+        if (!adminAvailableMonths.includes(requestedMonth)) adminAvailableMonths.push(requestedMonth);
+        adminAvailableMonths.sort().reverse();
+        dataLoaded = true;
+        rowsLoadFailed = false;
+        rowsLoadFailedReason = '';
+        refreshAll();
+        settle('month', true, '');
+        return;
+      }
+      if (partAttempt < 1) {
+        setTimeout(() => requestCurrentMonth(partAttempt + 1), 1000);
+        return;
+      }
+      settle('month', false, (data && data.message) || 'The current month did not load.');
+    }, 15000);
+  }
+
+  if (!hadRows) adminLoadedMonths[requestedMonth] = 'loading';
+  requestShell(attempt);
+  requestCurrentMonth(attempt);
 }
 
 function adminMonthStatus(ym) {
