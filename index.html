@@ -2710,12 +2710,28 @@ function verifySubmission(name, date, post, tiktok, insta, firstName, isSecond, 
   }, 15000);
 }
 
+// Admin pages contain several large tables. Rebuilding every one after each
+// response made a completed Apps Script call look slow because the browser
+// then rendered thousands of hidden rows and controls. Hidden pages are
+// already rendered when opened by showPage(), so refresh only what the admin
+// is looking at now.
+function renderCurrentAdminPage(name) {
+  if (name === 'weekly') renderWeeklyGrid();
+  else if (name === 'detailed') { renderMonthTabs(); renderDetailedLog(); }
+  else if (name === 'dashboard') renderDashboard();
+  else if (name === 'manage') renderManageCreators();
+  else if (name === 'payments') renderPayments();
+}
+
 function refreshAll() {
   populateNameDropdown();
-  renderWeeklyGrid();
-  renderMonthTabs();
-  renderDetailedLog();
-  if (isAdmin) { renderDashboard(); renderManageCreators(); renderPayments(); }
+  if (isAdmin) {
+    renderCurrentAdminPage(currentPage);
+  } else {
+    renderWeeklyGrid();
+    renderMonthTabs();
+    renderDetailedLog();
+  }
   // Re-run the name status in case allRows just loaded/changed. While
   // backdating a missed video, re-render THAT state instead, a plain
   // onNameChange() would reset loggingYesterday and jump back to today.
