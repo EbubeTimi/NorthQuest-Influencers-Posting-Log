@@ -1529,6 +1529,11 @@ document.addEventListener('DOMContentLoaded', () => {
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible') { loadRowsIfStale(); }
   });
+  // Mobile browsers can restore a frozen back-forward-cache snapshot without
+  // firing a normal visibility transition. Re-check that restored page too.
+  window.addEventListener('pageshow', function(event) {
+    if (event.persisted) loadRowsIfStale();
+  });
   // When focus leaves the payments table, fire any deferred render
   document.addEventListener('focusout', function(e) {
     const payBody = document.getElementById('pay-body');
@@ -1751,9 +1756,21 @@ function logLoadSettled() {
 // original re-fetch was to catch data that changed under us, which a minute
 // of staleness still catches — it just stops the same half-megabyte being
 // pulled three times in the ten seconds it takes to pick a name.
+function beginAdminRefresh() {
+  // Render the existing loading state before requesting fresh data so a
+  // resumed phone tab never presents an old count as if it were current.
+  dataLoaded = false;
+  creatorsLoaded = false;
+  paysLoaded = false;
+  refreshAll();
+}
+
 function loadRowsIfStale() {
   if (isAdmin) {
-    if (adminBootstrapFailed || !dataLoaded || Date.now() - lastAdminBootstrapFetch >= FRESH_MS) loadAdminBootstrap();
+    if (adminBootstrapFailed || !dataLoaded || Date.now() - lastAdminBootstrapFetch >= FRESH_MS) {
+      beginAdminRefresh();
+      loadAdminBootstrap(0, null, true);
+    }
     return;
   }
   // What we hold belongs to whoever was selected when it was fetched. A
