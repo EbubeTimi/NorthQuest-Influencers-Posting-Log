@@ -1,6 +1,6 @@
 # Current Project State
 
-Updated: 2026-09-17
+Updated: 2026-09-22
 
 ## Active work
 
@@ -12,6 +12,7 @@ Updated: 2026-09-17
 - The browser-side follow-up is live: admin refreshes now redraw only the visible screen instead of rebuilding every hidden admin table.
 - The phone-resume repair is deployed to production on GitHub Pages commit `e8747209816d98c84044017ab692b651e548fd50`: restored mobile tabs now replace stale admin counts with the existing loading state before forcing a fresh bootstrap request.
 - The second admin-delay repair is deployed to production: Apps Script Version 44 plus GitHub Pages commit `313a665219fd804ffc3a69b93300c8d1b33e701b`. The browser now requests a compact admin shell and the current-month log separately, retries each after 15 seconds instead of holding every page behind a 60-second combined response, and keeps confirmed data visible during background refreshes.
+- The approved intake contract-step change is live on GitHub Pages commit `8d30c945a8cc1490dd7e845452488e71977b7f39`: walkthrough first, written Fill & Sign instructions second, contract link next, and a signed file required before submission. Apps Script was not changed.
 
 ## Completed
 
@@ -69,7 +70,8 @@ Updated: 2026-09-17
 - Version 44 endpoint verification passed: `getAdminShell` is recognized and rejects an unauthenticated call instead of returning `Unknown action`.
 - GitHub Pages run `35269063117` completed successfully for production commit `313a665219fd804ffc3a69b93300c8d1b33e701b`.
 - The live Pages document is byte-for-byte identical to the tested local `index.html`; the creator route loaded 66 dropdown options in about 0.34 seconds and produced no browser warnings or errors. Authenticated admin timing remains unverified because this automation tab has no reusable admin session.
+- Intake release: the focused contract tests passed 3/3 on the main-based release tree; inline intake JavaScript syntax and the two-file release diff passed. The unrelated admin bonus test fails identically on untouched `main` and the release tree because its DOM fixture lacks `parentNode`. GitHub Pages run `35751947432` succeeded, and the live contract page renders the new video link, written Fill & Sign steps, contract link, and upload control; no real creator submission or Drive upload was performed.
 
 ## Next action
 
-- Obtain a fresh admin sign-in for authenticated timing checks on Dashboard, Manage Creators, Payments, and September Detailed Log. Then perform the requested security review before planning the CashDrive and Aura replicas.
+- If needed, verify the signed-contract upload with an authorized disposable creator submission; this was not exercised during the live intake smoke test. The earlier admin timing/security-review and CashDrive/Aura replica work remains separate.
