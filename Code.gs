@@ -297,6 +297,11 @@ const BONUS_TIERS_SHEET = 'Bonus Tiers';
 const DEFAULT_BONUS_TIERS = [
   [100000, 50000], [500000, 100000], [1000000, 250000], [2000000, 500000], [5000000, 1000000]
 ];
+const SEPTEMBER_2026_BONUS_TIERS = [
+  [10000000, 2000000], [5000000, 1000000], [2000000, 500000],
+  [1000000, 250000], [500000, 100000], [200000, 70000], [100000, 50000]
+];
+const BONUS_TIERS_MONTHLY_SHEET = 'Bonus Tiers by Month';
 
 
 
@@ -445,8 +450,37 @@ function readBonusTiers_() {
 
 
 
-function handleGetBonusTiers() {
-  return { status: 'success', tiers: readBonusTiers_() };
+function readMonthlyBonusTiers_() {
+  const sheet = getSpreadsheet_().getSheetByName(BONUS_TIERS_MONTHLY_SHEET);
+  const byMonth = {};
+  if (!sheet) return byMonth;
+  const rows = sheet.getDataRange().getValues();
+  for (let i = 1; i < rows.length; i++) {
+    const month = String(rows[i][0] || '').replace(/^'/, '').trim();
+    const views = Number(rows[i][1]), amount = Number(rows[i][2]);
+    if (!/^\d{4}-\d{2}$/.test(month) || views <= 0 || amount < 0) continue;
+    if (!byMonth[month]) byMonth[month] = [];
+    byMonth[month].push([views, amount]);
+  }
+  Object.keys(byMonth).forEach(month => byMonth[month].sort((a, b) => b[0] - a[0]));
+  return byMonth;
+}
+
+function bonusTiersForMonth_(month, monthly) {
+  const override = (monthly || readMonthlyBonusTiers_())[month];
+  if (override && override.length) return override;
+  // The old Bonus Tiers sheet was global, so changing it for September could
+  // silently reprice August and every earlier register. Pre-September months
+  // are pinned to the original five-tier structure; month-specific rows are
+  // the only deliberate way to override a historical month.
+  return month >= '2026-09' ? SEPTEMBER_2026_BONUS_TIERS : DEFAULT_BONUS_TIERS;
+}
+
+function handleGetBonusTiers(params) {
+  const month = String((params && params.month) || Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM')).trim();
+  const monthly = readMonthlyBonusTiers_();
+  return { status: 'success', tiers: bonusTiersForMonth_(month, monthly),
+    legacyTiers: DEFAULT_BONUS_TIERS, monthlyTiers: monthly };
 }
 
 
@@ -456,9 +490,11 @@ function handleGetBonusTiers() {
 
 
 
-// params.tiers is a JSON string: [[views, amount], ...]. Full replace —
-// simplest to keep the sheet as the single source of truth, no partial edits.
+// Edit only the selected month. The original Bonus Tiers sheet remains the
+// historical schedule, so changing September never reprices older months.
 function handleSetBonusTiers(params) {
+  const month = String((params && params.month) || '').trim();
+  if (!/^\d{4}-\d{2}$/.test(month)) return { status: 'error', message: 'Month required (YYYY-MM)' };
   let tiers;
   try { tiers = JSON.parse(params.tiers || '[]'); } catch (e) { return { status: 'error', message: 'Bad tier data' }; }
   if (!Array.isArray(tiers) || !tiers.length) return { status: 'error', message: 'At least one tier is required' };
@@ -469,12 +505,24 @@ function handleSetBonusTiers(params) {
     clean.push([min, bonus]);
   }
   clean.sort((a, b) => b[0] - a[0]);
-  const sheet = getBonusTiersSheet_();
-  const existingRows = sheet.getLastRow() - 1;
-  if (existingRows > 0) sheet.getRange(2, 1, existingRows, 2).clearContent();
-  if (clean.length) sheet.getRange(2, 1, clean.length, 2).setValues(clean);
-  nqInvalidateBonusTiers_();
-  return { status: 'success', tiers: clean };
+  const lock = LockService.getScriptLock();
+  try { lock.waitLock(20000); } catch (e) { return { status: 'error', message: 'The system is busy. Please try again.' }; }
+  try {
+    const ss = getSpreadsheet_();
+    let sheet = ss.getSheetByName(BONUS_TIERS_MONTHLY_SHEET);
+    if (!sheet) {
+      sheet = ss.insertSheet(BONUS_TIERS_MONTHLY_SHEET);
+      sheet.appendRow(['Month', 'Views Threshold', 'Bonus Amount (₦)']);
+      sheet.setFrozenRows(1);
+    }
+    const rows = sheet.getDataRange().getValues();
+    for (let i = rows.length - 1; i >= 1; i--) {
+      if (String(rows[i][0] || '').replace(/^'/, '').trim() === month) sheet.deleteRow(i + 1);
+    }
+    sheet.getRange(sheet.getLastRow() + 1, 1, clean.length, 3).setValues(clean.map(t => [month, t[0], t[1]]));
+    SpreadsheetApp.flush();
+    return { status: 'success', month: month, tiers: clean };
+  } finally { lock.releaseLock(); }
 }
 
 
@@ -670,7 +718,7 @@ function doGet(e) {
     else if (action === 'setRate') result = handleSetRate(e.parameter);
     else if (action === 'setCreatorBank') result = handleSetCreatorBank(e.parameter);
     else if (action === 'intake') result = handleIntake(e.parameter);
-    else if (action === 'getBonusTiers') result = handleGetBonusTiers();
+    else if (action === 'getBonusTiers') result = handleGetBonusTiers(e.parameter);
     else if (action === 'setBonusTiers') result = handleSetBonusTiers(e.parameter);
     else if (action === 'setContractResolved') result = handleSetContractResolved(e.parameter);
     else if (action === 'submitViews') result = handleSubmitViews(e.parameter);
@@ -1282,6 +1330,8 @@ function buildAdminBootstrapPayload_(includeCurrentRows) {
     creators: creators.creators || [],
     payments: payments.payments || [],
     tiers: tiers.tiers || [],
+    legacyTiers: tiers.legacyTiers || [],
+    monthlyTiers: tiers.monthlyTiers || {},
     categories: categories.categories || []
   };
   if (includeCurrentRows) result.rows = rows;
@@ -2578,65 +2628,12 @@ function handleSetCreatorBank(params) {
 
 
 // ==========================================================
-// CREATOR TIER — the content type picked at onboarding decides the monthly
-// salary, so it no longer has to be set by hand in the payment register
-// afterwards.
-//
-//   WhatsApp & picture content -> ₦100,000
-//   Video content              -> ₦150,000
-//
-// ₦200,000 is deliberately NOT offered on the form. It is the discretionary
-// bump for creators who did exceptionally well, and it stays admin-only in
-// Manage Creators. Onboarding can never cut a bump — see the first rule.
+// New intake sets a video creator to the internal base rate; an existing
+// administrator-set rate is never overwritten by a repeat intake.
 // ==========================================================
 function nqTierRate_(params, existingRate) {
-  var existing = parseFloat(existingRate);
-
-
-
-
-
-
-
-
-  // Never lower a deliberate bump. Someone already above the standard salary
-  // keeps it, so re-running intake to fix bank details cannot cost them money.
-  if (!isNaN(existing) && existing > DEFAULT_MONTHLY_SALARY) return existing;
-
-
-
-
-
-
-
-
-  // 'rate' arrives in the query string, so a creator could edit it in the URL.
-  // Only ever accept the two values the form can legitimately produce.
-  var ALLOWED = [100000, 150000];
-  var picked = parseInt(params.rate, 10);
-  if (ALLOWED.indexOf(picked) >= 0) return picked;
-
-
-
-
-
-
-
-
-  // A tier was chosen but the amount is not one we issue — treat that as
-  // tampering and use the lower tier. Someone underpaid says so immediately;
-  // someone overpaid never will.
-  if (params.creatorType) return 100000;
-
-
-
-
-
-
-
-
-  // No tier at all, so this is an older copy of the form. Behave exactly as
-  // this function's code did before the tier feature existed.
+  const existing = parseFloat(existingRate);
+  // Intake now offers only video content. Preserve any existing admin-set rate.
   if (!isNaN(existing) && existing > 0) return existing;
   return NEW_CREATOR_MONTHLY_SALARY;
 }
@@ -2651,12 +2648,16 @@ function nqTierRate_(params, existingRate) {
 // ==========================================================
 // CALC_BONUS — used by the monthly register sheets
 // ==========================================================
-function CALC_BONUS(viewsList) {
+function CALC_BONUS(viewsList, month) {
   if (!viewsList) return 0;
   // Reads live from the Bonus Tiers sheet — change the amounts there (or via
   // Manage Creators → Edit bonus tiers in the app) and every register,
   // formula, and legend picks it up automatically. No code edits needed.
-  const TIERS = readBonusTiers_();
+  // Old one-argument register formulas retain the legacy schedule. New
+  // formulas identify their month explicitly.
+  // One-argument formulas are historical registers created before the month
+  // parameter existed. Keep those on the original schedule as well.
+  const TIERS = month ? bonusTiersForMonth_(String(month).trim()) : DEFAULT_BONUS_TIERS;
   const values = String(viewsList).split(',').map(v => parseInt(v.trim().replace(/[^\d]/g,'')) || 0);
   let total = 0;
   values.forEach(v => {
@@ -2874,7 +2875,9 @@ function buildOneMonth(ss, ym, counts, info) {
     const ci = info[cname] || { rate: DEFAULT_MONTHLY_SALARY, bank:'', acct:'', acctName:'' };
     const p = preserved[cname] || {};
     // Rate per Post (column D) = monthly salary ÷ 60 (flat divisor).
-    const perVideoRate = (parseFloat(ci.rate) || DEFAULT_MONTHLY_SALARY) / 60;
+    const rawRate = parseFloat(ci.rate) || DEFAULT_MONTHLY_SALARY;
+    const monthlyRate = ym >= '2026-09' && rawRate === 100000 ? 150000 : rawRate;
+    const perVideoRate = monthlyRate / 60;
     return [
       i+1, cname, posts, perVideoRate, '', p.bonusViews || '', '', p.special || '', '',
       ci.bank, ci.acct, ci.acctName, p.status || 'Pending', p.payDate || '', p.remarks || ''
@@ -2893,7 +2896,7 @@ function buildOneMonth(ss, ym, counts, info) {
     for (let i = 0; i < rows.length; i++) {
       const r = HR+1+i;
       sheet.getRange(r,5).setFormula('=C'+r+'*D'+r);
-      sheet.getRange(r,7).setFormula('=IF(F'+r+'="",0,CALC_BONUS(F'+r+'))');
+      sheet.getRange(r,7).setFormula('=IF(F'+r+'="",0,CALC_BONUS(F'+r+',"'+ym+'"))');
       sheet.getRange(r,9).setFormula('=E'+r+'+G'+r+'+IF(H'+r+'="",0,H'+r+')');
     }
     [4,5,7,8,9].forEach(col => sheet.getRange(HR+1, col, rows.length, 1).setNumberFormat('"₦"#,##0.00'));

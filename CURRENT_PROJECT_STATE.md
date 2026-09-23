@@ -1,8 +1,14 @@
 # Current Project State
 
-Updated: 2026-09-22
+Updated: 2026-09-23
 
 ## Active work
+
+- Release branch: `codex/sep26-bonus-release` from production `main` at `5fbedb275a32e293f7e4ceb09ca50917e7cb9b7c`.
+- Approved September 2026 intake/payment backend is deployed as Apps Script Version 46: all new creators are video creators, the new intake base rate is internally fixed at ₦150,000, and the creator-facing intake does not disclose that figure.
+- September 2026 bonus schedule adds 200,000 views = ₦70,000 and 10,000,000 views = ₦2,000,000 while preserving the legacy schedule for months before September.
+- Bonus-tier edits are month-scoped; changing one month cannot reprice another month.
+- Live endpoint checks confirmed September returns the new seven-tier schedule, August remains pinned to the original five-tier schedule, and unauthenticated admin requests remain denied.
 
 - Branch: `codex/northquest-performance-bootstrap`
 - Goal: remove the Apps Script request queue that makes the admin dashboard, Manage Creators, Payments, and Detailed Log slow or intermittently empty.
@@ -15,6 +21,11 @@ Updated: 2026-09-22
 - The approved intake contract-step change is live on GitHub Pages commit `8d30c945a8cc1490dd7e845452488e71977b7f39`: walkthrough first, written Fill & Sign instructions second, contract link next, and a signed file required before submission. Apps Script was not changed.
 
 ## Completed
+
+- Replaced the intake's WhatsApp/video choice with one fixed video-creator payload and preserved existing administrator-set rates on repeat intake.
+- Rebuilt the creator-facing pay explanation as a readable seven-row milestone list and changed both detail steps to compact underline fields without card nesting.
+- Added month-aware bonus calculation to the app, exports, admin manage controls, and new spreadsheet-register formulas.
+- Applied a September floor of ₦150,000 only to legacy ₦100,000 defaults; older months retain their original rate and explicit monthly overrides still win.
 
 - Added the complete current Google Apps Script as `Code.gs` for version control.
 - Combined the creator roster and remembered creator's recent rows into one startup request.
@@ -43,6 +54,11 @@ Updated: 2026-09-22
 - Published the matching `Code.gs` and `index.html` to production `main` in commit `313a665219fd804ffc3a69b93300c8d1b33e701b`.
 
 ## Verification
+
+- September release suite: `node --test tests/*.test.js` passed, including August/September bonus isolation, September base-pay floor, and admin override preservation.
+- `Code.gs`, inline `index.html`, and inline `intake.html` JavaScript parsed successfully; `git diff --check` passed.
+- Local browser verification passed for the approved milestone screen and compact detail form; all seven September tiers render and the removed creator-type choice is absent.
+- Impeccable detector was run on both changed UI files. Its remaining warnings are inherited brand/style patterns or false positives from legacy selectors; no blocking functional issue was found.
 
 - `node --test tests/*.test.js`: 16 tests passed.
 - `Get-Content -Raw Code.gs | node --check -`: passed.
@@ -75,3 +91,4 @@ Updated: 2026-09-22
 ## Next action
 
 - If needed, verify the signed-contract upload with an authorized disposable creator submission; this was not exercised during the live intake smoke test. The earlier admin timing/security-review and CashDrive/Aura replica work remains separate.
+

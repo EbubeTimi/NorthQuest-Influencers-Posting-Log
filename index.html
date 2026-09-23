@@ -1342,11 +1342,11 @@
   </div>
 </div>
 
-<!-- EDIT BONUS TIERS, changes apply everywhere: Manage creators, Payments, CSV export -->
+<!-- EDIT BONUS TIERS for the selected month only -->
 <div class="modal-overlay" id="bonus-tiers-modal">
   <div class="modal bt-box">
     <div class="confirm-title">Edit bonus tiers</div>
-    <div class="confirm-msg">Set the views threshold and the bonus amount for each tier. These apply to every creator, everywhere in the app, the moment you save.</div>
+    <div class="confirm-msg">Set the views threshold and bonus amount for the selected month. Other months stay unchanged.</div>
     <div id="bonus-tiers-rows"></div>
     <button type="button" class="btn btn-sm" style="width:auto;margin:6px 0 0" onclick="addBonusTierRow()">+ Add another tier</button>
     <div class="bt-actions">
@@ -1451,7 +1451,16 @@ let loggingYesterday = false;
 // Current structure (Aug 2026): 100k views=₦50k, 500k=₦100k, 1M=₦250k,
 // 2M=₦500k, 5M=₦1M, 10M=₦2M. The live values live in the "Bonus Tiers" sheet;
 // this is only what shows before that loads and what "Reset to defaults" gives.
-let bonusTiers = [[10000000,2000000],[5000000,1000000],[2000000,500000],[1000000,250000],[500000,100000],[100000,50000]];
+const SEPTEMBER_BONUS_TIERS = [[10000000,2000000],[5000000,1000000],[2000000,500000],[1000000,250000],[500000,100000],[200000,70000],[100000,50000]];
+let legacyBonusTiers = [[10000000,2000000],[5000000,1000000],[2000000,500000],[1000000,250000],[500000,100000],[100000,50000]];
+let monthlyBonusTiers = {};
+let bonusTiers = SEPTEMBER_BONUS_TIERS;
+function bonusTiersForMonth(ym) { return monthlyBonusTiers[ym] || (ym >= '2026-09' ? SEPTEMBER_BONUS_TIERS : legacyBonusTiers); }
+function acceptBonusTierPayload(data) {
+  if (Array.isArray(data.legacyTiers) && data.legacyTiers.length) legacyBonusTiers = data.legacyTiers.map(t => [Number(t[0]),Number(t[1])]).sort((a,b)=>b[0]-a[0]);
+  if (data.monthlyTiers && typeof data.monthlyTiers === 'object') monthlyBonusTiers = data.monthlyTiers;
+  bonusTiers = bonusTiersForMonth(todayStr().substring(0,7));
+}
 let bonusTiersLoaded = false;
 let payRowNames = [];
 let currentPage = 'chooser';
@@ -2029,9 +2038,7 @@ function loadAdminBootstrap(attempt, onDone, force) {
         if (!adminAvailableMonths.includes(currentMonth)) adminAvailableMonths.unshift(currentMonth);
         adminAvailableMonths = [...new Set(adminAvailableMonths)].sort().reverse();
         adminSummary = data.summary || null;
-        if (Array.isArray(data.tiers) && data.tiers.length) {
-          bonusTiers = data.tiers.map(t => [Number(t[0]), Number(t[1])]).sort((a,b) => b[0]-a[0]);
-        }
+        acceptBonusTierPayload(data);
         bonusTiersLoaded = true;
         if (Array.isArray(data.categories)) {
           bonusCats = data.categories.map(c => ({
@@ -3085,12 +3092,12 @@ function renderMyLogs(name) {
   const monthlySalary = effMonthlyRate(name, ym);
   const ratePerVideo = monthlySalary / maxVideos;
   const baseAmount = Math.round(effPosts * ratePerVideo);
-  const perf = calcBonus(man.bonusViews || '');
+  const perf = calcBonus(man.bonusViews || '', ym);
   // How MANY bonuses, not how much. bonusViews is a comma-separated list with
   // one entry per video the admin awarded, so a creator on ₦1,300,000 may
   // have earned that across four separate bonuses — one figure answers "how
   // many", the other "how much".
-  const bonusCount = calcBonusCount(man.bonusViews || '');
+  const bonusCount = calcBonusCount(man.bonusViews || '', ym);
   const extraBonuses = parseExtraBonuses(man.specialBonus || '', ym);
   const special = extraBonuses.reduce((sum, e) => sum + e.amount, 0);
   const totalOv = String(man.totalOverride || '').replace(/[^\d.]/g, '');
@@ -3332,7 +3339,7 @@ function bonusControl(name) {
   const rec = allPayments.find(p => p.month === ym && String(p.name).toLowerCase() === name.toLowerCase());
   const views = rec && rec.bonusViews ? String(rec.bonusViews) : '';
   const list = views.split(',').map(v => v.trim()).filter(Boolean);
-  const total = calcBonus(views);
+  const total = calcBonus(views, ym);
   const chips = list.map(v =>
     '<span class="post-chip chip-tt-1">' + (Number(v) || 0).toLocaleString('en-NG') + ' views</span>'
   ).join(' ');
@@ -3342,7 +3349,7 @@ function bonusControl(name) {
     (chips ? '<div style="display:flex;gap:4px;flex-wrap:wrap;margin:4px 0">' + chips + '</div>' : '') +
     '<select class="pay-input bonus-select" style="max-width:170px;margin-top:3px" onchange="onBonusPick(\'' + escH(name) + '\', this)">' +
       '<option value="">+ Add views bonus…</option>' +
-      [...bonusTiers].sort((a,b) => a[0]-b[0]).map(t => '<option value="' + t[0] + '">' + t[0].toLocaleString('en-NG') + ' views &rarr; &#8358;' + t[1].toLocaleString('en-NG') + '</option>').join('') +
+      [...bonusTiersForMonth(ym)].sort((a,b) => a[0]-b[0]).map(t => '<option value="' + t[0] + '">' + t[0].toLocaleString('en-NG') + ' views &rarr; &#8358;' + t[1].toLocaleString('en-NG') + '</option>').join('') +
       (list.length
         ? '<optgroup label="Remove one bonus">' +
             list.map((v, i) => '<option value="del:' + i + '">&#x2715; ' + (Number(v) || 0).toLocaleString('en-NG') + ' views</option>').join('') +
@@ -3370,7 +3377,7 @@ function onBonusPick(name, sel) {
   else list.push(val);
   const newViews = list.join(',');
   savePaymentField(ym, name, 'bonusViews', newViews, false);
-  const total = calcBonus(newViews);
+  const total = calcBonus(newViews, ym);
   showToast('success', 'Bonus updated',
     total
       ? name.split(' ')[0] + '\'s performance bonus for ' + monthLabel(ym) + ' is now &#8358;' + total.toLocaleString('en-NG') + '. The payment register updated automatically.'
@@ -3800,12 +3807,13 @@ function ord(n) {
 function fmtMoney2(n) {
   return Number(n || 0).toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
-function calcBonus(viewsList) {
+function calcBonus(viewsList, ym) {
   if (!viewsList) return 0;
+  const tiers = bonusTiersForMonth(ym || todayStr().substring(0,7));
   let total = 0;
   String(viewsList).split(',').forEach(v => {
     const n = parseInt(v.trim().replace(/[^\d]/g, '')) || 0;
-    for (let i = 0; i < bonusTiers.length; i++) { if (n >= bonusTiers[i][0]) { total += bonusTiers[i][1]; break; } }
+    for (let i = 0; i < tiers.length; i++) { if (n >= tiers[i][0]) { total += tiers[i][1]; break; } }
   });
   return total;
 }
@@ -3874,12 +3882,13 @@ function setBonusCount(cell, name, count) {
 // How many bonuses were actually earned, walking the same list and the same
 // tiers as calcBonus so the count and the total can never disagree. An entry
 // that cleared no tier earned nothing, so it is not counted.
-function calcBonusCount(viewsList) {
+function calcBonusCount(viewsList, ym) {
   if (!viewsList) return 0;
+  const tiers = bonusTiersForMonth(ym || todayStr().substring(0,7));
   let count = 0;
   String(viewsList).split(',').forEach(v => {
     const n = parseInt(v.trim().replace(/[^\d]/g, '')) || 0;
-    for (let i = 0; i < bonusTiers.length; i++) { if (n >= bonusTiers[i][0]) { count++; break; } }
+    for (let i = 0; i < tiers.length; i++) { if (n >= tiers[i][0]) { count++; break; } }
   });
   return count;
 }
@@ -3912,7 +3921,8 @@ function effMonthlyRate(name, ym) {
     const ov = String(rec.rateOverride || '').replace(/[^\d.]/g, '');
     if (ov !== '' && !isNaN(parseFloat(ov)) && parseFloat(ov) > 0) return parseFloat(ov);
   }
-  return creatorDefaultRate(name);
+  const base = creatorDefaultRate(name);
+  return ym >= '2026-09' && base === 100000 ? 150000 : base;
 }
 
 // ── BONUS TIERS, editable from Manage Creators / Payments, no code changes ──
@@ -3925,7 +3935,7 @@ function loadBonusTiers(done) {
     bonusTiersInFlight = false;
     bonusTiersLoaded = true;
     if (data && data.status === 'success' && Array.isArray(data.tiers) && data.tiers.length) {
-      bonusTiers = data.tiers.map(t => [Number(t[0]), Number(t[1])]).sort((a,b) => b[0]-a[0]);
+      acceptBonusTierPayload(data);
     }
     if (currentPage === 'manage') renderManageCreators();
     if (currentPage === 'payments') renderPayments();
@@ -3959,13 +3969,15 @@ function loadBonusCategories(done) {
   }, 60000);
 }
 
-function bonusTierLegendText() {
-  return bonusTiers.map(t => t[0].toLocaleString('en-NG') + ' views = &#8358;' + t[1].toLocaleString('en-NG')).join(' &middot; ');
+function bonusTierLegendText(ym) {
+  return bonusTiersForMonth(ym || manageMonthOrToday()).map(t => t[0].toLocaleString('en-NG') + ' views = &#8358;' + t[1].toLocaleString('en-NG')).join(' &middot; ');
 }
 
-function openBonusTiersModal() {
+function openBonusTiersModal(displayTiers) {
   const body = document.getElementById('bonus-tiers-rows');
-  body.innerHTML = bonusTiers.map((t, i) =>
+  const ym = currentPage === 'payments' ? selectedPayMonth : manageMonthOrToday();
+  body.dataset.month = ym;
+  body.innerHTML = (displayTiers || bonusTiersForMonth(ym)).map((t, i) =>
     '<div class="bt-row" data-idx="' + i + '">' +
       '<input type="text" inputmode="numeric" class="pay-input" value="' + t[0] + '" placeholder="Views">' +
       '<span style="color:var(--text3)">views &rarr;</span>' +
@@ -4054,8 +4066,8 @@ function addBonusTierRow() {
 }
 
 function resetBonusTiersDefault() {
-  bonusTiers = [[10000000,2000000],[5000000,1000000],[2000000,500000],[1000000,250000],[500000,100000],[100000,50000]];
-  openBonusTiersModal();
+  const ym = document.getElementById('bonus-tiers-rows').dataset.month || manageMonthOrToday();
+  openBonusTiersModal(ym >= '2026-09' ? SEPTEMBER_BONUS_TIERS : legacyBonusTiers);
 }
 
 function saveBonusTiers() {
@@ -4075,12 +4087,13 @@ function saveBonusTiers() {
   tiers.sort((a,b) => b[0]-a[0]);
   const btn = document.getElementById('bonus-tiers-save-btn');
   btn.disabled = true; btn.textContent = 'Saving…';
-  jsonp({ action:'setBonusTiers', tiers: JSON.stringify(tiers) }, (d) => {
+  const ym = document.getElementById('bonus-tiers-rows').dataset.month || manageMonthOrToday();
+  jsonp({ action:'setBonusTiers', month: ym, tiers: JSON.stringify(tiers) }, (d) => {
     btn.disabled = false; btn.textContent = 'Save tiers';
     if (d && d.status === 'success') {
-      bonusTiers = tiers;
+      monthlyBonusTiers[ym] = tiers;
       closeBonusTiersModal();
-      showToast('success', 'Bonus tiers updated', 'New bonuses now apply everywhere, Manage creators, the payment register, and the legend.');
+      showToast('success', 'Bonus tiers updated', 'The bonus amounts for ' + monthLabel(ym) + ' are saved. Other months are unchanged.');
       if (currentPage === 'manage') renderManageCreators();
       if (currentPage === 'payments') renderPayments();
     } else {
@@ -4113,7 +4126,7 @@ function addCreatorToPayMonth() {
   const sel = document.getElementById('paymonth-add-name');
   const name = sel ? sel.value : '';
   if (!name) { showToast('error', 'Pick a creator', 'Choose a creator to add to this month.'); return; }
-  savePaymentField(selectedPayMonth, name, 'rateOverride', String(creatorDefaultRate(name)), false);
+  savePaymentField(selectedPayMonth, name, 'rateOverride', String(effMonthlyRate(name, selectedPayMonth)), false);
   showToast('success', 'Added to ' + monthLabel(selectedPayMonth),
     name.split(' ')[0] + ' added to ' + monthLabel(selectedPayMonth) + '. Set their base pay and bonus in the row.');
   renderPayments();
@@ -4266,7 +4279,7 @@ function payLegendHtml(tiers) {
     'Per-video rate = monthly base pay &divide; 62 (flat, same divisor every month). Base pay tiers in this month\'s register:<br>' + tierLines + '<br>' +
     'Pay = (videos posted that month) &times; per-video rate. &nbsp;Bonuses are the same for everybody regardless of base pay. &nbsp;Staff rows show a fixed monthly salary, not calculated from posts.' +
     '<h4>Performance Bonus Tiers (same for all creators) <button type="button" class="btn btn-sm" style="margin-left:8px;padding:3px 10px;font-size:11px" onclick="openBonusTiersModal()">Edit tiers</button></h4>' +
-    [...bonusTiers].sort((a,b) => a[0]-b[0]).map(t => t[0].toLocaleString('en-NG') + ' views = &#8358;' + t[1].toLocaleString('en-NG')).join('<br>') +
+    [...bonusTiersForMonth(selectedPayMonth)].sort((a,b) => a[0]-b[0]).map(t => t[0].toLocaleString('en-NG') + ' views = &#8358;' + t[1].toLocaleString('en-NG')).join('<br>') +
     '<h4>How to enter multiple bonuses</h4>' +
     'If a creator hits more than one milestone, type the view counts in the Bonus Views box separated by commas, WITHOUT thousands separators. ' +
     'Example: <strong>100000,50000</strong> &nbsp;&nbsp; Not like this: 100,000, 50,000. The Perf. Bonus and Total update on their own.';
@@ -4441,7 +4454,7 @@ function renderPayments() {
         : '<input class="pay-input" style="max-width:56px;text-align:right" value="' + credit + '" title="Videos you added on ' + escH(name) + '\'s behalf. Adds to what they logged — this is what shows in their own +N corner, never merged into their own count." onchange="onCreditFieldEdit(' + i + ',this.value)">';
       const base = Math.round(effPosts * monthlySalary / maxVideos);
       const bonusViews = man.bonusViews || '';
-      const perf = calcBonus(bonusViews);
+      const perf = calcBonus(bonusViews, selectedPayMonth);
       const special = parseExtraBonuses(man.specialBonus || '', selectedPayMonth).reduce((t,e) => t + e.amount, 0);
       const computedTotal = base + perf + special;
       const totalOv = String(man.totalOverride || '').replace(/[^\d.]/g,'');
@@ -4563,7 +4576,7 @@ function exportPaymentsCSV() {
     }
     const rawPosts = counts[name];
     const ci = cmap[name.toLowerCase()] || { rate:defMonthlySalary, bankName:'', acctNum:'', acctName:'' };
-    const perVideo = ci.rate / maxVideosCSV;
+    const perVideo = effMonthlyRate(name, selectedPayMonth) / maxVideosCSV;
     const man = allPayments.find(p => p.month === selectedPayMonth && String(p.name).toLowerCase() === name.toLowerCase()) || {};
     const creditRaw = String(man.postsCredit || '');
     const overrideRaw = String(man.postsOverride || '');
@@ -4571,7 +4584,7 @@ function exportPaymentsCSV() {
     const hasLegacyOverride = !hasCredit && overrideRaw !== '' && !isNaN(parseFloat(overrideRaw));
     const credit = hasCredit ? parseFloat(creditRaw) : 0;
     const effPosts = hasLegacyOverride ? parseFloat(overrideRaw) : (rawPosts + credit);
-    const perf = calcBonus(man.bonusViews || '');
+    const perf = calcBonus(man.bonusViews || '', selectedPayMonth);
     // Each named bonus parsed on its own. Stripping the digits out of the
     // whole cell turned "50000, 20000" into 5000020000 in the old export.
     const special = parseExtraBonuses(man.specialBonus || '', selectedPayMonth).reduce((t,e) => t + e.amount, 0);
@@ -4603,7 +4616,7 @@ function exportPaymentsCSV() {
   });
   R.push(['Pay = (videos posted that month) × per-video rate. Bonuses are the same for everybody regardless of base pay. In ' + mName + ' ' + y + ' there are ' + (last*2) + ' possible video slots (' + last + ' days × 2/day).']);
   R.push([]); R.push([{ v:'PERFORMANCE BONUS TIERS', s:4 }]);
-  [...bonusTiers].sort((a,b) => a[0]-b[0]).forEach(t => {
+  [...bonusTiersForMonth(selectedPayMonth)].sort((a,b) => a[0]-b[0]).forEach(t => {
     R.push(['• ' + t[0].toLocaleString('en-NG') + ' views = ₦' + t[1].toLocaleString('en-NG')]);
   });
 

@@ -126,6 +126,28 @@
   .example-row .ex-num{width:22px;height:22px;border-radius:50%;background:var(--lav);color:var(--accent3);font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
   .example-row .ex-txt{font-size:13.5px;color:var(--text2);}
   .example-row .ex-txt strong{color:var(--text);}
+  /* The detail steps are writing surfaces, not cards within cards. */
+  .step[data-key="details1"] .group,.step[data-key="details2"] .group{background:transparent;border:0;border-radius:0;padding:0;margin:20px 0 0;max-width:370px;}
+  .step[data-key="details1"] .group-title,.step[data-key="details2"] .group-title{font-size:14px;text-transform:none;letter-spacing:0;margin-bottom:13px;}
+  .step[data-key="details2"] .group + .group{border-top:1px solid var(--border);padding-top:19px;margin-top:23px;}
+  .step[data-key="details1"] .field,.step[data-key="details2"] .field{margin-bottom:15px;}
+  .step[data-key="details1"] .field label,.step[data-key="details2"] .field label{font-size:12px;text-transform:none;letter-spacing:0;margin-bottom:0;}
+  .step[data-key="details1"] .field input,.step[data-key="details2"] .field input{background:transparent;border:0;border-bottom:1px solid #aebfb2;border-radius:0;box-shadow:none;padding:5px 0 7px;min-height:44px;caret-color:var(--accent);}
+  .step[data-key="details1"] .field input:focus,.step[data-key="details2"] .field input:focus{border-bottom:2px solid var(--accent);outline:2px solid #c5ddca;outline-offset:3px;}
+  .step[data-key="details1"] .field input::placeholder,.step[data-key="details2"] .field input::placeholder{color:#6b685f;opacity:1;}
+  .step[data-key="details1"] #f-phone{max-width:204px;}
+  .step[data-key="details1"] #f-email{max-width:330px;}
+  .step[data-key="details1"] .nav,.step[data-key="details2"] .nav{max-width:370px;}
+  .bonus-head,.bonus-row{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:baseline;text-align:left;}
+  .bonus-head{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--accent3);border-bottom:2px solid var(--accent3);padding:0 2px 8px;margin-top:25px;}
+  .bonus-row{border-bottom:1px solid var(--border);padding:11px 2px;font-variant-numeric:tabular-nums;}
+  .bonus-row span:first-child{color:var(--text2);}
+  .bonus-row strong{font-size:17px;color:var(--accent3);}
+  .bonus-row:last-of-type{background:var(--gold-soft);border:0;border-radius:0 0 10px 10px;margin:0 -10px;padding:13px 12px;}
+  .bonus-row:last-of-type strong{color:#79500f;}
+  .bonus-note{font-size:12px;color:var(--text2);line-height:1.5;margin-top:15px;text-align:left;}
+  ::selection{background:#d7e8d7;color:var(--accent3);}
+  @media(max-width:400px){.bonus-row strong{font-size:15px;}.bonus-row span:first-child{font-size:13px;}}
 </style>
 </head>
 <body>
@@ -181,16 +203,18 @@
     </section>
 
     <section class="step center" data-key="pay">
-      <div class="bignum rv" style="margin-bottom:4px;">&#8358;100,000 &ndash; &#8358;300,000</div>
-      <p class="lead rv">a month in base pay. Every creator has their own base pay — it is set when you join and reviewed as you perform, and creators who perform well get bumped up. Your rate per video is your base pay &divide; 62, earned on every video you log towards your full <strong>62 videos a month</strong>. You are paid once a month, on or before the last day.</p>
-      <p class="lead rv" style="margin-top:14px;">And when you go viral, real bonuses stack on top:</p>
-      <div class="ladder rv" style="margin-top:8px;text-align:left;">
-        <div class="rung top"><span class="views">5,000,000 views</span><span class="cash">&#8358;1,000,000</span></div>
-        <div class="rung"><span class="views">2,000,000 views</span><span class="cash">&#8358;500,000</span></div>
-        <div class="rung"><span class="views">1,000,000 views</span><span class="cash">&#8358;250,000</span></div>
-        <div class="rung"><span class="views">500,000 views</span><span class="cash">&#8358;100,000</span></div>
-        <div class="rung"><span class="views">100,000 views</span><span class="cash">&#8358;50,000</span></div>
-      </div>
+      <h1 class="rv">How your pay works</h1>
+      <p class="lead rv">Your base pay is set when you join. Each video you log earns its share of that monthly amount. You are paid once a month, on or before the last day.</p>
+      <div class="note rv" style="text-align:left;"><strong>Views can add to your pay.</strong><br>When a video reaches a milestone, it can earn the corresponding bonus on top of your base pay.</div>
+      <div class="bonus-head rv"><span>Video views</span><span>Bonus</span></div>
+      <div class="bonus-row rv"><span>100,000</span><strong>&#8358;50,000</strong></div>
+      <div class="bonus-row rv"><span>200,000</span><strong>&#8358;70,000</strong></div>
+      <div class="bonus-row rv"><span>500,000</span><strong>&#8358;100,000</strong></div>
+      <div class="bonus-row rv"><span>1,000,000</span><strong>&#8358;250,000</strong></div>
+      <div class="bonus-row rv"><span>2,000,000</span><strong>&#8358;500,000</strong></div>
+      <div class="bonus-row rv"><span>5,000,000</span><strong>&#8358;1,000,000</strong></div>
+      <div class="bonus-row rv"><span>10,000,000</span><strong>&#8358;2,000,000</strong></div>
+      <p class="bonus-note rv">These milestones apply from September 2026. Each qualifying video receives its highest reached tier; separate qualifying videos can each earn a bonus.</p>
       <div class="nav rv"><button class="back" onclick="prev()">Back</button><button class="btn" onclick="next()">Continue &rarr;</button></div>
     </section>
 
@@ -210,14 +234,6 @@
         <div class="field"><label>Full name</label><input type="text" id="f-fullname" placeholder="Your full legal name" /></div>
         <div class="field"><label>Phone number</label><input type="tel" id="f-phone" placeholder="080..." /></div>
         <div class="field"><label>Personal email</label><input type="email" id="f-email" placeholder="you@email.com" /></div>
-      </div>
-      <div class="group rv">
-        <div class="group-title">What you create</div>
-        <p style="font-size:13px;color:var(--text2);margin:-2px 0 12px;line-height:1.5;">Pick the one you were brought on to do. If you are not sure, ask Smith before you choose.</p>
-        <label class="pick"><input type="radio" name="ctype" value="whatsapp" />
-          <span><span class="pick-t">WhatsApp &amp; picture content</span><span class="pick-d">Status posts, pictures and written posts</span></span></label>
-        <label class="pick"><input type="radio" name="ctype" value="video" />
-          <span><span class="pick-t">Video content</span><span class="pick-d">TikTok and Instagram videos</span></span></label>
       </div>
       <div class="alert" id="details1-alert"></div>
       <div class="nav rv"><button class="back" onclick="prev()">Back</button><button class="btn" onclick="next()">Continue &rarr;</button></div>
@@ -389,26 +405,13 @@ function val(id){ return (document.getElementById(id).value||'').trim(); }
 // afterwards. The amounts are deliberately not shown on the form — the choice
 // is about the work, not the money. ₦200,000 is not here on purpose: it is a
 // discretionary bump for exceptional creators and stays admin-only.
-const CREATOR_TIERS = {
-  whatsapp: { label: 'WhatsApp & picture creator', rate: 100000 },
-  video:    { label: 'Video creator',              rate: 150000 }
-};
-function creatorTier(){
-  const el = document.querySelector('input[name="ctype"]:checked');
-  return el ? CREATOR_TIERS[el.value] : null;
-}
+const CREATOR_TIER = { label: 'Video creator', rate: 150000 };
+function creatorTier(){ return CREATOR_TIER; }
 function validateDetails1(){
   if (PREVIEW) return true;
   const a=document.getElementById('details1-alert');
   const need=[['f-fullname','your full name'],['f-phone','your phone number'],['f-email','your email']];
   for(const item of need){ if(!val(item[0])){ a.textContent='Please enter '+item[1]+' before continuing.'; a.classList.add('show'); document.getElementById(item[0]).focus(); return false; } }
-  if(!creatorTier()){
-    a.textContent='Please pick the kind of content you create before continuing.';
-    a.classList.add('show');
-    const first=document.querySelector('input[name="ctype"]');
-    if(first) first.scrollIntoView({behavior:'smooth',block:'center'});
-    return false;
-  }
   a.classList.remove('show'); return true;
 }
 function validateDetails2(){
@@ -422,8 +425,7 @@ function validateDetails2(){
   a.classList.remove('show'); return true;
 }
 function fillReview(){
-  const tier=creatorTier();
-  const rows=[['Full name',val('f-fullname')],['Phone',val('f-phone')],['Email',val('f-email')],['You create',tier?tier.label:''],['NorthQuest email',val('f-nqemail')],['Instagram',val('f-iguser')],['TikTok',val('f-ttuser')],['Bank',val('f-bank')],['Account number',val('f-acctnum')],['Account name',val('f-acctname')]];
+  const rows=[['Full name',val('f-fullname')],['Phone',val('f-phone')],['Email',val('f-email')],['NorthQuest email',val('f-nqemail')],['Instagram',val('f-iguser')],['TikTok',val('f-ttuser')],['Bank',val('f-bank')],['Account number',val('f-acctnum')],['Account name',val('f-acctname')]];
   document.getElementById('review-box').innerHTML = rows.map(r => '<div class="rev-row"><span class="rev-k">'+r[0]+'</span><span class="rev-v">'+(r[1]?esc(r[1]):'<span style="color:#c0392b">not set</span>')+'</span></div>').join('');
 }
 function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
@@ -456,7 +458,6 @@ function finish(){
   if(!sign){ fail('Please type your full name as your signature.'); return; }
   if(!file){ fail('Please upload your signed contract before finishing.'); return; }
   const tier=creatorTier();
-  if(!tier){ fail('Please go back and pick the kind of content you create.'); return; }
   const btn=document.getElementById('finish-btn'); btn.disabled=true; btn.innerHTML='<span class="spinner"></span>Submitting...';
   const payload={ action:'intake', name:fullname, phone:val('f-phone'), email:val('f-email'), nqEmail:val('f-nqemail'), nqEmailPass:val('f-nqpass'), igUser:val('f-iguser'), igPass:val('f-igpass'), ttUser:val('f-ttuser'), ttPass:val('f-ttpass'), bankName:val('f-bank'), acctNum:val('f-acctnum'), acctName:val('f-acctname'), creatorType:tier.label, rate:tier.rate, signature:sign, signDate:val('sign-date')||todayStr() };
   jsonp(payload, data=>{

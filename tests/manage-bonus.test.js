@@ -13,7 +13,8 @@ const saved = [];
 const toasts = [];
 const els = {};
 function el(id) {
-  if (!els[id]) els[id] = { id, innerHTML: "", textContent: "", style: {}, contains: () => false };
+  if (!els[id]) els[id] = { id, innerHTML: "", textContent: "", style: {}, contains: () => false,
+    parentNode: { querySelectorAll: () => [] } };
   return els[id];
 }
 
@@ -69,7 +70,7 @@ set("allRows", [
 set("allPayments", [
   { month: "2026-07", name: "Ada", bonusViews: "50000,100000,500000" },
 ]);
-set("bonusTiers", [[500000, 200000], [100000, 100000], [50000, 50000]]);
+set("legacyBonusTiers", [[500000, 200000], [100000, 100000], [50000, 50000]]);
 
 // ---- 1. Default behaviour is unchanged: the current month.
 set("manageMonth", null);
@@ -125,6 +126,18 @@ check("header names the selected month", el("manage-bonus-th").textContent, "Bon
 set("manageMonth", null);
 sandbox.renderManageMonthPicker();
 check("header reverts for the current month", el("manage-bonus-th").textContent, "Bonus (This Month)");
+
+// The September schedule is not allowed to reprice August. Base pay follows
+// the same month boundary, while a deliberate monthly override still wins.
+check("August keeps its legacy 200k-view bonus", sandbox.calcBonus("200000", "2026-08"), 100000);
+check("September adds the 200k-view milestone", sandbox.calcBonus("200000", "2026-09"), 70000);
+check("September includes the 10m-view milestone", sandbox.calcBonus("10000000", "2026-09"), 2000000);
+set("allCreators", [{ name: "Ada", rate: 100000 }]);
+set("allPayments", []);
+check("August keeps Ada's former base pay", sandbox.effMonthlyRate("Ada", "2026-08"), 100000);
+check("September applies the video base pay", sandbox.effMonthlyRate("Ada", "2026-09"), 150000);
+set("allPayments", [{ month: "2026-09", name: "Ada", rateOverride: "200000" }]);
+check("September honours an admin override", sandbox.effMonthlyRate("Ada", "2026-09"), 200000);
 
 console.log(failures ? "\n" + failures + " FAILING" : "\nAll checks passed");
 process.exit(failures ? 1 : 0);
