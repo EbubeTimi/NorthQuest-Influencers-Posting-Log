@@ -4,6 +4,7 @@ Updated: 2026-09-26
 
 ## Active work
 
+- The September payment-register repair is approved for deployment. Payments now hides the raw Bonus Views/Special Bonus storage fields, keeps one calculated Performance Bonus column, and renders each month-defined custom payment category as its own ordered direct-naira column before Total Payable. Existing legacy `Name:count` values remain readable; new edits use exact `Name=amount` values.
 - Intake draft recovery is implemented locally and awaiting production deployment approval. Reloading in the same browser tab restores the creator's current step and typed fields from session storage; a completed submission clears the draft. Browser security prevents restoring the selected contract file, so a creator who had selected one sees a clear prompt to select it again after reloading.
 - The 1.56 GB contract-signing walkthrough was converted to a 23.96 MB H.264/AAC fast-start web copy and embedded directly in the intake contract step. The Drive dependency is removed; the contract link, instructions, agreement, and signed-file upload flow are unchanged. The live GitHub Pages release is commit `6602967e6ed54e48a19aad94775efd98c688745a`.
 
@@ -58,6 +59,7 @@ Updated: 2026-09-26
 
 ## Verification
 
+- Payment-register repair: focused tests pass 3/3 for hidden raw fields, direct-naira custom values, legacy-value compatibility, column order, totals, and XLSX export order. The complete repository test suite and inline `index.html` JavaScript syntax check pass. No Apps Script change or data migration is required.
 - Intake draft recovery: focused tests passed 5/5; the complete test suite passed; inline `intake.html` JavaScript syntax and `git diff --check` passed. A local browser check entered nickname `Reload Test` and full name `Ada Reload` on the details step, reloaded the page, and confirmed both the same step and values were restored. Submission and production deployment were not exercised.
 
 - September release suite: `node --test tests/*.test.js` passed, including August/September bonus isolation, September base-pay floor, and admin override preservation.
@@ -96,6 +98,6 @@ Updated: 2026-09-26
 
 ## Next action
 
-- After explicit deployment approval, publish the embedded walkthrough change and verify playback from the live HTTPS GitHub Pages URL on a normal browser or phone. If needed, separately verify the signed-contract upload with an authorized disposable creator submission; this was not exercised during the live intake smoke test. The earlier admin timing/security-review and CashDrive/Aura replica work remains separate.
+- Publish the approved payment-register frontend, verify the remote `main` commit and GitHub Pages output, then smoke-test the live register structure. No production payment data should be changed during verification. The earlier admin timing/security-review and CashDrive/Aura replica work remains separate.
 
 

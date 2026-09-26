@@ -462,14 +462,9 @@
   }
   /* A disabled action must look unavailable, not merely refuse when pressed. */
   .btn:disabled { opacity: 0.45; cursor: not-allowed; filter: grayscale(0.35); }
-  /* Extra-bonus columns: type a count, see what it pays underneath. */
+  /* Extra payment columns: each cell is the direct naira amount to add. */
   .eb-th { white-space: nowrap; }
-  .eb-th-rate { display: block; font-weight: 500; font-size: 11px; color: var(--text3); text-transform: none; letter-spacing: 0; }
-  /* The register's header band is dark green, so the rate needs light text
-     there rather than the table default. */
-  .pay-eb-th .eb-th-rate { color: rgba(255,255,255,0.8); }
-  .eb-count { max-width: 72px; text-align: center; }
-  .eb-paid { font-size: 11.5px; font-weight: 700; color: var(--green); margin-top: 3px; text-align: center; }
+  .eb-count { max-width: 92px; text-align: right; }
   .btn-primary {
     background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%);
     color: white;
@@ -1221,7 +1216,7 @@
     </div>
     <div class="mmb-hint">The <strong>Base Pay</strong> and <strong>Bonus</strong> columns below apply to this month. To fix an earlier month, pick it here (e.g.&nbsp;June), changes save to that month's register only. Each month is independent, so fixing one never changes another.</div>
     <button class="btn btn-sm mmb-edit" onclick="openBonusTiersModal();return false;">Edit bonus amounts</button>
-    <button class="btn btn-sm mmb-edit" onclick="openExtraBonusModal();return false;">Extra bonuses</button>
+    <button class="btn btn-sm mmb-edit" onclick="openExtraBonusModal();return false;">Payment columns</button>
   </div>
 
   <div class="manage-tabs">
@@ -1260,7 +1255,7 @@
       <button class="btn btn-sm btn-primary" id="paymonth-add-btn" onclick="addCreatorToPayMonth()" style="white-space:nowrap">+ Add creator to this month</button>
       <button id="pay-refresh-btn" class="btn btn-sm" onclick="refreshPaymentsData(this)">&#x21BB; Refresh</button>
       <button class="btn btn-sm" onclick="exportPaymentsCSV()">&#x2913; Download XLSX</button>
-      <button id="pay-clear-bonuses-btn" class="btn btn-sm" onclick="clearAllBonusesThisMonth(this)" style="color:var(--red)">&#x2715; Clear all bonuses (this month)</button>
+      <button id="pay-clear-bonuses-btn" class="btn btn-sm" onclick="clearAllBonusesThisMonth(this)" style="color:var(--red)">&#x2715; Clear performance bonuses (this month)</button>
     </div>
   </div>
   <div class="month-tabs" id="pay-tabs"><span class="spinner"></span></div>
@@ -1275,9 +1270,7 @@
         <th class="eb-th" title="Videos you added on a creator's behalf. Adds to what they logged — never replaces it.">No. of Posts (Admin)</th>
         <th id="ph-rate" contenteditable="true" spellcheck="false" onkeydown="return event.key!=='Enter'" onblur="savePayHeader('rate',this)">Rate / Post (&#8358;)</th>
         <th id="ph-base" contenteditable="true" spellcheck="false" onkeydown="return event.key!=='Enter'" onblur="savePayHeader('base',this)">Base Amount (&#8358;)</th>
-        <th id="ph-bv" contenteditable="true" spellcheck="false" onkeydown="return event.key!=='Enter'" onblur="savePayHeader('bv',this)">Bonus Views</th>
-        <th id="ph-perf" contenteditable="true" spellcheck="false" onkeydown="return event.key!=='Enter'" onblur="savePayHeader('perf',this)">Perf. Bonus (&#8358;)</th>
-        <th id="ph-special" contenteditable="true" spellcheck="false" onkeydown="return event.key!=='Enter'" onblur="savePayHeader('special',this)">Special Bonus / Ice Cream (&#8358;)</th>
+        <th id="ph-perf" contenteditable="true" spellcheck="false" onkeydown="return event.key!=='Enter'" onblur="savePayHeader('perf',this)">Performance Bonus (&#8358;)</th>
         <th id="ph-total" contenteditable="true" spellcheck="false" onkeydown="return event.key!=='Enter'" onblur="savePayHeader('total',this)">Total Payable (&#8358;)</th>
         <th id="ph-bank" contenteditable="true" spellcheck="false" onkeydown="return event.key!=='Enter'" onblur="savePayHeader('bank',this)">Bank Name</th>
         <th id="ph-acctnum" contenteditable="true" spellcheck="false" onkeydown="return event.key!=='Enter'" onblur="savePayHeader('acctnum',this)">Account Number</th>
@@ -1286,7 +1279,7 @@
         <th id="ph-date" contenteditable="true" spellcheck="false" onkeydown="return event.key!=='Enter'" onblur="savePayHeader('date',this)">Payment Date</th>
         <th id="ph-remarks" contenteditable="true" spellcheck="false" onkeydown="return event.key!=='Enter'" onblur="savePayHeader('remarks',this)">Remarks</th>
       </tr></thead>
-      <tbody id="pay-body"><tr><td colspan="15" class="empty-state"><span class="spinner"></span></td></tr></tbody>
+      <tbody id="pay-body"><tr><td colspan="14" class="empty-state"><span class="spinner"></span></td></tr></tbody>
     </table>
   </div>
   <div class="pay-legend" id="pay-legend"></div>
@@ -1361,15 +1354,15 @@
 
 <div class="modal-overlay" id="extra-bonus-modal">
   <div class="modal bt-box">
-    <div class="confirm-title">Extra bonuses for <span id="eb-month">this month</span></div>
-    <div class="confirm-msg">Name a bonus and set what <strong>one</strong> of them is worth. Against each creator you then type only how many they got &mdash; 2 referrals at &#8358;30,000 pays &#8358;60,000. Change the amount and every creator's total for this month follows it. Each month keeps its own list, so editing this one never changes another.</div>
+    <div class="confirm-title">Payment columns for <span id="eb-month">this month</span></div>
+    <div class="confirm-msg">Add the columns you need for this month, such as <strong>Budget Videos</strong> or <strong>Referral</strong>. In the payment register, type the exact naira amount earned by each creator. Every column appears after Performance Bonus and before Total Payable, in the same order shown here.</div>
     <div id="extra-bonus-rows"></div>
-    <button type="button" class="btn btn-sm" style="width:auto;margin:6px 0 0" onclick="addExtraBonusRow()">+ Add another bonus</button>
+    <button type="button" class="btn btn-sm" style="width:auto;margin:6px 0 0" onclick="addExtraBonusRow()">+ Add another column</button>
     <div class="bt-actions">
       <span style="font-size:12px;color:var(--text3)">Remove a bonus to stop it applying.</span>
       <div style="display:flex;gap:8px">
         <button type="button" class="btn btn-sm" onclick="closeExtraBonusModal()">Cancel</button>
-        <button type="button" class="btn btn-primary" id="extra-bonus-save-btn" onclick="saveExtraBonuses()">Save bonuses</button>
+        <button type="button" class="btn btn-primary" id="extra-bonus-save-btn" onclick="saveExtraBonuses()">Save columns</button>
       </div>
     </div>
   </div>
@@ -1473,7 +1466,7 @@ function savePayHeader(k, el) {
   safeStorage.setItem('nq_ph_' + k, el.textContent.trim());
 }
 function loadPayHeaders() {
-  const map = { cn:'ph-cn', posts:'ph-posts', rate:'ph-rate', base:'ph-base', bv:'ph-bv', perf:'ph-perf', special:'ph-special', total:'ph-total', bank:'ph-bank', acctnum:'ph-acctnum', acctname:'ph-acctname', status:'ph-status', date:'ph-date', remarks:'ph-remarks' };
+  const map = { cn:'ph-cn', posts:'ph-posts', rate:'ph-rate', base:'ph-base', perf:'ph-perf', total:'ph-total', bank:'ph-bank', acctnum:'ph-acctnum', acctname:'ph-acctname', status:'ph-status', date:'ph-date', remarks:'ph-remarks' };
   Object.entries(map).forEach(([k, id]) => {
     const v = safeStorage.getItem('nq_ph_' + k);
     if (v) { const el = document.getElementById(id); if (el) el.textContent = v; }
@@ -3098,7 +3091,12 @@ function renderMyLogs(name) {
   // have earned that across four separate bonuses — one figure answers "how
   // many", the other "how much".
   const bonusCount = calcBonusCount(man.bonusViews || '', ym);
-  const extraBonuses = parseExtraBonuses(man.specialBonus || '', ym);
+  const extraBonuses = bonusCatsFor(ym).map(cat => ({
+    name: cat.name,
+    count: null,
+    each: null,
+    amount: parseFloat(getPaymentExtraAmount(man.specialBonus || '', ym, cat.name)) || 0
+  })).filter(entry => entry.amount > 0);
   const special = extraBonuses.reduce((sum, e) => sum + e.amount, 0);
   const totalOv = String(man.totalOverride || '').replace(/[^\d.]/g, '');
   const amountExpected = (totalOv !== '' && !isNaN(parseFloat(totalOv))) ? parseFloat(totalOv) : (baseAmount + perf + special);
@@ -3558,8 +3556,7 @@ function renderManageMonthPicker() {
     cats.forEach(cat => {
       const el = document.createElement('th');
       el.className = 'eb-th';
-      el.innerHTML = escH(cat.name) + '<span class="eb-th-rate">&#8358;' +
-        Number(cat.amount).toLocaleString('en-NG') + ' each</span>';
+      el.textContent = cat.name;
       after.parentNode.insertBefore(el, after.nextSibling);
       after = el;
     });
@@ -3735,67 +3732,59 @@ function renderManageCreators() {
   }).join('');
 }
 
-// One cell per extra bonus running this month: type how many, see what it
-// pays. Nothing is shown at all in a month with no extra bonuses defined.
+// One cell per extra payment column running this month. The value is the
+// direct naira amount, not a count and not a count multiplied by a hidden
+// rate. Nothing is shown in a month with no extra columns defined.
 function extraBonusCells(name, ym) {
   return bonusCatsFor(ym).map(cat => {
     const man = allPayments.find(p => p.month === ym &&
       String(p.name).toLowerCase() === String(name).toLowerCase()) || {};
-    const count = getBonusCount(man.specialBonus || '', cat.name);
-    const n = parseFloat(count) || 0;
-    const paid = n > 0
-      ? '<div class="eb-paid">&#8358;' + Math.round(n * cat.amount).toLocaleString('en-NG') + '</div>'
-      : '';
-    return '<td><input class="pay-input eb-count" type="text" inputmode="numeric" value="' + escH(count) + '"' +
-      ' placeholder="0" title="How many ' + escH(cat.name) + ' this month"' +
-      ' onchange="onExtraBonusCount(\'' + escH(name) + '\', \'' + escH(cat.name) + '\', this.value)">' + paid + '</td>';
+    const amount = getPaymentExtraAmount(man.specialBonus || '', ym, cat.name);
+    return '<td><input class="pay-input eb-count" type="text" inputmode="decimal" value="' + escH(amount || '') + '"' +
+      ' placeholder="0" title="Exact ' + escH(cat.name) + ' amount in naira"' +
+      ' onchange="onExtraBonusCount(\'' + escH(name) + '\', \'' + escH(cat.name) + '\', this.value)"></td>';
   }).join('');
 }
 
-// Same count boxes, on the payment register. Whatever is set up under Extra
-// bonuses appears in both places — there is one list per month, not one per
-// screen.
+// Same direct-amount cells on the payment register. The serialized Manual
+// sheet field stays internal and never appears as its own visible column.
 function payExtraBonusCells(name) {
   return bonusCatsFor(selectedPayMonth).map(cat => {
     const man = allPayments.find(p => p.month === selectedPayMonth &&
       String(p.name).toLowerCase() === String(name).toLowerCase()) || {};
-    const count = getBonusCount(man.specialBonus || '', cat.name);
-    const n = parseFloat(count) || 0;
-    const paid = n > 0
-      ? '<div class="eb-paid">&#8358;' + Math.round(n * cat.amount).toLocaleString('en-NG') + '</div>' : '';
-    return '<td><input class="pay-input eb-count" type="text" inputmode="numeric" value="' + escH(count) + '"' +
-      ' placeholder="0" title="How many ' + escH(cat.name) + ' in ' + escH(monthLabel(selectedPayMonth)) + '"' +
-      ' onchange="onPayExtraBonusCount(\'' + escH(name) + '\', \'' + escH(cat.name) + '\', this.value)">' + paid + '</td>';
+    const amount = getPaymentExtraAmount(man.specialBonus || '', selectedPayMonth, cat.name);
+    return '<td><input class="pay-input eb-count" type="text" inputmode="decimal" value="' + escH(amount || '') + '"' +
+      ' placeholder="0" title="Exact ' + escH(cat.name) + ' amount in naira"' +
+      ' onchange="onPayExtraBonusCount(\'' + escH(name) + '\', \'' + escH(cat.name) + '\', this.value)"></td>';
   }).join('');
 }
 function onPayExtraBonusCount(name, catName, value) {
   const man = allPayments.find(p => p.month === selectedPayMonth &&
     String(p.name).toLowerCase() === String(name).toLowerCase()) || {};
   savePaymentField(selectedPayMonth, name, 'specialBonus',
-    setBonusCount(man.specialBonus || '', catName, value), true);
+    setPaymentExtraAmount(man.specialBonus || '', catName, value), true);
 }
 // Keeps the register's header row in step with the month's bonus list.
 function syncPayExtraHeaders() {
-  const th = document.getElementById('ph-special');
+  const th = document.getElementById('ph-perf');
   if (!th) return;
   [...th.parentNode.querySelectorAll('.pay-eb-th')].forEach(e => e.remove());
   let after = th;
   bonusCatsFor(selectedPayMonth).forEach(cat => {
     const el = document.createElement('th');
     el.className = 'eb-th pay-eb-th';
-    el.innerHTML = escH(cat.name) + '<span class="eb-th-rate">&#8358;' +
-      Number(cat.amount).toLocaleString('en-NG') + ' each</span>';
+    el.textContent = cat.name;
     after.parentNode.insertBefore(el, after.nextSibling);
     after = el;
   });
 }
-function payColSpan() { return 16 + bonusCatsFor(selectedPayMonth).length; }
+function payColSpan() { return 14 + bonusCatsFor(selectedPayMonth).length; }
 
 function onExtraBonusCount(name, catName, value) {
   const ym = manageMonthOrToday();
   const man = allPayments.find(p => p.month === ym &&
     String(p.name).toLowerCase() === String(name).toLowerCase()) || {};
-  const next = setBonusCount(man.specialBonus || '', catName, value);
+  const next = setPaymentExtraAmount(man.specialBonus || '', catName, value);
   savePaymentField(ym, name, 'specialBonus', next, true);
 }
 
@@ -3830,8 +3819,11 @@ function bonusCatAmount(ym, name) {
 }
 function bonusCatsFor(ym) { return bonusCats.filter(c => c.month === ym); }
 
-// The Special Bonus cell records what a creator earned outside base pay,
-// written as "Name:number", comma separated for more than one.
+// Custom payment-column values live in the existing Special Bonus backend
+// field so older deployments and Sheets remain compatible. New direct naira
+// amounts are written as "Name=amount". Older "Name:count" records are read
+// as count × the old category rate, but are converted to direct amounts the
+// next time an admin edits them.
 //
 // The number means one of two things, decided by whether the admin has
 // defined a bonus of that name for the month:
@@ -3848,35 +3840,52 @@ function parseExtraBonuses(cell, ym) {
   return String(cell).split(',').map(part => {
     const s = part.trim();
     if (!s) return null;
-    const i = s.lastIndexOf(':');
+    const direct = s.lastIndexOf('=');
+    const legacy = s.lastIndexOf(':');
+    const i = direct > -1 ? direct : legacy;
     const name = (i > -1 ? s.slice(0, i) : '').trim();
     const num = parseFloat((i > -1 ? s.slice(i + 1) : s).replace(/[^\d.]/g, '')) || 0;
     if (num <= 0) return null;
+    if (direct > -1) return { name: name || 'Extra payment', count: null, each: null, amount: num };
     const each = name && ym ? bonusCatAmount(ym, name) : null;
     if (each !== null) return { name: name, count: num, each: each, amount: num * each };
     return { name: name || 'Extra bonus', count: null, each: null, amount: num };
   }).filter(Boolean);
 }
 
-// Read/write one creator's count for one named bonus, leaving the rest of
-// the cell alone.
-function getBonusCount(cell, name) {
+function paymentExtraPart(cell, name) {
   const hit = String(cell || '').split(',').map(s => s.trim()).find(s => {
-    const i = s.lastIndexOf(':');
+    const i = Math.max(s.lastIndexOf('='), s.lastIndexOf(':'));
     return i > -1 && s.slice(0, i).trim().toLowerCase() === String(name).toLowerCase();
   });
-  if (!hit) return '';
-  return hit.slice(hit.lastIndexOf(':') + 1).replace(/[^\d.]/g, '');
+  return hit || '';
 }
-function setBonusCount(cell, name, count) {
+
+function getPaymentExtraAmount(cell, ym, name) {
+  const hit = paymentExtraPart(cell, name);
+  if (!hit) return '';
+  const direct = hit.lastIndexOf('=');
+  const legacy = hit.lastIndexOf(':');
+  const i = direct > -1 ? direct : legacy;
+  const value = parseFloat(hit.slice(i + 1).replace(/[^\d.]/g, '')) || 0;
+  if (value <= 0) return '';
+  return direct > -1 ? value : value * (bonusCatAmount(ym, name) || 0);
+}
+
+function setPaymentExtraAmount(cell, name, amount) {
   const parts = String(cell || '').split(',').map(s => s.trim()).filter(Boolean)
     .filter(s => {
-      const i = s.lastIndexOf(':');
+      const i = Math.max(s.lastIndexOf('='), s.lastIndexOf(':'));
       return !(i > -1 && s.slice(0, i).trim().toLowerCase() === String(name).toLowerCase());
     });
-  const n = parseFloat(String(count).replace(/[^\d.]/g, ''));
-  if (!isNaN(n) && n > 0) parts.push(name + ':' + n);
+  const n = parseFloat(String(amount).replace(/[^\d.]/g, ''));
+  if (!isNaN(n) && n > 0) parts.push(name + '=' + n);
   return parts.join(', ');
+}
+
+function paymentExtraTotal(cell, ym) {
+  return bonusCatsFor(ym).reduce((sum, cat) =>
+    sum + (parseFloat(getPaymentExtraAmount(cell, ym, cat.name)) || 0), 0);
 }
 
 // How many bonuses were actually earned, walking the same list and the same
@@ -3988,28 +3997,35 @@ function openBonusTiersModal(displayTiers) {
   document.getElementById('bonus-tiers-modal').classList.add('open');
 }
 
-// ── EXTRA BONUSES, per month: name + what one is worth ──
+// ── CUSTOM PAYMENT COLUMNS, per month ──
 function openExtraBonusModal() {
   const ym = manageMonthOrToday();
   document.getElementById('eb-month').textContent = monthLabel(ym);
   const rows = bonusCatsFor(ym);
   const body = document.getElementById('extra-bonus-rows');
   body.innerHTML = rows.length
-    ? rows.map(c => extraBonusRowHtml(c.name, c.amount)).join('')
-    : extraBonusRowHtml('', '');
+    ? rows.map(c => extraBonusRowHtml(c.name)).join('')
+    : extraBonusRowHtml('');
   document.getElementById('extra-bonus-modal').classList.add('open');
 }
-function extraBonusRowHtml(name, amount) {
+function extraBonusRowHtml(name) {
   return '<div class="bt-row">' +
     '<input type="text" class="pay-input eb-name" value="' + escH(name) + '" placeholder="Referral">' +
-    '<span style="color:var(--text3)">&#8358; each</span>' +
-    '<input type="text" inputmode="numeric" class="pay-input eb-amt" value="' + escH(amount === '' ? '' : amount) + '" placeholder="30000">' +
-    '<button type="button" class="pay-row-del" onclick="this.closest(\'.bt-row\').remove()" title="Remove this bonus">&times;</button>' +
+    '<button type="button" class="btn btn-sm" style="padding:6px 9px" onclick="moveExtraBonusRow(this,-1)" title="Move column left">&uarr;</button>' +
+    '<button type="button" class="btn btn-sm" style="padding:6px 9px" onclick="moveExtraBonusRow(this,1)" title="Move column right">&darr;</button>' +
+    '<button type="button" class="pay-row-del" onclick="this.closest(\'.bt-row\').remove()" title="Remove this payment column">&times;</button>' +
   '</div>';
+}
+function moveExtraBonusRow(btn, delta) {
+  const row = btn.closest('.bt-row');
+  const sibling = delta < 0 ? row.previousElementSibling : row.nextElementSibling;
+  if (!sibling) return;
+  if (delta < 0) row.parentNode.insertBefore(row, sibling);
+  else row.parentNode.insertBefore(sibling, row);
 }
 function addExtraBonusRow() {
   const div = document.createElement('div');
-  div.innerHTML = extraBonusRowHtml('', '');
+  div.innerHTML = extraBonusRowHtml('');
   document.getElementById('extra-bonus-rows').appendChild(div.firstChild);
 }
 function closeExtraBonusModal() {
@@ -4022,19 +4038,17 @@ function saveExtraBonuses() {
   const seen = {};
   for (const r of rows) {
     const name = r.querySelector('.eb-name').value.trim();
-    const amtRaw = r.querySelector('.eb-amt').value.replace(/[^\d.]/g, '');
-    if (!name && !amtRaw) continue; // a blank row is just an unused slot
-    if (!name) { showToast('error', 'Name missing', 'Give every bonus a name, or clear the row.'); return; }
-    const amount = parseFloat(amtRaw);
-    if (isNaN(amount) || amount < 0) { showToast('error', 'Amount missing', '"' + name + '" needs an amount.'); return; }
-    if (seen[name.toLowerCase()]) { showToast('error', 'Same name twice', 'Two bonuses are both called "' + name + '".'); return; }
+    if (!name) continue;
+    if (seen[name.toLowerCase()]) { showToast('error', 'Same name twice', 'Two payment columns are both called "' + name + '".'); return; }
     seen[name.toLowerCase()] = true;
-    list.push({ name: name, amount: amount });
+    const prior = bonusCats.find(c => c.month === ym && String(c.name).toLowerCase() === name.toLowerCase());
+    // Preserve the old rate only to interpret legacy Name:count records.
+    list.push({ name: name, amount: prior ? prior.amount : 0 });
   }
   const btn = document.getElementById('extra-bonus-save-btn');
   btn.disabled = true; btn.textContent = 'Saving…';
   jsonp({ action:'setBonusCategories', month: ym, categories: JSON.stringify(list) }, (d) => {
-    btn.disabled = false; btn.textContent = 'Save bonuses';
+    btn.disabled = false; btn.textContent = 'Save columns';
     if (d && d.status === 'success') {
       bonusCats = bonusCats.filter(c => c.month !== ym)
         .concat(list.map(c => ({ month: ym, name: c.name, amount: c.amount })));
@@ -4042,8 +4056,8 @@ function saveExtraBonuses() {
       renderManageCreators();
       if (currentPage === 'payments') renderPayments();
       showToast('success', 'Saved', list.length
-        ? list.map(c => c.name + ' at ₦' + c.amount.toLocaleString('en-NG')).join(' · ')
-        : 'No extra bonuses for ' + monthLabel(ym) + '.');
+        ? list.map(c => c.name).join(' · ')
+        : 'No custom payment columns for ' + monthLabel(ym) + '.');
     } else {
       showToast('error', 'Not saved', (d && d.message) || 'Could not save. Check your connection and try again.');
     }
@@ -4280,9 +4294,9 @@ function payLegendHtml(tiers) {
     'Pay = (videos posted that month) &times; per-video rate. &nbsp;Bonuses are the same for everybody regardless of base pay. &nbsp;Staff rows show a fixed monthly salary, not calculated from posts.' +
     '<h4>Performance Bonus Tiers (same for all creators) <button type="button" class="btn btn-sm" style="margin-left:8px;padding:3px 10px;font-size:11px" onclick="openBonusTiersModal()">Edit tiers</button></h4>' +
     [...bonusTiersForMonth(selectedPayMonth)].sort((a,b) => a[0]-b[0]).map(t => t[0].toLocaleString('en-NG') + ' views = &#8358;' + t[1].toLocaleString('en-NG')).join('<br>') +
-    '<h4>How to enter multiple bonuses</h4>' +
-    'If a creator hits more than one milestone, type the view counts in the Bonus Views box separated by commas, WITHOUT thousands separators. ' +
-    'Example: <strong>100000,50000</strong> &nbsp;&nbsp; Not like this: 100,000, 50,000. The Perf. Bonus and Total update on their own.';
+    '<h4>How performance bonuses are entered</h4>' +
+    'Enter the qualifying view counts under <strong>Manage creators</strong>, separated by commas and without thousands separators. ' +
+    'Example: <strong>100000,50000</strong>. The payment register shows only the calculated Performance Bonus. Custom payment columns accept the exact naira amount directly.';
 }
 
 function renderPayments() {
@@ -4373,21 +4387,23 @@ function renderPayments() {
   // Fill the "add creator to this month" picker, see monthAddCandidates.
   fillAddPicker('paymonth-add-name', selectedPayMonth);
 
-  let tPosts = 0, tCredit = 0, tBase = 0, tPerf = 0, tSpecial = 0, tTotal = 0;
+  let tPosts = 0, tCredit = 0, tBase = 0, tPerf = 0, tTotal = 0;
+  const extraCats = bonusCatsFor(selectedPayMonth);
+  const tExtraByName = {};
+  extraCats.forEach(cat => { tExtraByName[cat.name.toLowerCase()] = 0; });
 
   // ── STAFF ROWS (always shown, above creators) ──
   const staffRowsHtml = STAFF.map((s, si) => {
     const man = allPayments.find(p => p.month === selectedPayMonth && String(p.name) === s.key) || {};
     const salary = parseFloat(String(man.postsOverride || '').replace(/[^\d.]/g,'')) || 0;
-    const special = parseFloat(String(man.specialBonus || '').replace(/[^\d.]/g,'')) || 0;
-    const computedTotal = salary + special;
+    const computedTotal = salary;
     const totalOv = String(man.totalOverride || '').replace(/[^\d.]/g,'');
     const effTotal = (totalOv !== '' && !isNaN(parseFloat(totalOv))) ? parseFloat(totalOv) : computedTotal;
     const status = man.paymentStatus || 'Pending';
     const payDate = man.paymentDate || '';
     const remarks = man.remarks || '';
     const bankData = JSON.parse(safeStorage.getItem('nq_sb_' + si) || '{}');
-    tSpecial += special; tTotal += effTotal;
+    tTotal += effTotal;
     const stColor = status === 'Paid' ? 'background:#e6f4ec;color:#1a6b4a' : 'background:#fdf6e3;color:#b7770d';
     return '<tr class="pay-staff">' +
       '<td class="pay-num" style="color:#b7770d">S' + (si+1) + '</td>' +
@@ -4397,10 +4413,8 @@ function renderPayments() {
       '<td style="color:var(--text3);text-align:center">—</td>' +
       '<td style="color:var(--text3);text-align:center">—</td>' +
       '<td style="color:var(--text3);text-align:center">—</td>' +
-      '<td style="color:var(--text3);text-align:center">—</td>' +
-      '<td><input class="pay-input" style="max-width:100px;text-align:right" value="' + (special||'') + '" placeholder="0" onchange="onStaffEdit(' + si + ',\'specialBonus\',this.value,true)"></td>' +
       // Staff do not earn creator bonuses, but the columns must still line up.
-      bonusCatsFor(selectedPayMonth).map(() => '<td></td>').join('') +
+      extraCats.map(() => '<td></td>').join('') +
       '<td><input class="pay-input" style="max-width:120px;text-align:right" value="' + fmtMoney2(effTotal) + '" onchange="onStaffEdit(' + si + ',\'totalOverride\',this.value,true)"></td>' +
       '<td><input class="pay-input" value="' + escH(bankData.bankName||'') + '" onchange="onStaffBankEdit(' + si + ',\'bankName\',this.value)"></td>' +
       '<td><input class="pay-input" value="' + escH(bankData.acctNum||'') + '" onchange="onStaffBankEdit(' + si + ',\'acctNum\',this.value)"></td>' +
@@ -4455,14 +4469,17 @@ function renderPayments() {
       const base = Math.round(effPosts * monthlySalary / maxVideos);
       const bonusViews = man.bonusViews || '';
       const perf = calcBonus(bonusViews, selectedPayMonth);
-      const special = parseExtraBonuses(man.specialBonus || '', selectedPayMonth).reduce((t,e) => t + e.amount, 0);
-      const computedTotal = base + perf + special;
+      const extras = paymentExtraTotal(man.specialBonus || '', selectedPayMonth);
+      extraCats.forEach(cat => {
+        tExtraByName[cat.name.toLowerCase()] += parseFloat(getPaymentExtraAmount(man.specialBonus || '', selectedPayMonth, cat.name)) || 0;
+      });
+      const computedTotal = base + perf + extras;
       const totalOv = String(man.totalOverride || '').replace(/[^\d.]/g,'');
       const effTotal = (totalOv !== '' && !isNaN(parseFloat(totalOv))) ? parseFloat(totalOv) : computedTotal;
       const status = man.paymentStatus || 'Pending';
       const payDate = man.paymentDate || '';
       const remarks = man.remarks || '';
-      tPosts += posts; tCredit += credit; tBase += base; tPerf += perf; tSpecial += special; tTotal += effTotal;
+      tPosts += posts; tCredit += credit; tBase += base; tPerf += perf; tTotal += effTotal;
       const stColor = status === 'Paid' ? 'background:#e6f4ec;color:#1a6b4a' : 'background:#fdf6e3;color:#b7770d';
       return tierLabel + '<tr data-creator="' + escH(name) + '">' +
         '<td class="pay-num" style="white-space:nowrap">' + (i+1) + ' <button class="pay-row-del" onclick="deletePaymentRow(' + i + ')" title="Remove ' + escH(name) + ' from ' + escH(monthLabel(selectedPayMonth)) + '">&times;</button></td>' +
@@ -4471,10 +4488,7 @@ function renderPayments() {
         '<td>' + creditCellHtml + '</td>' +
         '<td><input class="pay-input" style="max-width:100px;text-align:right" value="' + fmtMoney2(monthlySalary / maxVideos) + '" onchange="onRateEdit(' + i + ',this.value)" title="Rate per video = monthly base pay ÷ 62. To change base pay: type the monthly amount (e.g. 200000) and press Enter, or use the Base Pay column under Manage creators. You can also type a per-video amount directly (e.g. 3226)." placeholder="150000"></td>' +
         '<td class="pay-num">' + fmtMoney2(base) + '</td>' +
-        '<td><input class="pay-input" value="' + escH(bonusViews) + '" placeholder="100000,50000" onchange="onPayEdit(' + i + ',\'bonusViews\',this.value,true)"></td>' +
         '<td class="pay-num">' + fmtMoney2(perf) + '</td>' +
-        '<td><input class="pay-input" style="max-width:150px" value="' + escH(man.specialBonus || '') + '" placeholder="Ice cream:20000" title="Free-form one-offs. Named bonuses set up under Extra bonuses have their own columns to the right." onchange="onPayEdit(' + i + ',\'specialBonus\',this.value,true)">' +
-          (special ? '<div class="eb-paid">&#8358;' + Math.round(special).toLocaleString('en-NG') + '</div>' : '') + '</td>' +
         payExtraBonusCells(name) +
         '<td><input class="pay-input" style="max-width:110px;text-align:right" value="' + fmtMoney2(effTotal) + '" onchange="onPayEdit(' + i + ',\'totalOverride\',this.value,true)"></td>' +
         '<td><input class="pay-input" value="' + escH(ci.bankName) + '" onchange="onBankEdit(' + i + ',\'bankName\',this.value)"></td>' +
@@ -4493,10 +4507,8 @@ function renderPayments() {
     '<td class="pay-num">' + tCredit + '</td>' +
     '<td></td>' +
     '<td class="pay-num">' + fmtMoney2(tBase) + '</td>' +
-    '<td></td>' +
     '<td class="pay-num">' + fmtMoney2(tPerf) + '</td>' +
-    '<td class="pay-num">' + fmtMoney2(tSpecial) + '</td>' +
-    bonusCatsFor(selectedPayMonth).map(() => '<td></td>').join('') +
+    extraCats.map(cat => '<td class="pay-num">' + fmtMoney2(tExtraByName[cat.name.toLowerCase()] || 0) + '</td>').join('') +
     '<td class="pay-num">' + fmtMoney2(tTotal) + '</td>' +
     '<td></td><td></td><td></td><td></td><td></td><td></td>' +
     '</tr>';
@@ -4533,36 +4545,42 @@ function exportPaymentsCSV() {
   const defMonthlySalary = 150000;
   const monthRows = allRows.filter(r => monthYM(r.date) === selectedPayMonth);
   const counts = {}; monthRows.forEach(r => { counts[r.name] = (counts[r.name]||0)+1; });
+  allPayments.forEach(p => {
+    if (p.month !== selectedPayMonth || !p.name || STAFF.some(s => s.key === String(p.name))) return;
+    if (!Object.keys(counts).some(k => k.toLowerCase() === String(p.name).toLowerCase())) counts[String(p.name)] = 0;
+  });
   const cmap = {};
   allCreators.forEach(c => { cmap[String(c.name).toLowerCase()] = { rate: parseFloat(c.rate)||defMonthlySalary, bankName:c.bankName||'', acctNum:c.acctNum||'', acctName:c.acctName||'' }; });
   const tierOf = n => (cmap[n.toLowerCase()] || { rate: defMonthlySalary }).rate;
   const names = Object.keys(counts).sort((a, b) => tierOf(b) - tierOf(a) || a.localeCompare(b));
 
   // Columns: A S/N, B Name, C Posts (Creator), D Posts (You Added), E Rate,
-  // F Base, G Bonus Views, H Perf, I Special, J Total, K..M bank, N status,
-  // O date, P remarks. Base and Total are written as live formulas, so
+  // F Base, G Performance Bonus, then one column per active custom payment,
+  // followed by Total and bank/status fields. Base and Total are live formulas, so
   // editing a post count or a bonus in the exported file re-does the
   // arithmetic instead of leaving a stale number sitting next to the edited one.
   const R = [];
   R.push([{ v:'NORTHQUEST FINANCE  ·  CREATOR PAYMENT REGISTER', s:1 }]);
   R.push(['Payment Period:  ' + ord(1) + ' ' + mName + ' ' + y + ' – ' + ord(last) + ' ' + mName + ' ' + y]);
   R.push([]);
-  R.push(['S/N','Name','No. of Posts / Salary','No. of Posts (Admin)','Rate per Post (₦)','Base Amount (₦)','Bonus Views',
-          'Perf. Bonus (₦)','Special Bonus (₦)','Total Payable (₦)','Bank Name','Account Number',
+  const extraCats = bonusCatsFor(selectedPayMonth);
+  const totalColIndex = 7 + extraCats.length;
+  const totalCol = nqColName(totalColIndex);
+  R.push(['S/N','Name','No. of Posts / Salary','No. of Posts (Admin)','Rate per Post (₦)','Base Amount (₦)',
+          'Performance Bonus (₦)', ...extraCats.map(c => c.name), 'Total Payable (₦)','Bank Name','Account Number',
           'Account Name','Payment Status','Payment Date','Remarks'].map(v => ({ v:v, s:2 })));
 
   const moneyRows = [];
   STAFF.forEach((s, si) => {
     const man = allPayments.find(p => p.month === selectedPayMonth && String(p.name) === s.key) || {};
     const salary = parseFloat(String(man.postsOverride||'').replace(/[^\d.]/g,'')) || 0;
-    const special = parseExtraBonuses(man.specialBonus || '', selectedPayMonth).reduce((t,e) => t + e.amount, 0);
     const totalOv = String(man.totalOverride||'').replace(/[^\d.]/g,'');
     const bankData = JSON.parse(safeStorage.getItem('nq_sb_' + si) || '{}');
     const rn = R.length + 1;
     const total = (totalOv !== '' && !isNaN(parseFloat(totalOv)))
-      ? { v: parseFloat(totalOv), s:3 } : { f:'C'+rn+'+I'+rn, s:3 };
-    R.push(['S'+(si+1), s.display + ' (' + s.role + ')', { v:salary, s:3 }, '', '', '', '', '',
-            { v:special, s:3 }, total, bankData.bankName||'', bankData.acctNum||'',
+      ? { v: parseFloat(totalOv), s:3 } : { f:'C'+rn, s:3 };
+    R.push(['S'+(si+1), s.display + ' (' + s.role + ')', { v:salary, s:3 }, '', '', '', '',
+            ...extraCats.map(() => ''), total, bankData.bankName||'', bankData.acctNum||'',
             bankData.acctName||'', man.paymentStatus||'Pending', man.paymentDate||'', man.remarks||'']);
     moneyRows.push(rn);
   });
@@ -4585,18 +4603,17 @@ function exportPaymentsCSV() {
     const credit = hasCredit ? parseFloat(creditRaw) : 0;
     const effPosts = hasLegacyOverride ? parseFloat(overrideRaw) : (rawPosts + credit);
     const perf = calcBonus(man.bonusViews || '', selectedPayMonth);
-    // Each named bonus parsed on its own. Stripping the digits out of the
-    // whole cell turned "50000, 20000" into 5000020000 in the old export.
-    const special = parseExtraBonuses(man.specialBonus || '', selectedPayMonth).reduce((t,e) => t + e.amount, 0);
+    const extraAmounts = extraCats.map(cat => parseFloat(getPaymentExtraAmount(man.specialBonus || '', selectedPayMonth, cat.name)) || 0);
     const totalOv = String(man.totalOverride||'').replace(/[^\d.]/g,'');
     const rn = R.length + 1;
+    const totalParts = ['F' + rn, 'G' + rn].concat(extraCats.map((_, x) => nqColName(7 + x) + rn));
     const total = (totalOv !== '' && !isNaN(parseFloat(totalOv)))
-      ? { v: parseFloat(totalOv), s:3 } : { f:'F'+rn+'+H'+rn+'+I'+rn, s:3 };
+      ? { v: parseFloat(totalOv), s:3 } : { f:totalParts.join('+'), s:3 };
     // Legacy fixed override replaces the total outright (credit is always 0
     // for these rows), so the override amount goes straight into the Posts
     // (Creator) cell and the formula below still lands on the right base pay.
     R.push([i+1, name, (hasLegacyOverride ? effPosts : rawPosts), credit, { v:Math.round(perVideo*100)/100, s:3 },
-            { f:'(C'+rn+'+D'+rn+')*E'+rn, s:3 }, man.bonusViews||'', { v:perf, s:3 }, { v:special, s:3 }, total,
+            { f:'(C'+rn+'+D'+rn+')*E'+rn, s:3 }, { v:perf, s:3 }, ...extraAmounts.map(v => ({ v:v, s:3 })), total,
             ci.bankName, ci.acctNum, ci.acctName, man.paymentStatus||'Pending',
             man.paymentDate||'', man.remarks||'']);
     moneyRows.push(rn);
@@ -4606,7 +4623,8 @@ function exportPaymentsCSV() {
   const sumOf = col => moneyRows.length
     ? { f: moneyRows.map(r => col + r).join('+'), s:4 } : { v:0, s:4 };
   R.push([]);
-  R.push(['', { v:'TOTAL', s:4 }, sumOf('C'), sumOf('D'), '', sumOf('F'), '', sumOf('H'), sumOf('I'), sumOf('J')]);
+  R.push(['', { v:'TOTAL', s:4 }, sumOf('C'), sumOf('D'), '', sumOf('F'), sumOf('G'),
+          ...extraCats.map((_, x) => sumOf(nqColName(7 + x))), sumOf(totalCol)]);
 
   R.push([]); R.push([{ v:'ASSUMPTIONS & LEGEND', s:4 }]);
   R.push(['Every creator has their own monthly base pay (default for new creators: ₦150,000/month)']);
@@ -4624,7 +4642,7 @@ function exportPaymentsCSV() {
     'NQ Payment Register - ' + monthLabel(selectedPayMonth) + '.xlsx',
     monthLabel(selectedPayMonth),
     R,
-    [6, 28, 12, 14, 14, 16, 16, 14, 16, 16, 18, 18, 22, 14, 14, 24]);
+    [6, 28, 12, 14, 14, 16, 16, ...extraCats.map(() => 16), 16, 18, 18, 22, 14, 14, 24]);
 }
 
 // ══════════════════════════════════════════════════════════
