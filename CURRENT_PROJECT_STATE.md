@@ -4,7 +4,7 @@ Updated: 2026-09-26
 
 ## Active work
 
-- The contract-signing walkthrough now opens the shared Google Drive folder instead of the direct video file, so creators can open and play the video from inside Drive. The contract link, instructions, agreement, and signed-file upload flow are unchanged.
+- The 1.56 GB contract-signing walkthrough has been converted to a 23.96 MB H.264/AAC fast-start web copy and embedded directly in the intake contract step. The Drive dependency is removed; the contract link, instructions, agreement, and signed-file upload flow are unchanged. This update is locally verified and awaiting production deployment approval.
 
 - Release branch: `codex/sep26-bonus-release` from production `main` at `5fbedb275a32e293f7e4ceb09ca50917e7cb9b7c`.
 - Approved September 2026 intake/payment backend is deployed as Apps Script Version 46: all new creators are video creators, the new intake base rate is internally fixed at ₦150,000, and the creator-facing intake does not disclose that figure.
@@ -89,8 +89,10 @@ Updated: 2026-09-26
 - GitHub Pages run `35269063117` completed successfully for production commit `313a665219fd804ffc3a69b93300c8d1b33e701b`.
 - The live Pages document is byte-for-byte identical to the tested local `index.html`; the creator route loaded 66 dropdown options in about 0.34 seconds and produced no browser warnings or errors. Authenticated admin timing remains unverified because this automation tab has no reusable admin session.
 - Intake release: the focused contract tests passed 3/3 on the main-based release tree; inline intake JavaScript syntax and the two-file release diff passed. The unrelated admin bonus test fails identically on untouched `main` and the release tree because its DOM fixture lacks `parentNode`. GitHub Pages run `35751947432` succeeded, and the live contract page renders the new video link, written Fill & Sign steps, contract link, and upload control; no real creator submission or Drive upload was performed.
+- Embedded walkthrough update: the focused intake tests passed 3/3 and the full test command passed; FFprobe confirmed the new media is H.264/AAC, 720x1558, 821.99 seconds, and 23,959,809 bytes. A full FFmpeg decode completed with exit code 0. The local contract step rendered the inline player and fallback link. Starting playback crashes the Codex in-app browser's local-media tab, so playback in a normal phone/browser remains unverified until a preview or production URL is published.
 
 ## Next action
 
-- If needed, verify the signed-contract upload with an authorized disposable creator submission; this was not exercised during the live intake smoke test. The earlier admin timing/security-review and CashDrive/Aura replica work remains separate.
+- After explicit deployment approval, publish the embedded walkthrough change and verify playback from the live HTTPS GitHub Pages URL on a normal browser or phone. If needed, separately verify the signed-contract upload with an authorized disposable creator submission; this was not exercised during the live intake smoke test. The earlier admin timing/security-review and CashDrive/Aura replica work remains separate.
+
 

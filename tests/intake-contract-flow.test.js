@@ -8,12 +8,14 @@ const intake = fs.readFileSync(path.join(__dirname, '..', 'intake.html'), 'utf8'
 const contract = intake.match(/<section class="step" data-key="contract">([\s\S]*?)<\/section>/)?.[1] || '';
 
 test('contract step puts the current walkthrough before written signing steps and contract', () => {
-  const video = contract.indexOf('drive/folders/1Vi8khniSRXO0Ocg672jqKzAhzjSawFw3');
+  const video = contract.indexOf('assets/contract-signing-walkthrough.mp4');
   const instructions = contract.indexOf('Fill &amp; Sign');
   const agreement = contract.indexOf('1Fx0_CJiVWo7PFbMtIRpoMShqA7mhjvrUDFvAor8_ln0');
   const upload = contract.indexOf('id="f-contract"');
   assert.ok(video >= 0 && instructions > video && agreement > instructions && upload > agreement);
   assert.doesNotMatch(contract, /Open Document 1|id="read-doc1"|11K32e1GR8xULU6rnZe12v-mlEGNmtLOV/);
+  assert.match(contract, /<video[^>]*controls[^>]*playsinline[^>]*preload="metadata"/);
+  assert.doesNotMatch(contract, /drive\/folders\/1Vi8khniSRXO0Ocg672jqKzAhzjSawFw3/);
 });
 
 test('intake submission no longer requires Document 1 but still records agreement and signed copy', () => {
@@ -42,3 +44,4 @@ test('submit without a signed file stops before any intake request', () => {
   assert.equal(error.textContent, 'Please upload your signed contract before finishing.');
   assert.equal(requests, 0);
 });
+
