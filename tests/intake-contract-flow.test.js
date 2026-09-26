@@ -8,7 +8,7 @@ const intake = fs.readFileSync(path.join(__dirname, '..', 'intake.html'), 'utf8'
 const contract = intake.match(/<section class="step" data-key="contract">([\s\S]*?)<\/section>/)?.[1] || '';
 
 test('contract step puts the current walkthrough before written signing steps and contract', () => {
-  const video = contract.indexOf('1Nvzv5bYjjLYt9r_80-9pnIsiMB8tgRBb');
+  const video = contract.indexOf('drive/folders/1Vi8khniSRXO0Ocg672jqKzAhzjSawFw3');
   const instructions = contract.indexOf('Fill &amp; Sign');
   const agreement = contract.indexOf('1Fx0_CJiVWo7PFbMtIRpoMShqA7mhjvrUDFvAor8_ln0');
   const upload = contract.indexOf('id="f-contract"');

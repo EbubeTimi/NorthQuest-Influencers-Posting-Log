@@ -1,8 +1,10 @@
 # Current Project State
 
-Updated: 2026-09-23
+Updated: 2026-09-26
 
 ## Active work
+
+- The contract-signing walkthrough now opens the shared Google Drive folder instead of the direct video file, so creators can open and play the video from inside Drive. The contract link, instructions, agreement, and signed-file upload flow are unchanged.
 
 - Release branch: `codex/sep26-bonus-release` from production `main` at `5fbedb275a32e293f7e4ceb09ca50917e7cb9b7c`.
 - Approved September 2026 intake/payment backend is deployed as Apps Script Version 46: all new creators are video creators, the new intake base rate is internally fixed at ₦150,000, and the creator-facing intake does not disclose that figure.
