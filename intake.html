@@ -347,9 +347,53 @@ const TRACKER_MIRROR = 'https://ebubetimi.github.io/NorthQuest-Influencers-Posti
   tip.style.display = '';
 })();
 const steps = Array.prototype.slice.call(document.querySelectorAll('.step'));
+const INTAKE_DRAFT_KEY = 'northquest-intake-draft-v1';
+const DRAFT_FIELD_IDS = ['nick','f-fullname','f-phone','f-email','f-nqemail','f-nqpass','f-iguser','f-igpass','f-ttuser','f-ttpass','f-bank','f-acctnum','f-acctname','sign-name','sign-date'];
 let cur = 0, nick = 'there', jsonpCtr = 0, typeTimer = null;
 function key(){ return steps[cur].dataset.key; }
 function todayStr(){ return new Date().toISOString().split('T')[0]; }
+
+// Keep an unfinished intake available across reloads in this tab. Session
+// storage is intentional: this form contains account credentials, so the
+// draft should not remain permanently on a shared phone after the tab closes.
+function saveDraft(){
+  if(PREVIEW) return;
+  try{
+    const fields={};
+    DRAFT_FIELD_IDS.forEach(id=>{ fields[id]=document.getElementById(id).value; });
+    const draft={
+      step:key(),
+      fields:fields,
+      agreed:document.getElementById('agree').checked,
+      contractSelected: !!document.getElementById('f-contract').files[0]
+    };
+    sessionStorage.setItem(INTAKE_DRAFT_KEY, JSON.stringify(draft));
+  }catch(e){}
+}
+function restoreDraft(){
+  if(PREVIEW) return false;
+  try{
+    const raw=sessionStorage.getItem(INTAKE_DRAFT_KEY);
+    if(!raw) return false;
+    const draft=JSON.parse(raw);
+    if(!draft || !draft.fields) return false;
+    DRAFT_FIELD_IDS.forEach(id=>{
+      if(typeof draft.fields[id]==='string') document.getElementById(id).value=draft.fields[id];
+    });
+    document.getElementById('agree').checked=!!draft.agreed;
+    const restoredStep=steps.findIndex(s=>s.dataset.key===draft.step);
+    if(restoredStep>=0 && restoredStep<steps.length-1) cur=restoredStep;
+    nick=(document.getElementById('nick').value||'').trim()||'there';
+    document.querySelectorAll('.gname').forEach(e=>e.textContent=nick);
+    if(draft.contractSelected){
+      document.getElementById('filechip').textContent='Please select your signed contract again after the reload.';
+    }
+    return true;
+  }catch(e){ return false; }
+}
+function clearDraft(){
+  try{ sessionStorage.removeItem(INTAKE_DRAFT_KEY); }catch(e){}
+}
 
 function typeOut(el, text, speed){
   clearTimeout(typeTimer);
@@ -386,12 +430,12 @@ function render(){
   playFor(key());
   window.scrollTo({top:0,behavior:'smooth'});
 }
-function prev(){ if(cur>0){ cur--; render(); } }
+function prev(){ if(cur>0){ cur--; saveDraft(); render(); } }
 function next(){
   if(key()==='name'){ const v=(document.getElementById('nick').value||'').trim(); nick=v||'there'; document.querySelectorAll('.gname').forEach(e=>e.textContent=nick); buildWa(); }
   if(key()==='details1'){ if(!validateDetails1()) return; }
   if(key()==='details2'){ if(!validateDetails2()) return; }
-  if(cur<steps.length-1){ cur++; if(key()==='review') fillReview(); render(); }
+  if(cur<steps.length-1){ cur++; if(key()==='review') fillReview(); saveDraft(); render(); }
 }
 function buildWa(){
   const txt = "Hi, I'm " + nick + ", a new creator at NorthQuest. I have a question about my contract.";
@@ -469,14 +513,18 @@ function finish(){
   const btn=document.getElementById('finish-btn'); btn.disabled=true; btn.innerHTML='<span class="spinner"></span>Submitting...';
   const payload={ action:'intake', name:fullname, phone:val('f-phone'), email:val('f-email'), nqEmail:val('f-nqemail'), nqEmailPass:val('f-nqpass'), igUser:val('f-iguser'), igPass:val('f-igpass'), ttUser:val('f-ttuser'), ttPass:val('f-ttpass'), bankName:val('f-bank'), acctNum:val('f-acctnum'), acctName:val('f-acctname'), creatorType:tier.label, rate:tier.rate, signature:sign, signDate:val('sign-date')||todayStr() };
   jsonp(payload, data=>{
-    if(data && data.status==='success'){ uploadContract(fullname, file).then(()=>{ cur=steps.length-1; render(); }); }
+    if(data && data.status==='success'){ uploadContract(fullname, file).then(()=>{ clearDraft(); cur=steps.length-1; render(); }); }
     else { btn.disabled=false; btn.textContent='Submit and finish'; fail((data&&data.message)||'Something went wrong. Please check your connection and try again.'); }
   });
 }
-document.getElementById('f-contract').addEventListener('change', function(){ const f=this.files[0]; document.getElementById('filechip').textContent = f ? ('Selected: '+f.name) : ''; });
-document.getElementById('sign-date').value = todayStr();
+document.addEventListener('input', saveDraft);
+document.addEventListener('change', saveDraft);
+document.getElementById('f-contract').addEventListener('change', function(){ const f=this.files[0]; document.getElementById('filechip').textContent = f ? ('Selected: '+f.name) : ''; saveDraft(); });
+restoreDraft();
+if(!document.getElementById('sign-date').value) document.getElementById('sign-date').value = todayStr();
 if (PREVIEW) document.getElementById('pv-badge').style.display = 'inline-block';
 buildWa();
+if(key()==='review') fillReview();
 render();
 </script>
 </body>

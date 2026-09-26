@@ -45,3 +45,19 @@ test('submit without a signed file stops before any intake request', () => {
   assert.equal(requests, 0);
 });
 
+test('intake progress survives a reload in the same tab and clears after completion', () => {
+  assert.match(intake, /const INTAKE_DRAFT_KEY = 'northquest-intake-draft-v1'/);
+  assert.match(intake, /sessionStorage\.setItem\(INTAKE_DRAFT_KEY/);
+  assert.match(intake, /function restoreDraft\(\)/);
+  assert.match(intake, /steps\.findIndex\(s=>s\.dataset\.key===draft\.step\)/);
+  assert.match(intake, /document\.addEventListener\('input', saveDraft\)/);
+  assert.match(intake, /document\.addEventListener\('change', saveDraft\)/);
+  assert.match(intake, /sessionStorage\.removeItem\(INTAKE_DRAFT_KEY\)/);
+});
+
+test('reload recovery does not claim that a browser file input was restored', () => {
+  assert.match(intake, /contractSelected: !!document\.getElementById\('f-contract'\)\.files\[0\]/);
+  assert.match(intake, /Please select your signed contract again after the reload\./);
+  assert.doesNotMatch(intake, /fileData|readAsDataURL\(.*saveDraft/);
+});
+

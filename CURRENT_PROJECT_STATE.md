@@ -4,7 +4,8 @@ Updated: 2026-09-26
 
 ## Active work
 
-- The 1.56 GB contract-signing walkthrough has been converted to a 23.96 MB H.264/AAC fast-start web copy and embedded directly in the intake contract step. The Drive dependency is removed; the contract link, instructions, agreement, and signed-file upload flow are unchanged. This update is locally verified and awaiting production deployment approval.
+- Intake draft recovery is implemented locally and awaiting production deployment approval. Reloading in the same browser tab restores the creator's current step and typed fields from session storage; a completed submission clears the draft. Browser security prevents restoring the selected contract file, so a creator who had selected one sees a clear prompt to select it again after reloading.
+- The 1.56 GB contract-signing walkthrough was converted to a 23.96 MB H.264/AAC fast-start web copy and embedded directly in the intake contract step. The Drive dependency is removed; the contract link, instructions, agreement, and signed-file upload flow are unchanged. The live GitHub Pages release is commit `6602967e6ed54e48a19aad94775efd98c688745a`.
 
 - Release branch: `codex/sep26-bonus-release` from production `main` at `5fbedb275a32e293f7e4ceb09ca50917e7cb9b7c`.
 - Approved September 2026 intake/payment backend is deployed as Apps Script Version 46: all new creators are video creators, the new intake base rate is internally fixed at ₦150,000, and the creator-facing intake does not disclose that figure.
@@ -56,6 +57,8 @@ Updated: 2026-09-26
 - Published the matching `Code.gs` and `index.html` to production `main` in commit `313a665219fd804ffc3a69b93300c8d1b33e701b`.
 
 ## Verification
+
+- Intake draft recovery: focused tests passed 5/5; the complete test suite passed; inline `intake.html` JavaScript syntax and `git diff --check` passed. A local browser check entered nickname `Reload Test` and full name `Ada Reload` on the details step, reloaded the page, and confirmed both the same step and values were restored. Submission and production deployment were not exercised.
 
 - September release suite: `node --test tests/*.test.js` passed, including August/September bonus isolation, September base-pay floor, and admin override preservation.
 - `Code.gs`, inline `index.html`, and inline `intake.html` JavaScript parsed successfully; `git diff --check` passed.
