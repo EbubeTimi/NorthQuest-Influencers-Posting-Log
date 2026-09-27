@@ -4,12 +4,12 @@ Updated: 2026-09-26
 
 ## Active work
 
-- The September payment-register repair is approved for deployment. Payments now hides the raw Bonus Views/Special Bonus storage fields, keeps one calculated Performance Bonus column, and renders each month-defined custom payment category as its own ordered direct-naira column before Total Payable. Existing legacy `Name:count` values remain readable; new edits use exact `Name=amount` values.
+- The September payment-register repair is deployed on production `main` in commit `d42f6714f9ddf5105c6403350e0de35e27bf`. Payments now hides the raw Bonus Views/Special Bonus storage fields, keeps one calculated Performance Bonus column, and renders each month-defined custom payment category as its own ordered direct-naira column before Total Payable. Existing legacy `Name:count` values remain readable; new edits use exact `Name=amount` values. Regression coverage was added in follow-up commit `1120667d4e288cd46f0eb9686fdc3ba5fcde`.
 - Intake draft recovery is implemented locally and awaiting production deployment approval. Reloading in the same browser tab restores the creator's current step and typed fields from session storage; a completed submission clears the draft. Browser security prevents restoring the selected contract file, so a creator who had selected one sees a clear prompt to select it again after reloading.
 - The 1.56 GB contract-signing walkthrough was converted to a 23.96 MB H.264/AAC fast-start web copy and embedded directly in the intake contract step. The Drive dependency is removed; the contract link, instructions, agreement, and signed-file upload flow are unchanged. The live GitHub Pages release is commit `6602967e6ed54e48a19aad94775efd98c688745a`.
 
 - Release branch: `codex/sep26-bonus-release` from production `main` at `5fbedb275a32e293f7e4ceb09ca50917e7cb9b7c`.
-- Approved September 2026 intake/payment backend is deployed as Apps Script Version 46: all new creators are video creators, the new intake base rate is internally fixed at ₦150,000, and the creator-facing intake does not disclose that figure.
+- Approved September 2026 intake/payment backend is deployed as Apps Script Version 47: all new creators are video creators, the new intake base rate is internally fixed at ₦150,000, the creator-facing intake does not disclose that figure, and name-only payment columns can be saved with direct naira amounts entered in the register.
 - September 2026 bonus schedule adds 200,000 views = ₦70,000 and 10,000,000 views = ₦2,000,000 while preserving the legacy schedule for months before September.
 - Bonus-tier edits are month-scoped; changing one month cannot reprice another month.
 - Live endpoint checks confirmed September returns the new seven-tier schedule, August remains pinned to the original five-tier schedule, and unauthenticated admin requests remain denied.
@@ -59,7 +59,7 @@ Updated: 2026-09-26
 
 ## Verification
 
-- Payment-register repair: focused tests pass 3/3 for hidden raw fields, direct-naira custom values, legacy-value compatibility, column order, totals, and XLSX export order. The complete repository test suite and inline `index.html` JavaScript syntax check pass. No Apps Script change or data migration is required.
+- Payment-register repair: focused tests pass 3/3 for hidden raw fields, direct-naira custom values, legacy-value compatibility, column order, totals, and XLSX export order. The complete repository test suite and inline `index.html` JavaScript syntax check pass. GitHub Pages runs 142 and 143 completed successfully. The live HTML contains the direct-amount and reorder implementations and no longer contains the raw Bonus Views or Special Bonus table headers. No Apps Script change or data migration was required.
 - Intake draft recovery: focused tests passed 5/5; the complete test suite passed; inline `intake.html` JavaScript syntax and `git diff --check` passed. A local browser check entered nickname `Reload Test` and full name `Ada Reload` on the details step, reloaded the page, and confirmed both the same step and values were restored. Submission and production deployment were not exercised.
 
 - September release suite: `node --test tests/*.test.js` passed, including August/September bonus isolation, September base-pay floor, and admin override preservation.
@@ -98,6 +98,6 @@ Updated: 2026-09-26
 
 ## Next action
 
-- Publish the approved payment-register frontend, verify the remote `main` commit and GitHub Pages output, then smoke-test the live register structure. No production payment data should be changed during verification. The earlier admin timing/security-review and CashDrive/Aura replica work remains separate.
+- Ask the administrator to smoke-test adding, reordering, entering, and removing custom columns with real authenticated September payment data. The earlier admin timing/security-review and CashDrive/Aura replica work remains separate.
 
 

@@ -795,6 +795,8 @@
   .bt-box { max-width: 440px; padding: 26px 24px 22px; text-align: left; }
   .bt-row { display: grid; grid-template-columns: 1fr auto 1fr auto; align-items: center; gap: 8px; margin-bottom: 8px; }
   .bt-row input { max-width: none; text-align: right; }
+  .bt-row.payment-column-row { grid-template-columns: minmax(0,1fr) auto auto auto; }
+  .bt-row.payment-column-row input { text-align: left; }
   .bt-actions { display: flex; justify-content: space-between; align-items: center; margin-top: 14px; gap: 10px; }
   .bt-actions .btn { width: auto; margin: 0; }
 
@@ -1359,7 +1361,7 @@
     <div id="extra-bonus-rows"></div>
     <button type="button" class="btn btn-sm" style="width:auto;margin:6px 0 0" onclick="addExtraBonusRow()">+ Add another column</button>
     <div class="bt-actions">
-      <span style="font-size:12px;color:var(--text3)">Remove a bonus to stop it applying.</span>
+      <span style="font-size:12px;color:var(--text3)">Remove a column to stop it applying.</span>
       <div style="display:flex;gap:8px">
         <button type="button" class="btn btn-sm" onclick="closeExtraBonusModal()">Cancel</button>
         <button type="button" class="btn btn-primary" id="extra-bonus-save-btn" onclick="saveExtraBonuses()">Save columns</button>
@@ -4009,7 +4011,7 @@ function openExtraBonusModal() {
   document.getElementById('extra-bonus-modal').classList.add('open');
 }
 function extraBonusRowHtml(name) {
-  return '<div class="bt-row">' +
+  return '<div class="bt-row payment-column-row">' +
     '<input type="text" class="pay-input eb-name" value="' + escH(name) + '" placeholder="Referral">' +
     '<button type="button" class="btn btn-sm" style="padding:6px 9px" onclick="moveExtraBonusRow(this,-1)" title="Move column left">&uarr;</button>' +
     '<button type="button" class="btn btn-sm" style="padding:6px 9px" onclick="moveExtraBonusRow(this,1)" title="Move column right">&darr;</button>' +

@@ -313,12 +313,11 @@ const BONUS_TIERS_MONTHLY_SHEET = 'Bonus Tiers by Month';
 // Editable from Manage Creators / Payments in the app — no code changes needed
 // when the bonus structure changes. Seeds the current defaults the first time.
 // ══════════════════════════════════════════════════════════
-// EXTRA BONUSES — admin-defined, month by month.
+// CUSTOM PAYMENT COLUMNS — admin-defined, month by month.
 //
 // A referral, a budget-video run, anything that comes and goes. The admin
-// names it and sets what ONE of them is worth for that month; against each
-// creator they type only how many. Two referrals at ₦30,000 is ₦60,000;
-// change the amount to ₦50,000 and the same 2 becomes ₦100,000.
+// names the column here and enters each creator's exact naira amount in the
+// register. The third sheet column remains only for legacy count-based data.
 //
 // Stored per month so correcting September never rewrites August, which is
 // the same rule base pay already follows.
@@ -373,7 +372,10 @@ function handleSetBonusCategories(params) {
   const seen = {};
   for (let i = 0; i < list.length; i++) {
     const name = String((list[i] && list[i].name) || '').trim();
-    const amount = parseFloat(String((list[i] && list[i].amount) || '').replace(/[^\d.]/g, ''));
+    // Zero is a valid value for a name-only payment column. `value || ''`
+    // incorrectly converted it to an empty string and rejected the save.
+    const rawAmount = list[i] && list[i].amount;
+    const amount = parseFloat(String(rawAmount == null ? '' : rawAmount).replace(/[^\d.]/g, ''));
     if (!name) continue;
     if (seen[name.toLowerCase()]) return { status: 'error', message: 'Two bonuses share the name "' + name + '"' };
     if (isNaN(amount) || amount < 0) return { status: 'error', message: '"' + name + '" needs an amount' };
