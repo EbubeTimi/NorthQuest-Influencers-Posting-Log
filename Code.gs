@@ -1282,13 +1282,10 @@ function handleGetCreatorBootstrap(params) {
 }
 
 
-// Build the compact admin summary separately from the detailed month rows.
-// A previous combined response included 1,000+ link-heavy posting rows plus
-// the roster and payment register. Apps Script completed that work quickly,
-// but browsers intermittently failed to receive the oversized JSONP payload
-// and waited for the full client timeout before retrying.
-function buildAdminBootstrapPayload_(includeCurrentRows) {
-  const currentMonth = Utilities.formatDate(new Date(), 'Africa/Lagos', 'yyyy-MM');
+// Read the Posting Log once for one admin month. The same pass also produces
+// the lightweight all-time summary and complete month list, so startup no
+// longer scans the growing log once for the shell and again for September.
+function buildAdminMonthPayload_(month) {
   const postingData = getSheet().getDataRange().getValues();
   const rows = [];
   const months = {};
@@ -1315,10 +1312,25 @@ function buildAdminBootstrapPayload_(includeCurrentRows) {
     byCreator[name].total++;
     if (!byCreator[name].last || dateStr > byCreator[name].last) byCreator[name].last = dateStr;
 
-    if (includeCurrentRows && ym === currentMonth) {
+    if (ym === month) {
       rows.push([ts, name, dateStr, String(r[3] || ''), String(r[4] || ''), String(r[5] || ''), String(r[6] || '')]);
     }
   }
+
+  return {
+    status: 'success',
+    month: month,
+    months: Object.keys(months).sort().reverse(),
+    summary: { total: total, creators: byCreator },
+    rows: rows
+  };
+}
+
+
+// Small reference payload: roster, manual payments and configurable payment
+// rules only. It deliberately does not open the Posting Log.
+function buildAdminReferencePayload_() {
+  const currentMonth = Utilities.formatDate(new Date(), 'Africa/Lagos', 'yyyy-MM');
 
   const creators = handleGetCreators(true);
   const payments = handleGetPayments();
@@ -1327,8 +1339,6 @@ function buildAdminBootstrapPayload_(includeCurrentRows) {
   const result = {
     status: 'success',
     currentMonth: currentMonth,
-    months: Object.keys(months).sort().reverse(),
-    summary: { total: total, creators: byCreator },
     creators: creators.creators || [],
     payments: payments.payments || [],
     tiers: tiers.tiers || [],
@@ -1336,7 +1346,18 @@ function buildAdminBootstrapPayload_(includeCurrentRows) {
     monthlyTiers: tiers.monthlyTiers || {},
     categories: categories.categories || []
   };
-  if (includeCurrentRows) result.rows = rows;
+  return result;
+}
+
+
+// Kept for rollback compatibility with older callers that expect the complete
+// current-month bootstrap in one response.
+function buildAdminBootstrapPayload_(includeCurrentRows) {
+  const result = buildAdminReferencePayload_();
+  const monthData = buildAdminMonthPayload_(result.currentMonth);
+  result.months = monthData.months;
+  result.summary = monthData.summary;
+  if (includeCurrentRows) result.rows = monthData.rows;
   return result;
 }
 
@@ -1345,7 +1366,7 @@ function buildAdminBootstrapPayload_(includeCurrentRows) {
 // travel through handleGetAdminMonth in a separate request, so one dropped
 // large script response can no longer hold every admin page for a minute.
 function handleGetAdminShell(params) {
-  return buildAdminBootstrapPayload_(false);
+  return buildAdminReferencePayload_();
 }
 
 
@@ -1362,9 +1383,8 @@ function handleGetAdminBootstrap(params) {
 function handleGetAdminMonth(params) {
   const month = String((params && params.month) || '').trim();
   if (!/^\d{4}-\d{2}$/.test(month)) return { status: 'error', message: 'Month required (YYYY-MM)' };
-  const result = handleGet({ since: month + '-01', until: month + '-31' });
-  if (result.status === 'error') return result;
-  return { status: 'success', month: month, rows: result.rows || [] };
+  const result = buildAdminMonthPayload_(month);
+  return { status: 'success', month: month, rows: result.rows || [], months: result.months || [], summary: result.summary || null };
 }
 
 
@@ -2100,7 +2120,7 @@ function handleGetCreators(isAdmin) {
       publicCreators.push({
         name: String(publicData[i][0]).trim(),
         status: String(publicData[i][1] || 'Active'),
-        added: publicData[i][2] instanceof Date ? publicData[i][2].toISOString() : String(publicData[i][2] || '')
+        added: publicData[i][2] instanceof Date ? Utilities.formatDate(publicData[i][2], 'Africa/Lagos', 'yyyy-MM-dd') : String(publicData[i][2] || '')
       });
     }
     const publicResult = { status: 'success', creators: publicCreators };
@@ -2112,7 +2132,7 @@ function handleGetCreators(isAdmin) {
   const creators = [];
   for (let i = 1; i < data.length; i++) {
     if (!data[i][0]) continue;
-    const added = data[i][2] instanceof Date ? data[i][2].toISOString() : String(data[i][2] || '');
+    const added = data[i][2] instanceof Date ? Utilities.formatDate(data[i][2], 'Africa/Lagos', 'yyyy-MM-dd') : String(data[i][2] || '');
     const leftRaw = data[i][21];
     creators.push({
       name: String(data[i][0]).trim(),
@@ -2129,7 +2149,7 @@ function handleGetCreators(isAdmin) {
       contractFiledAt: data[i][18] instanceof Date ? data[i][18].toISOString() : String(data[i][18] || ''),
       contractResolved: String(data[i][19] || ''),
       creatorType: String(data[i][20] || ''),
-      left: leftRaw instanceof Date ? leftRaw.toISOString() : String(leftRaw || '')
+      left: leftRaw instanceof Date ? Utilities.formatDate(leftRaw, 'Africa/Lagos', 'yyyy-MM-dd') : String(leftRaw || '')
     });
   }
   return { status: 'success', creators };
@@ -4210,3 +4230,4 @@ function fixBackdatedTimestamps() {
   }
   Logger.log('======================================================');
 }
+

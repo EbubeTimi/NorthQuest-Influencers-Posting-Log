@@ -1461,6 +1461,15 @@ let payRowNames = [];
 let currentPage = 'chooser';
 let renderPaymentsPending = false;
 let lastPayEditTime = 0;
+let lastBonusCatEditTime = 0;
+let lastCreatorEditTime = 0;
+let lastBonusTierEditTime = 0;
+let lastRowsEditTime = {};
+let pendingPayEdits = 0;
+let pendingBonusCatEdits = 0;
+let pendingCreatorEdits = 0;
+let pendingBonusTierEdits = 0;
+let pendingRowsEdits = {};
 let jsonpCtr = 0;
 
 // ── EDITABLE COLUMN HEADERS ──
@@ -1633,7 +1642,7 @@ function dayLabel(dateStr) {
   return ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][d.getDay()] + ' ' + d.getDate();
 }
 
-function jsonp(params, cb, timeoutMs) {
+function jsonp(params, cb, timeoutMs, acceptLate) {
   timeoutMs = timeoutMs || 15000;
   const name = 'cb' + (++jsonpCtr);
   let done = false;
@@ -1657,9 +1666,17 @@ function jsonp(params, cb, timeoutMs) {
     // late-response callback alive so its JSONP payload does not throw
     // "cbN is not defined" in the browser. It only cleans up; it never calls
     // the application callback a second time.
-    window[name] = function() { cleanup(); };
+    window[name] = function(data) {
+      cleanup();
+      if (acceptLate) cb(data, 'late');
+    };
     cb(null,'timeout');
-    setTimeout(cleanup, 120000);
+    setTimeout(function() {
+      if (window[name]) {
+        cleanup();
+        if (acceptLate) cb(null, 'abandoned');
+      }
+    }, 370000);
   }, timeoutMs);
 
   window[name] = function(data) {
@@ -2010,8 +2027,6 @@ function loadAdminBootstrap(attempt, onDone, force) {
       lastAdminBootstrapFetch = Date.now();
       lastRowsFetch = lastAdminBootstrapFetch;
     } else {
-      if (!shellSucceeded && !hadCreators) creatorsLoaded = true;
-      if (!shellSucceeded && !hadPayments) paysLoaded = true;
       if (!monthSucceeded && !hadRows) {
         dataLoaded = true;
         rowsLoadFailed = true;
@@ -2024,18 +2039,19 @@ function loadAdminBootstrap(attempt, onDone, force) {
   }
 
   function requestShell(partAttempt) {
+    const shellRequestStarted = Date.now();
     jsonp({ action:'getAdminShell' }, (data) => {
       if (data && data.status === 'success' && Array.isArray(data.creators) && Array.isArray(data.payments)) {
         const currentMonth = String(data.currentMonth || requestedMonth);
-        allCreators = data.creators;
-        allPayments = data.payments;
-        adminAvailableMonths = Array.isArray(data.months) ? data.months.filter(m => /^\d{4}-\d{2}$/.test(String(m))) : [currentMonth];
+        if (pendingCreatorEdits === 0 && shellRequestStarted >= lastCreatorEditTime) allCreators = data.creators;
+        if (pendingPayEdits === 0 && shellRequestStarted >= lastPayEditTime) allPayments = data.payments;
+        adminAvailableMonths = Array.isArray(data.months) ? data.months.filter(m => /^\d{4}-\d{2}$/.test(String(m))) : adminAvailableMonths;
         if (!adminAvailableMonths.includes(currentMonth)) adminAvailableMonths.unshift(currentMonth);
         adminAvailableMonths = [...new Set(adminAvailableMonths)].sort().reverse();
-        adminSummary = data.summary || null;
-        acceptBonusTierPayload(data);
+        if (data.summary) adminSummary = data.summary;
+        if (pendingBonusTierEdits === 0 && shellRequestStarted >= lastBonusTierEditTime) acceptBonusTierPayload(data);
         bonusTiersLoaded = true;
-        if (Array.isArray(data.categories)) {
+        if (Array.isArray(data.categories) && pendingBonusCatEdits === 0 && shellRequestStarted >= lastBonusCatEditTime) {
           bonusCats = data.categories.map(c => ({
             month: String(c.month || ''), name: String(c.name || ''), amount: Number(c.amount) || 0
           })).filter(c => c.month && c.name);
@@ -2056,10 +2072,17 @@ function loadAdminBootstrap(attempt, onDone, force) {
   }
 
   function requestCurrentMonth(partAttempt) {
+    const monthRequestStarted = Date.now();
     jsonp({ action:'getAdminMonth', month:requestedMonth }, (data) => {
       if (data && data.status === 'success' && Array.isArray(data.rows)) {
         const incoming = normalizeLogRows(data.rows);
-        allRows = allRows.filter(r => monthYM(r.date) !== requestedMonth).concat(incoming);
+        if ((pendingRowsEdits[requestedMonth] || 0) === 0 && monthRequestStarted >= (lastRowsEditTime[requestedMonth] || 0)) {
+          allRows = allRows.filter(r => monthYM(r.date) !== requestedMonth).concat(incoming);
+        }
+        if (Array.isArray(data.months)) {
+          adminAvailableMonths = data.months.filter(m => /^\d{4}-\d{2}$/.test(String(m)));
+        }
+        if (data.summary) adminSummary = data.summary;
         adminLoadedMonths[requestedMonth] = 'loaded';
         if (!adminAvailableMonths.includes(requestedMonth)) adminAvailableMonths.push(requestedMonth);
         adminAvailableMonths.sort().reverse();
@@ -2100,10 +2123,17 @@ function loadAdminMonth(ym, done, force) {
   refreshAll();
 
   function request(attempt) {
+    const monthRequestStarted = Date.now();
     jsonp({ action:'getAdminMonth', month:ym }, (data) => {
       if (data && data.status === 'success' && Array.isArray(data.rows)) {
         const incoming = normalizeLogRows(data.rows);
-        allRows = allRows.filter(r => monthYM(r.date) !== ym).concat(incoming);
+        if ((pendingRowsEdits[ym] || 0) === 0 && monthRequestStarted >= (lastRowsEditTime[ym] || 0)) {
+          allRows = allRows.filter(r => monthYM(r.date) !== ym).concat(incoming);
+        }
+        if (Array.isArray(data.months)) {
+          adminAvailableMonths = [...new Set(adminAvailableMonths.concat(data.months.filter(m => /^\d{4}-\d{2}$/.test(String(m)))))].sort().reverse();
+        }
+        if (data.summary) adminSummary = data.summary;
         adminLoadedMonths[ym] = 'loaded';
         if (!adminAvailableMonths.includes(ym)) adminAvailableMonths.push(ym);
         adminAvailableMonths.sort().reverse();
@@ -2497,6 +2527,13 @@ function loadFailedRowHtml(colspan) {
     loadFailedDetailHtml() + '</td></tr>';
 }
 
+function adminReferenceFailedRowHtml(colspan) {
+  return '<tr><td colspan="' + colspan + '" class="empty-state">' +
+    '<strong>&#9888; Could not load creators and payments.</strong><br>' +
+    '<button type="button" class="btn btn-sm" style="margin-top:8px" onclick="retryLoadRows(this)">Try again</button>' +
+    '</td></tr>';
+}
+
 // ── LOADING STATE, show/hide spinner on submit button ──
 function setSubmitting(on, msg) {
   const btn = document.getElementById('submit-btn');
@@ -2847,7 +2884,12 @@ function renderWeeklyGrid() {
   head.innerHTML = '<th>Creator</th>' + dates.map(d => '<th>' + dayLabel(d) + '</th>').join('') + '<th>Week Total</th>';
   const creators = getActiveCreators();
   const tbody = document.getElementById('weekly-body');
-  if (!dataLoaded || !creatorsLoaded) { tbody.innerHTML = '<tr><td colspan="9" class="empty-state"><span class="spinner"></span></td></tr>'; return; }
+  if (!dataLoaded || !creatorsLoaded) {
+    tbody.innerHTML = adminBootstrapFailed
+      ? adminReferenceFailedRowHtml(9)
+      : '<tr><td colspan="9" class="empty-state"><span class="spinner"></span></td></tr>';
+    return;
+  }
   if (rowsLoadFailed) { tbody.innerHTML = loadFailedRowHtml(9); return; }
   if (isAdmin) {
     const neededMonths = [...new Set(dates.map(d => monthYM(d)))].filter(ym => adminMonthStatus(ym) !== 'loaded');
@@ -2889,6 +2931,21 @@ function getMonths() {
     // with no posts. Keep that register reachable even though its log month
     // is empty.
     allPayments.forEach(p => { if (p.month) months.push(String(p.month).slice(0, 7)); });
+    allCreators.forEach(c => { if (c.added) months.push(monthYM(c.added)); });
+    months.push(todayStr().slice(0, 7));
+    // Keep every calendar month between the first creator/activity record and
+    // today reachable, even when an entire month had no posts or payment rows.
+    const known = months.filter(m => /^\d{4}-\d{2}$/.test(String(m))).sort();
+    if (known.length) {
+      let cursor = known[0];
+      const end = todayStr().slice(0, 7);
+      for (let guard = 0; cursor <= end && guard < 240; guard++) {
+        months.push(cursor);
+        const parts = cursor.split('-').map(Number);
+        const next = new Date(Date.UTC(parts[0], parts[1], 1));
+        cursor = next.getUTCFullYear() + '-' + String(next.getUTCMonth() + 1).padStart(2, '0');
+      }
+    }
   }
   return [...new Set(months.filter(m => /^\d{4}-\d{2}$/.test(String(m))))].sort().reverse();
 }
@@ -3166,7 +3223,9 @@ function renderDashboard() {
     document.getElementById('d-month').textContent = '—';
     document.getElementById('d-creators').textContent = '—';
     document.getElementById('d-today').textContent = '—';
-    tbody.innerHTML = '<tr><td colspan="6" class="empty-state"><span class="spinner"></span></td></tr>';
+    tbody.innerHTML = adminBootstrapFailed
+      ? adminReferenceFailedRowHtml(6)
+      : '<tr><td colspan="6" class="empty-state"><span class="spinner"></span></td></tr>';
     return;
   }
   if (rowsLoadFailed) {
@@ -3215,10 +3274,19 @@ function addCreator() {
     alertEl.className='alert alert-error show'; alertEl.textContent = name + ' already exists.'; return;
   }
   btn.disabled = true; btn.textContent = 'Adding...';
-  jsonp({ action:'addCreator', name }, (data) => {
+  lastCreatorEditTime = Date.now();
+  pendingCreatorEdits++;
+  jsonp({ action:'addCreator', name }, (data, err) => {
+    if (err === 'timeout') {
+      btn.disabled = false; btn.textContent = 'Add creator';
+      showToast('error', 'Still saving', 'Google is taking longer than usual. Keep this page open while the save finishes.');
+      return;
+    }
+    pendingCreatorEdits = Math.max(0, pendingCreatorEdits - 1);
+    lastCreatorEditTime = Date.now();
     btn.disabled = false; btn.textContent = 'Add creator';
     if (data && data.status === 'success') {
-      allCreators.push({ name, status:'Active', added: new Date().toISOString() });
+      allCreators.push({ name, status:'Active', added: todayStr() });
       input.value = ''; refreshAll();
       showToast('success', 'Creator added', name + ' is now an active creator.');
       alertEl.classList.remove('show');
@@ -3226,7 +3294,7 @@ function addCreator() {
       alertEl.className='alert alert-error show';
       alertEl.textContent = (data&&data.message)||'Failed to add. Please try again.';
     }
-  });
+  }, 15000, true);
 }
 
 function toggleCreator(name) {
@@ -3234,7 +3302,15 @@ function toggleCreator(name) {
   if (!c) return;
   const isActive = String(c.status).toLowerCase() === 'active';
   if (!confirm((isActive?'Deactivate':'Reactivate') + ' ' + name + '?')) return;
-  jsonp({ action:'toggleCreator', name }, (data) => {
+  lastCreatorEditTime = Date.now();
+  pendingCreatorEdits++;
+  jsonp({ action:'toggleCreator', name }, (data, err) => {
+    if (err === 'timeout') {
+      showToast('error', 'Still saving', 'Google is taking longer than usual. Keep this page open while the status change finishes.');
+      return;
+    }
+    pendingCreatorEdits = Math.max(0, pendingCreatorEdits - 1);
+    lastCreatorEditTime = Date.now();
     if (data && data.status === 'success') {
       c.status = data.newStatus;
       // Record the leaving date the moment a creator is deactivated, and clear
@@ -3249,7 +3325,7 @@ function toggleCreator(name) {
     } else {
       showToast('error', 'Failed', (data&&data.message)||'Could not update status.');
     }
-  });
+  }, 15000, true);
 }
 
 function deleteCreator(name) {
@@ -3257,7 +3333,15 @@ function deleteCreator(name) {
   let msg = 'Delete ' + name + ' from the creator list?';
   if (posts > 0) msg = name + ' has ' + posts + ' logged post' + (posts!==1?'s':'') + '. Deleting removes them from the roster only. Their posts and payment records stay intact. Delete anyway?';
   if (!confirm(msg)) return;
-  jsonp({ action:'deleteCreator', name }, (data) => {
+  lastCreatorEditTime = Date.now();
+  pendingCreatorEdits++;
+  jsonp({ action:'deleteCreator', name }, (data, err) => {
+    if (err === 'timeout') {
+      showToast('error', 'Still saving', 'Google is taking longer than usual. Keep this page open while the removal finishes.');
+      return;
+    }
+    pendingCreatorEdits = Math.max(0, pendingCreatorEdits - 1);
+    lastCreatorEditTime = Date.now();
     if (data && data.status === 'success') {
       allCreators = allCreators.filter(c => c.name !== name);
       refreshAll();
@@ -3265,7 +3349,7 @@ function deleteCreator(name) {
     } else {
       showToast('error', 'Failed', (data && data.message) || 'Could not delete.');
     }
-  });
+  }, 15000, true);
 }
 
 // Change a creator's monthly base pay. The payments register, the per-video
@@ -3504,13 +3588,21 @@ function toggleContractResolved(name, resolved) {
   const prev = c.contractResolved;
   c.contractResolved = resolved ? 'true' : '';
   renderManageCreators();
-  jsonp({ action: 'setContractResolved', name, resolved: resolved ? '1' : '0' }, (data) => {
+  lastCreatorEditTime = Date.now();
+  pendingCreatorEdits++;
+  jsonp({ action: 'setContractResolved', name, resolved: resolved ? '1' : '0' }, (data, err) => {
+    if (err === 'timeout') {
+      showToast('error', 'Still saving', 'Google is taking longer than usual. Keep this page open while the contract update finishes.');
+      return;
+    }
+    pendingCreatorEdits = Math.max(0, pendingCreatorEdits - 1);
+    lastCreatorEditTime = Date.now();
     if (!data || data.status !== 'success') {
       c.contractResolved = prev;
       renderManageCreators();
       showToast('error', 'Could not update', 'Please try again.');
     }
-  });
+  }, 15000, true);
 }
 
 function updateBonusLegendText() {
@@ -3569,20 +3661,21 @@ function renderManageMonthPicker() {
 // empty/loading rows have to span the real width rather than a fixed 10.
 function manageColSpan() { return 10 + bonusCatsFor(manageMonthOrToday()).length; }
 
-// Month-scoped roster: what state a creator is in for a given month.
-// addedYM = the month they joined; leftYM = the month they were deactivated
-// (only set for inactive creators). "Active in this month" means they had
-// joined by then and had not yet left; "deactivated this month" files them
-// under the month they were let go so they stop showing afterwards.
+// Month-scoped activity view. Anyone who existed by the selected month and
+// logged at least one post is active for that month. Everyone else who already
+// existed is filed under Deactivated for that month only; this never changes
+// the permanent status stored in the Creators sheet.
 function creatorMonthStatus(c, ym) {
   const addedYM = c.added ? monthYM(c.added) : '';
-  const leftRaw = leftDateFor(c);                    // '' for active creators
-  const leftYM = leftRaw ? monthYM(leftRaw) : null;
   const nl = String(c.name).toLowerCase();
-  const hasRecord = allPayments.some(p => p.month === ym && String(p.name).toLowerCase() === nl);
-  const deactivatedThisMonth = (leftYM !== null && leftYM === ym);
-  const activeInMonth = ((addedYM === '' || addedYM <= ym) || hasRecord) && (leftYM === null || ym < leftYM);
-  return { activeInMonth, deactivatedThisMonth, leftYM };
+  const existedByMonth = !addedYM || addedYM <= ym;
+  const postedThisMonth = existedByMonth && allRows.some(r =>
+    monthYM(r.date) === ym && String(r.name).toLowerCase() === nl);
+  return {
+    activeInMonth: postedThisMonth,
+    deactivatedThisMonth: existedByMonth && !postedThisMonth,
+    leftYM: null
+  };
 }
 
 function setManageTab(t) { manageTab = (t === 'inactive') ? 'inactive' : 'active'; renderManageCreators(); }
@@ -3596,7 +3689,11 @@ function monthAddCandidates(ym) {
   allRows.forEach(r => { if (monthYM(r.date) === ym) hasRow[String(r.name).toLowerCase()] = 1; });
   allPayments.forEach(p => { if (p.month === ym && p.name) hasRow[String(p.name).toLowerCase()] = 1; });
   return allCreators
-    .filter(c => String(c.status).toLowerCase() === 'active' && !hasRow[String(c.name).toLowerCase()])
+    .filter(c => {
+      const addedYM = c.added ? monthYM(c.added) : '';
+      return String(c.status).toLowerCase() === 'active' &&
+        (!addedYM || addedYM <= ym) && !hasRow[String(c.name).toLowerCase()];
+    })
     .sort((a,b) => a.name.localeCompare(b.name));
 }
 function fillAddPicker(selId, ym) {
@@ -3652,10 +3749,10 @@ function addCreatorToMonth() {
   // A rate record for this month makes them appear in the month's roster and
   // in the payment register even with zero logged posts.
   savePaymentField(ym, name, 'rateOverride', String(tier), false);
-  manageTab = 'active';
+  manageTab = 'inactive';
   showToast('success', 'Added to ' + monthLabel(ym),
-    name.split(' ')[0] + ' now appears in ' + monthLabel(ym) + ' at ₦' + tier.toLocaleString('en-NG') +
-    '/month. Set their bonus in the row, they show in the payment register too.');
+    name.split(' ')[0] + ' is now in the payment register at ₦' + tier.toLocaleString('en-NG') +
+    '/month. With no posts, they remain under Deactivated this month.');
   renderManageCreators();
   renderPayments();
 }
@@ -3665,7 +3762,9 @@ function renderManageCreators() {
   const counts = document.getElementById('manage-counts');
   renderManageMonthPicker();
   if (!dataLoaded || !creatorsLoaded || !paysLoaded) {
-    tbody.innerHTML = '<tr><td colspan="' + manageColSpan() + '" class="empty-state"><span class="spinner"></span></td></tr>';
+    tbody.innerHTML = adminBootstrapFailed
+      ? adminReferenceFailedRowHtml(manageColSpan())
+      : '<tr><td colspan="' + manageColSpan() + '" class="empty-state"><span class="spinner"></span></td></tr>';
     return;
   }
   if (rowsLoadFailed) {
@@ -3693,11 +3792,11 @@ function renderManageCreators() {
     else if (st.activeInMonth) activeList.push(c);
   });
   const list = (manageTab === 'inactive' ? inactiveList : activeList).sort((a,b) => a.name.localeCompare(b.name));
-  counts.textContent = activeList.length + ' active · ' + inactiveList.length + ' left · in ' + monthShort(ym);
+  counts.textContent = activeList.length + ' active · ' + inactiveList.length + ' no posts · in ' + monthShort(ym);
   if (!allCreators.length) { tbody.innerHTML = '<tr><td colspan="' + manageColSpan() + '" class="empty-state"><strong>No creators yet</strong></td></tr>'; return; }
   if (!list.length) {
     tbody.innerHTML = '<tr><td colspan="' + manageColSpan() + '" class="empty-state"><strong>' +
-      (manageTab === 'inactive' ? 'No one was deactivated in ' + escH(monthLabel(ym)) : 'No active creators in ' + escH(monthLabel(ym))) +
+      (manageTab === 'inactive' ? 'Everyone posted in ' + escH(monthLabel(ym)) : 'No active creators in ' + escH(monthLabel(ym))) +
       '</strong></td></tr>';
     return;
   }
@@ -4049,7 +4148,16 @@ function saveExtraBonuses() {
   }
   const btn = document.getElementById('extra-bonus-save-btn');
   btn.disabled = true; btn.textContent = 'Saving…';
-  jsonp({ action:'setBonusCategories', month: ym, categories: JSON.stringify(list) }, (d) => {
+  lastBonusCatEditTime = Date.now();
+  pendingBonusCatEdits++;
+  jsonp({ action:'setBonusCategories', month: ym, categories: JSON.stringify(list) }, (d, err) => {
+    if (err === 'timeout') {
+      btn.disabled = false; btn.textContent = 'Save columns';
+      showToast('error', 'Still saving', 'Google is taking longer than usual. Keep this page open while the columns finish saving.');
+      return;
+    }
+    pendingBonusCatEdits = Math.max(0, pendingBonusCatEdits - 1);
+    lastBonusCatEditTime = Date.now();
     btn.disabled = false; btn.textContent = 'Save columns';
     if (d && d.status === 'success') {
       bonusCats = bonusCats.filter(c => c.month !== ym)
@@ -4063,7 +4171,7 @@ function saveExtraBonuses() {
     } else {
       showToast('error', 'Not saved', (d && d.message) || 'Could not save. Check your connection and try again.');
     }
-  });
+  }, 15000, true);
 }
 
 function closeBonusTiersModal() {
@@ -4104,7 +4212,16 @@ function saveBonusTiers() {
   const btn = document.getElementById('bonus-tiers-save-btn');
   btn.disabled = true; btn.textContent = 'Saving…';
   const ym = document.getElementById('bonus-tiers-rows').dataset.month || manageMonthOrToday();
-  jsonp({ action:'setBonusTiers', month: ym, tiers: JSON.stringify(tiers) }, (d) => {
+  lastBonusTierEditTime = Date.now();
+  pendingBonusTierEdits++;
+  jsonp({ action:'setBonusTiers', month: ym, tiers: JSON.stringify(tiers) }, (d, err) => {
+    if (err === 'timeout') {
+      btn.disabled = false; btn.textContent = 'Save tiers';
+      showToast('error', 'Still saving', 'Google is taking longer than usual. Keep this page open while the tiers finish saving.');
+      return;
+    }
+    pendingBonusTierEdits = Math.max(0, pendingBonusTierEdits - 1);
+    lastBonusTierEditTime = Date.now();
     btn.disabled = false; btn.textContent = 'Save tiers';
     if (d && d.status === 'success') {
       monthlyBonusTiers[ym] = tiers;
@@ -4115,7 +4232,7 @@ function saveBonusTiers() {
     } else {
       showToast('error', 'Not saved', (d && d.message) || 'Could not save the new tiers. Check your connection and try again.');
     }
-  });
+  }, 15000, true);
 }
 
 function loadPayments() {
@@ -4195,12 +4312,19 @@ function onPayEdit(idx, field, value, rerender) {
 
 function savePaymentField(month, name, field, value, rerender) {
   lastPayEditTime = Date.now();
+  pendingPayEdits++;
   let rec = allPayments.find(p => p.month === month && String(p.name).toLowerCase() === name.toLowerCase());
   if (!rec) { rec = { month, name, bonusViews:'', specialBonus:'', paymentStatus:'Pending', paymentDate:'', remarks:'', postsOverride:'', postsCredit:'', totalOverride:'', rateOverride:'' }; allPayments.push(rec); }
   rec[field] = value;
-  jsonp({ action:'savePayment', month, name, bonusViews:rec.bonusViews||'', specialBonus:rec.specialBonus||'', paymentStatus:rec.paymentStatus||'Pending', paymentDate:rec.paymentDate||'', remarks:rec.remarks||'', postsOverride:rec.postsOverride||'', postsCredit:rec.postsCredit||'', totalOverride:rec.totalOverride||'', rateOverride:rec.rateOverride||'' }, (d) => {
+  jsonp({ action:'savePayment', month, name, bonusViews:rec.bonusViews||'', specialBonus:rec.specialBonus||'', paymentStatus:rec.paymentStatus||'Pending', paymentDate:rec.paymentDate||'', remarks:rec.remarks||'', postsOverride:rec.postsOverride||'', postsCredit:rec.postsCredit||'', totalOverride:rec.totalOverride||'', rateOverride:rec.rateOverride||'' }, (d, err) => {
+    if (err === 'timeout') {
+      showToast('error', 'Still saving', 'Google is taking longer than usual. Keep this page open while the payment change finishes.');
+      return;
+    }
+    pendingPayEdits = Math.max(0, pendingPayEdits - 1);
+    lastPayEditTime = Date.now();
     if (!d || d.status !== 'success') showToast('error', 'Not saved', 'Could not save that change. Check your connection and try again.');
-  });
+  }, 15000, true);
   if (rerender) renderPayments();
 }
 
@@ -4238,24 +4362,37 @@ function onLegacyOverrideEdit(idx, typedValue) {
 function deletePaymentRow(idx) {
   const name = payRowNames[idx];
   if (!name) return;
-  const monthName = monthLabel(selectedPayMonth);
-  const postsThisMonth = allRows.filter(r => String(r.name).toLowerCase() === name.toLowerCase() && monthYM(r.date) === selectedPayMonth).length;
+  const deleteMonth = selectedPayMonth;
+  const monthName = monthLabel(deleteMonth);
+  const postsThisMonth = allRows.filter(r => String(r.name).toLowerCase() === name.toLowerCase() && monthYM(r.date) === deleteMonth).length;
   const msg = 'Remove ' + name + ' from ' + monthName + '?\n\n' +
     'This will permanently delete:\n' +
     '• ' + postsThisMonth + ' logged post' + (postsThisMonth === 1 ? '' : 's') + ' from the Posting Log\n' +
     '• Their payment record for this month\n\n' +
     'Cannot be undone.';
   if (!confirm(msg)) return;
-  jsonp({ action:'deletePaymentRow', month: selectedPayMonth, name }, (d) => {
+  lastPayEditTime = Date.now();
+  lastRowsEditTime[deleteMonth] = Date.now();
+  pendingPayEdits++;
+  pendingRowsEdits[deleteMonth] = (pendingRowsEdits[deleteMonth] || 0) + 1;
+  jsonp({ action:'deletePaymentRow', month: deleteMonth, name }, (d, err) => {
+    if (err === 'timeout') {
+      showToast('error', 'Still deleting', 'Google is taking longer than usual. Keep this page open while the removal finishes.');
+      return;
+    }
+    pendingPayEdits = Math.max(0, pendingPayEdits - 1);
+    pendingRowsEdits[deleteMonth] = Math.max(0, (pendingRowsEdits[deleteMonth] || 0) - 1);
+    lastPayEditTime = Date.now();
+    lastRowsEditTime[deleteMonth] = Date.now();
     if (d && d.status === 'success') {
-      allRows = allRows.filter(r => !(String(r.name).toLowerCase() === name.toLowerCase() && monthYM(r.date) === selectedPayMonth));
-      allPayments = allPayments.filter(p => !(p.month === selectedPayMonth && String(p.name).toLowerCase() === name.toLowerCase()));
+      allRows = allRows.filter(r => !(String(r.name).toLowerCase() === name.toLowerCase() && monthYM(r.date) === deleteMonth));
+      allPayments = allPayments.filter(p => !(p.month === deleteMonth && String(p.name).toLowerCase() === name.toLowerCase()));
       renderPayments();
       showToast('success', 'Removed', name + ' deleted from ' + monthName + ' (' + (d.deletedPosts || 0) + ' post' + ((d.deletedPosts||0)===1?'':'s') + ' removed).');
     } else {
       showToast('error', 'Could not delete', (d && d.message) || 'Try again or refresh.');
     }
-  });
+  }, 15000, true);
 }
 
 function onRateEdit(idx, value) {
@@ -4281,7 +4418,17 @@ function onBankEdit(idx, field, value) {
   if (c) { if (field==='bankName') c.bankName = value; else if (field==='acctNum') c.acctNum = value; else if (field==='acctName') c.acctName = value; }
   const params = { action:'setCreatorBank', name };
   params[field] = value;
-  jsonp(params, (d) => { if (!d || d.status !== 'success') showToast('error', 'Not saved', 'Could not save the bank detail. Check your connection and try again.'); });
+  lastCreatorEditTime = Date.now();
+  pendingCreatorEdits++;
+  jsonp(params, (d, err) => {
+    if (err === 'timeout') {
+      showToast('error', 'Still saving', 'Google is taking longer than usual. Keep this page open while the bank detail finishes saving.');
+      return;
+    }
+    pendingCreatorEdits = Math.max(0, pendingCreatorEdits - 1);
+    lastCreatorEditTime = Date.now();
+    if (!d || d.status !== 'success') showToast('error', 'Not saved', 'Could not save the bank detail. Check your connection and try again.');
+  }, 15000, true);
 }
 
 // The legend rebuilds itself from whatever base-pay tiers are actually in
@@ -4314,7 +4461,12 @@ function renderPayments() {
   const tabsEl = document.getElementById('pay-tabs');
   const body = document.getElementById('pay-body');
   if (!tabsEl || !body) return;
-  if (!dataLoaded || !creatorsLoaded || !paysLoaded) { body.innerHTML = '<tr><td colspan="' + payColSpan() + '" class="empty-state"><span class="spinner"></span></td></tr>'; return; }
+  if (!dataLoaded || !creatorsLoaded || !paysLoaded) {
+    body.innerHTML = adminBootstrapFailed
+      ? adminReferenceFailedRowHtml(payColSpan())
+      : '<tr><td colspan="' + payColSpan() + '" class="empty-state"><span class="spinner"></span></td></tr>';
+    return;
+  }
   // Every figure on this table is money. Refusing to show it is safer than
   // showing a total built on a posting log we know failed to load.
   if (rowsLoadFailed) {
@@ -5125,3 +5277,4 @@ function filterTableRows(inputId, tbodyId) {
 </script>
 </body>
 </html>
+
