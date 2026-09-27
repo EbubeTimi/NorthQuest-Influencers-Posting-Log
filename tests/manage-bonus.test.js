@@ -139,5 +139,33 @@ check("September applies the video base pay", sandbox.effMonthlyRate("Ada", "202
 set("allPayments", [{ month: "2026-09", name: "Ada", rateOverride: "200000" }]);
 check("September honours an admin override", sandbox.effMonthlyRate("Ada", "2026-09"), 200000);
 
+// Manage Creators is an activity view for the selected month. A creator who
+// existed by then is active only when they logged at least one post; zero posts
+// files them under Deactivated for that month without changing account status.
+set("allCreators", [
+  { name: "Ada", status: "Active", added: "2026-06-01" },
+  { name: "Bola", status: "Active", added: "2026-06-01" },
+  { name: "Chi", status: "Active", added: "2026-09-02" },
+  { name: "Dayo", status: "Inactive", added: "2026-05-01", left: "2026-08-20" },
+]);
+set("allRows", [
+  { name: "Ada", date: "2026-08-04" },
+  { name: "Dayo", date: "2026-08-10" },
+]);
+let status = sandbox.creatorMonthStatus(sandbox.__get("allCreators")[0], "2026-08");
+check("a creator with an August post is active in August", status.activeInMonth, true);
+status = sandbox.creatorMonthStatus(sandbox.__get("allCreators")[1], "2026-08");
+check("an existing creator with no August posts is deactivated for August", status.deactivatedThisMonth, true);
+status = sandbox.creatorMonthStatus(sandbox.__get("allCreators")[2], "2026-08");
+check("a creator who had not joined is absent from August", [status.activeInMonth, status.deactivatedThisMonth], [false, false]);
+status = sandbox.creatorMonthStatus(sandbox.__get("allCreators")[3], "2026-08");
+check("a creator who later left but posted in August stays active in August", status.activeInMonth, true);
+check("August add picker excludes a September joiner",
+  sandbox.monthAddCandidates("2026-08").some(c => c.name === "Chi"), false);
+set("isAdmin", true);
+check("the admin month list includes an empty July between June and September",
+  sandbox.getMonths().includes("2026-07"), true);
+
 console.log(failures ? "\n" + failures + " FAILING" : "\nAll checks passed");
 process.exit(failures ? 1 : 0);
+
