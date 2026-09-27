@@ -5,6 +5,7 @@ const path = require('node:path');
 const vm = require('node:vm');
 
 const html = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
+const appsScript = fs.readFileSync(path.join(__dirname, '..', 'Code.gs'), 'utf8');
 const code = /<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/.exec(html)[1];
 
 function buildSandbox() {
@@ -71,4 +72,15 @@ test('export follows the visible payment order and omits Bonus Views and Special
   assert.doesNotMatch(exportFn, /'Bonus Views'|'Special Bonus \(₦\)'/);
   assert.match(exportFn, /extraCats\.map\(c => c\.name\)/);
   assert.match(exportFn, /'Performance Bonus \(₦\)'[\s\S]*extraCats[\s\S]*'Total Payable \(₦\)'/);
+});
+
+test('Apps Script accepts zero as the legacy rate for a name-only payment column', () => {
+  assert.match(appsScript, /const rawAmount = list\[i\] && list\[i\]\.amount;/);
+  assert.match(appsScript, /rawAmount == null \? '' : rawAmount/);
+  assert.doesNotMatch(appsScript, /String\(\(list\[i\] && list\[i\]\.amount\) \|\| ''\)/);
+});
+
+test('payment column reorder controls stay compact and wording says column', () => {
+  assert.match(html, /\.bt-row\.payment-column-row \{ grid-template-columns: minmax\(0,1fr\) auto auto auto; \}/);
+  assert.match(html, /Remove a column to stop it applying\./);
 });
