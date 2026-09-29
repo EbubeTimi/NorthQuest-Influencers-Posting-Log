@@ -1728,6 +1728,7 @@ function flushQueue() {
 // be skipped instead of repeated.
 let lastRowsFetch = 0;
 let loadedForName = null;   // whose rows allRows currently holds (creator mode)
+let creatorDashboardLoadedFor = null; // whose pay + bonus references arrived with the rows
 let logWaitStartedAt = 0;
 const FRESH_MS = 60000;
 const ME_KEY = 'nq_me';
@@ -1871,6 +1872,7 @@ function loadRows(attempt, forName) {
   d.setMonth(d.getMonth() - 1);
   const since = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-01';
   fetchLogWindow({ since: since, name: name }, attempt, (data) => {
+    const receivedDashboard = data && data.rows ? acceptCreatorDashboardPayload(name, data) : false;
     // Whose rows these are must be recorded BEFORE applyLogRows, because it
     // re-renders the page synchronously — and every creator screen checks
     // this to decide whether it is looking at the right person's data.
@@ -1878,6 +1880,16 @@ function loadRows(attempt, forName) {
     else if (data && data.status === 'error') logLoadFailed(data.message);
     else logLoadFailed('');
     logLoadSettled();
+    // Rollback compatibility: an older backend returns rows only. Keep the
+    // former pay/reference path available, but never start it alongside the
+    // new one-response dashboard request.
+    if (data && data.rows && !receivedDashboard) {
+      const modal = document.getElementById('creator-modal');
+      const openFor = document.getElementById('modal-name');
+      if (modal && modal.classList.contains('open') && openFor && openFor.textContent === name) {
+        loadMyPay(name, function() { loadBonusTiers(function() { loadBonusCategories(); }); });
+      }
+    }
     // They changed the dropdown while this was in the air, so what just
     // landed belongs to somebody else. Go and get the right person's.
     const now = currentCreatorName();
@@ -2164,6 +2176,31 @@ function loadAdminMonths(months, done) {
 let creatorsLoadInFlight = false;
 
 let creatorBootstrapInFlight = false;
+
+function acceptCreatorDashboardPayload(name, data) {
+  if (!data || !Array.isArray(data.payments)) return false;
+  const lower = String(name || '').toLowerCase();
+  allPayments = allPayments.filter(p => String(p.name || '').toLowerCase() !== lower)
+    .concat(data.payments);
+  if (parseFloat(data.rate) > 0) myOwnRate = { name: name, rate: parseFloat(data.rate) };
+  if (Array.isArray(data.tiers)) {
+    acceptBonusTierPayload(data);
+    bonusTiersLoaded = true;
+  }
+  if (Array.isArray(data.categories)) {
+    bonusCats = data.categories.map(c => ({
+      month: String(c.month || ''), name: String(c.name || ''), amount: Number(c.amount) || 0
+    })).filter(c => c.month && c.name);
+    bonusCatsLoaded = true;
+  }
+  creatorDashboardLoadedFor = lower;
+  return true;
+}
+
+function creatorDashboardIsLoaded(name) {
+  return String(creatorDashboardLoadedFor || '') === String(name || '').toLowerCase();
+}
+
 function loadCreatorBootstrap(attempt) {
   attempt = attempt || 0;
   if (creatorBootstrapInFlight) return;
@@ -2179,6 +2216,7 @@ function loadCreatorBootstrap(attempt) {
       allCreators = data.creators;
       const activeRemembered = me && getActiveCreators().indexOf(me) !== -1;
       if (activeRemembered && Array.isArray(data.rows)) {
+        acceptCreatorDashboardPayload(me, data);
         loadedForName = me;
         applyLogRows(data.rows);
       } else {
@@ -3036,12 +3074,13 @@ function openMyLogs() {
   if (!name) return;
   loadRowsIfStale(); // refresh in the background so the view is as current as possible
   renderMyLogs(name);
-  // Pay and bonus reference data are not needed to submit a video, so load
-  // them only when the creator opens this payment-aware view. Keep them
-  // serial so they do not recreate the startup request queue.
-  loadMyPay(name, function() {
-    loadBonusTiers(function() { loadBonusCategories(); });
-  });
+  // Current backends return logs, this creator's pay, tiers and custom payment
+  // columns together. Do not queue three more Google Script executions while
+  // that one request is still running. The fallback is only for a coordinated
+  // rollout where the page reaches an older backend that returned rows alone.
+  if (!creatorDashboardIsLoaded(name) && !logLoadInFlight) {
+    loadMyPay(name, function() { loadBonusTiers(function() { loadBonusCategories(); }); });
+  }
 }
 
 // One creator's own pay figures. Never the whole register — that stays
@@ -3150,15 +3189,16 @@ function renderMyLogs(name) {
   // have earned that across four separate bonuses — one figure answers "how
   // many", the other "how much".
   const bonusCount = calcBonusCount(man.bonusViews || '', ym);
-  const extraBonuses = bonusCatsFor(ym).map(cat => ({
-    name: cat.name,
-    count: null,
-    each: null,
-    amount: parseFloat(getPaymentExtraAmount(man.specialBonus || '', ym, cat.name)) || 0
-  })).filter(entry => entry.amount > 0);
+  // Read the creator's saved payment values directly. Do not make their
+  // dashboard depend on the separate column-definition request completing:
+  // a saved Referral/Budget Videos payment must still be visible even while
+  // that reference list is loading or after a column was renamed.
+  const extraBonuses = creatorExtraPayments(man.specialBonus || '', ym);
   const special = extraBonuses.reduce((sum, e) => sum + e.amount, 0);
   const totalOv = String(man.totalOverride || '').replace(/[^\d.]/g, '');
-  const amountExpected = (totalOv !== '' && !isNaN(parseFloat(totalOv))) ? parseFloat(totalOv) : (baseAmount + perf + special);
+  const amountExpected = baseAmount;
+  const computedTotal = baseAmount + perf + special;
+  const totalPayable = (totalOv !== '' && !isNaN(parseFloat(totalOv))) ? parseFloat(totalOv) : computedTotal;
   // Videos the admin added show as a "+2" chip in the corner of the count.
   // The legacy override REPLACES the count rather than adding to it, so there
   // is no honest "+N" for it — that case keeps its wording instead.
@@ -3196,14 +3236,14 @@ function renderMyLogs(name) {
       extraBonuses.map(e =>
         (e.count !== null
           ? '<div class="mylog-stat extra-bonus"><div class="v">' + e.count + '</div>' +
-            '<div class="l">' + escH(e.name) + '</div></div>'
+            '<div class="l">' + escH(e.name) + ' count</div></div>'
           : '') +
         '<div class="mylog-stat extra-bonus"><div class="v">&#8358;' + Math.round(e.amount).toLocaleString('en-NG') + '</div>' +
-        '<div class="l">' + escH(e.name) + ' amount</div></div>').join('') +
+        '<div class="l">' + escH(e.name) + ' payment</div></div>').join('') +
     '</div>' +
     // Everything above added up, stated once so it needs no working out.
     '<div class="mylog-total"><span class="mt-l">Total</span>' +
-      '<span class="mt-v">&#8358;' + Math.round(amountExpected).toLocaleString('en-NG') + '</span></div>' +
+      '<span class="mt-v">&#8358;' + Math.round(totalPayable).toLocaleString('en-NG') + '</span></div>' +
     '<div class="month-block"><div class="month-block-header"><span class="month-block-name">' + monthLabel(ym) + '</span><span class="month-block-total">' + monthRows.length + ' of 62 videos</span></div>' + dayRowsHtml.join('') + '</div>';
   document.getElementById('creator-modal').classList.add('open');
 }
@@ -3915,10 +3955,27 @@ let bonusCats = [], bonusCatsLoaded = false;
 // not defined a bonus by that name for the month.
 function bonusCatAmount(ym, name) {
   const hit = bonusCats.find(c => c.month === ym &&
-    String(c.name).toLowerCase() === String(name).toLowerCase());
+    paymentExtraKey(c.name) === paymentExtraKey(name));
   return hit ? hit.amount : null;
 }
-function bonusCatsFor(ym) { return bonusCats.filter(c => c.month === ym); }
+function paymentExtraKey(name) {
+  const key = String(name || '').trim().toLowerCase().replace(/\s+/g, ' ');
+  // Historical saves used both singular and plural spellings for these two
+  // columns. They are one payment, not four separate columns.
+  if (key === 'referrals') return 'referral';
+  if (key === 'budget videos') return 'budget video';
+  return key;
+}
+function bonusCatsFor(ym) {
+  const rows = [], indexes = {};
+  bonusCats.filter(c => c.month === ym).forEach(c => {
+    const key = paymentExtraKey(c.name);
+    if (!key) return;
+    if (Object.prototype.hasOwnProperty.call(indexes, key)) rows[indexes[key]] = c;
+    else { indexes[key] = rows.length; rows.push(c); }
+  });
+  return rows;
+}
 
 // Custom payment-column values live in the existing Special Bonus backend
 // field so older deployments and Sheets remain compatible. New direct naira
@@ -3947,17 +4004,47 @@ function parseExtraBonuses(cell, ym) {
     const name = (i > -1 ? s.slice(0, i) : '').trim();
     const num = parseFloat((i > -1 ? s.slice(i + 1) : s).replace(/[^\d.]/g, '')) || 0;
     if (num <= 0) return null;
-    if (direct > -1) return { name: name || 'Extra payment', count: null, each: null, amount: num };
+    if (direct > -1) return { name: name || 'Extra payment', count: null, each: null, amount: num, unnamed: !name };
     const each = name && ym ? bonusCatAmount(ym, name) : null;
-    if (each !== null) return { name: name, count: num, each: each, amount: num * each };
-    return { name: name || 'Extra bonus', count: null, each: null, amount: num };
+    if (each !== null) return { name: name, count: num, each: each, amount: num * each, unnamed: false };
+    return { name: name || 'Extra bonus', count: null, each: null, amount: num, unnamed: !name };
   }).filter(Boolean);
+}
+
+// Creator-facing custom payments come from the saved payment record itself,
+// not only from the current list of admin-defined columns. Current columns
+// still define the display order; any saved older/late value follows after
+// them so money never silently disappears from the creator's dashboard.
+function creatorExtraPayments(cell, ym) {
+  const saved = parseExtraBonuses(cell, ym);
+  const order = {};
+  bonusCatsFor(ym).forEach((cat, i) => { order[paymentExtraKey(cat.name)] = i; });
+
+  // Keep the latest spelling/value for one logical named payment. Old builds
+  // wrote both "Budget Video" and "Budget Videos", and also left the former
+  // bare numeric value beside them. That is one ₦10,000 payment, not ₦30,000.
+  const merged = [], indexes = {};
+  saved.forEach(e => {
+    const key = e.unnamed ? '' : paymentExtraKey(e.name);
+    if (key && Object.prototype.hasOwnProperty.call(indexes, key)) merged[indexes[key]] = e;
+    else {
+      if (key) indexes[key] = merged.length;
+      merged.push(e);
+    }
+  });
+  const namedAmounts = {};
+  merged.forEach(e => { if (!e.unnamed) namedAmounts[String(e.amount)] = true; });
+  return merged.filter(e => !e.unnamed || !namedAmounts[String(e.amount)]).sort((a, b) => {
+    const ai = Object.prototype.hasOwnProperty.call(order, paymentExtraKey(a.name)) ? order[paymentExtraKey(a.name)] : 9999;
+    const bi = Object.prototype.hasOwnProperty.call(order, paymentExtraKey(b.name)) ? order[paymentExtraKey(b.name)] : 9999;
+    return ai - bi;
+  });
 }
 
 function paymentExtraPart(cell, name) {
   const hit = String(cell || '').split(',').map(s => s.trim()).find(s => {
     const i = Math.max(s.lastIndexOf('='), s.lastIndexOf(':'));
-    return i > -1 && s.slice(0, i).trim().toLowerCase() === String(name).toLowerCase();
+    return i > -1 && paymentExtraKey(s.slice(0, i)) === paymentExtraKey(name);
   });
   return hit || '';
 }
@@ -3974,10 +4061,22 @@ function getPaymentExtraAmount(cell, ym, name) {
 }
 
 function setPaymentExtraAmount(cell, name, amount) {
-  const parts = String(cell || '').split(',').map(s => s.trim()).filter(Boolean)
+  const source = String(cell || '').split(',').map(s => s.trim()).filter(Boolean);
+  const targetKey = paymentExtraKey(name);
+  const previousAmounts = {};
+  source.forEach(s => {
+    const i = Math.max(s.lastIndexOf('='), s.lastIndexOf(':'));
+    if (i > -1 && paymentExtraKey(s.slice(0, i)) === targetKey) {
+      const old = parseFloat(s.slice(i + 1).replace(/[^\d.]/g, '')) || 0;
+      if (old > 0) previousAmounts[String(old)] = true;
+    }
+  });
+  const parts = source
     .filter(s => {
       const i = Math.max(s.lastIndexOf('='), s.lastIndexOf(':'));
-      return !(i > -1 && s.slice(0, i).trim().toLowerCase() === String(name).toLowerCase());
+      if (i > -1) return paymentExtraKey(s.slice(0, i)) !== targetKey;
+      const bare = parseFloat(s.replace(/[^\d.]/g, '')) || 0;
+      return !previousAmounts[String(bare)];
     });
   const n = parseFloat(String(amount).replace(/[^\d.]/g, ''));
   if (!isNaN(n) && n > 0) parts.push(name + '=' + n);
@@ -3985,8 +4084,7 @@ function setPaymentExtraAmount(cell, name, amount) {
 }
 
 function paymentExtraTotal(cell, ym) {
-  return bonusCatsFor(ym).reduce((sum, cat) =>
-    sum + (parseFloat(getPaymentExtraAmount(cell, ym, cat.name)) || 0), 0);
+  return creatorExtraPayments(cell, ym).reduce((sum, item) => sum + item.amount, 0);
 }
 
 // How many bonuses were actually earned, walking the same list and the same
@@ -4310,21 +4408,44 @@ function onPayEdit(idx, field, value, rerender) {
   savePaymentField(selectedPayMonth, name, field, value, rerender);
 }
 
+const paymentSaveQueues = {};
+
+function runNextPaymentSave(key) {
+  const queue = paymentSaveQueues[key];
+  if (!queue || queue.active || !queue.items.length) return;
+  queue.active = true;
+  const item = queue.items[0];
+  const payload = { action:'savePayment', month:item.month, name:item.name };
+  payload[item.field] = item.value;
+  jsonp(payload, (d, err) => {
+    // A late Apps Script reply is still authoritative. Keep this queue paused
+    // after the visible timeout so a newer edit cannot overtake the request.
+    if (err === 'timeout') {
+      showToast('error', 'Still saving', 'Google is taking longer than usual. Keep this page open while the payment change finishes.');
+      return;
+    }
+    queue.items.shift();
+    queue.active = false;
+    pendingPayEdits = Math.max(0, pendingPayEdits - 1);
+    lastPayEditTime = Date.now();
+    if (!d || d.status !== 'success') {
+      showToast('error', 'Not saved', 'Could not save that change. Check your connection and try again.');
+    }
+    if (queue.items.length) runNextPaymentSave(key);
+    else delete paymentSaveQueues[key];
+  }, 15000, true);
+}
+
 function savePaymentField(month, name, field, value, rerender) {
   lastPayEditTime = Date.now();
   pendingPayEdits++;
   let rec = allPayments.find(p => p.month === month && String(p.name).toLowerCase() === name.toLowerCase());
   if (!rec) { rec = { month, name, bonusViews:'', specialBonus:'', paymentStatus:'Pending', paymentDate:'', remarks:'', postsOverride:'', postsCredit:'', totalOverride:'', rateOverride:'' }; allPayments.push(rec); }
   rec[field] = value;
-  jsonp({ action:'savePayment', month, name, bonusViews:rec.bonusViews||'', specialBonus:rec.specialBonus||'', paymentStatus:rec.paymentStatus||'Pending', paymentDate:rec.paymentDate||'', remarks:rec.remarks||'', postsOverride:rec.postsOverride||'', postsCredit:rec.postsCredit||'', totalOverride:rec.totalOverride||'', rateOverride:rec.rateOverride||'' }, (d, err) => {
-    if (err === 'timeout') {
-      showToast('error', 'Still saving', 'Google is taking longer than usual. Keep this page open while the payment change finishes.');
-      return;
-    }
-    pendingPayEdits = Math.max(0, pendingPayEdits - 1);
-    lastPayEditTime = Date.now();
-    if (!d || d.status !== 'success') showToast('error', 'Not saved', 'Could not save that change. Check your connection and try again.');
-  }, 15000, true);
+  const key = month + '\n' + name.toLowerCase();
+  if (!paymentSaveQueues[key]) paymentSaveQueues[key] = { active:false, items:[] };
+  paymentSaveQueues[key].items.push({ month, name, field, value });
+  runNextPaymentSave(key);
   if (rerender) renderPayments();
 }
 
