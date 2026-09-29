@@ -65,6 +65,49 @@ test('custom payment columns accept direct naira amounts without a duplicate amo
   assert.match(cells, /inputmode="decimal"/);
 });
 
+test('creator dashboard separates base amount from the grand total and always shows saved custom payments', () => {
+  const sandbox = buildSandbox();
+  sandbox.__set('bonusCats', []); // reference request can be late or stale
+  const extras = sandbox.creatorExtraPayments('Referral=30000, Budget Videos=10000', '2026-09');
+  assert.deepEqual(Array.from(extras, e => [e.name, e.amount]), [
+    ['Referral', 30000],
+    ['Budget Videos', 10000]
+  ]);
+
+  const renderStart = code.indexOf('function renderMyLogs(name)');
+  const renderEnd = code.indexOf('function renderDashboard()', renderStart);
+  const render = code.slice(renderStart, renderEnd);
+  assert.match(render, /const amountExpected = baseAmount;/);
+  assert.match(render, /const computedTotal = baseAmount \+ perf \+ special;/);
+  assert.match(render, /Math\.round\(totalPayable\)/);
+  assert.match(render, /escH\(e\.name\) \+ ' payment<\/div>/);
+});
+
+test('historical singular, plural and bare copies count as one custom payment', () => {
+  const sandbox = buildSandbox();
+  sandbox.__set('bonusCats', [
+    { month: '2026-09', name: 'Budget Videos', amount: 0 },
+    { month: '2026-09', name: 'Budget Video', amount: 0 },
+    { month: '2026-09', name: 'Referral', amount: 0 },
+    { month: '2026-09', name: 'Referrals', amount: 0 }
+  ]);
+
+  assert.deepEqual(Array.from(sandbox.bonusCatsFor('2026-09'), c => c.name), [
+    'Budget Video', 'Referrals'
+  ]);
+  const extras = sandbox.creatorExtraPayments(
+    '10000, Budget Videos=10000, Budget Video=10000', '2026-09'
+  );
+  assert.deepEqual(Array.from(extras, e => [e.name, e.amount]), [['Budget Video', 10000]]);
+  assert.equal(
+    sandbox.setPaymentExtraAmount(
+      '10000, Budget Videos=10000, Budget Video=10000', 'Budget Videos', '20000'
+    ),
+    'Budget Videos=20000'
+  );
+  assert.equal(sandbox.paymentExtraTotal('10000, Budget Videos=10000, Budget Video=10000', '2026-09'), 10000);
+});
+
 test('export follows the visible payment order and omits Bonus Views and Special Bonus', () => {
   const start = html.indexOf('function exportPaymentsCSV()');
   const end = html.indexOf('// ══════════════════════════════════════════════════════════', start);
@@ -78,6 +121,19 @@ test('Apps Script accepts zero as the legacy rate for a name-only payment column
   assert.match(appsScript, /const rawAmount = list\[i\] && list\[i\]\.amount;/);
   assert.match(appsScript, /rawAmount == null \? '' : rawAmount/);
   assert.doesNotMatch(appsScript, /String\(\(list\[i\] && list\[i\]\.amount\) \|\| ''\)/);
+});
+
+test('Apps Script keeps payment-column months stable across save and reload', () => {
+  assert.match(appsScript, /function nqBonusMonthKey_\(value\)/);
+  assert.match(appsScript, /value instanceof Date/);
+  assert.match(appsScript, /clean\.push\(\["'" \+ month, name, amount\]\)/);
+  assert.match(appsScript, /if \(nqBonusMonthKey_\(data\[i\]\[0\]\) === month\) sheet\.deleteRow/);
+  assert.match(appsScript, /const month = nqBonusMonthKey_\(data\[i\]\[0\]\)/);
+});
+
+test('Apps Script collapses duplicate saved column names when reading old data', () => {
+  assert.match(appsScript, /const categoryIndexes = \{\}/);
+  assert.match(appsScript, /categories\[categoryIndexes\[key\]\] = item/);
 });
 
 test('payment column reorder controls stay compact and wording says column', () => {
