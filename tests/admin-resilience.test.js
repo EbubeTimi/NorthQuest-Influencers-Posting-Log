@@ -57,3 +57,14 @@ test('creator join dates keep their Lagos calendar day', () => {
   assert.match(gs, /const added = data\[i\]\[2\] instanceof Date\s*\?\s*Utilities\.formatDate\(data\[i\]\[2\], 'Africa\/Lagos', 'yyyy-MM-dd'\)/);
 });
 
+test('admin login does not compete with the public bootstrap or require a manual retry', () => {
+  assert.match(html, /creatorBootstrapTimer\s*=\s*setTimeout/);
+  assert.match(html, /name === 'login' && creatorBootstrapTimer[\s\S]*clearTimeout\(creatorBootstrapTimer\)/);
+  assert.match(html, /name === 'submit'[\s\S]*loadCreatorBootstrap\(\)/);
+  assert.match(html, /function checkLogin\(\)[\s\S]*err\.classList\.remove\('show'\)/);
+  assert.match(html, /function requestLogin\(attempt\)[\s\S]*attempt < 1[\s\S]*requestLogin\(attempt \+ 1\)/);
+  assert.match(html, /action: 'adminLogin'[\s\S]*25000, true\)/);
+  assert.match(html, /function finishLogin\(d\)[\s\S]*d\.status === 'success'[\s\S]*grantAdmin\(d\.adminKey\)/);
+});
+
+
