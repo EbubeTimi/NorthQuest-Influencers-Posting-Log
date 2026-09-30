@@ -139,6 +139,29 @@ check("September applies the video base pay", sandbox.effMonthlyRate("Ada", "202
 set("allPayments", [{ month: "2026-09", name: "Ada", rateOverride: "200000" }]);
 check("September honours an admin override", sandbox.effMonthlyRate("Ada", "2026-09"), 200000);
 
+// Per-video rates follow the selected month's real calendar. These checks are
+// deliberately about calculation only: no creator posts, bonuses, or saved
+// base-pay figures are rewritten.
+check("September has 60 available video slots", sandbox.monthlyVideoTarget("2026-09"), 60);
+check("October has 62 available video slots", sandbox.monthlyVideoTarget("2026-10"), 62);
+check("a normal February has 56 available video slots", sandbox.monthlyVideoTarget("2027-02"), 56);
+check("a leap-year February has 58 available video slots", sandbox.monthlyVideoTarget("2028-02"), 58);
+
+saved.length = 0;
+set("payRowNames", ["Ada"]);
+set("selectedPayMonth", "2026-09");
+sandbox.onRateEdit(0, "2500");
+check("September per-video edit stores a 60-slot monthly base pay",
+  saved.map(s => ({ month: s.month, field: s.field, value: s.value })),
+  [{ month: "2026-09", field: "rateOverride", value: "150000" }]);
+
+saved.length = 0;
+set("selectedPayMonth", "2026-10");
+sandbox.onRateEdit(0, "2500");
+check("October per-video edit stores a 62-slot monthly base pay",
+  saved.map(s => ({ month: s.month, field: s.field, value: s.value })),
+  [{ month: "2026-10", field: "rateOverride", value: "155000" }]);
+
 // Manage Creators follows the real roster status, never inferred posting
 // activity. Zero posts cannot deactivate an active creator. A recorded leaving
 // month keeps historical months correct while still showing a fired creator in
@@ -175,4 +198,5 @@ check("the admin month list includes an empty July between June and September",
 
 console.log(failures ? "\n" + failures + " FAILING" : "\nAll checks passed");
 process.exit(failures ? 1 : 0);
+
 
