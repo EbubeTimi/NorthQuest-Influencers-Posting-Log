@@ -1471,6 +1471,8 @@ let pendingCreatorEdits = 0;
 let pendingBonusTierEdits = 0;
 let pendingRowsEdits = {};
 let jsonpCtr = 0;
+let loginRunId = 0;
+let creatorBootstrapTimer = null;
 
 // ── EDITABLE COLUMN HEADERS ──
 function savePayHeader(k, el) {
@@ -1521,7 +1523,15 @@ document.addEventListener('DOMContentLoaded', () => {
   // remembered creator's recent rows. This avoids the Apps Script execution
   // queue that made a cold page fan out into overlapping 45-76 second jobs.
   if (!isAdmin) {
-    loadCreatorBootstrap();
+    // Give an administrator a short window to choose Admin login before the
+    // public creator bootstrap starts. Apps Script can queue simultaneous
+    // executions; previously the large creator request could get in front of
+    // the tiny password check and make a correct password appear to fail.
+    // Creators still load immediately when they tap Log a video below.
+    creatorBootstrapTimer = setTimeout(() => {
+      creatorBootstrapTimer = null;
+      if (!isAdmin && currentPage !== 'login') loadCreatorBootstrap();
+    }, 5000);
   } else {
     loadAdminBootstrap();
   }
@@ -5311,26 +5321,58 @@ function checkLogin() {
   const err = document.getElementById('login-err');
   const btn = document.querySelector('.login-form .btn-primary');
   if (!val) { err.classList.add('show'); return; }
+  const runId = ++loginRunId;
+  let finished = false;
+  err.classList.remove('show');
   if (btn) { btn.disabled = true; btn.textContent = 'Checking…'; }
-  jsonp({ action: 'adminLogin', pass: val }, function(d, netErr) {
-    if (btn) { btn.disabled = false; btn.textContent = 'Sign in'; }
+
+  function finishLogin(d) {
+    if (finished || runId !== loginRunId) return true;
     if (d && d.status === 'success' && d.adminKey) {
+      finished = true;
       grantAdmin(d.adminKey);
-    } else if (d && d.status === 'denied') {
-      loginFail('Incorrect password. Please try again.');
-    } else if (LEGACY_LOGIN_FALLBACK && val === ADMIN_PASS) {
-      grantAdmin('');
-    } else if (!d) {
-      // No answer at all — a timeout or a dropped connection. The password
-      // was never checked, so saying it is wrong is a plain lie, and it sends
-      // you hunting for a typo that is not there. Apps Script waking up cold
-      // regularly takes longer than the old 15-second limit allowed.
-      loginFail('Could not reach the server, so your password was not checked. ' +
-                'This is usually the server waking up. Please tap Sign in again.');
-    } else {
-      loginFail('The server gave an answer we did not understand. Please try again.');
+      return true;
     }
-  }, 40000);
+    if (d && d.status === 'denied') {
+      finished = true;
+      if (btn) { btn.disabled = false; btn.textContent = 'Sign in'; }
+      loginFail('Incorrect password. Please try again.');
+      return true;
+    }
+    if (LEGACY_LOGIN_FALLBACK && val === ADMIN_PASS) {
+      finished = true;
+      grantAdmin('');
+      return true;
+    }
+    return false;
+  }
+
+  function requestLogin(attempt) {
+    jsonp({ action: 'adminLogin', pass: val }, function(d, netErr) {
+      if (finished || runId !== loginRunId || finishLogin(d)) return;
+
+      // A timed-out JSONP request may still deliver an authoritative late
+      // response. jsonp(..., true) keeps that callback alive. Start one fresh
+      // lightweight login request automatically instead of making the admin
+      // tap Sign in again, and accept whichever valid response arrives first.
+      if ((netErr === 'timeout' || netErr === 'network') && attempt < 1) {
+        if (btn) btn.textContent = 'Still checking…';
+        setTimeout(() => {
+          if (!finished && runId === loginRunId) requestLogin(attempt + 1);
+        }, 800);
+        return;
+      }
+
+      // Do not discard a later successful reply after the visible timeout.
+      // A new manual sign-in increments loginRunId and safely supersedes it.
+      if (netErr === 'late') return;
+      if (btn) { btn.disabled = false; btn.textContent = 'Sign in'; }
+      loginFail('Google is taking longer than usual to check your password. ' +
+                'Your password has not been rejected. Please try again.');
+    }, 25000, true);
+  }
+
+  requestLogin(0);
 }
 
 function loginFail(msg) {
@@ -5367,6 +5409,17 @@ function renderNav() {
 const ADMIN_PAGES = ['weekly','detailed','dashboard','manage','payments','viewlog'];
 function showPage(name) {
   if (ADMIN_PAGES.includes(name) && !isAdmin) { showPage('login'); return; }
+  if (name === 'login' && creatorBootstrapTimer) {
+    clearTimeout(creatorBootstrapTimer);
+    creatorBootstrapTimer = null;
+  }
+  if (name === 'submit' && !isAdmin && !creatorsLoaded && !creatorBootstrapInFlight) {
+    if (creatorBootstrapTimer) {
+      clearTimeout(creatorBootstrapTimer);
+      creatorBootstrapTimer = null;
+    }
+    loadCreatorBootstrap();
+  }
   currentPage = name;
   document.querySelectorAll('.page').forEach(p => { p.classList.remove('active'); p.style.display='none'; });
   const pg = document.getElementById('page-'+name);
@@ -5403,4 +5456,5 @@ function filterTableRows(inputId, tbodyId) {
 </script>
 </body>
 </html>
+
 
