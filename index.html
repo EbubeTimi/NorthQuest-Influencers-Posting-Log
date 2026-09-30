@@ -1240,7 +1240,7 @@
     <h4>How these columns work</h4>
     <strong>Contract</strong>: &#128196; opens the signed PDF if one has been filed, or searches your Google Drive by that creator's name if it hasn't (in case a copy exists but never got linked automatically). The line underneath tells you what's outstanding. Handled it another way (a phone call, they showed you in person) but the file still isn't in Drive? Click "mark resolved" so it stops showing as outstanding; "reopen" undoes that any time.<br>
     <strong>Contact</strong>: &#128172; opens WhatsApp with a pre-written follow-up message asking about their contract, using the phone number they gave at intake. Greyed out means no phone number is on file.<br>
-    <strong>Base Pay</strong>: each creator's monthly base pay. Changing it here updates the payment register, the per-video rate (base pay &divide; 62) and the legend instantly. Only shown for active creators.<br>
+    <strong>Base Pay</strong>: each creator's monthly base pay. Changing it here updates the payment register, the per-video rate (base pay &divide; that month's available video slots) and the legend instantly. Only shown for active creators.<br>
     <strong id="bonus-legend-label">Bonus (This Month)</strong>: <span id="bonus-legend-text">pick the views milestone a creator hit and the bonus is entered into this month's payment register automatically. Add as many as they earn; use "Remove last" or "Clear all" to fix mistakes. Same tiers for everybody.</span><br>
     <strong>Joined</strong>: the date the creator was added to the roster (from the sheet).<br>
     <strong>Left</strong>: recorded automatically on the day you press Deactivate. Reactivating a creator clears it. For creators deactivated before this feature existed, the date of their last logged post is shown instead.
@@ -1627,6 +1627,17 @@ function normDate(v) {
 function escH(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
 function fmtDate(str) { return new Date(str + 'T00:00:00').toLocaleDateString('en-GB', { day:'numeric', month:'short' }); }
 function monthYM(d) { return String(d).substring(0,7); }
+// Two videos are expected for every calendar day in the selected month.
+// Keep this as one shared rule so the creator dashboard, payment register,
+// rate editor, and export can never disagree about 28/29/30/31-day months.
+function monthlyVideoTarget(ym) {
+  const match = /^(\d{4})-(\d{2})$/.exec(String(ym || ''));
+  if (!match) return 62;
+  const year = parseInt(match[1], 10);
+  const month = parseInt(match[2], 10);
+  if (month < 1 || month > 12) return 62;
+  return new Date(year, month, 0).getDate() * 2;
+}
 function monthLabel(ym) {
   const [y,m] = ym.split('-');
   return ['January','February','March','April','May','June','July','August','September','October','November','December'][parseInt(m)-1] + ' ' + y;
@@ -3189,7 +3200,7 @@ function renderMyLogs(name) {
   const hasLegacyOverride = !hasCredit && overrideRaw !== '' && !isNaN(parseFloat(overrideRaw));
   const credit = hasCredit ? parseFloat(creditRaw) : 0;
   const effPosts = hasLegacyOverride ? parseFloat(overrideRaw) : (monthRows.length + credit);
-  const maxVideos = 62;
+  const maxVideos = monthlyVideoTarget(ym);
   const monthlySalary = effMonthlyRate(name, ym);
   const ratePerVideo = monthlySalary / maxVideos;
   const baseAmount = Math.round(effPosts * ratePerVideo);
@@ -3254,7 +3265,7 @@ function renderMyLogs(name) {
     // Everything above added up, stated once so it needs no working out.
     '<div class="mylog-total"><span class="mt-l">Total</span>' +
       '<span class="mt-v">&#8358;' + Math.round(totalPayable).toLocaleString('en-NG') + '</span></div>' +
-    '<div class="month-block"><div class="month-block-header"><span class="month-block-name">' + monthLabel(ym) + '</span><span class="month-block-total">' + monthRows.length + ' of 62 videos</span></div>' + dayRowsHtml.join('') + '</div>';
+    '<div class="month-block"><div class="month-block-header"><span class="month-block-name">' + monthLabel(ym) + '</span><span class="month-block-total">' + monthRows.length + ' of ' + maxVideos + ' videos</span></div>' + dayRowsHtml.join('') + '</div>';
   document.getElementById('creator-modal').classList.add('open');
 }
 
@@ -3403,7 +3414,7 @@ function deleteCreator(name) {
 }
 
 // Change a creator's monthly base pay. The payments register, the per-video
-// rate (base ÷ 62) and the legend all recalculate from this one number.
+// rate (base ÷ this month's video target) and the legend all recalculate from this one number.
 function onBasePayEdit(name, value) {
   if (value === 'custom') {
     const v = prompt('Enter ' + name + '\'s monthly base pay in naira (numbers only, e.g. 250000):');
@@ -3415,9 +3426,10 @@ function onBasePayEdit(name, value) {
   // Save base pay for the selected month only. It carries forward to later
   // months until the next change; earlier months keep whatever they had.
   const ym = manageMonthOrToday();
+  const maxVideos = monthlyVideoTarget(ym);
   savePaymentField(ym, name, 'rateOverride', String(rate), false);
   showToast('success', 'Base pay set for ' + monthLabel(ym),
-    name.split(' ')[0] + ' is on ₦' + rate.toLocaleString('en-NG') + '/month (₦' + fmtMoney2(rate/62) +
+    name.split(' ')[0] + ' is on ₦' + rate.toLocaleString('en-NG') + '/month (₦' + fmtMoney2(rate/maxVideos) +
     ' per video) for ' + monthLabel(ym) + ' only. Other months are unchanged.');
   renderManageCreators();
   renderPayments();
@@ -3524,7 +3536,7 @@ function basePaySelect(c) {
   const ym = manageMonthOrToday();
   const rate = effMonthlyRate(c.name, ym);
   const opts = BASE_PAY_TIERS.includes(rate) ? BASE_PAY_TIERS : [...BASE_PAY_TIERS, rate].sort((a, b) => a - b);
-  return '<select class="pay-input bp-select" style="max-width:130px" onchange="onBasePayEdit(\'' + escH(c.name) + '\',this.value)" title="Base pay for ' + escH(monthLabel(ym)) + '. Per-video rate = base pay ÷ 62. Saves for this month only; other months are unchanged.">' +
+  return '<select class="pay-input bp-select" style="max-width:130px" onchange="onBasePayEdit(\'' + escH(c.name) + '\',this.value)" title="Base pay for ' + escH(monthLabel(ym)) + '. Per-video rate = base pay ÷ ' + monthlyVideoTarget(ym) + '. Saves for this month only; other months are unchanged.">' +
     opts.map(t => '<option value="' + t + '"' + (t === rate ? ' selected' : '') + '>&#8358;' + t.toLocaleString('en-NG') + '</option>').join('') +
     '<option value="custom">Custom…</option></select>';
 }
@@ -4537,8 +4549,8 @@ function onRateEdit(idx, value) {
   const raw = parseFloat(String(value).replace(/[^\d.]/g, ''));
   if (isNaN(raw) || raw <= 0) { renderPayments(); return; }
   // The cell shows per-video rate but we store monthly base pay.
-  // Flat divisor of 62 (regardless of month length).
-  const rate = raw < 10000 ? Math.round(raw * 62) : raw;   // per-video → monthly
+  const maxVideos = monthlyVideoTarget(selectedPayMonth);
+  const rate = raw < 10000 ? Math.round(raw * maxVideos) : raw;   // per-video → monthly
   // Save the base pay for THIS month only (carries forward to later months
   // until the next change; earlier months are untouched).
   savePaymentField(selectedPayMonth, name, 'rateOverride', String(rate), true);
@@ -4570,12 +4582,13 @@ function onBankEdit(idx, field, value) {
 // The legend rebuilds itself from whatever base-pay tiers are actually in
 // use this month, so changing someone's base pay corrects it automatically.
 function payLegendHtml(tiers) {
+  const maxVideos = monthlyVideoTarget(selectedPayMonth);
   const tierLines = [...tiers].sort((a, b) => b - a)
-    .map(t => '&#8358;' + Number(t).toLocaleString('en-NG') + '/month base pay = &#8358;' + fmtMoney2(t / 62) + ' per video')
+    .map(t => '&#8358;' + Number(t).toLocaleString('en-NG') + '/month base pay = &#8358;' + fmtMoney2(t / maxVideos) + ' per video')
     .join('<br>');
   return '<h4>Assumptions &amp; Legend</h4>' +
     'Every creator has their own monthly base pay, set it under <strong>Manage creators</strong> (Base Pay column) or by editing the Rate column here. Default for new creators: &#8358;150,000/month.<br>' +
-    'Per-video rate = monthly base pay &divide; 62 (flat, same divisor every month). Base pay tiers in this month\'s register:<br>' + tierLines + '<br>' +
+    'Per-video rate = monthly base pay &divide; ' + maxVideos + ' available video slots in ' + escH(monthLabel(selectedPayMonth)) + '. Base pay tiers in this month\'s register:<br>' + tierLines + '<br>' +
     'Pay = (videos posted that month) &times; per-video rate. &nbsp;Bonuses are the same for everybody regardless of base pay. &nbsp;Staff rows show a fixed monthly salary, not calculated from posts.' +
     '<h4>Performance Bonus Tiers (same for all creators) <button type="button" class="btn btn-sm" style="margin-left:8px;padding:3px 10px;font-size:11px" onclick="openBonusTiersModal()">Edit tiers</button></h4>' +
     [...bonusTiersForMonth(selectedPayMonth)].sort((a,b) => a[0]-b[0]).map(t => t[0].toLocaleString('en-NG') + ' views = &#8358;' + t[1].toLocaleString('en-NG')).join('<br>') +
@@ -4657,8 +4670,7 @@ function renderPayments() {
     if (!Object.keys(counts).some(k => k.toLowerCase() === nm.toLowerCase())) counts[nm] = 0;
   });
 
-  // Per-video rate = monthly base pay ÷ 62 (flat divisor, regardless of month length).
-  const maxVideos = 62;
+  const maxVideos = monthlyVideoTarget(selectedPayMonth);
   const defaultMonthlySalary = 150000;
 
   const cmap = {};
@@ -4776,7 +4788,7 @@ function renderPayments() {
         '<td>' + escH(name) + '</td>' +
         '<td>' + postsCellHtml + '</td>' +
         '<td>' + creditCellHtml + '</td>' +
-        '<td><input class="pay-input" style="max-width:100px;text-align:right" value="' + fmtMoney2(monthlySalary / maxVideos) + '" onchange="onRateEdit(' + i + ',this.value)" title="Rate per video = monthly base pay ÷ 62. To change base pay: type the monthly amount (e.g. 200000) and press Enter, or use the Base Pay column under Manage creators. You can also type a per-video amount directly (e.g. 3226)." placeholder="150000"></td>' +
+        '<td><input class="pay-input" style="max-width:100px;text-align:right" value="' + fmtMoney2(monthlySalary / maxVideos) + '" onchange="onRateEdit(' + i + ',this.value)" title="Rate per video = monthly base pay ÷ ' + maxVideos + ' available video slots in ' + escH(monthLabel(selectedPayMonth)) + '. To change base pay: type the monthly amount (e.g. 200000) and press Enter, or use the Base Pay column under Manage creators. You can also type a per-video amount directly (e.g. 2500)." placeholder="150000"></td>' +
         '<td class="pay-num">' + fmtMoney2(base) + '</td>' +
         '<td class="pay-num">' + fmtMoney2(perf) + '</td>' +
         payExtraBonusCells(name) +
@@ -4831,7 +4843,7 @@ function exportPaymentsCSV() {
   const mm = parseInt(selectedPayMonth.split('-')[1]);
   const last = new Date(Number(y), mm, 0).getDate();
   const mName = monthLabel(selectedPayMonth).split(' ')[0];
-  const maxVideosCSV = 62;
+  const maxVideosCSV = monthlyVideoTarget(selectedPayMonth);
   const defMonthlySalary = 150000;
   const monthRows = allRows.filter(r => monthYM(r.date) === selectedPayMonth);
   const counts = {}; monthRows.forEach(r => { counts[r.name] = (counts[r.name]||0)+1; });
@@ -4918,9 +4930,9 @@ function exportPaymentsCSV() {
 
   R.push([]); R.push([{ v:'ASSUMPTIONS & LEGEND', s:4 }]);
   R.push(['Every creator has their own monthly base pay (default for new creators: ₦150,000/month)']);
-  R.push(['Rate per post = Monthly base pay ÷ 62 (flat divisor, regardless of month length)']);
+  R.push(['Rate per post = Monthly base pay ÷ ' + maxVideosCSV + ' available video slots in ' + monthLabel(selectedPayMonth)]);
   [...new Set(names.map(tierOf))].sort((a,b)=>b-a).forEach(t => {
-    R.push(['₦' + Number(t).toLocaleString('en-NG') + '/month base pay = ₦' + fmtMoney2(t/62) + ' per video']);
+    R.push(['₦' + Number(t).toLocaleString('en-NG') + '/month base pay = ₦' + fmtMoney2(t/maxVideosCSV) + ' per video']);
   });
   R.push(['Pay = (videos posted that month) × per-video rate. Bonuses are the same for everybody regardless of base pay. In ' + mName + ' ' + y + ' there are ' + (last*2) + ' possible video slots (' + last + ' days × 2/day).']);
   R.push([]); R.push([{ v:'PERFORMANCE BONUS TIERS', s:4 }]);
@@ -5456,5 +5468,6 @@ function filterTableRows(inputId, tbodyId) {
 </script>
 </body>
 </html>
+
 
 
