@@ -74,7 +74,7 @@ test('creator dashboard separates base amount from the grand total and always sh
     ['Budget Videos', 10000]
   ]);
 
-  const renderStart = code.indexOf('function renderMyLogs(name)');
+  const renderStart = code.indexOf('function renderMyLogs(');
   const renderEnd = code.indexOf('function renderDashboard()', renderStart);
   const render = code.slice(renderStart, renderEnd);
   assert.match(render, /const amountExpected = baseAmount;/);
@@ -140,3 +140,4 @@ test('payment column reorder controls stay compact and wording says column', () 
   assert.match(html, /\.bt-row\.payment-column-row \{ grid-template-columns: minmax\(0,1fr\) auto auto auto; \}/);
   assert.match(html, /Remove a column to stop it applying\./);
 });
+

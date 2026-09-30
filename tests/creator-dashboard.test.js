@@ -81,14 +81,37 @@ test('opening logs does not fan out legacy pay requests while dashboard load is 
     loadRowsIfStale() { calls.push('rows'); },
     renderMyLogs() { calls.push('render'); },
     creatorDashboardIsLoaded() { return false; },
+    todayStr() { return '2026-10-01'; },
+    openCreatorDashboardMonth: '',
     loadMyPay() { calls.push('pay'); },
     loadBonusTiers() { calls.push('tiers'); },
     loadBonusCategories() { calls.push('categories'); }
   };
   vm.createContext(sandbox);
+  vm.runInContext(functionSource(html, 'openMyLogsForMonth'), sandbox);
   vm.runInContext(functionSource(html, 'openMyLogs'), sandbox);
   sandbox.openMyLogs();
   assert.deepEqual(calls, ['rows', 'render']);
+});
+
+test('previous-month dashboard is offered only before payday on the 10th', () => {
+  const sandbox = { Date };
+  vm.createContext(sandbox);
+  vm.runInContext(functionSource(html, 'previousMonthDashboardMonth'), sandbox);
+
+  assert.equal(sandbox.previousMonthDashboardMonth('2026-10-01'), '2026-09');
+  assert.equal(sandbox.previousMonthDashboardMonth('2026-10-09'), '2026-09');
+  assert.equal(sandbox.previousMonthDashboardMonth('2026-10-10'), '');
+  assert.equal(sandbox.previousMonthDashboardMonth('2026-10-31'), '');
+  assert.equal(sandbox.previousMonthDashboardMonth('2027-01-05'), '2026-12');
+});
+
+test('historical creator dashboard reuses the existing modal without changing current logging', () => {
+  assert.match(html, /id="view-previous-dashboard-btn"[^>]*onclick="openPreviousMyLogs\(\)"/);
+  assert.match(functionSource(html, 'openPreviousMyLogs'), /const ym = previousMonthDashboardMonth\(\)[\s\S]*if \(ym\) openMyLogsForMonth\(ym\)/);
+  assert.match(functionSource(html, 'renderMyLogs'), /requestedMonth \|\| openCreatorDashboardMonth \|\| today\.substring\(0, 7\)/);
+  assert.match(functionSource(html, 'renderMyLogs'), /const dayOfMonth = ym === currentYM[\s\S]*new Date\(year, month, 0\)\.getDate\(\)/);
+  assert.match(functionSource(html, 'renderMyLogs'), /const graceHtml = ym === currentYM/);
 });
 
 test('payment edits send only the changed field and preserve edit order', () => {
@@ -130,3 +153,4 @@ test('payment row merge is protected by a script lock', () => {
   assert.match(saveSource, /upsertManual\(month, name, f\)/);
   assert.match(saveSource, /finally\s*\{\s*lock\.releaseLock\(\)/);
 });
+
