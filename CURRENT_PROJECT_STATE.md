@@ -4,6 +4,8 @@ Updated: 2026-09-30
 
 ## Active work
 
+- Calendar-aware per-video rates are implemented locally and await production deployment approval. The selected month's real day count now controls the payment register, creator dashboard, rate editor, legend, and XLSX export: 30 days = 60 video slots, 31 days = 62, 28 days = 56, and leap-year February = 58. This is a frontend calculation-only change; no creator posts, bonuses, custom payment amounts, base-pay overrides, or Google Sheets records were changed.
+
 - On 30 September 2026 Smith explicitly removed automatic post-based creator deactivation. Manage Creators now follows the real roster status only: zero posts never deactivates an active creator; only the administrator's Deactivate action does. Historical months use the recorded Left Date so a creator remains visible as active before their leaving month and visible under Deactivated in the month they were fired. The release is live on production `main` commit `71004292c9b88672416a1fbb0736026577d91417`, with the tabs renamed to Active creators / Deactivated creators.
 
 - The clean operational stability release is deployed. It contains only the month-resilience, creator-summary, custom-column persistence, ordered payment-save and manual-deactivation repairs. The separate creator-authentication, security-hardening and intake duplicate-guard work remains excluded.
@@ -110,5 +112,6 @@ Updated: 2026-09-30
 ## Next action
 
 - With the stability release live, use the authenticated administrator session to smoke-test July/August/September month switching, manual deactivate/reactivate, payment loading, column add/reorder/reload persistence, and back-to-back amount edits against real admin data.
+
 
 
