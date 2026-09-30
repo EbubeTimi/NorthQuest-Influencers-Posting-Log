@@ -1,8 +1,16 @@
 # Current Project State
 
-Updated: 2026-09-26
+Updated: 2026-09-30
 
 ## Active work
+
+- On 30 September 2026 Smith explicitly removed automatic post-based creator deactivation. Manage Creators must now follow the real roster status only: zero posts never deactivates an active creator; only the administrator's Deactivate action does. Historical months use the recorded Left Date so a creator remains visible as active before their leaving month and visible under Deactivated in the month they were fired. The local repair also renames the tabs to Active creators / Deactivated creators and is pending verification and deployment approval.
+
+- A clean operational release is assembled on `codex/current-tracker-stability` from production `origin/main`. It contains only the month-resilience, creator-summary, custom-column persistence and ordered payment-save repairs. The separate creator-authentication, security-hardening and intake duplicate-guard commits are deliberately excluded.
+- End-to-end creator bonus/dashboard repair is implemented locally and awaiting deployment approval. A creator log response now carries that creator's pay row, base rate, performance tiers, and custom payment columns in one Apps Script execution instead of queueing four calls. The browser consumes the combined payload during remembered-creator startup and name changes, while retaining the old separate endpoints only as rollback compatibility. Payment edits now send only the changed field, run in order per creator/month, and the backend locks each read/merge/write so older requests cannot erase newer bonus values.
+- Read-only live verification reproduced the current production failure for Ohia Promise Chiamaka: her public dashboard remained in the loading state beyond 25 seconds and the deployed page lacks the local creator-payment renderer. The live Payment Manual also contains historical duplicate encodings for Budget Videos (`10000`, `Budget Video=10000`, and `Budget Videos=10000`) on three September rows. Local compatibility logic now treats singular/plural aliases and a matching bare legacy value as one payment, and a future edit rewrites it as one direct-naira value.
+- Creator payment-summary repair is implemented locally and awaiting deployment approval. Amount expected is now only effective videos multiplied by rate per video; the final Total separately adds performance bonus and every saved custom payment. Referral, Budget Videos, and other saved custom payments render as their own creator-summary cards even if the separate payment-column reference request is late, stale, renamed, or unavailable.
+- Custom payment-column reload repair is implemented locally and awaiting deployment approval. Sheets had auto-converted values such as `2026-09` into Date objects; the backend compared those dates to YYYY-MM text, failed to delete/return the saved month, and accumulated duplicate Extra Bonuses rows. The backend now normalizes Date/text month values, writes new month keys as text, removes all matching month rows on replacement, and collapses historical duplicate names while reading.
 
 - The September payment-register repair is deployed on production `main` in commit `d42f6714f9ddf5105c6403350e0de35e27bf`. Payments now hides the raw Bonus Views/Special Bonus storage fields, keeps one calculated Performance Bonus column, and renders each month-defined custom payment category as its own ordered direct-naira column before Total Payable. Existing legacy `Name:count` values remain readable; new edits use exact `Name=amount` values. Regression coverage was added in follow-up commit `1120667d4e288cd46f0eb9686fdc3ba5fcde`.
 - Intake draft recovery is implemented locally and awaiting production deployment approval. Reloading in the same browser tab restores the creator's current step and typed fields from session storage; a completed submission clears the draft. Browser security prevents restoring the selected contract file, so a creator who had selected one sees a clear prompt to select it again after reloading.
@@ -59,6 +67,9 @@ Updated: 2026-09-26
 
 ## Verification
 
+- Current-tracker stability release: `node --test tests/*.test.js` passed all executable checks, including 25 Node tests plus the complete Manage Creators assertions. `Code.gs` and every inline `index.html` script pass `node --check`. The repository's CRLF-aware diff check (`git -c core.whitespace=cr-at-eol diff --check origin/main...HEAD`) passes, and a separate content scan found no actual trailing spaces or tabs. Authentication markers are absent from this release branch. Production runtime remains unchanged and therefore unverified until deployment is explicitly approved.
+
+- Complete repository suite passes 28/28, including executable checks for the combined creator dashboard payload, no request fan-out while it is loading, ordered field-only payment saves, backend row locking, and singular/plural/bare custom-payment deduplication. `Code.gs`, inline `index.html` JavaScript, and the CRLF-aware diff check pass. Production runtime remains unchanged and therefore still exhibits the reproduced slow creator dashboard until deployment is explicitly approved.
 - Payment-register repair: focused tests pass 3/3 for hidden raw fields, direct-naira custom values, legacy-value compatibility, column order, totals, and XLSX export order. The complete repository test suite and inline `index.html` JavaScript syntax check pass. GitHub Pages runs 142 and 143 completed successfully. The live HTML contains the direct-amount and reorder implementations and no longer contains the raw Bonus Views or Special Bonus table headers. No Apps Script change or data migration was required.
 - Intake draft recovery: focused tests passed 5/5; the complete test suite passed; inline `intake.html` JavaScript syntax and `git diff --check` passed. A local browser check entered nickname `Reload Test` and full name `Ada Reload` on the details step, reloaded the page, and confirmed both the same step and values were restored. Submission and production deployment were not exercised.
 
@@ -98,6 +109,6 @@ Updated: 2026-09-26
 
 ## Next action
 
-- Ask the administrator to smoke-test adding, reordering, entering, and removing custom columns with real authenticated September payment data. The earlier admin timing/security-review and CashDrive/Aura replica work remains separate.
+- After explicit deployment approval, publish the matching Apps Script and GitHub Pages versions, then smoke-test July/August/September month switching, monthly Active/Deactivated classification, payment loading, column add/reorder/reload persistence, back-to-back amount edits, creator custom-payment totals and the creator dashboard response with the authenticated administrator session.
 
 

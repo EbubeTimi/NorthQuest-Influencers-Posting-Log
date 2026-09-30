@@ -1222,8 +1222,8 @@
   </div>
 
   <div class="manage-tabs">
-    <button class="manage-tab active" id="mtab-active" onclick="setManageTab('active')">Active this month</button>
-    <button class="manage-tab" id="mtab-inactive" onclick="setManageTab('inactive')">Deactivated this month</button>
+    <button class="manage-tab active" id="mtab-active" onclick="setManageTab('active')">Active creators</button>
+    <button class="manage-tab" id="mtab-inactive" onclick="setManageTab('inactive')">Deactivated creators</button>
     <span class="manage-add">
       <select class="pay-input" id="manage-add-name" style="max-width:180px" onchange="onManageAddNameChange(this.value)"></select>
       <select class="pay-input" id="manage-add-tier" style="max-width:120px"></select>
@@ -3701,20 +3701,25 @@ function renderManageMonthPicker() {
 // empty/loading rows have to span the real width rather than a fixed 10.
 function manageColSpan() { return 10 + bonusCatsFor(manageMonthOrToday()).length; }
 
-// Month-scoped activity view. Anyone who existed by the selected month and
-// logged at least one post is active for that month. Everyone else who already
-// existed is filed under Deactivated for that month only; this never changes
-// the permanent status stored in the Creators sheet.
+// Month-scoped roster view. Activity is never inferred from posting volume:
+// an active creator stays active even when they logged zero posts. A creator
+// appears under Deactivated only after an administrator actually deactivates
+// them. For historical months, the recorded Left Date keeps them active until
+// the month in which they were deactivated.
 function creatorMonthStatus(c, ym) {
   const addedYM = c.added ? monthYM(c.added) : '';
-  const nl = String(c.name).toLowerCase();
   const existedByMonth = !addedYM || addedYM <= ym;
-  const postedThisMonth = existedByMonth && allRows.some(r =>
-    monthYM(r.date) === ym && String(r.name).toLowerCase() === nl);
+  const inactiveNow = String(c.status || '').toLowerCase() === 'inactive';
+  const leftRaw = inactiveNow ? leftDateFor(c) : '';
+  const leftYM = leftRaw ? monthYM(leftRaw) : '';
+  // Old deactivations may not have a recorded Left Date. In that case the
+  // permanent Inactive status is still authoritative for every month in which
+  // the creator existed.
+  const deactivatedByMonth = existedByMonth && inactiveNow && (!leftYM || leftYM <= ym);
   return {
-    activeInMonth: postedThisMonth,
-    deactivatedThisMonth: existedByMonth && !postedThisMonth,
-    leftYM: null
+    activeInMonth: existedByMonth && !deactivatedByMonth,
+    deactivatedThisMonth: deactivatedByMonth,
+    leftYM: leftYM || null
   };
 }
 
@@ -3789,10 +3794,10 @@ function addCreatorToMonth() {
   // A rate record for this month makes them appear in the month's roster and
   // in the payment register even with zero logged posts.
   savePaymentField(ym, name, 'rateOverride', String(tier), false);
-  manageTab = 'inactive';
+  manageTab = 'active';
   showToast('success', 'Added to ' + monthLabel(ym),
     name.split(' ')[0] + ' is now in the payment register at ₦' + tier.toLocaleString('en-NG') +
-    '/month. With no posts, they remain under Deactivated this month.');
+    '/month. Their roster status remains Active until an administrator deactivates them.');
   renderManageCreators();
   renderPayments();
 }
@@ -3832,11 +3837,11 @@ function renderManageCreators() {
     else if (st.activeInMonth) activeList.push(c);
   });
   const list = (manageTab === 'inactive' ? inactiveList : activeList).sort((a,b) => a.name.localeCompare(b.name));
-  counts.textContent = activeList.length + ' active · ' + inactiveList.length + ' no posts · in ' + monthShort(ym);
+  counts.textContent = activeList.length + ' active · ' + inactiveList.length + ' deactivated · in ' + monthShort(ym);
   if (!allCreators.length) { tbody.innerHTML = '<tr><td colspan="' + manageColSpan() + '" class="empty-state"><strong>No creators yet</strong></td></tr>'; return; }
   if (!list.length) {
     tbody.innerHTML = '<tr><td colspan="' + manageColSpan() + '" class="empty-state"><strong>' +
-      (manageTab === 'inactive' ? 'Everyone posted in ' + escH(monthLabel(ym)) : 'No active creators in ' + escH(monthLabel(ym))) +
+      (manageTab === 'inactive' ? 'No creators were deactivated by ' + escH(monthLabel(ym)) : 'No active creators in ' + escH(monthLabel(ym))) +
       '</strong></td></tr>';
     return;
   }
@@ -3844,7 +3849,7 @@ function renderManageCreators() {
     const isActiveNow = String(c.status).toLowerCase() === 'active';
     const st = creatorMonthStatus(c, ym);
     const badge = st.deactivatedThisMonth
-      ? '<span class="badge badge-inactive">Left in ' + escH(monthShort(ym)) + '</span>'
+      ? '<span class="badge badge-inactive">Deactivated</span>'
       : '<span class="badge badge-active">Active</span>';
     const added = c.added ? new Date(c.added).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}) : '—';
     const leftRaw = leftDateFor(c);

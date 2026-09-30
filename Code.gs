@@ -337,6 +337,15 @@ function getBonusCatsSheet_() {
   return sheet;
 }
 
+function nqBonusMonthKey_(value) {
+  if (value instanceof Date && !isNaN(value.getTime())) {
+    return Utilities.formatDate(value, 'Africa/Lagos', 'yyyy-MM');
+  }
+  const raw = String(value || '').replace(/^'/, '').trim();
+  const match = raw.match(/^(\d{4})-(\d{2})/);
+  return match ? match[1] + '-' + match[2] : '';
+}
+
 
 // Readable by creators too: it is only names and amounts, nothing personal,
 // and their own card needs it to turn "2 referrals" into a naira figure.
@@ -345,12 +354,20 @@ function handleGetBonusCategories() {
   if (cached) return cached;
   const data = getBonusCatsSheet_().getDataRange().getValues();
   const categories = [];
+  const categoryIndexes = {};
   for (let i = 1; i < data.length; i++) {
-    const month = String(data[i][0] || '').replace(/^'/, '').trim();
+    const month = nqBonusMonthKey_(data[i][0]);
     const name = String(data[i][1] || '').trim();
     const amount = parseFloat(String(data[i][2] || '').replace(/[^\d.]/g, '')) || 0;
     if (!month || !name) continue;
-    categories.push({ month: month, name: name, amount: amount });
+    const key = month + '\n' + name.toLowerCase();
+    const item = { month: month, name: name, amount: amount };
+    if (Object.prototype.hasOwnProperty.call(categoryIndexes, key)) {
+      categories[categoryIndexes[key]] = item;
+    } else {
+      categoryIndexes[key] = categories.length;
+      categories.push(item);
+    }
   }
   const result = { status: 'success', categories: categories };
   nqCachePutJson_(NQ_BONUS_CATS_CACHE_KEY, result, NQ_REFERENCE_CACHE_SECONDS);
@@ -380,7 +397,10 @@ function handleSetBonusCategories(params) {
     if (seen[name.toLowerCase()]) return { status: 'error', message: 'Two bonuses share the name "' + name + '"' };
     if (isNaN(amount) || amount < 0) return { status: 'error', message: '"' + name + '" needs an amount' };
     seen[name.toLowerCase()] = true;
-    clean.push([month, name, amount]);
+    // Prefix the month so Sheets keeps it as text. Without this, a formatted
+    // column converts 2026-09 into a Date, and the next reload cannot match it
+    // back to the selected YYYY-MM month.
+    clean.push(["'" + month, name, amount]);
   }
 
 
@@ -393,7 +413,7 @@ function handleSetBonusCategories(params) {
     const data = sheet.getDataRange().getValues();
     // Drop this month's existing rows bottom-up so earlier row numbers hold.
     for (let i = data.length - 1; i >= 1; i--) {
-      if (String(data[i][0] || '').replace(/^'/, '').trim() === month) sheet.deleteRow(i + 1);
+      if (nqBonusMonthKey_(data[i][0]) === month) sheet.deleteRow(i + 1);
     }
     if (clean.length) {
       sheet.getRange(sheet.getLastRow() + 1, 1, clean.length, 3).setValues(clean);
@@ -1231,29 +1251,54 @@ function handleGet(params) {
   const only = String((params && params.name) || '').trim().toLowerCase();
   const cacheKey = only && useSince ? nqCreatorLogCacheKey_(only, since, useUntil ? until : '') : '';
   const cached = cacheKey ? nqCacheGetJson_(cacheKey) : null;
-  if (cached) return cached;
-  const data = getSheet().getDataRange().getValues();
-  const rows = [];
-  // The oldest date anywhere in the log, regardless of the window asked for.
-  // Costs nothing (every row is being walked anyway) and it is what tells the
-  // caller how many windows it needs to ask for to hold the whole log.
-  let earliest = '';
-  for (let i = 1; i < data.length; i++) {
-    const r = data[i];
-    if (!r[1]) continue;
-    const ts = r[0] instanceof Date ? r[0].toISOString() : String(r[0] || '');
-    let dateStr = r[2];
-    if (dateStr instanceof Date) {
-      dateStr = dateStr.getFullYear() + '-' + String(dateStr.getMonth()+1).padStart(2,'0') + '-' + String(dateStr.getDate()).padStart(2,'0');
-    } else { dateStr = String(dateStr || ''); }
-    if (dateStr && (!earliest || dateStr < earliest)) earliest = dateStr;
-    if (only && String(r[1]).trim().toLowerCase() !== only) continue;
-    if (useSince && dateStr < since) continue;
-    if (useUntil && dateStr > until) continue;
-    rows.push([ts, String(r[1]).trim(), dateStr, String(r[3]||''), String(r[4]||''), String(r[5]||''), String(r[6]||'')]);
+  let result = cached;
+  if (!result) {
+    const data = getSheet().getDataRange().getValues();
+    const rows = [];
+    // The oldest date anywhere in the log, regardless of the window asked for.
+    // Costs nothing (every row is being walked anyway) and it is what tells the
+    // caller how many windows it needs to ask for to hold the whole log.
+    let earliest = '';
+    for (let i = 1; i < data.length; i++) {
+      const r = data[i];
+      if (!r[1]) continue;
+      const ts = r[0] instanceof Date ? r[0].toISOString() : String(r[0] || '');
+      let dateStr = r[2];
+      if (dateStr instanceof Date) {
+        dateStr = dateStr.getFullYear() + '-' + String(dateStr.getMonth()+1).padStart(2,'0') + '-' + String(dateStr.getDate()).padStart(2,'0');
+      } else { dateStr = String(dateStr || ''); }
+      if (dateStr && (!earliest || dateStr < earliest)) earliest = dateStr;
+      if (only && String(r[1]).trim().toLowerCase() !== only) continue;
+      if (useSince && dateStr < since) continue;
+      if (useUntil && dateStr > until) continue;
+      rows.push([ts, String(r[1]).trim(), dateStr, String(r[3]||''), String(r[4]||''), String(r[5]||''), String(r[6]||'')]);
+    }
+    result = { status: 'success', rows: rows, earliest: earliest };
+    // Cache only the log window. Pay and reference values below have their own
+    // independently invalidated caches; caching the combined object would let
+    // an administrator save a bonus while a creator kept seeing the old one.
+    if (cacheKey) nqCachePutJson_(cacheKey, result, NQ_CREATOR_LOG_CACHE_SECONDS);
   }
-  const result = { status: 'success', rows: rows, earliest: earliest };
-  if (cacheKey) nqCachePutJson_(cacheKey, result, NQ_CREATOR_LOG_CACHE_SECONDS);
+
+  // A creator opens one dashboard, so return one dashboard response. The old
+  // implementation made the browser queue four Apps Script executions (logs,
+  // pay, tiers, custom columns), which is why a saved bonus could take nearly
+  // a minute to appear. These helpers already expose only this creator's pay
+  // fields plus non-personal bonus references.
+  if (only && useSince) {
+    const pay = handleGetMyPay({ name: only });
+    const month = Utilities.formatDate(new Date(), 'Africa/Lagos', 'yyyy-MM');
+    const tiers = handleGetBonusTiers({ month: month });
+    const categories = handleGetBonusCategories();
+    result = Object.assign({}, result, {
+      payments: pay.payments || [],
+      rate: pay.rate || 0,
+      tiers: tiers.tiers || [],
+      legacyTiers: tiers.legacyTiers || [],
+      monthlyTiers: tiers.monthlyTiers || {},
+      categories: categories.categories || []
+    });
+  }
   return result;
 }
 
@@ -1277,7 +1322,13 @@ function handleGetCreatorBootstrap(params) {
     status: 'success',
     creators: roster.creators,
     rows: logs.rows || [],
-    earliest: logs.earliest || ''
+    earliest: logs.earliest || '',
+    payments: logs.payments || [],
+    rate: logs.rate || 0,
+    tiers: logs.tiers || [],
+    legacyTiers: logs.legacyTiers || [],
+    monthlyTiers: logs.monthlyTiers || {},
+    categories: logs.categories || []
   };
 }
 
@@ -2469,9 +2520,20 @@ function handleSavePayment(params) {
   if (params.postsCredit !== undefined && String(params.postsCredit) !== '') {
     f.postsOverride = '';
   }
-  upsertManual(month, name, f);
-  nqInvalidateCreatorPay_(name);
-  return { status: 'success' };
+  const lock = LockService.getScriptLock();
+  try { lock.waitLock(20000); } catch (e) {
+    return { status: 'error', message: 'The payment register is busy. Please try again in a few seconds.' };
+  }
+  try {
+    // One row is read, merged and written as a unit. Without this lock two
+    // quick edits could both read the old row and whichever finished last
+    // would erase the other change.
+    upsertManual(month, name, f);
+    nqInvalidateCreatorPay_(name);
+    return { status: 'success' };
+  } finally {
+    lock.releaseLock();
+  }
 }
 
 
