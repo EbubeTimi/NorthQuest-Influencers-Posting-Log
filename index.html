@@ -3368,6 +3368,7 @@ function addCreator() {
   const btn   = document.getElementById('add-creator-btn');
   const alertEl = document.getElementById('manage-alert');
   const name  = input.value.trim();
+  const month = manageMonthOrToday();
   if (!name) { alertEl.className='alert alert-error show'; alertEl.textContent='Please enter a full name.'; return; }
   if (allCreators.find(c => c.name.toLowerCase() === name.toLowerCase())) {
     alertEl.className='alert alert-error show'; alertEl.textContent = name + ' already exists.'; return;
@@ -3375,7 +3376,7 @@ function addCreator() {
   btn.disabled = true; btn.textContent = 'Adding...';
   lastCreatorEditTime = Date.now();
   pendingCreatorEdits++;
-  jsonp({ action:'addCreator', name }, (data, err) => {
+  jsonp({ action:'addCreator', name, month }, (data, err) => {
     if (err === 'timeout') {
       btn.disabled = false; btn.textContent = 'Add creator';
       showToast('error', 'Still saving', 'Google is taking longer than usual. Keep this page open while the save finishes.');
@@ -3385,7 +3386,8 @@ function addCreator() {
     lastCreatorEditTime = Date.now();
     btn.disabled = false; btn.textContent = 'Add creator';
     if (data && data.status === 'success') {
-      allCreators.push({ name, status:'Active', added: todayStr() });
+      const added = data.addedDate || creatorAddedDateForMonth(month);
+      allCreators.push({ name, status:'Active', added });
       input.value = ''; refreshAll();
       showToast('success', 'Creator added', name + ' is now an active creator.');
       alertEl.classList.remove('show');
@@ -3500,6 +3502,15 @@ const BASE_PAY_TIERS = [100000, 150000, 200000, 250000, 300000];
 // The month the bonus column is currently pointed at. Defaults to this month,
 // so nothing changes until an admin deliberately picks an earlier one.
 function manageMonthOrToday() { return manageMonth || todayStr().substring(0, 7); }
+
+// A new creator belongs to the month the administrator is currently managing.
+// Keep the real Lagos day for this month; a historical month uses its first day
+// because the UI records month membership, not an invented historical day.
+function creatorAddedDateForMonth(ym) {
+  const currentDate = todayStr();
+  const currentMonth = currentDate.substring(0, 7);
+  return ym === currentMonth ? currentDate : ym + '-01';
+}
 
 // Months worth offering: any month with posts, any month with a payment record,
 // and always the current one (which may have neither yet).
@@ -5506,6 +5517,7 @@ function filterTableRows(inputId, tbodyId) {
 </script>
 </body>
 </html>
+
 
 
 
