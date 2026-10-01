@@ -4,7 +4,7 @@ Updated: 2026-10-01
 
 ## Active work
 
-- Previous-month creator dashboards are implemented locally and await production deployment approval. From the 1st through the 9th of each new month, a creator can open the immediately preceding month's dashboard from the existing creator screen; the option disappears on the 10th. The historical dashboard reuses the existing combined creator payload and modal, so it adds no Apps Script request and does not alter current-month logging, creator records, posts, bonuses, rates, custom payments, or Google Sheets data.
+- Previous-month creator dashboards are deployed to production `main` in commit `77b6dad5195a880ae4c752564689ab7914ed0936` through PR #8. From the 1st through the 9th of each new month, a creator can open the immediately preceding month's dashboard from the existing creator screen; the option disappears on the 10th. The historical dashboard reuses the existing combined creator payload and modal, so it adds no Apps Script request and does not alter current-month logging, creator records, posts, bonuses, rates, custom payments, or Google Sheets data. GitHub confirmed the production `main` HTML contains the release markers; direct GitHub Pages verification was blocked by this workstation's `github.io` connection failure.
 
 - Calendar-aware per-video rates are implemented locally and await production deployment approval. The selected month's real day count now controls the payment register, creator dashboard, rate editor, legend, and XLSX export: 30 days = 60 video slots, 31 days = 62, 28 days = 56, and leap-year February = 58. This is a frontend calculation-only change; no creator posts, bonuses, custom payment amounts, base-pay overrides, or Google Sheets records were changed.
 
