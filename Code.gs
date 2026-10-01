@@ -2216,16 +2216,21 @@ function handleGetCreators(isAdmin) {
 function handleAddCreator(params) {
   const name = (params.name || '').trim();
   if (!name) return { status: 'error', message: 'Name required' };
+  const currentDate = todayStr_();
+  const currentMonth = currentDate.substring(0, 7);
+  const requestedMonth = String(params.month || '').trim();
+  const selectedMonth = /^\d{4}-(0[1-9]|1[0-2])$/.test(requestedMonth) ? requestedMonth : currentMonth;
+  const addedDate = selectedMonth === currentMonth ? currentDate : selectedMonth + '-01';
   const sheet = getCreatorsSheet();
   const data = sheet.getDataRange().getValues();
   for (let i = 1; i < data.length; i++) {
     if (String(data[i][0]).trim().toLowerCase() === name.toLowerCase())
       return { status: 'error', message: 'Creator already exists' };
   }
-  sheet.appendRow([name, 'Active', new Date(), DEFAULT_MONTHLY_SALARY, '', '', '']);
+  sheet.appendRow([name, 'Active', addedDate, DEFAULT_MONTHLY_SALARY, '', '', '']);
   nqInvalidateCreatorRoster_();
   nqInvalidateCreatorPay_(name);
-  return { status: 'success' };
+  return { status: 'success', month: selectedMonth, addedDate: addedDate };
 }
 
 
@@ -4292,4 +4297,5 @@ function fixBackdatedTimestamps() {
   }
   Logger.log('======================================================');
 }
+
 
