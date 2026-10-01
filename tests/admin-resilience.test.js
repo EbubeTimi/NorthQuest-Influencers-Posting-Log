@@ -57,6 +57,13 @@ test('creator join dates keep their Lagos calendar day', () => {
   assert.match(gs, /const added = data\[i\]\[2\] instanceof Date\s*\?\s*Utilities\.formatDate\(data\[i\]\[2\], 'Africa\/Lagos', 'yyyy-MM-dd'\)/);
 });
 
+test('adding a creator honours the month selected in Manage Creators', () => {
+  assert.match(html, /function addCreator\(\)[\s\S]*const month = manageMonthOrToday\(\)/);
+  assert.match(html, /action:'addCreator', name, month/);
+  assert.match(html, /const added = data\.addedDate \|\| creatorAddedDateForMonth\(month\)[\s\S]*allCreators\.push\(\{ name, status:'Active', added \}\)/);
+  assert.match(gs, /function handleAddCreator\(params\)[\s\S]*params\.month[\s\S]*selectedMonth[\s\S]*sheet\.appendRow\(\[name, 'Active', addedDate/);
+});
+
 test('admin login does not compete with the public bootstrap or require a manual retry', () => {
   assert.match(html, /creatorBootstrapTimer\s*=\s*setTimeout/);
   assert.match(html, /name === 'login' && creatorBootstrapTimer[\s\S]*clearTimeout\(creatorBootstrapTimer\)/);
@@ -66,5 +73,6 @@ test('admin login does not compete with the public bootstrap or require a manual
   assert.match(html, /action: 'adminLogin'[\s\S]*25000, true\)/);
   assert.match(html, /function finishLogin\(d\)[\s\S]*d\.status === 'success'[\s\S]*grantAdmin\(d\.adminKey\)/);
 });
+
 
 
