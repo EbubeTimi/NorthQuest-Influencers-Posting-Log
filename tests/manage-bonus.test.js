@@ -75,6 +75,10 @@ set("legacyBonusTiers", [[500000, 200000], [100000, 100000], [50000, 50000]]);
 // ---- 1. Default behaviour is unchanged: the current month.
 set("manageMonth", null);
 check("defaults to the current month", sandbox.manageMonthOrToday(), THIS_MONTH);
+check("a creator added to the current month keeps today's Lagos date",
+  sandbox.creatorAddedDateForMonth(THIS_MONTH), sandbox.todayStr());
+check("a creator added to a selected historical month belongs to that month",
+  sandbox.creatorAddedDateForMonth("2026-09"), "2026-09-01");
 
 // ---- 2. The month list offers July even though it is in the past.
 set("manageMonth", null);
@@ -198,5 +202,6 @@ check("the admin month list includes an empty July between June and September",
 
 console.log(failures ? "\n" + failures + " FAILING" : "\nAll checks passed");
 process.exit(failures ? 1 : 0);
+
 
 
