@@ -113,7 +113,16 @@ Updated: 2026-10-01
 
 ## Next action
 
-- With the stability release live, use the authenticated administrator session to smoke-test July/August/September month switching, manual deactivate/reactivate, payment loading, column add/reorder/reload persistence, and back-to-back amount edits against real admin data.
+- Deploy the selected-month creator fix as a new Apps Script version and matching frontend release after explicit approval, then smoke-test adding a creator to both the current month and a historical month.
+
+## October 2026 creator-month and account reconciliation
+
+- Fixed the add-creator flow so Manage Creators sends the selected `YYYY-MM` month to Apps Script instead of silently using the current date. Current-month additions retain the real Lagos date; historical-month additions use the first day of the selected month as the membership marker.
+- Reconciled the NorthQuest Finance Creator Bank Details responses against the tracker by creator name. Updated only the Creators tab bank name, account number, and account name fields for 37 confident matches; preserved account numbers as text.
+- Ignored five responses containing old or personal-bank details rather than NorthQuest/Paystack-Titan details. Left the unmatched valid response for Angel Chinecherem Nwankwo untouched because no corresponding tracker creator was found.
+- Exact post-write spreadsheet readback verified all 37 updated creator records with zero mismatches. The native visual browser inspection timed out, so rendered-sheet appearance was not independently rechecked; formatting and validation were not changed by the value-only batch update.
+- The selected-month regression suite passes 29/29 tests and the CRLF-aware diff check passes. This code is not yet deployed.
+
 
 
 
