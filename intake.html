@@ -256,10 +256,11 @@
         <div class="field"><label>TikTok password</label><input type="text" id="f-ttpass" placeholder="Password" /></div>
       </div>
       <div class="group rv">
-        <div class="group-title">Get paid</div>
-        <div class="field"><label>Bank name</label><input type="text" id="f-bank" placeholder="e.g. OPay, GTBank" /></div>
-        <div class="field"><label>Account number</label><input type="text" id="f-acctnum" inputmode="numeric" placeholder="10-digit number" /></div>
-        <div class="field"><label>Account name</label><input type="text" id="f-acctname" placeholder="Name on the account" /></div>
+        <div class="group-title">Get paid through NorthQuest Finance</div>
+        <p class="lead" style="font-size:14px;margin:-4px 0 14px;">Enter only your NorthQuest Finance account details. Do not enter a personal or another bank account.</p>
+        <div class="field"><label>Bank</label><input type="text" id="f-bank" value="Paystack-Titan / NorthQuest Finance" readonly /></div>
+        <div class="field"><label>Your NorthQuest Finance account number</label><input type="text" id="f-acctnum" inputmode="numeric" autocomplete="off" maxlength="10" placeholder="10-digit NorthQuest Finance account number" /></div>
+        <div class="field"><label>Name on your NorthQuest Finance account</label><input type="text" id="f-acctname" placeholder="NorthQuestFin / Your name" /></div>
       </div>
       <div class="alert" id="details2-alert"></div>
       <div class="nav rv"><button class="back" onclick="prev()">Back</button><button class="btn" onclick="next()">Review my details &rarr;</button></div>
@@ -469,8 +470,9 @@ function validateDetails1(){
 function validateDetails2(){
   if (PREVIEW) return true;
   const a=document.getElementById('details2-alert');
-  const need=[['f-nqemail','the NorthQuest email address'],['f-nqpass','the NorthQuest email password'],['f-bank','your bank name'],['f-acctnum','your account number'],['f-acctname','your account name']];
+  const need=[['f-nqemail','the NorthQuest email address'],['f-nqpass','the NorthQuest email password'],['f-bank','the NorthQuest Finance bank name'],['f-acctnum','your NorthQuest Finance account number'],['f-acctname','your NorthQuest Finance account name']];
   for(const item of need){ if(!val(item[0])){ a.textContent='Please enter '+item[1]+' before continuing.'; a.classList.add('show'); document.getElementById(item[0]).focus(); return false; } }
+  if(!/^\d{10}$/.test(val('f-acctnum'))){ a.textContent='Please enter the 10-digit number on your NorthQuest Finance account.'; a.classList.add('show'); document.getElementById('f-acctnum').focus(); return false; }
   // Instagram and TikTok are plainly optional, independently of each other:
   // if a creator has the account they fill it in, if not they leave it
   // blank. No "at least one required" coupling.
@@ -529,4 +531,5 @@ render();
 </script>
 </body>
 </html>
+
 

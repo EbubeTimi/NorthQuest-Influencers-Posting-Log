@@ -61,3 +61,12 @@ test('reload recovery does not claim that a browser file input was restored', ()
   assert.doesNotMatch(intake, /fileData|readAsDataURL\(.*saveDraft/);
 });
 
+test('intake collects only NorthQuest Finance payment details', () => {
+  assert.match(intake, /Enter only your NorthQuest Finance account details/);
+  assert.match(intake, /id="f-bank"[^>]*value="Paystack-Titan \/ NorthQuest Finance"[^>]*readonly/);
+  assert.match(intake, /<label>Your NorthQuest Finance account number<\/label>/);
+  assert.match(intake, /<label>Name on your NorthQuest Finance account<\/label>/);
+  assert.doesNotMatch(intake, /placeholder="e\.g\. OPay, GTBank"/);
+});
+
+
