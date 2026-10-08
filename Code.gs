@@ -858,7 +858,7 @@ function handleSetContractResolved(params) {
 // ══════════════════════════════════════════════════════════
 // GRACE WINDOW CUTOFF
 //
-// Yesterday's videos can normally be backfilled until 2 PM Lagos. A one-off
+// Yesterday's videos can normally be backfilled until 10 AM Lagos. A one-off
 // extension can be granted for a SINGLE date — set the date and the hour
 // below, and it lifts itself the moment that date passes. Nobody has to
 // remember to undo it.
@@ -866,7 +866,7 @@ function handleSetContractResolved(params) {
 // Hour is 0–24 in Lagos time, where 24 means "all the way to midnight".
 // Set GRACE_EXTENSION_DATE to '' to have no extension at all.
 // ══════════════════════════════════════════════════════════
-const GRACE_CUTOFF_HOUR = 14;          // the standing rule: 2 PM
+const GRACE_CUTOFF_HOUR = 10;          // the standing rule: 10 AM Lagos time
 const GRACE_EXTENSION_DATE = '2026-09-06';
 const GRACE_EXTENSION_HOUR = 24;       // midnight, i.e. the whole of that day
 
