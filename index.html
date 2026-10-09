@@ -1439,7 +1439,7 @@ let rowsLoadFailed = false;
 let rowsLoadFailedReason = '';
 // True while a creator is backdating a missed video via "Log yesterday's
 // videos". Only flips true through startLogYesterday(); the server is the
-// real authority on the 2 PM cutoff and on which date is "yesterday", this
+// real authority on the 10 AM cutoff and on which date is "yesterday", this
 // just drives which day the submit form displays and targets.
 let loggingYesterday = false;
 // Bonus tiers, editable from the app (Manage creators / Payments → Edit
@@ -1592,12 +1592,12 @@ function yesterdayStr() {
   dt.setUTCDate(dt.getUTCDate() - 1);
   return dt.getUTCFullYear() + '-' + String(dt.getUTCMonth()+1).padStart(2,'0') + '-' + String(dt.getUTCDate()).padStart(2,'0');
 }
-// Yesterday's videos can normally be backfilled until 2 PM Lagos. A one-off
+// Yesterday's videos can normally be backfilled until 10 AM Lagos. A one-off
 // extension can be granted for a SINGLE date: set the date and hour below and
 // it lifts itself once that date passes, so nobody has to remember to undo
 // it. These two lines must match the same two in Code.gs — the server has the
 // real say, this only decides what the creator is offered.
-const GRACE_CUTOFF_HOUR = 14;
+const GRACE_CUTOFF_HOUR = 10;
 const GRACE_EXTENSION_DATE = '2026-09-06';
 const GRACE_EXTENSION_HOUR = 24; // 24 = midnight, i.e. the whole of that day
 
@@ -2494,7 +2494,7 @@ function onNameChange(fetchFresh) {
   updatePostCards(count);
 
   // Grace window: missed yesterday (or only logged 1 of 2) and it is still
-  // before the 2 PM cutoff, offer to backdate. The server has the real,
+  // before the 10 AM cutoff, offer to backdate. The server has the real,
   // authoritative cutoff; this only decides whether to light up the Yesterday
   // segment and let the creator tap into it.
   const yCount = allRows.filter(function(r) {
@@ -2530,7 +2530,7 @@ function updateDateLockDisplay() {
   document.getElementById('seg-today').classList.toggle('is-target', !loggingYesterday);
   document.getElementById('seg-yesterday').classList.toggle('is-target', loggingYesterday);
   // Once Yesterday is selected the "you missed yesterday" wording is stale,
-  // but the 2 PM cutoff still matters — it is the thing that can strand a
+  // but the 10 AM cutoff still matters — it is the thing that can strand a
   // half-finished backdate — so restate it rather than hiding the line.
   if (loggingYesterday) {
     const hintEl = document.getElementById('date-toggle-hint');
@@ -2725,7 +2725,7 @@ function doSubmitLog(name, date, post, tiktok, insta, issues, firstName, isSecon
     } else if (data && data.status === 'blocked') {
       setSubmitting(false);
       // Server says they already hit the limit, or the grace window has
-      // closed (2 PM cutoff), reload fresh data and update cards
+      // closed (10 AM cutoff), reload fresh data and update cards
       loadRows();
       showToast('error',
         'Already logged',
