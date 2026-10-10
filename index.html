@@ -634,7 +634,8 @@
     padding: 22px 28px; border-bottom: 1px solid var(--border);
     position: sticky; top: 0; background: var(--surface); z-index: 1;
   }
-  .modal-title { font-family: 'Playfair Display', serif; font-size: 18px; font-weight: 700; }
+  .modal-heading { font-family: 'Playfair Display', serif; font-size: 22px; font-weight: 700; }
+  .modal-title { font-family: 'Playfair Display', serif; font-size: 18px; font-weight: 700; margin-top: 5px; }
   .modal-sub { font-size: 12px; color: var(--text3); margin-top: 2px; }
   .modal-close {
     background: var(--surface2); border: 1px solid var(--border);
@@ -994,7 +995,7 @@
         <span class="s-icon" id="today-status-icon"></span>
         <span id="today-status-msg"></span>
       </div>
-      <button class="view-logs-btn" id="view-logs-btn" onclick="openMyLogs()" type="button">View my logs for this month</button>
+      <button class="view-logs-btn" id="view-logs-btn" onclick="openMyLogs()" type="button">View My Dashboard</button>
       <button class="view-logs-btn" id="view-previous-dashboard-btn" onclick="openPreviousMyLogs()" type="button" style="display:none"></button>
     </div>
 
@@ -1317,6 +1318,7 @@
   <div class="modal">
     <div class="modal-header">
       <div>
+        <div class="modal-heading">Your Dashboard</div>
         <div class="modal-title" id="modal-name">Creator</div>
         <div class="modal-sub" id="modal-sub"></div>
       </div>
@@ -2817,7 +2819,7 @@ function finalizeSuccess(name, date, post, tiktok, insta, issues, firstName, isS
     isSecond ? 'All done, ' + firstName + '!' : 'Video 1 successfully logged, ' + firstName + '!',
     isSecond
       ? ('Your second video has been successfully logged and confirmed. Both posts are done for ' + dayWord + (wasYesterday ? '.' : '. See you tomorrow!'))
-      : ('Your first video has been successfully logged and confirmed for ' + dayWord + '. You can check it under "View my logs". Come back and submit your second video!')
+      : ('Your first video has been successfully logged and confirmed for ' + dayWord + '. You can check it under "View My Dashboard". Come back and submit your second video!')
   );
   setTimeout(function() { window.scrollTo({ top:0, behavior:'smooth' }); }, 200);
 }
@@ -5517,6 +5519,7 @@ function filterTableRows(inputId, tbodyId) {
 </script>
 </body>
 </html>
+
 
 
 
