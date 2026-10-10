@@ -8,6 +8,12 @@ const root = path.resolve(__dirname, '..');
 const appsScript = fs.readFileSync(path.join(root, 'Code.gs'), 'utf8');
 const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
 
+test('creator-facing copy identifies the complete view as a dashboard', () => {
+  assert.match(html, /id="view-logs-btn"[^>]*>View My Dashboard<\/button>/);
+  assert.match(html, /class="modal-heading">Your Dashboard<\/div>/);
+  assert.doesNotMatch(html, />View my logs for this month<\/button>/);
+});
+
 function functionSource(source, name) {
   const start = source.indexOf('function ' + name + '(');
   assert.notEqual(start, -1, name + ' should exist');
@@ -153,4 +159,5 @@ test('payment row merge is protected by a script lock', () => {
   assert.match(saveSource, /upsertManual\(month, name, f\)/);
   assert.match(saveSource, /finally\s*\{\s*lock\.releaseLock\(\)/);
 });
+
 
