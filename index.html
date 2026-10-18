@@ -1330,7 +1330,7 @@
     <span class="page-search-wrap"><input class="page-search-input" id="profiles-search" type="text" placeholder="Search creators..." oninput="filterTableRows('profiles-search','profiles-body')" autocomplete="off"></span>
   </div>
   <div style="font-size:12px;color:var(--text3);margin-bottom:12px">Profile links and creator access.</div>
-  <div class="profiles-actions"><button class="btn btn-sm" onclick="loadCreatorProfiles(true)">&#x21BB; Refresh</button><button class="btn btn-sm" onclick="exportCreatorProfilesCSV()">&#x2913; Export profile links</button></div>
+  <div class="profiles-actions"><button class="btn btn-sm" onclick="loadCreatorProfiles(true)">&#x21BB; Refresh</button><button class="btn btn-sm" onclick="generateMissingCreatorPins()">Generate missing PINs</button><button class="btn btn-sm" onclick="exportCreatorProfilesCSV()">&#x2913; Export profile links</button></div>
   <div class="pay-wrap"><table class="pay-table"><thead><tr><th>Creator</th><th>Instagram</th><th>TikTok</th><th>Facebook</th><th>Profile status</th><th>PIN</th><th>Action</th></tr></thead><tbody id="profiles-body"><tr><td colspan="7" class="empty-state"><span class="spinner"></span></td></tr></tbody></table></div>
  </div>
 
@@ -1579,8 +1579,18 @@ document.addEventListener('DOMContentLoaded', () => {
   updateDateLockDisplay();
   document.getElementById('seg-yesterday').setAttribute('disabled', '');
   if (safeStorage.getSession(SESSION_KEY) === '1') {
-    isAdmin = true;
-    adminKey = safeStorage.getSession(ADMIN_KEY_SESSION) || '';
+    const restoredAdminKey = safeStorage.getSession(ADMIN_KEY_SESSION) || '';
+    // Sessions created before the server-side admin lock do not contain an
+    // admin key. Treating those stale sessions as signed in makes the older
+    // dashboard appear to work from cached bootstrap data while every newer
+    // protected action (Creator Profiles, PINs, analytics) is denied.
+    if (restoredAdminKey) {
+      isAdmin = true;
+      adminKey = restoredAdminKey;
+    } else {
+      safeStorage.removeSession(SESSION_KEY);
+      safeStorage.removeSession(ADMIN_KEY_SESSION);
+    }
   }
   loadPayHeaders();
   renderNav();
@@ -5628,6 +5638,15 @@ function loadCreatorProfiles(force) {
   const body = document.getElementById('profiles-body');
   if (body) body.innerHTML = '<tr><td colspan="7" class="empty-state"><span class="spinner"></span></td></tr>';
   jsonp({ action:'getCreatorProfiles', _bust:Date.now() }, function(data, err) {
+    if (data && data.status === 'denied') {
+      isAdmin = false;
+      adminKey = '';
+      safeStorage.removeSession(SESSION_KEY);
+      safeStorage.removeSession(ADMIN_KEY_SESSION);
+      showPage('login');
+      loginFail('Your admin session expired. Sign in again to manage creator profiles and PINs.');
+      return;
+    }
     if (!data || data.status !== 'success') {
       if (body) body.innerHTML = '<tr><td colspan="7" class="empty-state"><strong>Could not load creator profiles</strong><button class="s-retry" onclick="loadCreatorProfiles(true)">Try again</button></td></tr>';
       return;
@@ -5671,6 +5690,43 @@ function setCreatorPin(name) {
     creatorProfilesLoaded = false;
     loadCreatorProfiles(true);
   }, 30000);
+}
+
+function generateMissingCreatorPins() {
+  if (!confirm('Generate a new six-digit PIN for every creator who does not already have one? Existing PINs will not change.')) return;
+  jsonp({ action:'generateMissingCreatorPins', _bust:Date.now() }, function(data, err) {
+    if (data && data.status === 'denied') {
+      isAdmin = false;
+      adminKey = '';
+      safeStorage.removeSession(SESSION_KEY);
+      safeStorage.removeSession(ADMIN_KEY_SESSION);
+      showPage('login');
+      loginFail('Your admin session expired. Sign in again to generate creator PINs.');
+      return;
+    }
+    if (!data || data.status !== 'success') {
+      alert((data && data.message) || 'Could not generate the missing PINs. Please try again.');
+      return;
+    }
+    const issued = data.issued || [];
+    if (!issued.length) {
+      alert('Every active creator already has a PIN. Use Reset PIN beside one creator if they need a replacement.');
+      return;
+    }
+    const csv = '\ufeffCreator,PIN\n' + issued.map(function(r) {
+      return '"' + String(r.name || '').replace(/"/g, '""') + '","' + String(r.pin || '') + '"';
+    }).join('\n');
+    const blob = new Blob([csv], { type:'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'Creator PINs - ' + todayStr() + '.csv';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    creatorProfilesLoaded = false;
+    loadCreatorProfiles(true);
+    alert(issued.length + ' missing PIN' + (issued.length === 1 ? ' was' : 's were') + ' generated. The one-time CSV has downloaded. Store it securely.');
+  }, 60000);
 }
 
 function analyticsDateDefaults() {
@@ -5792,6 +5848,7 @@ function filterTableRows(inputId, tbodyId) {
 </script>
 </body>
 </html>
+
 
 
 
