@@ -628,8 +628,10 @@ var NQ_ADMIN_ACTIONS = [
   'addCreator', 'toggleCreator', 'deleteCreator', 'setRate',
   'setCreatorBank', 'savePayment', 'deletePaymentRow', 'getPayments', 'setBonusTiers',
   'setContractResolved', 'getViewLog', 'getIgStatus', 'getIgInsights',
-  'setBonusCategories', 'getAdminBootstrap', 'getAdminShell', 'getAdminMonth'
+  'setBonusCategories', 'getAdminBootstrap', 'getAdminShell', 'getAdminMonth',
+  'getCreatorProfiles', 'setCreatorPin', 'runCreatorAnalyticsTest', 'getBonusLedger'
 ];
+var NQ_CREATOR_ACTIONS = ['submit', 'checkPost', 'get', 'getMyPay', 'getCreatorProfile', 'saveCreatorProfile'];
 
 
 
@@ -666,6 +668,265 @@ function nqAdminKey_() {
 function nqIsAdmin_(e) {
   var k = e && e.parameter && e.parameter.adminKey;
   return !!k && nqAdminPass_() !== '' && k === nqAdminKey_();
+}
+
+// ==========================================================
+// CREATOR ACCESS + PROFILE LINKS
+// Each creator receives an individual six-digit PIN. Only a salted hash is
+// stored. Profile links begin empty and remain editable by that creator.
+// ==========================================================
+var NQ_CREATOR_ACCESS_SHEET = 'Creator Access';
+var NQ_CREATOR_PROFILES_SHEET = 'Creator Profiles';
+var NQ_BONUS_LEDGER_SHEET = 'Bonus Ledger';
+
+function nqSheetWithHeaders_(name, headers) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sh = ss.getSheetByName(name);
+  if (!sh) sh = ss.insertSheet(name);
+  if (sh.getLastRow() === 0) sh.getRange(1, 1, 1, headers.length).setValues([headers]);
+  return sh;
+}
+
+function nqAccessSheet_() {
+  return nqSheetWithHeaders_(NQ_CREATOR_ACCESS_SHEET,
+    ['Name', 'Salt', 'PIN Hash', 'Status', 'Updated At']);
+}
+
+function nqProfilesSheet_() {
+  return nqSheetWithHeaders_(NQ_CREATOR_PROFILES_SHEET,
+    ['Name', 'Instagram', 'TikTok', 'Facebook', 'Updated At']);
+}
+
+function nqBonusLedgerSheet_() {
+  return nqSheetWithHeaders_(NQ_BONUS_LEDGER_SHEET,
+    ['Transaction ID', 'Creator', 'Bonus Type', 'Amount', 'Recorded Date', 'Recorded At', 'Admin', 'Note']);
+}
+
+function nqLagosDate_() {
+  return Utilities.formatDate(new Date(), 'Africa/Lagos', 'yyyy-MM-dd');
+}
+
+function nqDigest_(text) {
+  return Utilities.base64EncodeWebSafe(Utilities.computeDigest(
+    Utilities.DigestAlgorithm.SHA_256, String(text || '')));
+}
+
+function nqPinHash_(salt, pin) { return nqDigest_(salt + '|' + pin); }
+
+function nqCreatorAccessRecord_(name) {
+  var wanted = String(name || '').trim().toLowerCase();
+  if (!wanted) return null;
+  var values = nqAccessSheet_().getDataRange().getValues();
+  for (var i = 1; i < values.length; i++) {
+    if (String(values[i][0] || '').trim().toLowerCase() === wanted) {
+      return { row: i + 1, name: String(values[i][0] || '').trim(), salt: String(values[i][1] || ''),
+        hash: String(values[i][2] || ''), status: String(values[i][3] || '') };
+    }
+  }
+  return null;
+}
+
+function nqCreatorKey_(rec) {
+  var secret = PropertiesService.getScriptProperties().getProperty('CREATOR_KEY_SECRET') || nqAdminPass_();
+  return nqDigest_('creator|' + rec.name.toLowerCase() + '|' + rec.hash + '|' + secret);
+}
+
+function nqIsCreator_(params) {
+  var rec = nqCreatorAccessRecord_(params && params.name);
+  return !!rec && rec.status.toLowerCase() === 'active' && String((params && params.creatorKey) || '') === nqCreatorKey_(rec);
+}
+
+function nqProfileRecord_(name) {
+  var wanted = String(name || '').trim().toLowerCase();
+  var sh = nqProfilesSheet_();
+  var values = sh.getDataRange().getValues();
+  for (var i = 1; i < values.length; i++) {
+    if (String(values[i][0] || '').trim().toLowerCase() === wanted) {
+      return { row: i + 1, name: String(values[i][0] || '').trim(), instagram: String(values[i][1] || ''),
+        tiktok: String(values[i][2] || ''), facebook: String(values[i][3] || ''), updatedAt: values[i][4] || '' };
+    }
+  }
+  return { row: 0, name: String(name || '').trim(), instagram: '', tiktok: '', facebook: '', updatedAt: '' };
+}
+
+function nqPublicProfile_(rec) {
+  return { name: rec.name, instagram: rec.instagram, tiktok: rec.tiktok, facebook: rec.facebook,
+    hasAny: !!(rec.instagram || rec.tiktok || rec.facebook),
+    complete: !!(rec.instagram && rec.tiktok && rec.facebook), updatedAt: rec.updatedAt };
+}
+
+function handleVerifyCreatorPin(params) {
+  var name = String(params.name || '').trim();
+  var pin = String(params.pin || '').trim();
+  if (!/^\d{6}$/.test(pin)) return { status: 'error', message: 'Enter the six-digit PIN.' };
+  var rec = nqCreatorAccessRecord_(name);
+  if (!rec || rec.status.toLowerCase() !== 'active') return { status: 'not_configured', message: 'Your PIN has not been set yet. Please contact the NorthQuest admin.' };
+  if (nqPinHash_(rec.salt, pin) !== rec.hash) return { status: 'denied', message: 'That PIN is not correct.' };
+  return { status: 'success', creatorKey: nqCreatorKey_(rec), profile: nqPublicProfile_(nqProfileRecord_(name)) };
+}
+
+function handleSetCreatorPin(params) {
+  var name = String(params.name || '').trim();
+  var pin = String(params.pin || '').trim();
+  if (!name) return { status: 'error', message: 'Creator name is required.' };
+  if (!/^\d{6}$/.test(pin)) return { status: 'error', message: 'PIN must contain exactly six digits.' };
+  var creatorExists = (handleGetCreators(true).creators || []).some(function(c) {
+    return String(c.name || '').trim().toLowerCase() === name.toLowerCase();
+  });
+  if (!creatorExists) return { status: 'error', message: 'Choose a creator from the current creator list.' };
+  var sh = nqAccessSheet_();
+  var rec = nqCreatorAccessRecord_(name);
+  var salt = Utilities.getUuid();
+  var row = [[name, salt, nqPinHash_(salt, pin), 'Active', new Date()]];
+  if (rec) sh.getRange(rec.row, 1, 1, 5).setValues(row); else sh.appendRow(row[0]);
+  return { status: 'success', name: name };
+}
+
+function nqValidProfileUrl_(value, host) {
+  value = String(value || '').trim();
+  if (!value) return true;
+  var escapedHost = String(host || '').replace(/\./g, '\\.');
+  return new RegExp('^https://([^/]+\\.)?' + escapedHost + '(/|$)', 'i').test(value);
+}
+
+function handleGetCreatorProfile(params) {
+  if (!nqIsCreator_(params)) return { status: 'denied', message: 'Please enter your PIN again.' };
+  return { status: 'success', profile: nqPublicProfile_(nqProfileRecord_(params.name)) };
+}
+
+function handleSaveCreatorProfile(params) {
+  if (!nqIsCreator_(params)) return { status: 'denied', message: 'Please enter your PIN again.' };
+  var name = String(params.name || '').trim();
+  var instagram = String(params.instagram || '').trim();
+  var tiktok = String(params.tiktok || '').trim();
+  var facebook = String(params.facebook || '').trim();
+  if (!nqValidProfileUrl_(instagram, 'instagram.com') || !nqValidProfileUrl_(tiktok, 'tiktok.com') || !nqValidProfileUrl_(facebook, 'facebook.com')) {
+    return { status: 'error', message: 'Use a complete profile URL for every link you add.' };
+  }
+  var sh = nqProfilesSheet_();
+  var rec = nqProfileRecord_(name);
+  var row = [[name, instagram, tiktok, facebook, new Date()]];
+  if (rec.row) sh.getRange(rec.row, 1, 1, 5).setValues(row); else sh.appendRow(row[0]);
+  return { status: 'success', profile: nqPublicProfile_(nqProfileRecord_(name)) };
+}
+
+function handleGetCreatorProfiles() {
+  var roster = handleGetCreators(true).creators || [];
+  var out = roster.map(function(c) {
+    var p = nqProfileRecord_(c.name);
+    var a = nqCreatorAccessRecord_(c.name);
+    return { name: c.name, status: c.status, instagram: p.instagram, tiktok: p.tiktok, facebook: p.facebook,
+      hasAny: !!(p.instagram || p.tiktok || p.facebook), complete: !!(p.instagram && p.tiktok && p.facebook),
+      pinActive: !!(a && a.status.toLowerCase() === 'active'), updatedAt: p.updatedAt };
+  });
+  return { status: 'success', creators: out };
+}
+
+function handleGetBonusLedger(params) {
+  var start = String((params && params.startDate) || '0000-00-00');
+  var end = String((params && params.endDate) || '9999-99-99');
+  var values = nqBonusLedgerSheet_().getDataRange().getValues();
+  var rows = [];
+  for (var i = 1; i < values.length; i++) {
+    var recordedDate = values[i][4] instanceof Date
+      ? Utilities.formatDate(values[i][4], 'Africa/Lagos', 'yyyy-MM-dd')
+      : String(values[i][4] || '');
+    if (recordedDate < start || recordedDate > end) continue;
+    rows.push({ id: String(values[i][0] || ''), creator: String(values[i][1] || ''),
+      type: String(values[i][2] || ''), amount: Number(values[i][3] || 0), date: recordedDate,
+      admin: String(values[i][6] || 'Admin'), note: String(values[i][7] || '') });
+  }
+  return { status: 'success', bonuses: rows };
+}
+
+function handleRecordBonusTransaction(params) {
+  var creator = String(params.creator || params.name || '').trim();
+  var type = String(params.type || '').trim();
+  var amount = Number(params.amount || 0);
+  var note = String(params.note || '').trim().slice(0, 500);
+  if (!creator || !type || !isFinite(amount) || amount <= 0) {
+    return { status: 'error', message: 'Choose a creator, bonus type and positive amount.' };
+  }
+  var exists = (handleGetCreators(true).creators || []).some(function(c) {
+    return String(c.name || '').trim().toLowerCase() === creator.toLowerCase();
+  });
+  if (!exists) return { status: 'error', message: 'Choose a creator from the current creator list.' };
+  var id = Utilities.getUuid();
+  var date = nqLagosDate_();
+  nqBonusLedgerSheet_().appendRow([id, creator, type, amount, date, new Date(), 'Admin', note]);
+  nqInvalidateCreatorPay_(creator);
+  return { status: 'success', bonus: { id: id, creator: creator, type: type, amount: amount, date: date, note: note } };
+}
+
+function handleDeleteBonusTransaction(params) {
+  var id = String(params.id || '').trim();
+  if (!id) return { status: 'error', message: 'Bonus transaction ID is required.' };
+  var sh = nqBonusLedgerSheet_();
+  var values = sh.getDataRange().getValues();
+  for (var i = values.length - 1; i >= 1; i--) {
+    if (String(values[i][0] || '') === id) {
+      var creator = String(values[i][1] || '');
+      sh.deleteRow(i + 1);
+      nqInvalidateCreatorPay_(creator);
+      return { status: 'success' };
+    }
+  }
+  return { status: 'error', message: 'Bonus transaction not found.' };
+}
+
+function handleRunCreatorAnalyticsTest(params) {
+  var start = String(params.startDate || '');
+  var end = String(params.endDate || '');
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(start) || !/^\d{4}-\d{2}-\d{2}$/.test(end) || start > end) {
+    return { status: 'error', message: 'Choose a valid start and end date.' };
+  }
+  var allProfiles = handleGetCreatorProfiles().creators;
+  var profiles = allProfiles.filter(function(c) { return c.hasAny; });
+  var posting = getSheet().getDataRange().getValues();
+  var postCounts = {};
+  for (var p = 1; p < posting.length; p++) {
+    var postDate = posting[p][2] instanceof Date
+      ? Utilities.formatDate(posting[p][2], 'Africa/Lagos', 'yyyy-MM-dd')
+      : String(posting[p][2] || '').substring(0, 10);
+    if (postDate < start || postDate > end) continue;
+    var postName = String(posting[p][1] || '').trim().toLowerCase();
+    if (postName) postCounts[postName] = (postCounts[postName] || 0) + 1;
+  }
+  var creatorValues = getCreatorsSheet().getDataRange().getValues();
+  var creatorInfo = {};
+  for (var c = 1; c < creatorValues.length; c++) {
+    creatorInfo[String(creatorValues[c][0] || '').trim().toLowerCase()] = {
+      basePay: Number(creatorValues[c][3] || DEFAULT_MONTHLY_SALARY), bankName: String(creatorValues[c][4] || ''),
+      accountNumber: String(creatorValues[c][5] || ''), accountName: String(creatorValues[c][6] || '')
+    };
+  }
+  var bonuses = handleGetBonusLedger({ startDate: start, endDate: end }).bonuses;
+  var bonusByCreator = {};
+  var bonusTypes = [];
+  bonuses.forEach(function(b) {
+    var key = b.creator.toLowerCase();
+    if (!bonusByCreator[key]) bonusByCreator[key] = {};
+    bonusByCreator[key][b.type] = (bonusByCreator[key][b.type] || 0) + b.amount;
+    if (bonusTypes.indexOf(b.type) < 0) bonusTypes.push(b.type);
+  });
+  var rows = profiles.map(function(profile, i) {
+    var key = profile.name.toLowerCase();
+    var info = creatorInfo[key] || { basePay: DEFAULT_MONTHLY_SALARY, bankName: '', accountNumber: '', accountName: '' };
+    var payable = postCounts[key] || 0;
+    var rate = info.basePay / 60;
+    var ownBonuses = bonusByCreator[key] || {};
+    var bonusTotal = Object.keys(ownBonuses).reduce(function(sum, type) { return sum + Number(ownBonuses[type] || 0); }, 0);
+    var igVideos = 1 + (i % 3), ttVideos = 1 + ((i + 1) % 3), fbVideos = 1 + ((i + 2) % 3);
+    var igViews = 3200 + i * 713, ttViews = 4700 + i * 997, fbViews = 1800 + i * 431;
+    return { creator: profile.name, instagramVideos: igVideos, instagramViews: igViews,
+      tiktokVideos: ttVideos, tiktokViews: ttViews, facebookVideos: fbVideos, facebookViews: fbViews,
+      combinedViews: igViews + ttViews + fbViews, likes: 420 + i * 37, comments: 38 + i * 4, shares: 17 + i * 3,
+      payableVideos: payable, ratePerPost: rate, basePay: payable * rate,
+      bonuses: ownBonuses, bonusTotal: bonusTotal, totalPay: payable * rate + bonusTotal,
+      bankName: info.bankName, accountNumber: info.accountNumber, accountName: info.accountName };
+  });
+  return { status: 'success', mode: 'test', startDate: start, endDate: end, profileCount: profiles.length,
+    missingCount: allProfiles.length - profiles.length, bonusTypes: bonusTypes.sort(), rows: rows };
 }
 
 
@@ -720,6 +981,7 @@ function doGet(e) {
   try {
     if (action === 'adminLogin') result = handleAdminLogin(e.parameter);
     else if (NQ_ADMIN_ACTIONS.indexOf(action) >= 0 && !nqIsAdmin_(e)) result = { status: 'denied', message: 'Admin only. Please sign in from the Admin login page.' };
+    else if (NQ_CREATOR_ACTIONS.indexOf(action) >= 0 && !nqIsAdmin_(e) && !nqIsCreator_(e.parameter)) result = { status: 'denied', message: 'Please select your name and enter your PIN again.' };
     else if (action === 'submit') result = handleSubmit(e.parameter);
     else if (action === 'checkPost') result = handleCheckPost(e.parameter);
     else if (action === 'get') result = handleGet(e.parameter);
@@ -748,6 +1010,13 @@ function doGet(e) {
     else if (action === 'getViewLog') result = handleGetViewLogAdmin();
     else if (action === 'getIgStatus') result = handleGetIgStatus_();
     else if (action === 'getIgInsights') result = handleGetIgInsights_();
+    else if (action === 'verifyCreatorPin') result = handleVerifyCreatorPin(e.parameter);
+    else if (action === 'getCreatorProfile') result = handleGetCreatorProfile(e.parameter);
+    else if (action === 'saveCreatorProfile') result = handleSaveCreatorProfile(e.parameter);
+    else if (action === 'getCreatorProfiles') result = handleGetCreatorProfiles();
+    else if (action === 'setCreatorPin') result = handleSetCreatorPin(e.parameter);
+    else if (action === 'runCreatorAnalyticsTest') result = handleRunCreatorAnalyticsTest(e.parameter);
+    else if (action === 'getBonusLedger') result = handleGetBonusLedger(e.parameter);
     else result = { status: 'error', message: 'Unknown action' };
   } catch (err) { result = { status: 'error', message: err.toString() }; }
   const json = JSON.stringify(result);
@@ -1312,6 +1581,9 @@ function handleGetCreatorBootstrap(params) {
   const name = String((params && params.name) || '').trim();
   if (!name) {
     return { status: 'success', creators: roster.creators, rows: [] };
+  }
+  if (!nqIsCreator_(params)) {
+    return { status: 'success', creators: roster.creators, rows: [], locked: true };
   }
   const logs = handleGet({
     name: name,
@@ -2533,12 +2805,71 @@ function handleSavePayment(params) {
     // One row is read, merged and written as a unit. Without this lock two
     // quick edits could both read the old row and whichever finished last
     // would erase the other change.
+    const before = nqPaymentBonusState_(month, name);
     upsertManual(month, name, f);
+    nqAuditPaymentBonusChange_(month, name, before, f);
     nqInvalidateCreatorPay_(name);
     return { status: 'success' };
   } finally {
     lock.releaseLock();
   }
+}
+
+function nqPaymentBonusState_(month, name) {
+  const data = getManualSheet().getDataRange().getValues();
+  for (let i = 1; i < data.length; i++) {
+    if (String(data[i][0]).replace(/^'/, '').trim() === month &&
+        String(data[i][1]).trim().toLowerCase() === name.toLowerCase()) {
+      return { bonusViews: String(data[i][2] || '').replace(/^'/, ''), specialBonus: String(data[i][3] || '') };
+    }
+  }
+  return { bonusViews: '', specialBonus: '' };
+}
+
+function nqExtraBonusAmounts_(cell, month) {
+  const amounts = {};
+  const categories = (handleGetBonusCategories().categories || []).filter(c => c.month === month);
+  const rateByName = {};
+  categories.forEach(c => { rateByName[String(c.name).toLowerCase()] = Number(c.amount || 0); });
+  String(cell || '').split(',').forEach(part => {
+    const text = part.trim();
+    if (!text) return;
+    const direct = text.lastIndexOf('=');
+    const legacy = text.lastIndexOf(':');
+    const at = direct >= 0 ? direct : legacy;
+    const type = (at >= 0 ? text.slice(0, at) : 'Extra bonus').trim() || 'Extra bonus';
+    const value = Number(String(at >= 0 ? text.slice(at + 1) : text).replace(/[^\d.]/g, '')) || 0;
+    const amount = direct >= 0 ? value : value * (rateByName[type.toLowerCase()] || 1);
+    amounts[type] = (amounts[type] || 0) + amount;
+  });
+  return amounts;
+}
+
+// Bonuses still belong to Manage Creators / Payments. This audit is written
+// automatically when those fields change so date-range analytics can include
+// only the bonus deltas entered during the selected Lagos dates.
+function nqAuditPaymentBonusChange_(month, name, before, changed) {
+  const events = [];
+  if (changed.bonusViews !== undefined) {
+    const oldAmount = CALC_BONUS(before.bonusViews || '', month);
+    const newAmount = CALC_BONUS(changed.bonusViews || '', month);
+    if (newAmount !== oldAmount) events.push(['Performance bonus', newAmount - oldAmount]);
+  }
+  if (changed.specialBonus !== undefined) {
+    const oldExtras = nqExtraBonusAmounts_(before.specialBonus || '', month);
+    const newExtras = nqExtraBonusAmounts_(changed.specialBonus || '', month);
+    const types = Object.keys(Object.assign({}, oldExtras, newExtras));
+    types.forEach(type => {
+      const delta = Number(newExtras[type] || 0) - Number(oldExtras[type] || 0);
+      if (delta) events.push([type, delta]);
+    });
+  }
+  if (!events.length) return;
+  const date = nqLagosDate_();
+  const now = new Date();
+  const rows = events.map(event => [Utilities.getUuid(), name, event[0], event[1], date, now, 'Manage Creators', 'Payment register ' + month]);
+  const sheet = nqBonusLedgerSheet_();
+  sheet.getRange(sheet.getLastRow() + 1, 1, rows.length, rows[0].length).setValues(rows);
 }
 
 
