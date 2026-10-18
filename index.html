@@ -1341,7 +1341,7 @@
     <div class="profiles-actions">
       <label class="form-label">Start date <input class="form-input" id="analytics-start" type="date"></label>
       <label class="form-label">End date <input class="form-input" id="analytics-end" type="date"></label>
-      <button class="btn btn-primary" id="analytics-test-btn" onclick="runAnalyticsTest()" style="width:auto">Run test analytics</button>
+      <button class="btn btn-primary" id="analytics-test-btn" onclick="runAnalyticsTest()" style="width:auto">Run analytics</button>
     </div>
     <div id="analytics-test-status"></div>
     <div id="analytics-summary" class="analytics-summary" style="display:none"></div>
@@ -5688,13 +5688,13 @@ function runAnalyticsTest() {
   const status = document.getElementById('analytics-test-status');
   const btn = document.getElementById('analytics-test-btn');
   if (!start || !end || start > end) { status.innerHTML = '<div class="alert alert-error show">Choose a valid start and end date.</div>'; return; }
-  btn.disabled = true; btn.textContent = 'Running test…';
-  status.innerHTML = '<div class="today-status s-one" style="display:block">Checking every completed creator profile…</div>';
-  jsonp({ action:'runCreatorAnalyticsTest', startDate:start, endDate:end }, function(data, err) {
-    btn.disabled = false; btn.textContent = 'Run test analytics';
-    if (!data || data.status !== 'success') { status.innerHTML = '<div class="alert alert-error show">' + escH((data && data.message) || 'The test run failed. Please try again.') + '</div>'; return; }
+  btn.disabled = true; btn.textContent = 'Running all profiles…';
+  status.innerHTML = '<div class="today-status s-one" style="display:block">Scraping all saved Instagram, TikTok and Facebook profiles. This can take a few minutes.</div>';
+  jsonp({ action:'runCreatorAnalytics', startDate:start, endDate:end }, function(data, err) {
+    btn.disabled = false; btn.textContent = 'Run analytics';
+    if (!data || data.status !== 'success') { status.innerHTML = '<div class="alert alert-error show">' + escH((data && data.message) || 'The analytics run failed. Please try again.') + '</div>'; return; }
     renderAnalyticsResults(data);
-  }, 60000);
+  }, 300000);
 }
 
 function renderAnalyticsResults(data) {
@@ -5703,7 +5703,10 @@ function renderAnalyticsResults(data) {
   const summary = document.getElementById('analytics-summary');
   summary.style.display = 'grid';
   summary.innerHTML = '<div><strong>' + data.profileCount + '</strong>Creators with links</div><div><strong>' + data.missingCount + '</strong>Missing all links</div><div><strong>' + rows.reduce((s,r)=>s+Number(r.payableVideos||0),0) + '</strong>Payable videos</div><div><strong>' + views.toLocaleString('en-NG') + '</strong>Total views</div>';
-  document.getElementById('analytics-test-status').innerHTML = '<div class="today-status s-two" style="display:block">Test completed. These are sample rows; no Apify credits were used.</div>';
+  const failures = data.platformErrors || [];
+  document.getElementById('analytics-test-status').innerHTML = failures.length
+    ? '<div class="alert alert-error show">Completed with retry failures: ' + failures.map(escH).join('; ') + '. Successful platforms are shown below; run again to retry.</div>'
+    : '<div class="today-status s-two" style="display:block">Analytics completed for all saved profile links.</div>';
   const results = document.getElementById('analytics-results');
   results.style.display = 'block';
   const bonusTypes = data.bonusTypes || [];
