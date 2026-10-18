@@ -33,7 +33,7 @@ test('admin keeps Creator Profiles and Analytics on separate pages', () => {
   assert.match(html, /TikTok Videos/);
   assert.match(html, /Facebook Videos/);
   assert.match(html, /Bank Name/);
-  assert.match(appsScript, /function handleRunCreatorAnalyticsTest\(/);
+  assert.match(appsScript, /function handleRunCreatorAnalytics\(/);
   assert.match(appsScript, /payableVideos/);
 });
 

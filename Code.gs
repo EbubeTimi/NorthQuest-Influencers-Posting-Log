@@ -629,7 +629,7 @@ var NQ_ADMIN_ACTIONS = [
   'setCreatorBank', 'savePayment', 'deletePaymentRow', 'getPayments', 'setBonusTiers',
   'setContractResolved', 'getViewLog', 'getIgStatus', 'getIgInsights',
   'setBonusCategories', 'getAdminBootstrap', 'getAdminShell', 'getAdminMonth',
-  'getCreatorProfiles', 'setCreatorPin', 'runCreatorAnalyticsTest', 'getBonusLedger'
+  'getCreatorProfiles', 'setCreatorPin', 'runCreatorAnalytics', 'getBonusLedger'
 ];
 var NQ_CREATOR_ACTIONS = ['submit', 'checkPost', 'get', 'getMyPay', 'getCreatorProfile', 'saveCreatorProfile'];
 
@@ -874,7 +874,83 @@ function handleDeleteBonusTransaction(params) {
   return { status: 'error', message: 'Bonus transaction not found.' };
 }
 
-function handleRunCreatorAnalyticsTest(params) {
+function nqApifyConfig_() {
+  var p = PropertiesService.getScriptProperties();
+  return {
+    token: p.getProperty('APIFY_TOKEN') || '',
+    instagramActor: p.getProperty('APIFY_INSTAGRAM_ACTOR') || 'apify/instagram-scraper',
+    tiktokActor: p.getProperty('APIFY_TIKTOK_ACTOR') || 'clockworks/tiktok-scraper',
+    facebookActor: p.getProperty('APIFY_FACEBOOK_ACTOR') || 'apify/facebook-posts-scraper'
+  };
+}
+
+function nqApifyRequest_(actorId, token, input) {
+  return {
+    url: 'https://api.apify.com/v2/acts/' + encodeURIComponent(actorId).replace(/%2F/g, '~') +
+      '/run-sync-get-dataset-items?token=' + encodeURIComponent(token) + '&timeout=240&clean=true',
+    method: 'post', contentType: 'application/json', payload: JSON.stringify(input),
+    muteHttpExceptions: true
+  };
+}
+
+function nqMetric_(item, names) {
+  for (var i = 0; i < names.length; i++) {
+    var v = item && item[names[i]];
+    if (v !== undefined && v !== null && v !== '') return Number(v) || 0;
+  }
+  return 0;
+}
+
+function nqDateFromItem_(item) {
+  var raw = item.timestamp || item.createTimeISO || item.createdAt || item.date || item.time || item.createTime;
+  if (!raw) return '';
+  if (typeof raw === 'number' || /^\d{10,13}$/.test(String(raw))) {
+    var n = Number(raw); if (n < 100000000000) n *= 1000;
+    return Utilities.formatDate(new Date(n), 'Africa/Lagos', 'yyyy-MM-dd');
+  }
+  var d = new Date(raw);
+  return isNaN(d.getTime()) ? String(raw).substring(0, 10) : Utilities.formatDate(d, 'Africa/Lagos', 'yyyy-MM-dd');
+}
+
+function nqHandle_(value) {
+  value = String(value || '').toLowerCase().replace(/[?#].*$/, '').replace(/\/$/, '');
+  var at = value.match(/tiktok\.com\/@([^/]+)/); if (at) return at[1];
+  var path = value.match(/(?:instagram|facebook)\.com\/([^/]+)/); if (path) return path[1];
+  return value.replace(/^@/, '');
+}
+
+function nqOwnerHandle_(item, platform) {
+  if (platform === 'instagram') return nqHandle_(item.ownerUsername || item.username || (item.owner && item.owner.username) || item.inputUrl || item.url);
+  if (platform === 'tiktok') return nqHandle_(item.authorMeta && (item.authorMeta.name || item.authorMeta.nickName) || item.author && (item.author.uniqueId || item.author.username) || item.input || item.webVideoUrl);
+  return nqHandle_(item.pageUsername || item.pageUrl || item.authorUrl || item.author && (item.author.url || item.author.name) || item.input || item.url);
+}
+
+function nqAggregatePlatform_(items, platform, profiles, start, end) {
+  var byHandle = {};
+  profiles.forEach(function(p) { var h = nqHandle_(p[platform]); if (h) byHandle[h] = p.name; });
+  var out = {};
+  (items || []).forEach(function(item) {
+    var date = nqDateFromItem_(item); if (!date || date < start || date > end) return;
+    var name = byHandle[nqOwnerHandle_(item, platform)]; if (!name) return;
+    if (!out[name]) out[name] = { videos: 0, views: 0, likes: 0, comments: 0, shares: 0 };
+    var r = out[name]; r.videos++;
+    if (platform === 'instagram') {
+      r.views += nqMetric_(item, ['videoPlayCount','playCount','videoViewCount','viewCount','viewsCount']);
+      r.likes += nqMetric_(item, ['likesCount','likes','likeCount']); r.comments += nqMetric_(item, ['commentsCount','comments','commentCount']);
+      r.shares += nqMetric_(item, ['sharesCount','shareCount','shares']);
+    } else if (platform === 'tiktok') {
+      r.views += nqMetric_(item, ['playCount','views','viewCount']); r.likes += nqMetric_(item, ['diggCount','likes','likeCount']);
+      r.comments += nqMetric_(item, ['commentCount','commentsCount','comments']); r.shares += nqMetric_(item, ['shareCount','sharesCount','shares']);
+    } else {
+      r.views += nqMetric_(item, ['videoPlayCount','videoViewCount','viewsCount','views']);
+      r.likes += nqMetric_(item, ['reactionsCount','reactionCount','likesCount','likes']);
+      r.comments += nqMetric_(item, ['commentsCount','commentCount','comments']); r.shares += nqMetric_(item, ['sharesCount','shareCount','reshareCount','shares']);
+    }
+  });
+  return out;
+}
+
+function handleRunCreatorAnalytics(params) {
   var start = String(params.startDate || '');
   var end = String(params.endDate || '');
   if (!/^\d{4}-\d{2}-\d{2}$/.test(start) || !/^\d{4}-\d{2}-\d{2}$/.test(end) || start > end) {
@@ -882,6 +958,30 @@ function handleRunCreatorAnalyticsTest(params) {
   }
   var allProfiles = handleGetCreatorProfiles().creators;
   var profiles = allProfiles.filter(function(c) { return c.hasAny; });
+  var cfg = nqApifyConfig_();
+  if (!cfg.token) return { status: 'error', code: 'APIFY_NOT_CONFIGURED', message: 'Add APIFY_TOKEN in Apps Script Project Settings, then run analytics again.' };
+  if (!profiles.length) return { status: 'error', message: 'No creator profile links have been saved yet.' };
+  var limit = Math.min(250, Math.max(20, (Math.floor((new Date(end) - new Date(start)) / 86400000) + 1) * 3));
+  var igUrls = profiles.map(function(p) { return p.instagram; }).filter(String);
+  var ttUrls = profiles.map(function(p) { return p.tiktok; }).filter(String);
+  var fbUrls = profiles.map(function(p) { return p.facebook; }).filter(String);
+  var specs = [];
+  if (igUrls.length) specs.push({ platform: 'instagram', request: nqApifyRequest_(cfg.instagramActor, cfg.token,
+    { directUrls: igUrls, resultsType: 'posts', resultsLimit: limit, onlyPostsNewerThan: start }) });
+  if (ttUrls.length) specs.push({ platform: 'tiktok', request: nqApifyRequest_(cfg.tiktokActor, cfg.token,
+    { profiles: ttUrls, profileScrapeSections: ['videos'], profileSorting: 'latest', resultsPerPage: limit,
+      oldestPostDateUnified: start, newestPostDate: end, shouldDownloadVideos: false }) });
+  if (fbUrls.length) specs.push({ platform: 'facebook', request: nqApifyRequest_(cfg.facebookActor, cfg.token,
+    { startUrls: fbUrls.map(function(url) { return { url: url }; }), resultsLimit: limit,
+      onlyPostsNewerThan: start, onlyPostsOlderThan: end, captionText: false }) });
+  var responses = UrlFetchApp.fetchAll(specs.map(function(s) { return s.request; }));
+  var metrics = { instagram: {}, tiktok: {}, facebook: {} }, platformErrors = [];
+  responses.forEach(function(response, i) {
+    var code = response.getResponseCode(), platform = specs[i].platform;
+    if (code < 200 || code >= 300) { platformErrors.push(platform + ' failed (HTTP ' + code + ')'); return; }
+    try { metrics[platform] = nqAggregatePlatform_(JSON.parse(response.getContentText()), platform, profiles, start, end); }
+    catch (err) { platformErrors.push(platform + ' returned unreadable results'); }
+  });
   var posting = getSheet().getDataRange().getValues();
   var postCounts = {};
   for (var p = 1; p < posting.length; p++) {
@@ -916,17 +1016,20 @@ function handleRunCreatorAnalyticsTest(params) {
     var rate = info.basePay / 60;
     var ownBonuses = bonusByCreator[key] || {};
     var bonusTotal = Object.keys(ownBonuses).reduce(function(sum, type) { return sum + Number(ownBonuses[type] || 0); }, 0);
-    var igVideos = 1 + (i % 3), ttVideos = 1 + ((i + 1) % 3), fbVideos = 1 + ((i + 2) % 3);
-    var igViews = 3200 + i * 713, ttViews = 4700 + i * 997, fbViews = 1800 + i * 431;
+    var ig = metrics.instagram[profile.name] || {}, tt = metrics.tiktok[profile.name] || {}, fb = metrics.facebook[profile.name] || {};
+    var igVideos = ig.videos || 0, ttVideos = tt.videos || 0, fbVideos = fb.videos || 0;
+    var igViews = ig.views || 0, ttViews = tt.views || 0, fbViews = fb.views || 0;
     return { creator: profile.name, instagramVideos: igVideos, instagramViews: igViews,
       tiktokVideos: ttVideos, tiktokViews: ttViews, facebookVideos: fbVideos, facebookViews: fbViews,
-      combinedViews: igViews + ttViews + fbViews, likes: 420 + i * 37, comments: 38 + i * 4, shares: 17 + i * 3,
+      combinedViews: igViews + ttViews + fbViews, likes: (ig.likes||0)+(tt.likes||0)+(fb.likes||0),
+      comments: (ig.comments||0)+(tt.comments||0)+(fb.comments||0), shares: (ig.shares||0)+(tt.shares||0)+(fb.shares||0),
       payableVideos: payable, ratePerPost: rate, basePay: payable * rate,
       bonuses: ownBonuses, bonusTotal: bonusTotal, totalPay: payable * rate + bonusTotal,
       bankName: info.bankName, accountNumber: info.accountNumber, accountName: info.accountName };
   });
-  return { status: 'success', mode: 'test', startDate: start, endDate: end, profileCount: profiles.length,
-    missingCount: allProfiles.length - profiles.length, bonusTypes: bonusTypes.sort(), rows: rows };
+  return { status: 'success', mode: 'live', startDate: start, endDate: end, profileCount: profiles.length,
+    missingCount: allProfiles.length - profiles.length, platformErrors: platformErrors,
+    bonusTypes: bonusTypes.sort(), rows: rows };
 }
 
 
@@ -1015,7 +1118,7 @@ function doGet(e) {
     else if (action === 'saveCreatorProfile') result = handleSaveCreatorProfile(e.parameter);
     else if (action === 'getCreatorProfiles') result = handleGetCreatorProfiles();
     else if (action === 'setCreatorPin') result = handleSetCreatorPin(e.parameter);
-    else if (action === 'runCreatorAnalyticsTest') result = handleRunCreatorAnalyticsTest(e.parameter);
+    else if (action === 'runCreatorAnalytics') result = handleRunCreatorAnalytics(e.parameter);
     else if (action === 'getBonusLedger') result = handleGetBonusLedger(e.parameter);
     else result = { status: 'error', message: 'Unknown action' };
   } catch (err) { result = { status: 'error', message: err.toString() }; }
