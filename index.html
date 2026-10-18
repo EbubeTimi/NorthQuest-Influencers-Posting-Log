@@ -816,6 +816,26 @@
     font-size:13px; font-weight:600; cursor:pointer; transition:all 0.18s;
   }
   .view-logs-btn:hover { border-color:var(--accent); background:var(--accent-light); }
+  .creator-pin-panel { display:none; margin-top:12px; padding:14px; border:1px solid var(--border); border-radius:10px; background:var(--cream); }
+  .creator-pin-row { display:flex; gap:8px; align-items:flex-end; }
+  .creator-pin-row .form-group { margin:0; flex:1; }
+  .creator-pin-help { border:0; background:transparent; color:var(--accent); padding:8px 0 0; cursor:pointer; font:inherit; }
+  .profile-card { border:1px solid var(--border); border-radius:12px; padding:16px; margin:0 0 18px; background:#fff; }
+  .profile-card-head { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; }
+  .profile-card-title { font-family:Georgia,serif; font-size:21px; font-weight:700; }
+  .profile-status { border-radius:999px; padding:5px 9px; background:var(--accent-light); color:var(--accent); font-size:11px; font-weight:700; }
+  .profile-links-grid { display:grid; gap:8px; margin-top:12px; }
+  .profile-link-row { display:grid; grid-template-columns:90px 1fr; gap:10px; padding:10px 12px; border:1px solid var(--border); border-radius:8px; overflow-wrap:anywhere; }
+  .profile-link-row strong { font-size:12px; }
+  .profile-edit-fields { display:grid; gap:10px; margin-top:12px; }
+  .profiles-actions { display:flex; gap:8px; flex-wrap:wrap; margin:12px 0; }
+  .analytics-summary { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px; margin:14px 0; }
+  .analytics-summary > div { border:1px solid var(--border); border-radius:9px; padding:12px; background:#fff; }
+  .analytics-summary strong { display:block; font-size:20px; }
+  .analytics-results { overflow:auto; border:1px solid var(--border); border-radius:10px; background:#fff; }
+  .analytics-results table { width:100%; min-width:850px; border-collapse:collapse; }
+  .analytics-results th,.analytics-results td { padding:10px; text-align:left; border-top:1px solid var(--border); font-size:12px; }
+  .analytics-results th { background:var(--cream); border-top:0; text-transform:uppercase; letter-spacing:.05em; }
   .chooser-btn {
     display:flex; align-items:center; gap:14px; width:100%; padding:20px 18px;
     margin-bottom:14px; border:1.5px solid var(--border2); border-radius:var(--radius-sm);
@@ -991,13 +1011,26 @@
       <select class="form-input" id="f-name" onchange="onNameChange(true)">
         <option value="">Select your name...</option>
       </select>
+      <div class="creator-pin-panel" id="creator-pin-panel">
+        <div class="creator-pin-row">
+          <div class="form-group">
+            <label class="form-label" for="creator-pin">Your six-digit PIN</label>
+            <input class="form-input" id="creator-pin" type="password" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="Enter PIN" onkeydown="if(event.key==='Enter')verifyCreatorPin()" />
+          </div>
+          <button class="btn btn-primary" id="creator-pin-btn" type="button" onclick="verifyCreatorPin()" style="width:auto">Continue</button>
+        </div>
+        <button class="creator-pin-help" type="button" onclick="creatorPinHelp()">I forgot my PIN</button>
+        <div class="alert alert-error" id="creator-pin-error"></div>
+      </div>
+    </div>
+
+    <div id="creator-secure-content" style="display:none">
       <div class="today-status s-none" id="today-status" style="display:none">
         <span class="s-icon" id="today-status-icon"></span>
         <span id="today-status-msg"></span>
       </div>
-      <button class="view-logs-btn" id="view-logs-btn" onclick="openMyLogs()" type="button">View My Dashboard</button>
+      <button class="view-logs-btn" id="view-logs-btn" onclick="openMyLogs()" type="button">My Dashboard</button>
       <button class="view-logs-btn" id="view-previous-dashboard-btn" onclick="openPreviousMyLogs()" type="button" style="display:none"></button>
-    </div>
 
     <!-- Date: one control, Today | Yesterday. Yesterday stays locked (padlock)
          until a video is actually missing, then lights up and becomes
@@ -1074,6 +1107,7 @@
     </div>
 
     <div class="alert alert-error" id="f-alert"></div>
+      </div>
   </div>
 </div>
 
@@ -1289,6 +1323,32 @@
   <div class="pay-legend" id="pay-legend"></div>
 </div>
 
+<!-- CREATOR PROFILES (admin) -->
+<div id="page-profiles" class="page main">
+  <div class="section-head">
+    <span class="section-title">Creator Profiles</span>
+    <span class="page-search-wrap"><input class="page-search-input" id="profiles-search" type="text" placeholder="Search creators..." oninput="filterTableRows('profiles-search','profiles-body')" autocomplete="off"></span>
+  </div>
+  <div style="font-size:12px;color:var(--text3);margin-bottom:12px">Profile links and creator access.</div>
+  <div class="profiles-actions"><button class="btn btn-sm" onclick="loadCreatorProfiles(true)">&#x21BB; Refresh</button><button class="btn btn-sm" onclick="exportCreatorProfilesCSV()">&#x2913; Export profile links</button></div>
+  <div class="pay-wrap"><table class="pay-table"><thead><tr><th>Creator</th><th>Instagram</th><th>TikTok</th><th>Facebook</th><th>Profile status</th><th>PIN</th><th>Action</th></tr></thead><tbody id="profiles-body"><tr><td colspan="7" class="empty-state"><span class="spinner"></span></td></tr></tbody></table></div>
+ </div>
+
+<!-- ANALYTICS (admin) -->
+<div id="page-analytics" class="page main">
+  <div class="section-head"><span class="section-title">Analytics</span></div>
+  <div class="dashboard-section">
+    <div class="profiles-actions">
+      <label class="form-label">Start date <input class="form-input" id="analytics-start" type="date"></label>
+      <label class="form-label">End date <input class="form-input" id="analytics-end" type="date"></label>
+      <button class="btn btn-primary" id="analytics-test-btn" onclick="runAnalyticsTest()" style="width:auto">Run test analytics</button>
+    </div>
+    <div id="analytics-test-status"></div>
+    <div id="analytics-summary" class="analytics-summary" style="display:none"></div>
+    <div id="analytics-results" class="analytics-results" style="display:none"></div>
+  </div>
+</div>
+
 <!-- VIEW LOG (admin) -->
 <div id="page-viewlog" class="page main">
   <div class="section-head">
@@ -1318,7 +1378,6 @@
   <div class="modal">
     <div class="modal-header">
       <div>
-        <div class="modal-heading">Your Dashboard</div>
         <div class="modal-title" id="modal-name">Creator</div>
         <div class="modal-sub" id="modal-sub"></div>
       </div>
@@ -1412,6 +1471,9 @@ const safeStorage = {
 };
 
 let allRows = [], allCreators = [], allPayments = [];
+let creatorAccessName = '', creatorAccessKey = '';
+let creatorProfile = { name:'', instagram:'', tiktok:'', facebook:'', complete:false };
+let creatorProfiles = [], creatorProfilesLoaded = false;
 let weekOffset = 0, selectedMonth = null, selectedPayMonth = null;
 // Which month the Manage Creators bonus column reads and writes. Null means
 // "the current month", which is what it always used to be locked to.
@@ -1720,7 +1782,9 @@ function jsonp(params, cb, timeoutMs, acceptLate) {
 
   // adminKey (when signed in against a patched backend) rides along on every
   // call so admin-only actions and full data fields are unlocked server-side.
-  s.src = SCRIPT_URL + '?' + new URLSearchParams(Object.assign({}, adminKey ? { adminKey: adminKey } : {}, params, { callback: name, _t: Date.now() }));
+  const creatorAuth = creatorAccessKey && (!params.name || String(params.name).toLowerCase() === String(creatorAccessName).toLowerCase())
+    ? { creatorKey: creatorAccessKey } : {};
+  s.src = SCRIPT_URL + '?' + new URLSearchParams(Object.assign({}, adminKey ? { adminKey: adminKey } : {}, creatorAuth, params, { callback: name, _t: Date.now() }));
   s.onerror = function() {
     if (!done) { done=true; clearTimeout(timer); cleanup(); cb(null,'network'); }
   };
@@ -2399,6 +2463,64 @@ function updatePostCards(count) {
   }
 }
 
+// ── CREATOR PIN GATE ──
+function creatorIsUnlocked(name) {
+  return !!creatorAccessKey && String(creatorAccessName).toLowerCase() === String(name || '').toLowerCase();
+}
+
+function resetCreatorAccess() {
+  creatorAccessName = '';
+  creatorAccessKey = '';
+  creatorProfile = { name:'', instagram:'', tiktok:'', facebook:'', complete:false };
+  const pin = document.getElementById('creator-pin');
+  const err = document.getElementById('creator-pin-error');
+  if (pin) pin.value = '';
+  if (err) { err.textContent = ''; err.classList.remove('show'); }
+}
+
+function showCreatorPinGate(name) {
+  const panel = document.getElementById('creator-pin-panel');
+  const secure = document.getElementById('creator-secure-content');
+  if (panel) panel.style.display = name ? 'block' : 'none';
+  if (secure) secure.style.display = 'none';
+}
+
+function verifyCreatorPin() {
+  const name = document.getElementById('f-name').value.trim();
+  const pin = document.getElementById('creator-pin').value.trim();
+  const btn = document.getElementById('creator-pin-btn');
+  const err = document.getElementById('creator-pin-error');
+  if (!/^\d{6}$/.test(pin)) {
+    err.textContent = 'Enter your six-digit PIN.'; err.classList.add('show'); return;
+  }
+  btn.disabled = true; btn.textContent = 'Checking…';
+  err.classList.remove('show');
+  jsonp({ action:'verifyCreatorPin', name:name, pin:pin, _bust:Date.now() }, function(data, networkError) {
+    btn.disabled = false; btn.textContent = 'Continue';
+    if (!data || data.status !== 'success') {
+      err.textContent = (data && data.message) || (networkError ? 'We could not check your PIN. Please try again.' : 'That PIN is not correct.');
+      err.classList.add('show'); return;
+    }
+    creatorAccessName = name;
+    creatorAccessKey = data.creatorKey || '';
+    creatorProfile = data.profile || { name:name, instagram:'', tiktok:'', facebook:'', complete:false };
+    document.getElementById('creator-pin-panel').style.display = 'none';
+    document.getElementById('creator-secure-content').style.display = 'block';
+    rememberMe(name);
+    loadRowsIfStale();
+    onNameChange(false);
+    if (!creatorProfile.hasAny) {
+      showToast('success', 'PIN accepted', 'Please add the profile links you use from My Dashboard.');
+    }
+  }, 30000);
+}
+
+function creatorPinHelp() {
+  const err = document.getElementById('creator-pin-error');
+  err.textContent = 'Ask the NorthQuest admin to reset your PIN. The old PIN stops working immediately after a reset.';
+  err.classList.add('show');
+}
+
 // ── NAME CHANGE, update status banner + post cards ──
 // fetchFresh is true only for a real user change of the dropdown. Internal
 // re-renders (refreshAll) must NOT pass it, otherwise loadRows → refreshAll →
@@ -2411,6 +2533,22 @@ function onNameChange(fetchFresh) {
   const segYesterday = document.getElementById('seg-yesterday');
   const hintEl   = document.getElementById('date-toggle-hint');
   const hintMsg  = document.getElementById('date-toggle-hint-msg');
+
+  if (!name) {
+    resetCreatorAccess();
+    showCreatorPinGate('');
+  } else if (!creatorIsUnlocked(name)) {
+    resetCreatorAccess();
+    showCreatorPinGate(name);
+    statusEl.style.display = 'none';
+    document.getElementById('view-logs-btn').style.display = 'none';
+    document.getElementById('view-previous-dashboard-btn').style.display = 'none';
+    updatePostCards(null);
+    return;
+  } else {
+    document.getElementById('creator-pin-panel').style.display = 'none';
+    document.getElementById('creator-secure-content').style.display = 'block';
+  }
 
   // A name change (picked from the dropdown, or cleared) always means "start
   // over as today", carrying yesterday-mode across a different creator would
@@ -3160,6 +3298,38 @@ function loadMyPay(name, done) {
   }, 60000);
 }
 
+function creatorProfileCardHtml() {
+  const p = creatorProfile || {};
+  return '<div class="profile-card">' +
+    '<div class="profile-card-head"><div class="profile-card-title">Profile links</div></div>' +
+    '<div class="profile-edit-fields">' +
+      '<label class="form-label">Instagram profile<input class="form-input" id="profile-instagram" type="url" placeholder="https://instagram.com/yourname" value="' + escH(p.instagram || '') + '"></label>' +
+      '<label class="form-label">TikTok profile<input class="form-input" id="profile-tiktok" type="url" placeholder="https://tiktok.com/@yourname" value="' + escH(p.tiktok || '') + '"></label>' +
+      '<label class="form-label">Facebook profile<input class="form-input" id="profile-facebook" type="url" placeholder="https://facebook.com/yourname" value="' + escH(p.facebook || '') + '"></label>' +
+    '</div><div id="profile-save-status"></div>' +
+    '<button class="btn btn-primary" id="profile-save-btn" type="button" onclick="saveCreatorProfile()" style="width:auto;margin-top:12px">Save profile links</button></div>';
+}
+
+function saveCreatorProfile() {
+  const name = document.getElementById('f-name').value.trim();
+  const instagram = document.getElementById('profile-instagram').value.trim();
+  const tiktok = document.getElementById('profile-tiktok').value.trim();
+  const facebook = document.getElementById('profile-facebook').value.trim();
+  const btn = document.getElementById('profile-save-btn');
+  const status = document.getElementById('profile-save-status');
+  btn.disabled = true; btn.textContent = 'Saving…';
+  jsonp({ action:'saveCreatorProfile', name:name, instagram:instagram, tiktok:tiktok, facebook:facebook }, function(data, err) {
+    btn.disabled = false; btn.textContent = 'Save profile links';
+    if (!data || data.status !== 'success') {
+      status.innerHTML = '<div class="alert alert-error show">' + escH((data && data.message) || (err ? 'Could not save your links. Please try again.' : 'Could not save your links.')) + '</div>';
+      return;
+    }
+    creatorProfile = data.profile;
+    showToast('success', 'Profile links saved', 'Your saved links are ready for analytics.');
+    renderMyLogs(name, openCreatorDashboardMonth);
+  }, 30000);
+}
+
 function renderMyLogs(name, requestedMonth) {
   // Show what we actually know, not a guess dressed up as fact. Without this,
   // a failed load on a weak connection renders every day this month as "not
@@ -3305,6 +3475,7 @@ function renderMyLogs(name, requestedMonth) {
     // Everything above added up, stated once so it needs no working out.
     '<div class="mylog-total"><span class="mt-l">Total</span>' +
       '<span class="mt-v">&#8358;' + Math.round(totalPayable).toLocaleString('en-NG') + '</span></div>' +
+    creatorProfileCardHtml() +
     '<div class="month-block"><div class="month-block-header"><span class="month-block-name">' + monthLabel(ym) + '</span><span class="month-block-total">' + monthRows.length + ' of ' + maxVideos + ' videos</span></div>' + dayRowsHtml.join('') + '</div>';
   document.getElementById('creator-modal').classList.add('open');
 }
@@ -5452,6 +5623,101 @@ function logout() {
   showPage('chooser');
 }
 
+function loadCreatorProfiles(force) {
+  if (creatorProfilesLoaded && !force) { renderCreatorProfiles(); return; }
+  const body = document.getElementById('profiles-body');
+  if (body) body.innerHTML = '<tr><td colspan="7" class="empty-state"><span class="spinner"></span></td></tr>';
+  jsonp({ action:'getCreatorProfiles', _bust:Date.now() }, function(data, err) {
+    if (!data || data.status !== 'success') {
+      if (body) body.innerHTML = '<tr><td colspan="7" class="empty-state"><strong>Could not load creator profiles</strong><button class="s-retry" onclick="loadCreatorProfiles(true)">Try again</button></td></tr>';
+      return;
+    }
+    creatorProfiles = data.creators || [];
+    creatorProfilesLoaded = true;
+    renderCreatorProfiles();
+  }, 60000);
+}
+
+function profileLinkCell(url) {
+  return url ? '<a href="' + escH(url) + '" target="_blank" rel="noopener">Open profile &#x2197;</a>' : '<span style="color:var(--amber);font-weight:700">Missing</span>';
+}
+
+function renderCreatorProfiles() {
+  const body = document.getElementById('profiles-body');
+  if (!body) return;
+  if (!creatorProfiles.length) { body.innerHTML = '<tr><td colspan="7" class="empty-state">No creators found</td></tr>'; return; }
+  body.innerHTML = creatorProfiles.map(function(c, index) {
+    const linkCount = [c.instagram,c.tiktok,c.facebook].filter(Boolean).length;
+    return '<tr data-creator="' + escH(c.name) + '"><td><strong>' + escH(c.name) + '</strong></td>' +
+      '<td>' + profileLinkCell(c.instagram) + '</td><td>' + profileLinkCell(c.tiktok) + '</td><td>' + profileLinkCell(c.facebook) + '</td>' +
+      '<td><span class="badge ' + (linkCount ? 'badge-p1' : 'badge-p2') + '">' + linkCount + ' of 3 saved</span></td>' +
+      '<td>' + (c.pinActive ? 'PIN active' : '<span style="color:var(--amber);font-weight:700">No PIN</span>') + '</td>' +
+      '<td><button class="btn btn-sm" onclick="setCreatorPinByIndex(' + index + ')">' + (c.pinActive ? 'Reset PIN' : 'Set PIN') + '</button></td></tr>';
+  }).join('');
+}
+
+function setCreatorPinByIndex(index) {
+  const creator = creatorProfiles[index];
+  if (creator) setCreatorPin(creator.name);
+}
+
+function setCreatorPin(name) {
+  const pin = prompt('Enter a new six-digit PIN for ' + name + '. The old PIN will stop working immediately.');
+  if (pin === null) return;
+  if (!/^\d{6}$/.test(String(pin).trim())) { alert('The PIN must contain exactly six digits.'); return; }
+  jsonp({ action:'setCreatorPin', name:name, pin:String(pin).trim() }, function(data, err) {
+    if (!data || data.status !== 'success') { alert((data && data.message) || 'Could not save the PIN. Please try again.'); return; }
+    alert('New PIN saved for ' + name + '. Share it privately with that creator.');
+    creatorProfilesLoaded = false;
+    loadCreatorProfiles(true);
+  }, 30000);
+}
+
+function analyticsDateDefaults() {
+  const start = document.getElementById('analytics-start');
+  const end = document.getElementById('analytics-end');
+  if (!start || !end || start.value) return;
+  const today = todayStr();
+  start.value = today.substring(0,7) + '-01';
+  end.value = today;
+}
+
+function runAnalyticsTest() {
+  const start = document.getElementById('analytics-start').value;
+  const end = document.getElementById('analytics-end').value;
+  const status = document.getElementById('analytics-test-status');
+  const btn = document.getElementById('analytics-test-btn');
+  if (!start || !end || start > end) { status.innerHTML = '<div class="alert alert-error show">Choose a valid start and end date.</div>'; return; }
+  btn.disabled = true; btn.textContent = 'Running test…';
+  status.innerHTML = '<div class="today-status s-one" style="display:block">Checking every completed creator profile…</div>';
+  jsonp({ action:'runCreatorAnalyticsTest', startDate:start, endDate:end }, function(data, err) {
+    btn.disabled = false; btn.textContent = 'Run test analytics';
+    if (!data || data.status !== 'success') { status.innerHTML = '<div class="alert alert-error show">' + escH((data && data.message) || 'The test run failed. Please try again.') + '</div>'; return; }
+    renderAnalyticsResults(data);
+  }, 60000);
+}
+
+function renderAnalyticsResults(data) {
+  const rows = data.rows || [];
+  const views = rows.reduce((sum,r) => sum + Number(r.combinedViews || 0), 0);
+  const summary = document.getElementById('analytics-summary');
+  summary.style.display = 'grid';
+  summary.innerHTML = '<div><strong>' + data.profileCount + '</strong>Creators with links</div><div><strong>' + data.missingCount + '</strong>Missing all links</div><div><strong>' + rows.reduce((s,r)=>s+Number(r.payableVideos||0),0) + '</strong>Payable videos</div><div><strong>' + views.toLocaleString('en-NG') + '</strong>Total views</div>';
+  document.getElementById('analytics-test-status').innerHTML = '<div class="today-status s-two" style="display:block">Test completed. These are sample rows; no Apify credits were used.</div>';
+  const results = document.getElementById('analytics-results');
+  results.style.display = 'block';
+  const bonusTypes = data.bonusTypes || [];
+  results.innerHTML = '<table><thead><tr><th>S/N</th><th>Creator</th><th>Instagram Videos</th><th>Instagram Views</th><th>TikTok Videos</th><th>TikTok Views</th><th>Facebook Videos</th><th>Facebook Views</th><th>Combined Views</th><th>Likes</th><th>Comments</th><th>Shares</th><th>Payable Videos</th><th>Rate per Post</th><th>Base Pay</th>' + bonusTypes.map(t=>'<th>'+escH(t)+'</th>').join('') + '<th>Total Pay</th><th>Bank Name</th><th>Account Number</th><th>Account Name</th></tr></thead><tbody>' +
+    (rows.length ? rows.map((r,i) => '<tr><td>'+(i+1)+'</td><td>' + escH(r.creator) + '</td><td>'+r.instagramVideos+'</td><td>'+Number(r.instagramViews||0).toLocaleString('en-NG')+'</td><td>'+r.tiktokVideos+'</td><td>'+Number(r.tiktokViews||0).toLocaleString('en-NG')+'</td><td>'+r.facebookVideos+'</td><td>'+Number(r.facebookViews||0).toLocaleString('en-NG')+'</td><td>'+Number(r.combinedViews||0).toLocaleString('en-NG')+'</td><td>'+Number(r.likes||0).toLocaleString('en-NG')+'</td><td>'+Number(r.comments||0).toLocaleString('en-NG')+'</td><td>'+Number(r.shares||0).toLocaleString('en-NG')+'</td><td>'+Number(r.payableVideos||0)+'</td><td>₦'+Math.round(Number(r.ratePerPost||0)).toLocaleString('en-NG')+'</td><td>₦'+Math.round(Number(r.basePay||0)).toLocaleString('en-NG')+'</td>'+bonusTypes.map(t=>'<td>₦'+Math.round(Number((r.bonuses||{})[t]||0)).toLocaleString('en-NG')+'</td>').join('')+'<td><strong>₦'+Math.round(Number(r.totalPay||0)).toLocaleString('en-NG')+'</strong></td><td>'+escH(r.bankName)+'</td><td>'+escH(r.accountNumber)+'</td><td>'+escH(r.accountName)+'</td></tr>').join('') : '<tr><td colspan="20" class="empty-state">No creator profile links have been saved yet.</td></tr>') + '</tbody></table>';
+}
+
+function exportCreatorProfilesCSV() {
+  const lines = [['Creator','Instagram','TikTok','Facebook','Profile status','PIN active']];
+  creatorProfiles.forEach(c => lines.push([c.name,c.instagram,c.tiktok,c.facebook,c.complete?'Complete':'Needs update',c.pinActive?'Yes':'No']));
+  const csv = lines.map(row => row.map(v => '"' + String(v || '').replace(/"/g,'""') + '"').join(',')).join('\r\n');
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv],{type:'text/csv'})); a.download = 'northquest-creator-profiles.csv'; a.click(); URL.revokeObjectURL(a.href);
+}
+
 function renderNav() {
   const c = document.getElementById('nav-container');
   if (isAdmin) {
@@ -5460,6 +5726,8 @@ function renderNav() {
       '<button class="nav-tab ' + (currentPage==='detailed'?'active':'') + '" onclick="showPage(\'detailed\')">Detailed log</button>' +
       '<button class="nav-tab ' + (currentPage==='dashboard'?'active':'') + '" onclick="showPage(\'dashboard\')">Dashboard</button>' +
       '<button class="nav-tab ' + (currentPage==='manage'?'active':'') + '" onclick="showPage(\'manage\')">Manage creators</button>' +
+      '<button class="nav-tab ' + (currentPage==='profiles'?'active':'') + '" onclick="showPage(\'profiles\')">Creator Profiles</button>' +
+      '<button class="nav-tab ' + (currentPage==='analytics'?'active':'') + '" onclick="showPage(\'analytics\')">Analytics</button>' +
       '<button class="nav-tab ' + (currentPage==='payments'?'active':'') + '" onclick="showPage(\'payments\')">Payments</button>' +
       '<button class="nav-tab ' + (currentPage==='viewlog'?'active':'') + '" onclick="showPage(\'viewlog\')">View log</button>' +
       '<button class="nav-tab ' + (currentPage==='submit'?'active':'') + '" onclick="showPage(\'submit\')">Submit form</button>' +
@@ -5469,7 +5737,7 @@ function renderNav() {
   }
 }
 
-const ADMIN_PAGES = ['weekly','detailed','dashboard','manage','payments','viewlog'];
+const ADMIN_PAGES = ['weekly','detailed','dashboard','manage','profiles','analytics','payments','viewlog'];
 function showPage(name) {
   if (ADMIN_PAGES.includes(name) && !isAdmin) { showPage('login'); return; }
   if (name === 'login' && creatorBootstrapTimer) {
@@ -5495,6 +5763,8 @@ function showPage(name) {
   if (name==='detailed') { renderMonthTabs(); renderDetailedLog(); }
   if (name==='dashboard') renderDashboard();
   if (name==='manage') renderManageCreators();
+  if (name==='profiles') loadCreatorProfiles();
+  if (name==='analytics') { analyticsDateDefaults(); loadCreatorProfiles(); }
   if (name==='payments') renderPayments();
   if (name==='views') populateViewsNameDropdown();
   if (name==='viewlog') { loadViewLogAdmin(); }
