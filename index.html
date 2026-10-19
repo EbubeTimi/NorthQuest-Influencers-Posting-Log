@@ -820,6 +820,10 @@
   .creator-pin-row { display:flex; gap:8px; align-items:flex-end; }
   .creator-pin-row .form-group { margin:0; flex:1; }
   .creator-pin-help { border:0; background:transparent; color:var(--accent); padding:8px 0 0; cursor:pointer; font:inherit; }
+  .creator-pin-progress { display:none; margin-top:10px; color:var(--text2); font-size:12px; line-height:1.45; }
+  .creator-pin-progress.show { display:block; }
+  .creator-pin-progress::before { content:''; display:inline-block; width:7px; height:7px; margin-right:7px; border-radius:50%; background:#d8ff37; box-shadow:0 0 0 3px rgba(216,255,55,.22); animation:creatorPulse 1.2s ease-in-out infinite; }
+  @keyframes creatorPulse { 50% { opacity:.35; transform:scale(.72); } }
   .profile-card { border:1px solid var(--border); border-radius:12px; padding:16px; margin:0 0 18px; background:#fff; }
   .profile-card-head { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; }
   .profile-card-title { font-family:Georgia,serif; font-size:21px; font-weight:700; }
@@ -944,6 +948,9 @@
     min-height:58px; border:2px solid #11110f; border-radius:15px;
     background:#fff; font-size:17px; color:#11110f;
   }
+  body:not(.is-admin-page) .creator-pin-password { position:relative; }
+  body:not(.is-admin-page) .creator-pin-password #creator-pin { padding-right:54px; }
+  body:not(.is-admin-page) .creator-pin-password .password-toggle { right:8px; top:50%; transform:translateY(-50%); }
   body:not(.is-admin-page) #f-name {
     appearance:none;
     background-image:linear-gradient(45deg,transparent 50%,#111 50%),linear-gradient(135deg,#111 50%,transparent 50%);
@@ -967,6 +974,10 @@
   }
   .creator-tabs button.active { background:#d8ff37; }
   body:not(.is-admin-page) #creator-secure-content #creator-tabs { display:flex; }
+  .creator-workspace-panel { display:none; }
+  .creator-workspace-panel.active { display:block; }
+  .creator-inline-head { margin:0 0 18px; }
+  .creator-inline-head .creator-view-name { margin-bottom:4px; }
   body:not(.is-admin-page) #view-logs-btn,
   body:not(.is-admin-page) #view-previous-dashboard-btn { display:none!important; }
   body:not(.is-admin-page) #creator-secure-content { border-top:1.5px solid #11110f; padding-top:22px; }
@@ -1150,11 +1161,17 @@
         <div class="creator-pin-row">
           <div class="form-group">
             <label class="form-label" for="creator-pin">Your six-digit PIN</label>
-            <input class="form-input" id="creator-pin" type="password" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="Enter PIN" onkeydown="if(event.key==='Enter')verifyCreatorPin()" />
+            <div class="creator-pin-password">
+              <input class="form-input" id="creator-pin" type="password" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="Enter PIN" onkeydown="if(event.key==='Enter')verifyCreatorPin()" />
+              <button class="password-toggle" id="creator-pin-toggle" onclick="toggleCreatorPinVisibility()" type="button" aria-label="Show PIN">
+                <svg id="creator-pin-eye-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
+              </button>
+            </div>
           </div>
           <button class="btn btn-primary" id="creator-pin-btn" type="button" onclick="verifyCreatorPin()" style="width:auto">Continue</button>
         </div>
         <button class="creator-pin-help" type="button" onclick="creatorPinHelp()">I forgot my PIN</button>
+        <div class="creator-pin-progress" id="creator-pin-progress" role="status" aria-live="polite"></div>
         <div class="alert alert-error" id="creator-pin-error"></div>
       </div>
     </div>
@@ -1166,9 +1183,10 @@
       </div>
       <nav class="creator-tabs" id="creator-tabs" aria-label="Creator pages">
         <button class="active" id="creator-post-tab" type="button" onclick="showCreatorSection('post',this)">Log a post</button>
-        <button type="button" onclick="openMyLogs(); setCreatorTab(this)">My dashboard</button>
-        <button type="button" onclick="openMyProfile(); setCreatorTab(this)">Account profile</button>
+        <button id="creator-dashboard-tab" type="button" onclick="openMyLogs()">My dashboard</button>
+        <button id="creator-profile-tab" type="button" onclick="openMyProfile()">Account profile</button>
       </nav>
+      <div class="creator-workspace-panel active" id="creator-post-panel">
       <div class="today-status s-none" id="today-status" style="display:none">
         <span class="s-icon" id="today-status-icon"></span>
         <span id="today-status-msg"></span>
@@ -1252,36 +1270,15 @@
 
     <div class="alert alert-error" id="f-alert"></div>
       </div>
-  </div>
-</div>
-
-<!-- CREATOR DASHBOARD PAGE -->
-<div id="page-creator-dashboard" class="page main creator-view-page">
-  <div class="creator-view-shell">
-    <div class="creator-view-head">
-      <div><div class="creator-view-name" id="creator-dashboard-name">Creator</div><div class="creator-view-sub" id="creator-dashboard-sub">Your posting record</div></div>
-    </div>
-    <nav class="creator-tabs" id="creator-dashboard-tabs" aria-label="Creator pages">
-      <button type="button" onclick="goToCreatorPost()">Log a post</button>
-      <button class="active" type="button" onclick="openMyLogs()">My dashboard</button>
-      <button type="button" onclick="openMyProfile()">Account profile</button>
-    </nav>
-    <div class="creator-view-body" id="creator-dashboard-body"></div>
-  </div>
-</div>
-
-<!-- CREATOR ACCOUNT PROFILE PAGE -->
-<div id="page-creator-profile" class="page main creator-view-page">
-  <div class="creator-view-shell">
-    <div class="creator-view-head">
-      <div><div class="creator-view-name" id="creator-profile-name">Creator</div><div class="creator-view-sub">Account profile</div></div>
-    </div>
-    <nav class="creator-tabs" id="creator-profile-tabs" aria-label="Creator pages">
-      <button type="button" onclick="goToCreatorPost()">Log a post</button>
-      <button type="button" onclick="openMyLogs()">My dashboard</button>
-      <button class="active" type="button" onclick="openMyProfile()">Account profile</button>
-    </nav>
-    <div class="creator-view-body" id="creator-profile-body"></div>
+      <section class="creator-workspace-panel" id="creator-dashboard-panel" aria-labelledby="creator-dashboard-name">
+        <div class="creator-inline-head"><div class="creator-view-name" id="creator-dashboard-name">Creator</div><div class="creator-view-sub" id="creator-dashboard-sub">Your posting record</div></div>
+        <div class="creator-view-body" id="creator-dashboard-body"></div>
+      </section>
+      <section class="creator-workspace-panel" id="creator-profile-panel" aria-labelledby="creator-profile-name">
+        <div class="creator-inline-head"><div class="creator-view-name" id="creator-profile-name">Creator</div><div class="creator-view-sub">Account profile</div></div>
+        <div class="creator-view-body" id="creator-profile-body"></div>
+      </section>
+      </div>
   </div>
 </div>
 
@@ -1796,6 +1793,10 @@ document.addEventListener('DOMContentLoaded', () => {
   // remembered creator's recent rows. This avoids the Apps Script execution
   // queue that made a cold page fan out into overlapping 45-76 second jobs.
   if (!isAdmin) {
+    // Show the most recently verified roster immediately. The live request
+    // below refreshes it in the background, so returning creators do not stare
+    // at an empty dropdown while Google Apps Script wakes up.
+    hydrateCachedCreatorRoster();
     // Give an administrator a short window to choose Admin login before the
     // public creator bootstrap starts. Apps Script can queue simultaneous
     // executions; previously the large creator request could get in front of
@@ -1804,7 +1805,7 @@ document.addEventListener('DOMContentLoaded', () => {
     creatorBootstrapTimer = setTimeout(() => {
       creatorBootstrapTimer = null;
       if (!isAdmin && currentPage !== 'login') loadCreatorBootstrap();
-    }, 5000);
+    }, 250);
   } else {
     loadAdminBootstrap();
   }
@@ -2040,6 +2041,7 @@ let openCreatorDashboardMonth = '';
 let logWaitStartedAt = 0;
 const FRESH_MS = 60000;
 const ME_KEY = 'nq_me';
+const CREATOR_ROSTER_CACHE_KEY = 'nq_creator_roster_v1';
 
 // Almost everybody opens this on the same phone as the same person every day.
 // Remembering who they are means their rows can be on their way at startup,
@@ -2048,6 +2050,20 @@ const ME_KEY = 'nq_me';
 // has even begun.
 function rememberMe(name) { try { safeStorage.setItem(ME_KEY, name); } catch (e) {} }
 function rememberedMe() { try { return safeStorage.getItem(ME_KEY) || ''; } catch (e) { return ''; } }
+function cacheCreatorRoster(creators) {
+  if (!Array.isArray(creators) || !creators.length) return;
+  safeStorage.setItem(CREATOR_ROSTER_CACHE_KEY, JSON.stringify({ savedAt:Date.now(), creators:creators }));
+}
+function hydrateCachedCreatorRoster() {
+  try {
+    const cached = JSON.parse(safeStorage.getItem(CREATOR_ROSTER_CACHE_KEY) || 'null');
+    if (!cached || !Array.isArray(cached.creators) || !cached.creators.length) return false;
+    allCreators = cached.creators;
+    creatorsLoaded = true;
+    refreshAll();
+    return true;
+  } catch (e) { return false; }
+}
 
 // A wait that says the same thing for thirty seconds reads as a stuck app.
 // Each line is honest about how long it has actually been. None of them
@@ -2193,7 +2209,9 @@ function loadRows(attempt, forName) {
     // new one-response dashboard request.
     if (data && data.rows && !receivedDashboard) {
       const openFor = document.getElementById('creator-dashboard-name');
-      if (currentPage === 'creator-dashboard' && openFor && openFor.textContent === name) {
+      const dashboardPanel = document.getElementById('creator-dashboard-panel');
+      if (currentPage === 'submit' && dashboardPanel && dashboardPanel.classList.contains('active') &&
+          openFor && openFor.textContent === name) {
         loadMyPay(name, function() { loadBonusTiers(function() { loadBonusCategories(); }); });
       }
     }
@@ -2521,6 +2539,7 @@ function loadCreatorBootstrap(attempt) {
     if (data && data.status === 'success' && Array.isArray(data.creators)) {
       creatorsLoaded = true;
       allCreators = data.creators;
+      cacheCreatorRoster(allCreators);
       const activeRemembered = me && getActiveCreators().indexOf(me) !== -1;
       if (activeRemembered && Array.isArray(data.rows)) {
         acceptCreatorDashboardPayload(me, data);
@@ -2551,6 +2570,7 @@ function loadCreators(attempt) {
     if (data && data.creators) {
       creatorsLoaded = true;
       allCreators = data.creators;
+      cacheCreatorRoster(allCreators);
       refreshAll();
 
       // In creator mode this is deliberately the second startup request, not
@@ -2693,20 +2713,51 @@ function showCreatorPinGate(name) {
   if (secure) secure.style.display = 'none';
 }
 
-function verifyCreatorPin() {
+function toggleCreatorPinVisibility() {
+  const input = document.getElementById('creator-pin');
+  const button = document.getElementById('creator-pin-toggle');
+  const icon = document.getElementById('creator-pin-eye-icon');
+  const showing = input.type === 'text';
+  input.type = showing ? 'password' : 'text';
+  button.setAttribute('aria-label', showing ? 'Show PIN' : 'Hide PIN');
+  icon.innerHTML = showing
+    ? '<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>'
+    : '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>';
+  input.focus();
+}
+
+function verifyCreatorPin(attempt) {
+  attempt = attempt || 0;
   const name = document.getElementById('f-name').value.trim();
   const pin = document.getElementById('creator-pin').value.trim();
   const btn = document.getElementById('creator-pin-btn');
   const err = document.getElementById('creator-pin-error');
+  const progress = document.getElementById('creator-pin-progress');
   if (!/^\d{6}$/.test(pin)) {
     err.textContent = 'Enter your six-digit PIN.'; err.classList.add('show'); return;
   }
-  btn.disabled = true; btn.textContent = 'Checking…';
+  const messages = attempt
+    ? ['Retrying securely…', 'Fetching your details…', 'Fetching your posting log…', 'Fetching your rates…']
+    : ['Checking your PIN…', 'Fetching your details…', 'Fetching your posting log…', 'Fetching your rates…'];
+  let messageIndex = 0;
+  btn.disabled = true; btn.textContent = 'Please wait…';
+  progress.textContent = messages[0]; progress.classList.add('show');
+  const messageTimer = setInterval(function() {
+    messageIndex = Math.min(messageIndex + 1, messages.length - 1);
+    progress.textContent = messages[messageIndex];
+  }, 2200);
   err.classList.remove('show');
   jsonp({ action:'verifyCreatorPin', name:name, pin:pin, _bust:Date.now() }, function(data, networkError) {
+    clearInterval(messageTimer);
+    if (networkError && attempt < 1) {
+      progress.textContent = 'The connection is taking a little longer. Retrying securely…';
+      setTimeout(function() { verifyCreatorPin(attempt + 1); }, 650);
+      return;
+    }
     btn.disabled = false; btn.textContent = 'Continue';
+    progress.classList.remove('show');
     if (!data || data.status !== 'success') {
-      err.textContent = (data && data.message) || (networkError ? 'We could not check your PIN. Please try again.' : 'That PIN is not correct.');
+      err.textContent = (data && data.message) || (networkError ? 'This is taking longer than expected. Tap Continue to try again.' : 'That PIN is not correct.');
       err.classList.add('show'); return;
     }
     creatorAccessName = name;
@@ -2725,7 +2776,7 @@ function verifyCreatorPin() {
     if (!creatorProfile.hasAny) {
       showToast('success', 'PIN accepted', 'Please add the profile links you use from My Dashboard.');
     }
-  }, 30000);
+  }, 25000);
 }
 
 function applyCreatorAccessMode() {
@@ -2757,17 +2808,16 @@ function setCreatorTab(button) {
 
 function showCreatorSection(section, button) {
   setCreatorTab(button);
-  if (section === 'post') {
-    closeModalDirect();
-    const fields = document.getElementById('form-fields');
-    if (fields) fields.scrollIntoView({ behavior:'smooth', block:'start' });
-  }
+  document.querySelectorAll('#creator-secure-content .creator-workspace-panel').forEach(function(panel) {
+    panel.classList.toggle('active', panel.id === 'creator-' + section + '-panel');
+  });
+  closeModalDirect();
+  const tabs = document.getElementById('creator-tabs');
+  if (tabs) tabs.scrollIntoView({ behavior:'smooth', block:'start' });
 }
 
 function goToCreatorPost() {
-  showPage('submit');
-  setCreatorTab(document.getElementById('creator-post-tab'));
-  window.scrollTo({ top: 0, behavior: 'instant' });
+  showCreatorSection('post', document.getElementById('creator-post-tab'));
 }
 
 function openMyProfile() {
@@ -2775,7 +2825,7 @@ function openMyProfile() {
   if (!name || !creatorIsUnlocked(name)) return;
   document.getElementById('creator-profile-name').textContent = name;
   document.getElementById('creator-profile-body').innerHTML = creatorProfileCardHtml();
-  showPage('creator-profile');
+  showCreatorSection('profile', document.getElementById('creator-profile-tab'));
 }
 
 // ── NAME CHANGE, update status banner + post cards ──
@@ -3314,8 +3364,9 @@ function refreshAll() {
   // became — including a load that just failed while the creator was
   // looking at it, which must show the warning, not a suddenly empty month.
   const openFor = document.getElementById('creator-dashboard-name');
-  if (!isAdmin && currentPage === 'creator-dashboard' &&
-      openFor && openFor.textContent) {
+  const dashboardPanel = document.getElementById('creator-dashboard-panel');
+  if (!isAdmin && currentPage === 'submit' && dashboardPanel &&
+      dashboardPanel.classList.contains('active') && openFor && openFor.textContent) {
     renderMyLogs(openFor.textContent);
   }
 }
@@ -3528,7 +3579,7 @@ function openMyLogsForMonth(ym) {
   const name = document.getElementById('f-name').value.trim();
   if (!name) return;
   openCreatorDashboardMonth = ym;
-  showPage('creator-dashboard');
+  showCreatorSection('dashboard', document.getElementById('creator-dashboard-tab'));
   loadRowsIfStale(); // refresh in the background so the view is as current as possible
   renderMyLogs(name, ym);
   // Current backends return logs, this creator's pay, tiers and custom payment
@@ -3552,7 +3603,8 @@ function loadMyPay(name, done) {
       if (data.rate && parseFloat(data.rate) > 0) myOwnRate = { name: name, rate: parseFloat(data.rate) };
       // Only redraw if this creator's modal is still the one on screen.
       const openFor = document.getElementById('creator-dashboard-name');
-      if (currentPage === 'creator-dashboard' &&
+      const dashboardPanel = document.getElementById('creator-dashboard-panel');
+      if (currentPage === 'submit' && dashboardPanel && dashboardPanel.classList.contains('active') &&
           openFor && openFor.textContent === name) {
         renderMyLogs(name);
       }
@@ -6221,6 +6273,7 @@ function filterTableRows(inputId, tbodyId) {
 </script>
 </body>
 </html>
+
 
 
 

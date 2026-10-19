@@ -115,15 +115,33 @@ test('deactivation cutoff includes the tenth and hides the creator on the eleven
   assert.equal(rule.accessMode('Active', '', '2026-11-11'), 'active');
 });
 
-test('creator dashboard and account profile are full page views', () => {
-  assert.match(html, /id="page-creator-dashboard"/);
-  assert.match(html, /id="page-creator-profile"/);
-  assert.match(html, /showPage\('creator-dashboard'\)/);
-  assert.match(html, /showPage\('creator-profile'\)/);
-  assert.doesNotMatch(html, /function openMyProfile\(\)[\s\S]{0,500}creator-modal[^\n]*classList\.add/);
-  assert.match(html, /id="creator-dashboard-tabs"[\s\S]*Log a post[\s\S]*My dashboard[\s\S]*Account profile/);
-  assert.match(html, /id="creator-profile-tabs"[\s\S]*Log a post[\s\S]*My dashboard[\s\S]*Account profile/);
+test('creator dashboard and account profile switch below persistent tabs', () => {
+  assert.match(html, /id="creator-tabs"[\s\S]*Log a post[\s\S]*My dashboard[\s\S]*Account profile/);
+  assert.match(html, /id="creator-post-panel"/);
+  assert.match(html, /id="creator-dashboard-panel"/);
+  assert.match(html, /id="creator-profile-panel"/);
+  assert.match(html, /showCreatorSection\('dashboard'/);
+  assert.match(html, /showCreatorSection\('profile'/);
+  assert.doesNotMatch(html, /id="page-creator-dashboard"/);
+  assert.doesNotMatch(html, /id="page-creator-profile"/);
   assert.match(html, /function goToCreatorPost\(/);
+});
+
+test('creator PIN has visibility control, staged progress, and one automatic retry', () => {
+  assert.match(html, /id="creator-pin-toggle"/);
+  assert.match(html, /function toggleCreatorPinVisibility\(/);
+  assert.match(html, /id="creator-pin-progress"/);
+  assert.match(html, /Fetching your details/);
+  assert.match(html, /Fetching your posting log/);
+  assert.match(html, /Fetching your rates/);
+  assert.match(html, /networkError && attempt < 1/);
+});
+
+test('creator roster is shown from cache while the live roster refreshes', () => {
+  assert.match(html, /CREATOR_ROSTER_CACHE_KEY/);
+  assert.match(html, /function hydrateCachedCreatorRoster\(/);
+  assert.match(html, /hydrateCachedCreatorRoster\(\)/);
+  assert.match(html, /cacheCreatorRoster\(allCreators\)/);
 });
 
 test('admin can generate one random PIN and control the posting cutoff', () => {
@@ -156,3 +174,4 @@ test('admin and creator branding use Growthcooks', () => {
   assert.match(html, /wordmark\.textContent = 'Growthcooks'/);
   assert.doesNotMatch(html, /Northquest Finance/);
 });
+
