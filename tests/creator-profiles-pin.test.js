@@ -115,3 +115,26 @@ test('deactivation cutoff includes the tenth and hides the creator on the eleven
   assert.equal(rule.accessMode('Active', '', '2026-11-11'), 'active');
 });
 
+test('creator dashboard and account profile are full page views', () => {
+  assert.match(html, /id="page-creator-dashboard"/);
+  assert.match(html, /id="page-creator-profile"/);
+  assert.match(html, /showPage\('creator-dashboard'\)/);
+  assert.match(html, /showPage\('creator-profile'\)/);
+  assert.doesNotMatch(html, /function openMyProfile\(\)[\s\S]{0,500}creator-modal[^\n]*classList\.add/);
+});
+
+test('admin can generate one random PIN and control the posting cutoff', () => {
+  assert.match(appsScript, /function handleGenerateCreatorPin/);
+  assert.match(appsScript, /POSTING_CUTOFF_HOUR/);
+  assert.match(appsScript, /function handleSetPostingCutoff/);
+  assert.match(html, /Generate new PIN/);
+  assert.match(html, /id="posting-cutoff-hour"/);
+  assert.match(html, /action:'setPostingCutoff'/);
+});
+
+test('admin and creator branding use Growthcooks', () => {
+  assert.match(html, /login-brand-name">growthcooks/);
+  assert.match(html, /wordmark\.textContent = 'Growthcooks'/);
+  assert.doesNotMatch(html, /Northquest Finance/);
+});
+
