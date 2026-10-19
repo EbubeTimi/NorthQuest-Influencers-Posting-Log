@@ -57,7 +57,7 @@ test('admin keeps Creator Profiles and Analytics on separate pages', () => {
 
 test('creator profile administration bulk-loads only unique active creators', () => {
   const handler = appsScript.match(/function handleGetCreatorProfiles\(\) \{[\s\S]*?\n\}/)[0];
-  assert.match(handler, /String\(c\.status \|\| ''\)\.toLowerCase\(\) === 'inactive'/);
+  assert.match(handler, /String\(c\.status \|\| ''\)\.toLowerCase\(\) !== 'active'/);
   assert.match(handler, /if \(!key \|\| seen\[key\]/);
   assert.match(handler, /nqProfileRecordsMap_\(\)/);
   assert.match(handler, /nqCreatorAccessRecordsMap_\(\)/);
@@ -79,7 +79,7 @@ test('admin can generate missing PINs once without replacing active PINs', () =>
   assert.match(html, /action:'generateMissingCreatorPins'/);
   assert.match(appsScript, /function handleGenerateMissingCreatorPins\(/);
   assert.match(appsScript, /existing && existing\.status\.toLowerCase\(\) === 'active'/);
-  assert.match(appsScript, /generateMissingCreatorPins', 'runCreatorAnalytics'/);
+  assert.match(appsScript, /generateMissingCreatorPins', 'getAnalyticsSetup', 'runCreatorAnalytics'/);
   assert.match(appsScript, /CacheService\.getScriptCache\(\)/);
   assert.match(appsScript, /function nqSheetWithHeaders_\([\s\S]*?var ss = getSpreadsheet_\(\)/);
 });
@@ -121,6 +121,9 @@ test('creator dashboard and account profile are full page views', () => {
   assert.match(html, /showPage\('creator-dashboard'\)/);
   assert.match(html, /showPage\('creator-profile'\)/);
   assert.doesNotMatch(html, /function openMyProfile\(\)[\s\S]{0,500}creator-modal[^\n]*classList\.add/);
+  assert.match(html, /id="creator-dashboard-tabs"[\s\S]*Log a post[\s\S]*My dashboard[\s\S]*Account profile/);
+  assert.match(html, /id="creator-profile-tabs"[\s\S]*Log a post[\s\S]*My dashboard[\s\S]*Account profile/);
+  assert.match(html, /function goToCreatorPost\(/);
 });
 
 test('admin can generate one random PIN and control the posting cutoff', () => {
@@ -130,6 +133,22 @@ test('admin can generate one random PIN and control the posting cutoff', () => {
   assert.match(html, /Generate new PIN/);
   assert.match(html, /id="posting-cutoff-hour"/);
   assert.match(html, /action:'setPostingCutoff'/);
+  assert.match(html, /id="generated-pin-result"/);
+  assert.match(html, /function copyGeneratedPin\(/);
+  assert.doesNotMatch(html, /prompt\('New PIN for/);
+});
+
+test('analytics exposes setup readiness and uses secure Apify authentication', () => {
+  assert.match(appsScript, /'getAnalyticsSetup'/);
+  assert.match(appsScript, /function handleGetAnalyticsSetup\(/);
+  assert.match(appsScript, /Authorization:\s*'Bearer '\s*\+\s*token/);
+  assert.doesNotMatch(appsScript, /run-sync-get-dataset-items\?token=/);
+  assert.match(html, /function loadAnalyticsSetup\(/);
+  assert.match(html, /Apify is not connected/);
+});
+
+test('creator profiles include only exactly active roster rows', () => {
+  assert.match(appsScript, /function handleGetCreatorProfiles\(\)[\s\S]*status[^\n]*toLowerCase\(\) !== 'active'/);
 });
 
 test('admin and creator branding use Growthcooks', () => {
@@ -137,4 +156,3 @@ test('admin and creator branding use Growthcooks', () => {
   assert.match(html, /wordmark\.textContent = 'Growthcooks'/);
   assert.doesNotMatch(html, /Northquest Finance/);
 });
-

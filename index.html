@@ -1260,8 +1260,12 @@
   <div class="creator-view-shell">
     <div class="creator-view-head">
       <div><div class="creator-view-name" id="creator-dashboard-name">Creator</div><div class="creator-view-sub" id="creator-dashboard-sub">Your posting record</div></div>
-      <button class="creator-back" type="button" onclick="showPage('submit');setCreatorTab(document.getElementById('creator-post-tab'))">Back</button>
     </div>
+    <nav class="creator-tabs" id="creator-dashboard-tabs" aria-label="Creator pages">
+      <button type="button" onclick="goToCreatorPost()">Log a post</button>
+      <button class="active" type="button" onclick="openMyLogs()">My dashboard</button>
+      <button type="button" onclick="openMyProfile()">Account profile</button>
+    </nav>
     <div class="creator-view-body" id="creator-dashboard-body"></div>
   </div>
 </div>
@@ -1271,8 +1275,12 @@
   <div class="creator-view-shell">
     <div class="creator-view-head">
       <div><div class="creator-view-name" id="creator-profile-name">Creator</div><div class="creator-view-sub">Account profile</div></div>
-      <button class="creator-back" type="button" onclick="showPage('submit');setCreatorTab(document.getElementById('creator-post-tab'))">Back</button>
     </div>
+    <nav class="creator-tabs" id="creator-profile-tabs" aria-label="Creator pages">
+      <button type="button" onclick="goToCreatorPost()">Log a post</button>
+      <button type="button" onclick="openMyLogs()">My dashboard</button>
+      <button class="active" type="button" onclick="openMyProfile()">Account profile</button>
+    </nav>
     <div class="creator-view-body" id="creator-profile-body"></div>
   </div>
 </div>
@@ -1510,6 +1518,10 @@
   </div>
   <div style="font-size:12px;color:var(--text3);margin-bottom:12px">Profile links and creator access.</div>
   <div class="profiles-actions"><button class="btn btn-sm" onclick="loadCreatorProfiles(true)">&#x21BB; Refresh</button><button class="btn btn-sm" onclick="generateMissingCreatorPins()">Generate missing PINs</button><button class="btn btn-sm" onclick="exportCreatorProfilesCSV()">&#x2913; Export profile links</button></div>
+  <div id="generated-pin-result" class="today-status s-two" style="display:none;margin:12px 0">
+    <span><strong id="generated-pin-name"></strong><br><span style="font-size:12px">New PIN</span> <code id="generated-pin-value" style="font-size:20px;letter-spacing:3px;margin-left:8px"></code></span>
+    <button class="btn btn-sm" type="button" onclick="copyGeneratedPin()">Copy PIN</button>
+  </div>
   <div class="pay-wrap"><table class="pay-table"><thead><tr><th>Creator</th><th>Instagram</th><th>TikTok</th><th>Facebook</th><th>Profile status</th><th>PIN</th><th>Action</th></tr></thead><tbody id="profiles-body"><tr><td colspan="7" class="empty-state"><span class="spinner"></span></td></tr></tbody></table></div>
  </div>
 
@@ -1522,6 +1534,7 @@
       <label class="form-label">End date <input class="form-input" id="analytics-end" type="date"></label>
       <button class="btn btn-primary" id="analytics-test-btn" onclick="runAnalyticsTest()" style="width:auto">Run analytics</button>
     </div>
+    <div id="analytics-setup-status" class="today-status s-one" style="display:none"></div>
     <div id="analytics-roster-summary" class="analytics-summary" style="display:none"></div>
     <div class="section-head" style="margin-top:18px">
       <span class="section-title" style="font-size:16px">Creators included</span>
@@ -2749,6 +2762,12 @@ function showCreatorSection(section, button) {
     const fields = document.getElementById('form-fields');
     if (fields) fields.scrollIntoView({ behavior:'smooth', block:'start' });
   }
+}
+
+function goToCreatorPost() {
+  showPage('submit');
+  setCreatorTab(document.getElementById('creator-post-tab'));
+  window.scrollTo({ top: 0, behavior: 'instant' });
 }
 
 function openMyProfile() {
@@ -5957,11 +5976,32 @@ function setCreatorPin(name) {
   jsonp({ action:'generateCreatorPin', name:name }, function(data, err) {
     if (!data || data.status !== 'success') { alert((data && data.message) || 'Could not save the PIN. Please try again.'); return; }
     const pin = String(data.pin || '');
-    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(pin).catch(function(){});
-    prompt('New PIN for ' + name + '. It has also been copied. Share it privately.', pin);
+    document.getElementById('generated-pin-name').textContent = name;
+    document.getElementById('generated-pin-value').textContent = pin;
+    document.getElementById('generated-pin-result').style.display = 'flex';
+    copyGeneratedPin();
     creatorProfilesLoaded = false;
     loadCreatorProfiles(true);
   }, 30000);
+}
+
+function copyGeneratedPin() {
+  const value = (document.getElementById('generated-pin-value') || {}).textContent || '';
+  if (!value) return;
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(value).then(function() {
+      showToast('success', 'PIN copied', 'Paste it privately into the creator’s chat.');
+    }).catch(function() { fallbackCopyGeneratedPin(value); });
+  } else fallbackCopyGeneratedPin(value);
+}
+
+function fallbackCopyGeneratedPin(value) {
+  const area = document.createElement('textarea');
+  area.value = value; area.setAttribute('readonly',''); area.style.position = 'fixed'; area.style.opacity = '0';
+  document.body.appendChild(area); area.select();
+  try { document.execCommand('copy'); showToast('success', 'PIN copied', 'Paste it privately into the creator’s chat.'); }
+  catch (e) { alert('Copy this PIN: ' + value); }
+  document.body.removeChild(area);
 }
 
 function loadPostingCutoff() {
@@ -6029,6 +6069,37 @@ function analyticsDateDefaults() {
   const today = todayStr();
   start.value = today.substring(0,7) + '-01';
   end.value = today;
+}
+
+function loadAnalyticsSetup() {
+  const status = document.getElementById('analytics-setup-status');
+  const btn = document.getElementById('analytics-test-btn');
+  if (!status || !btn) return;
+  status.style.display = 'block';
+  status.textContent = 'Checking analytics setup…';
+  jsonp({ action:'getAnalyticsSetup', _bust:Date.now() }, function(data) {
+    if (!data || data.status !== 'success') {
+      status.className = 'today-status s-one';
+      status.textContent = (data && data.message) || 'Could not check analytics setup. Refresh and try again.';
+      btn.disabled = true;
+      return;
+    }
+    if (!data.apifyConfigured) {
+      status.className = 'today-status s-one';
+      status.textContent = 'Apify is not connected yet. Add APIFY_TOKEN in Apps Script Project Settings before running analytics.';
+      btn.disabled = true;
+      return;
+    }
+    if (!data.linkedProfiles) {
+      status.className = 'today-status s-one';
+      status.textContent = 'Apify is connected, but no active creator has saved a profile link yet.';
+      btn.disabled = true;
+      return;
+    }
+    status.className = 'today-status s-two';
+    status.textContent = 'Ready: ' + data.linkedProfiles + ' creator' + (data.linkedProfiles === 1 ? '' : 's') + ' with profile links.';
+    btn.disabled = false;
+  }, 30000);
 }
 
 function runAnalyticsTest() {
@@ -6125,7 +6196,7 @@ function showPage(name) {
   if (name==='dashboard') renderDashboard();
   if (name==='manage') { renderManageCreators(); loadPostingCutoff(); }
   if (name==='profiles') loadCreatorProfiles();
-  if (name==='analytics') { analyticsDateDefaults(); loadCreatorProfiles(); }
+  if (name==='analytics') { analyticsDateDefaults(); loadCreatorProfiles(); loadAnalyticsSetup(); }
   if (name==='payments') renderPayments();
   if (name==='views') populateViewsNameDropdown();
   if (name==='viewlog') { loadViewLogAdmin(); }
