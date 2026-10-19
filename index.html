@@ -8,7 +8,7 @@
 <meta http-equiv="Expires" content="0" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="theme-color" content="#1f5c3f" />
-<title>Northquest Posting Log</title>
+<title>Growthcooks Creator Posting Tracker</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap');
 
@@ -1022,6 +1022,27 @@
     body:not(.is-admin-page) .login-screen { padding:42px 14px 28px; }
     body:not(.is-admin-page) .login-card { padding:28px 20px; border-radius:22px; box-shadow:7px 7px 0 #11110f; }
   }
+
+  /* Creator dashboard and profile are page views, not overlays. */
+  body:not(.is-admin-page) .creator-view-page { max-width:920px; padding-top:36px; }
+  .creator-view-shell {
+    background:#fffdf8; border:2px solid #11110f; border-radius:24px;
+    box-shadow:8px 8px 0 #11110f; padding:26px; min-height:60vh;
+  }
+  .creator-view-head { display:flex; align-items:flex-start; justify-content:space-between; gap:18px; margin-bottom:24px; }
+  .creator-view-name { font-size:clamp(28px,5vw,46px); line-height:1; font-weight:750; letter-spacing:-.04em; }
+  .creator-view-sub { margin-top:8px; color:#5d5a52; font-size:15px; }
+  .creator-view-body .mylog-stat .v, .creator-view-body .mylog-stat .l { font-weight:500; }
+  .creator-view-body .profile-card { margin-top:0; }
+  .creator-back { border:2px solid #11110f; background:#fff; color:#11110f; border-radius:999px; padding:9px 15px; font:inherit; font-weight:650; cursor:pointer; }
+  .cutoff-control { display:flex; align-items:end; gap:10px; flex-wrap:wrap; padding:14px 18px; margin:0 0 14px; border:1px solid var(--border); border-radius:var(--radius); background:var(--surface); }
+  .cutoff-control .form-group { margin:0; min-width:210px; }
+  .pin-result { margin-top:8px; padding:10px 12px; border:1px solid var(--accent); border-radius:8px; background:var(--accent-light); font-weight:700; }
+  @media (max-width:680px) {
+    body:not(.is-admin-page) .creator-view-page { padding:24px 14px 34px; }
+    .creator-view-shell { padding:20px 16px; border-radius:20px; box-shadow:6px 6px 0 #11110f; }
+    .creator-view-head { margin-bottom:18px; }
+  }
 </style>
 </head>
 <body>
@@ -1050,7 +1071,7 @@
 <!-- CHOOSER -->
 <div id="page-chooser" class="page main">
   <div class="welcome-banner">
-    <div class="welcome-greeting">Northquest Finance</div>
+    <div class="welcome-greeting">Growthcooks</div>
     <div class="welcome-title">Welcome, Creator</div>
     <div class="welcome-sub">What would you like to do?</div>
   </div>
@@ -1076,7 +1097,7 @@
 <!-- LOG MY VIEWS -->
 <div id="page-views" class="page main">
   <div class="welcome-banner">
-    <div class="welcome-greeting">Northquest Finance</div>
+    <div class="welcome-greeting">Growthcooks</div>
     <div class="welcome-title">Log my views</div>
     <div class="welcome-sub">Enter tonight's view count for today's and yesterday's videos.</div>
   </div>
@@ -1234,13 +1255,35 @@
   </div>
 </div>
 
+<!-- CREATOR DASHBOARD PAGE -->
+<div id="page-creator-dashboard" class="page main creator-view-page">
+  <div class="creator-view-shell">
+    <div class="creator-view-head">
+      <div><div class="creator-view-name" id="creator-dashboard-name">Creator</div><div class="creator-view-sub" id="creator-dashboard-sub">Your posting record</div></div>
+      <button class="creator-back" type="button" onclick="showPage('submit');setCreatorTab(document.getElementById('creator-post-tab'))">Back</button>
+    </div>
+    <div class="creator-view-body" id="creator-dashboard-body"></div>
+  </div>
+</div>
+
+<!-- CREATOR ACCOUNT PROFILE PAGE -->
+<div id="page-creator-profile" class="page main creator-view-page">
+  <div class="creator-view-shell">
+    <div class="creator-view-head">
+      <div><div class="creator-view-name" id="creator-profile-name">Creator</div><div class="creator-view-sub">Account profile</div></div>
+      <button class="creator-back" type="button" onclick="showPage('submit');setCreatorTab(document.getElementById('creator-post-tab'))">Back</button>
+    </div>
+    <div class="creator-view-body" id="creator-profile-body"></div>
+  </div>
+</div>
+
 <!-- ADMIN LOGIN -->
 <div id="page-login" class="page">
   <div class="login-screen">
     <div class="login-card">
       <div class="login-brand">
-        <div class="login-brand-logo">NQ</div>
-        <div class="login-brand-name">Northquest Finance</div>
+        <span class="creator-brand-mark" aria-hidden="true"><i></i><i></i><i></i></span>
+        <div class="login-brand-name">growthcooks<span style="color:#ff5a36">.</span></div>
       </div>
       <div class="login-divider"></div>
       <div class="login-title">Admin sign in</div>
@@ -1378,6 +1421,19 @@
     <div class="mmb-hint">The <strong>Base Pay</strong> and <strong>Bonus</strong> columns below apply to this month. To fix an earlier month, pick it here (e.g.&nbsp;June), changes save to that month's register only. Each month is independent, so fixing one never changes another.</div>
     <button class="btn btn-sm mmb-edit" onclick="openBonusTiersModal();return false;">Edit bonus amounts</button>
     <button class="btn btn-sm mmb-edit" onclick="openExtraBonusModal();return false;">Payment columns</button>
+  </div>
+
+  <div class="cutoff-control">
+    <div class="form-group">
+      <label class="form-label" for="posting-cutoff-hour">Yesterday logging closes at</label>
+      <select class="form-input" id="posting-cutoff-hour">
+        <option value="0">12 AM</option><option value="6">6 AM</option><option value="8">8 AM</option>
+        <option value="10">10 AM</option><option value="12">12 PM</option><option value="14">2 PM</option>
+        <option value="15">3 PM</option><option value="18">6 PM</option><option value="24">Midnight</option>
+      </select>
+    </div>
+    <button class="btn btn-sm btn-primary" type="button" onclick="savePostingCutoff()">Save cutoff time</button>
+    <span id="posting-cutoff-status" style="font-size:12px;color:var(--text2)">Loading current time...</span>
   </div>
 
   <div class="manage-tabs">
@@ -1800,7 +1856,7 @@ function yesterdayStr() {
 // it lifts itself once that date passes, so nobody has to remember to undo
 // it. These two lines must match the same two in Code.gs — the server has the
 // real say, this only decides what the creator is offered.
-const GRACE_CUTOFF_HOUR = 10;
+let GRACE_CUTOFF_HOUR = 10;
 const GRACE_EXTENSION_DATE = '2026-09-06';
 const GRACE_EXTENSION_HOUR = 24; // 24 = midnight, i.e. the whole of that day
 
@@ -2123,9 +2179,8 @@ function loadRows(attempt, forName) {
     // former pay/reference path available, but never start it alongside the
     // new one-response dashboard request.
     if (data && data.rows && !receivedDashboard) {
-      const modal = document.getElementById('creator-modal');
-      const openFor = document.getElementById('modal-name');
-      if (modal && modal.classList.contains('open') && openFor && openFor.textContent === name) {
+      const openFor = document.getElementById('creator-dashboard-name');
+      if (currentPage === 'creator-dashboard' && openFor && openFor.textContent === name) {
         loadMyPay(name, function() { loadBonusTiers(function() { loadBonusCategories(); }); });
       }
     }
@@ -2644,6 +2699,7 @@ function verifyCreatorPin() {
     creatorAccessName = name;
     creatorAccessKey = data.creatorKey || '';
     creatorAccessMode = data.accessMode || 'active';
+    if (Number.isFinite(Number(data.cutoffHour))) GRACE_CUTOFF_HOUR = Number(data.cutoffHour);
     creatorProfile = data.profile || { name:name, instagram:'', tiktok:'', facebook:'', complete:false };
     document.getElementById('creator-pin-panel').style.display = 'none';
     document.getElementById('creator-secure-content').style.display = 'block';
@@ -2677,7 +2733,7 @@ function applyCreatorAccessMode() {
 
 function creatorPinHelp() {
   const err = document.getElementById('creator-pin-error');
-  err.textContent = 'Ask the NorthQuest admin to reset your PIN. The old PIN stops working immediately after a reset.';
+  err.textContent = 'Ask the Growthcooks admin to reset your PIN. The old PIN stops working immediately after a reset.';
   err.classList.add('show');
 }
 
@@ -2698,10 +2754,9 @@ function showCreatorSection(section, button) {
 function openMyProfile() {
   const name = document.getElementById('f-name').value.trim();
   if (!name || !creatorIsUnlocked(name)) return;
-  document.getElementById('modal-name').textContent = name;
-  document.getElementById('modal-sub').textContent = 'Account profile';
-  document.getElementById('modal-body').innerHTML = creatorProfileCardHtml();
-  document.getElementById('creator-modal').classList.add('open');
+  document.getElementById('creator-profile-name').textContent = name;
+  document.getElementById('creator-profile-body').innerHTML = creatorProfileCardHtml();
+  showPage('creator-profile');
 }
 
 // ── NAME CHANGE, update status banner + post cards ──
@@ -3239,8 +3294,8 @@ function refreshAll() {
   // If "View my logs" is open, keep it in step with whatever allRows just
   // became — including a load that just failed while the creator was
   // looking at it, which must show the warning, not a suddenly empty month.
-  const openFor = document.getElementById('modal-name');
-  if (!isAdmin && document.getElementById('creator-modal').classList.contains('open') &&
+  const openFor = document.getElementById('creator-dashboard-name');
+  if (!isAdmin && currentPage === 'creator-dashboard' &&
       openFor && openFor.textContent) {
     renderMyLogs(openFor.textContent);
   }
@@ -3454,6 +3509,7 @@ function openMyLogsForMonth(ym) {
   const name = document.getElementById('f-name').value.trim();
   if (!name) return;
   openCreatorDashboardMonth = ym;
+  showPage('creator-dashboard');
   loadRowsIfStale(); // refresh in the background so the view is as current as possible
   renderMyLogs(name, ym);
   // Current backends return logs, this creator's pay, tiers and custom payment
@@ -3476,8 +3532,8 @@ function loadMyPay(name, done) {
       allPayments = others.concat(data.payments);
       if (data.rate && parseFloat(data.rate) > 0) myOwnRate = { name: name, rate: parseFloat(data.rate) };
       // Only redraw if this creator's modal is still the one on screen.
-      const openFor = document.getElementById('modal-name');
-      if (document.getElementById('creator-modal').classList.contains('open') &&
+      const openFor = document.getElementById('creator-dashboard-name');
+      if (currentPage === 'creator-dashboard' &&
           openFor && openFor.textContent === name) {
         renderMyLogs(name);
       }
@@ -3519,15 +3575,17 @@ function saveCreatorProfile() {
 }
 
 function renderMyLogs(name, requestedMonth) {
+  const pageName = document.getElementById('creator-dashboard-name');
+  const pageSub = document.getElementById('creator-dashboard-sub');
+  const pageBody = document.getElementById('creator-dashboard-body');
   // Show what we actually know, not a guess dressed up as fact. Without this,
   // a failed load on a weak connection renders every day this month as "not
   // logged" and every pay figure as zero — indistinguishable from a creator
   // who genuinely did nothing, which is exactly the false alarm reported.
   if (rowsLoadFailed) {
-    document.getElementById('modal-name').textContent = name;
-    document.getElementById('modal-sub').textContent = 'Your posting record';
-    document.getElementById('modal-body').innerHTML = loadFailedBannerHtml();
-    document.getElementById('creator-modal').classList.add('open');
+    pageName.textContent = name;
+    pageSub.textContent = 'Your posting record';
+    pageBody.innerHTML = loadFailedBannerHtml();
     return;
   }
   // Same reasoning while the rows are still on their way — and equally when
@@ -3536,13 +3594,12 @@ function renderMyLogs(name, requestedMonth) {
   // has in fact logged 28 videos is the most alarming thing this screen can
   // do, and it is not even true yet.
   if (!dataLoaded || rowsAreForSomeoneElse(name)) {
-    document.getElementById('modal-name').textContent = name;
-    document.getElementById('modal-sub').textContent = 'Your posting record';
-    document.getElementById('modal-body').innerHTML =
+    pageName.textContent = name;
+    pageSub.textContent = 'Your posting record';
+    pageBody.innerHTML =
       '<div class="empty-state" style="padding:36px 16px"><span class="spinner"></span>' +
       '<div id="mylog-waiting" style="margin-top:12px;color:var(--text2);font-size:13px">' +
       escH(waitingMessage()) + '</div></div>';
-    document.getElementById('creator-modal').classList.add('open');
     return;
   }
   const today = todayStr();
@@ -3638,9 +3695,9 @@ function renderMyLogs(name, requestedMonth) {
       '<button type="button" onclick="closeModalDirect(); startLogYesterday();">Log yesterday\'s videos</button></div>'
     : '';
 
-  document.getElementById('modal-name').textContent = name;
-  document.getElementById('modal-sub').textContent = 'Your posting record, ' + monthLabel(ym);
-  document.getElementById('modal-body').innerHTML =
+  pageName.textContent = name;
+  pageSub.textContent = 'Your posting record, ' + monthLabel(ym);
+  pageBody.innerHTML =
     graceHtml +
     '<div class="mylog-summary">' +
       '<div class="mylog-stat">' + adminChip + '<div class="v">' + monthRows.length + '</div><div class="l">Videos logged</div>' + adminNote + '</div>' +
@@ -3663,9 +3720,7 @@ function renderMyLogs(name, requestedMonth) {
     // Everything above added up, stated once so it needs no working out.
     '<div class="mylog-total"><span class="mt-l">Total</span>' +
       '<span class="mt-v">&#8358;' + Math.round(totalPayable).toLocaleString('en-NG') + '</span></div>' +
-    creatorProfileCardHtml() +
     '<div class="month-block"><div class="month-block-header"><span class="month-block-name">' + monthLabel(ym) + '</span><span class="month-block-total">' + monthRows.length + ' of ' + maxVideos + ' videos</span></div>' + dayRowsHtml.join('') + '</div>';
-  document.getElementById('creator-modal').classList.add('open');
 }
 
 function renderDashboard() {
@@ -3982,21 +4037,21 @@ function waMessages(c) {
   msgs.push({
     label: 'Contract follow-up',
     text: c.contractSigned
-      ? 'Hi ' + first + ', this is the NorthQuest team. We have your contract signature on file but haven\'t received the signed PDF copy yet, could you upload it when you get a chance? Let us know if you\'re stuck on any of the signing steps.'
-      : 'Hi ' + first + ', this is the NorthQuest team. We don\'t see your signed contract yet, could you complete the signing steps and upload it when you get a chance? Let us know if you need any help.'
+      ? 'Hi ' + first + ', this is the Growthcooks team. We have your contract signature on file but haven\'t received the signed PDF copy yet, could you upload it when you get a chance? Let us know if you\'re stuck on any of the signing steps.'
+      : 'Hi ' + first + ', this is the Growthcooks team. We don\'t see your signed contract yet, could you complete the signing steps and upload it when you get a chance? Let us know if you need any help.'
   });
   msgs.push({
     label: 'Request account details',
-    text: 'Hi ' + first + ', this is the NorthQuest team. Could you send your bank name, account number, and account name so we can confirm your payment details are correct? Thank you!'
+    text: 'Hi ' + first + ', this is the Growthcooks team. Could you send your bank name, account number, and account name so we can confirm your payment details are correct? Thank you!'
   });
   msgs.push({
     label: 'General check-in',
-    text: 'Hi ' + first + ', this is the NorthQuest team, just checking in, how are things going? Let us know if you need anything.'
+    text: 'Hi ' + first + ', this is the Growthcooks team, just checking in, how are things going? Let us know if you need anything.'
   });
   if (!isActive) {
     msgs.push({
       label: 'Message a former creator',
-      text: 'Hi ' + first + ', this is the NorthQuest team reaching out.'
+      text: 'Hi ' + first + ', this is the Growthcooks team reaching out.'
     });
   }
   return msgs;
@@ -5351,7 +5406,7 @@ function exportPaymentsCSV() {
   });
 
   nqDownloadXlsx(
-    'NQ Payment Register - ' + monthLabel(selectedPayMonth) + '.xlsx',
+    'Growthcooks Payment Register - ' + monthLabel(selectedPayMonth) + '.xlsx',
     monthLabel(selectedPayMonth),
     R,
     [6, 28, 12, 14, 14, 16, 16, ...extraCats.map(() => 16), 16, 18, 18, 22, 14, 14, 24]);
@@ -5683,7 +5738,7 @@ function exportViewLogCSV(grain) {
   const blob = new Blob([csv], { type:'text/csv;charset=utf-8' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
-  a.href = url; a.download = 'NQ View Log - ' + grain + ' - ' + label + '.csv';
+  a.href = url; a.download = 'Growthcooks View Log - ' + grain + ' - ' + label + '.csv';
   document.body.appendChild(a); a.click(); document.body.removeChild(a);
   URL.revokeObjectURL(url);
 }
@@ -5864,7 +5919,7 @@ function renderCreatorProfiles() {
       '<td>' + profileLinkCell(c.instagram) + '</td><td>' + profileLinkCell(c.tiktok) + '</td><td>' + profileLinkCell(c.facebook) + '</td>' +
       '<td><span class="badge ' + (linkCount ? 'badge-p1' : 'badge-p2') + '">' + linkCount + ' of 3 saved</span></td>' +
       '<td>' + (c.pinActive ? 'PIN active' : '<span style="color:var(--amber);font-weight:700">No PIN</span>') + '</td>' +
-      '<td><button class="btn btn-sm" onclick="setCreatorPinByIndex(' + index + ')">' + (c.pinActive ? 'Reset PIN' : 'Set PIN') + '</button></td></tr>';
+      '<td><button class="btn btn-sm" onclick="setCreatorPinByIndex(' + index + ')">' + (c.pinActive ? 'Generate new PIN' : 'Generate PIN') + '</button></td></tr>';
   }).join('');
 }
 
@@ -5898,14 +5953,35 @@ function setCreatorPinByIndex(index) {
 }
 
 function setCreatorPin(name) {
-  const pin = prompt('Enter a new six-digit PIN for ' + name + '. The old PIN will stop working immediately.');
-  if (pin === null) return;
-  if (!/^\d{6}$/.test(String(pin).trim())) { alert('The PIN must contain exactly six digits.'); return; }
-  jsonp({ action:'setCreatorPin', name:name, pin:String(pin).trim() }, function(data, err) {
+  if (!confirm('Generate a new six-digit PIN for ' + name + '? Any previous PIN will stop working immediately.')) return;
+  jsonp({ action:'generateCreatorPin', name:name }, function(data, err) {
     if (!data || data.status !== 'success') { alert((data && data.message) || 'Could not save the PIN. Please try again.'); return; }
-    alert('New PIN saved for ' + name + '. Share it privately with that creator.');
+    const pin = String(data.pin || '');
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(pin).catch(function(){});
+    prompt('New PIN for ' + name + '. It has also been copied. Share it privately.', pin);
     creatorProfilesLoaded = false;
     loadCreatorProfiles(true);
+  }, 30000);
+}
+
+function loadPostingCutoff() {
+  const status = document.getElementById('posting-cutoff-status');
+  jsonp({ action:'getPostingCutoff' }, function(data) {
+    if (!data || data.status !== 'success') { if (status) status.textContent = 'Could not load the current cutoff.'; return; }
+    const select = document.getElementById('posting-cutoff-hour');
+    if (select) select.value = String(data.hour);
+    if (status) status.textContent = 'Currently closes at ' + data.label + ' (Lagos time).';
+  }, 30000);
+}
+
+function savePostingCutoff() {
+  const select = document.getElementById('posting-cutoff-hour');
+  const status = document.getElementById('posting-cutoff-status');
+  const hour = select ? select.value : '10';
+  if (status) status.textContent = 'Saving...';
+  jsonp({ action:'setPostingCutoff', hour:hour }, function(data) {
+    if (!data || data.status !== 'success') { if (status) status.textContent = (data && data.message) || 'Could not save the cutoff.'; return; }
+    if (status) status.textContent = 'Saved. Yesterday logging closes at ' + data.label + ' (Lagos time).';
   }, 30000);
 }
 
@@ -6000,7 +6076,7 @@ function renderNav() {
   const product = document.getElementById('brand-product-name');
   const mark = document.querySelector('.creator-brand-mark');
   if (isAdmin) {
-    if (wordmark) wordmark.textContent = 'Northquest Finance';
+    if (wordmark) wordmark.textContent = 'Growthcooks';
     if (product) product.textContent = 'Admin Workspace';
     if (mark) mark.style.display = 'none';
     c.innerHTML =
@@ -6047,13 +6123,13 @@ function showPage(name) {
   if (name==='weekly') renderWeeklyGrid();
   if (name==='detailed') { renderMonthTabs(); renderDetailedLog(); }
   if (name==='dashboard') renderDashboard();
-  if (name==='manage') renderManageCreators();
+  if (name==='manage') { renderManageCreators(); loadPostingCutoff(); }
   if (name==='profiles') loadCreatorProfiles();
   if (name==='analytics') { analyticsDateDefaults(); loadCreatorProfiles(); }
   if (name==='payments') renderPayments();
   if (name==='views') populateViewsNameDropdown();
   if (name==='viewlog') { loadViewLogAdmin(); }
-  if (name==='intake') document.title = 'NorthQuest Creator Onboarding';
+  document.title = name === 'intake' ? 'Growthcooks Creator Onboarding' : 'Growthcooks Creator Posting Tracker';
   window.scrollTo({ top: 0, behavior: 'instant' });
 }
 
@@ -6074,7 +6150,6 @@ function filterTableRows(inputId, tbodyId) {
 </script>
 </body>
 </html>
-
 
 
 
