@@ -1139,8 +1139,12 @@
     </div>
 
     <div id="creator-secure-content" style="display:none">
+      <div class="today-status s-unknown" id="creator-readonly-notice" style="display:none">
+        <span class="s-icon">&#128274;</span>
+        <span>You can view your dashboard, but logging and account changes are now closed.</span>
+      </div>
       <nav class="creator-tabs" id="creator-tabs" aria-label="Creator pages">
-        <button class="active" type="button" onclick="showCreatorSection('post',this)">Log a post</button>
+        <button class="active" id="creator-post-tab" type="button" onclick="showCreatorSection('post',this)">Log a post</button>
         <button type="button" onclick="openMyLogs(); setCreatorTab(this)">My dashboard</button>
         <button type="button" onclick="openMyProfile(); setCreatorTab(this)">Account profile</button>
       </nav>
@@ -1596,7 +1600,7 @@ const safeStorage = {
 };
 
 let allRows = [], allCreators = [], allPayments = [];
-let creatorAccessName = '', creatorAccessKey = '';
+let creatorAccessName = '', creatorAccessKey = '', creatorAccessMode = '';
 let creatorProfile = { name:'', instagram:'', tiktok:'', facebook:'', complete:false };
 let creatorProfiles = [], creatorProfilesLoaded = false, creatorProfilesLoadInFlight = false, creatorProfilesSummary = null;
 let weekOffset = 0, selectedMonth = null, selectedPayMonth = null;
@@ -2501,7 +2505,7 @@ function loadCreators(attempt) {
 }
 
 function getActiveCreators() {
-  return allCreators.filter(c => String(c.status).toLowerCase() === 'active').map(c => c.name).sort();
+  return allCreators.filter(c => String(c.accessMode || (String(c.status).toLowerCase() === 'active' ? 'active' : 'hidden')) !== 'hidden').map(c => c.name).sort();
 }
 
 // ── TOAST ──
@@ -2606,6 +2610,7 @@ function creatorIsUnlocked(name) {
 function resetCreatorAccess() {
   creatorAccessName = '';
   creatorAccessKey = '';
+  creatorAccessMode = '';
   creatorProfile = { name:'', instagram:'', tiktok:'', facebook:'', complete:false };
   const pin = document.getElementById('creator-pin');
   const err = document.getElementById('creator-pin-error');
@@ -2638,10 +2643,13 @@ function verifyCreatorPin() {
     }
     creatorAccessName = name;
     creatorAccessKey = data.creatorKey || '';
+    creatorAccessMode = data.accessMode || 'active';
     creatorProfile = data.profile || { name:name, instagram:'', tiktok:'', facebook:'', complete:false };
     document.getElementById('creator-pin-panel').style.display = 'none';
     document.getElementById('creator-secure-content').style.display = 'block';
-    showCreatorSection('post', document.querySelector('#creator-tabs button'));
+    applyCreatorAccessMode();
+    if (creatorAccessMode === 'readOnly') openMyLogs();
+    else showCreatorSection('post', document.querySelector('#creator-tabs button'));
     rememberMe(name);
     loadRowsIfStale();
     onNameChange(false);
@@ -2649,6 +2657,22 @@ function verifyCreatorPin() {
       showToast('success', 'PIN accepted', 'Please add the profile links you use from My Dashboard.');
     }
   }, 30000);
+}
+
+function applyCreatorAccessMode() {
+  const readOnly = creatorAccessMode === 'readOnly';
+  const notice = document.getElementById('creator-readonly-notice');
+  const postTab = document.getElementById('creator-post-tab');
+  const profileTab = document.querySelector('#creator-tabs button:nth-child(3)');
+  const fields = document.getElementById('form-fields');
+  const dateGroup = document.getElementById('date-toggle') && document.getElementById('date-toggle').closest('.form-group');
+  const postGroup = document.getElementById('post-cards') && document.getElementById('post-cards').closest('.form-group');
+  if (notice) notice.style.display = readOnly ? '' : 'none';
+  if (postTab) { postTab.disabled = readOnly; postTab.style.display = readOnly ? 'none' : ''; }
+  if (profileTab) { profileTab.disabled = readOnly; profileTab.style.display = readOnly ? 'none' : ''; }
+  if (dateGroup) dateGroup.style.display = readOnly ? 'none' : '';
+  if (postGroup) postGroup.style.display = readOnly ? 'none' : '';
+  if (fields) fields.style.display = readOnly ? 'none' : '';
 }
 
 function creatorPinHelp() {
@@ -2935,6 +2959,11 @@ function submitLog() {
   const issues = document.getElementById('f-issues').value.trim();
 
   document.getElementById('f-alert').classList.remove('show');
+
+  if (creatorAccessMode === 'readOnly') {
+    showError('Your account is read-only. You can view your dashboard, but you cannot log new videos.');
+    return;
+  }
 
   if (!name)           { showError('Please select your name from the list.'); return; }
   if (!post)           { showError('Something went wrong. Please refresh the page and try again.'); return; }

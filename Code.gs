@@ -629,7 +629,7 @@ var NQ_ADMIN_ACTIONS = [
   'setCreatorBank', 'savePayment', 'deletePaymentRow', 'getPayments', 'setBonusTiers',
   'setContractResolved', 'getViewLog', 'getIgStatus', 'getIgInsights',
   'setBonusCategories', 'getAdminBootstrap', 'getAdminShell', 'getAdminMonth',
-  'getCreatorProfiles', 'setCreatorPin', 'runCreatorAnalytics', 'getBonusLedger'
+  'getCreatorProfiles', 'setCreatorPin', 'generateMissingCreatorPins', 'runCreatorAnalytics', 'getBonusLedger'
 ];
 var NQ_CREATOR_ACTIONS = ['submit', 'checkPost', 'get', 'getMyPay', 'getCreatorProfile', 'saveCreatorProfile'];
 
@@ -680,7 +680,7 @@ var NQ_CREATOR_PROFILES_SHEET = 'Creator Profiles';
 var NQ_BONUS_LEDGER_SHEET = 'Bonus Ledger';
 
 function nqSheetWithHeaders_(name, headers) {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var ss = getSpreadsheet_();
   var sh = ss.getSheetByName(name);
   if (!sh) sh = ss.insertSheet(name);
   if (sh.getLastRow() === 0) sh.getRange(1, 1, 1, headers.length).setValues([headers]);
@@ -726,14 +726,71 @@ function nqCreatorAccessRecord_(name) {
   return null;
 }
 
+function nqCreatorAccessRecordsMap_() {
+  var values = nqAccessSheet_().getDataRange().getValues();
+  var records = {};
+  for (var i = 1; i < values.length; i++) {
+    var name = String(values[i][0] || '').trim();
+    var key = name.toLowerCase();
+    if (!key || records[key]) continue;
+    records[key] = { row: i + 1, name: name, salt: String(values[i][1] || ''),
+      hash: String(values[i][2] || ''), status: String(values[i][3] || '') };
+  }
+  return records;
+}
+
 function nqCreatorKey_(rec) {
   var secret = PropertiesService.getScriptProperties().getProperty('CREATOR_KEY_SECRET') || nqAdminPass_();
   return nqDigest_('creator|' + rec.name.toLowerCase() + '|' + rec.hash + '|' + secret);
 }
 
+function nqCreatorVisibleUntil_(left) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(String(left || ''))) return '';
+  var y = Number(left.substring(0, 4));
+  var m = Number(left.substring(5, 7)) + 1;
+  if (m > 12) { m = 1; y++; }
+  return y + '-' + String(m).padStart(2, '0') + '-10';
+}
+
+function nqCreatorAccessMode_(status, left, today) {
+  if (String(status || 'Active').toLowerCase() === 'active') return 'active';
+  var visibleUntil = nqCreatorVisibleUntil_(left);
+  return visibleUntil && String(today || '') <= visibleUntil ? 'readOnly' : 'hidden';
+}
+
+// A deactivated creator keeps read-only access through the 10th day of the
+// following month. From the 11th onward they disappear from the public roster.
+// The Left Date in Creators column 22 is authoritative; older inactive rows
+// without that date stay hidden rather than receiving an indefinite grace.
+function nqCreatorRosterAccess_(name, now) {
+  var wanted = String(name || '').trim().toLowerCase();
+  if (!wanted) return { mode: 'hidden', left: '', visibleUntil: '' };
+  var values = getCreatorsSheet().getDataRange().getValues();
+  for (var i = 1; i < values.length; i++) {
+    if (String(values[i][0] || '').trim().toLowerCase() !== wanted) continue;
+    var status = String(values[i][1] || 'Active').toLowerCase();
+    if (status === 'active') return { mode: 'active', left: '', visibleUntil: '' };
+    var leftRaw = values[i][21];
+    var left = leftRaw instanceof Date
+      ? Utilities.formatDate(leftRaw, 'Africa/Lagos', 'yyyy-MM-dd')
+      : String(leftRaw || '').substring(0, 10);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(left)) return { mode: 'hidden', left: '', visibleUntil: '' };
+    var today = Utilities.formatDate(now || new Date(), 'Africa/Lagos', 'yyyy-MM-dd');
+    var visibleUntil = nqCreatorVisibleUntil_(left);
+    return { mode: nqCreatorAccessMode_(status, left, today), left: left, visibleUntil: visibleUntil };
+  }
+  return { mode: 'hidden', left: '', visibleUntil: '' };
+}
+
 function nqIsCreator_(params) {
   var rec = nqCreatorAccessRecord_(params && params.name);
-  return !!rec && rec.status.toLowerCase() === 'active' && String((params && params.creatorKey) || '') === nqCreatorKey_(rec);
+  var access = nqCreatorRosterAccess_(params && params.name);
+  return !!rec && rec.status.toLowerCase() === 'active' && access.mode !== 'hidden' &&
+    String((params && params.creatorKey) || '') === nqCreatorKey_(rec);
+}
+
+function nqCreatorCanWrite_(params) {
+  return nqIsCreator_(params) && nqCreatorRosterAccess_(params && params.name).mode === 'active';
 }
 
 function nqProfileRecord_(name) {
@@ -749,6 +806,19 @@ function nqProfileRecord_(name) {
   return { row: 0, name: String(name || '').trim(), instagram: '', tiktok: '', facebook: '', updatedAt: '' };
 }
 
+function nqProfileRecordsMap_() {
+  var values = nqProfilesSheet_().getDataRange().getValues();
+  var records = {};
+  for (var i = 1; i < values.length; i++) {
+    var name = String(values[i][0] || '').trim();
+    var key = name.toLowerCase();
+    if (!key || records[key]) continue;
+    records[key] = { row: i + 1, name: name, instagram: String(values[i][1] || ''),
+      tiktok: String(values[i][2] || ''), facebook: String(values[i][3] || ''), updatedAt: values[i][4] || '' };
+  }
+  return records;
+}
+
 function nqPublicProfile_(rec) {
   return { name: rec.name, instagram: rec.instagram, tiktok: rec.tiktok, facebook: rec.facebook,
     hasAny: !!(rec.instagram || rec.tiktok || rec.facebook),
@@ -761,8 +831,11 @@ function handleVerifyCreatorPin(params) {
   if (!/^\d{6}$/.test(pin)) return { status: 'error', message: 'Enter the six-digit PIN.' };
   var rec = nqCreatorAccessRecord_(name);
   if (!rec || rec.status.toLowerCase() !== 'active') return { status: 'not_configured', message: 'Your PIN has not been set yet. Please contact the NorthQuest admin.' };
+  var rosterAccess = nqCreatorRosterAccess_(name);
+  if (rosterAccess.mode === 'hidden') return { status: 'denied', message: 'This creator account is no longer available.' };
   if (nqPinHash_(rec.salt, pin) !== rec.hash) return { status: 'denied', message: 'That PIN is not correct.' };
-  return { status: 'success', creatorKey: nqCreatorKey_(rec), profile: nqPublicProfile_(nqProfileRecord_(name)) };
+  return { status: 'success', creatorKey: nqCreatorKey_(rec), accessMode: rosterAccess.mode,
+    visibleUntil: rosterAccess.visibleUntil, profile: nqPublicProfile_(nqProfileRecord_(name)) };
 }
 
 function handleSetCreatorPin(params) {
@@ -771,7 +844,8 @@ function handleSetCreatorPin(params) {
   if (!name) return { status: 'error', message: 'Creator name is required.' };
   if (!/^\d{6}$/.test(pin)) return { status: 'error', message: 'PIN must contain exactly six digits.' };
   var creatorExists = (handleGetCreators(true).creators || []).some(function(c) {
-    return String(c.name || '').trim().toLowerCase() === name.toLowerCase();
+    return String(c.status || '').toLowerCase() !== 'inactive' &&
+      String(c.name || '').trim().toLowerCase() === name.toLowerCase();
   });
   if (!creatorExists) return { status: 'error', message: 'Choose a creator from the current creator list.' };
   var sh = nqAccessSheet_();
@@ -780,6 +854,42 @@ function handleSetCreatorPin(params) {
   var row = [[name, salt, nqPinHash_(salt, pin), 'Active', new Date()]];
   if (rec) sh.getRange(rec.row, 1, 1, 5).setValues(row); else sh.appendRow(row[0]);
   return { status: 'success', name: name };
+}
+
+function nqRandomPin_() {
+  var bytes = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256,
+    Utilities.getUuid() + '|' + new Date().getTime() + '|' + Math.random());
+  var value = 0;
+  for (var i = 0; i < 6; i++) value = (value * 256 + (bytes[i] & 255)) % 900000;
+  return String(value + 100000);
+}
+
+function handleGenerateMissingCreatorPins() {
+  var seen = {};
+  var roster = (handleGetCreators(true).creators || []).filter(function(c) {
+    var key = String(c.name || '').trim().toLowerCase();
+    if (!key || seen[key] || String(c.status || '').toLowerCase() === 'inactive') return false;
+    seen[key] = true;
+    return true;
+  });
+  var sh = nqAccessSheet_();
+  var access = nqCreatorAccessRecordsMap_();
+  var rows = [], replacements = [], issued = [];
+  roster.forEach(function(c) {
+    var name = String(c.name || '').trim();
+    var key = name.toLowerCase();
+    var existing = access[key];
+    if (existing && existing.status.toLowerCase() === 'active') return;
+    var pin = nqRandomPin_();
+    var row = [name, Utilities.getUuid(), '', 'Active', new Date()];
+    row[2] = nqPinHash_(row[1], pin);
+    if (existing) replacements.push({ row: existing.row, values: row });
+    else rows.push(row);
+    issued.push({ name: name, pin: pin });
+  });
+  replacements.forEach(function(item) { sh.getRange(item.row, 1, 1, 5).setValues([item.values]); });
+  if (rows.length) sh.getRange(sh.getLastRow() + 1, 1, rows.length, 5).setValues(rows);
+  return { status: 'success', issued: issued, generated: issued.length };
 }
 
 function nqValidProfileUrl_(value, host) {
@@ -795,7 +905,7 @@ function handleGetCreatorProfile(params) {
 }
 
 function handleSaveCreatorProfile(params) {
-  if (!nqIsCreator_(params)) return { status: 'denied', message: 'Please enter your PIN again.' };
+  if (!nqCreatorCanWrite_(params)) return { status: 'denied', message: 'This dashboard is read-only.' };
   var name = String(params.name || '').trim();
   var instagram = String(params.instagram || '').trim();
   var tiktok = String(params.tiktok || '').trim();
@@ -811,15 +921,32 @@ function handleSaveCreatorProfile(params) {
 }
 
 function handleGetCreatorProfiles() {
-  var roster = handleGetCreators(true).creators || [];
-  var out = roster.map(function(c) {
-    var p = nqProfileRecord_(c.name);
-    var a = nqCreatorAccessRecord_(c.name);
-    return { name: c.name, status: c.status, instagram: p.instagram, tiktok: p.tiktok, facebook: p.facebook,
-      hasAny: !!(p.instagram || p.tiktok || p.facebook), complete: !!(p.instagram && p.tiktok && p.facebook),
-      pinActive: !!(a && a.status.toLowerCase() === 'active'), updatedAt: p.updatedAt };
+  var seen = {};
+  var roster = (handleGetCreators(true).creators || []).filter(function(c) {
+    var key = String(c.name || '').trim().toLowerCase();
+    if (!key || seen[key] || String(c.status || '').toLowerCase() === 'inactive') return false;
+    seen[key] = true;
+    return true;
   });
-  return { status: 'success', creators: out };
+  var profiles = nqProfileRecordsMap_();
+  var access = nqCreatorAccessRecordsMap_();
+  var withLinks = 0, complete = 0, pinReady = 0;
+  var out = roster.map(function(c) {
+    var key = String(c.name || '').trim().toLowerCase();
+    var p = profiles[key] || { instagram: '', tiktok: '', facebook: '', updatedAt: '' };
+    var a = access[key] || null;
+    var hasAny = !!(p.instagram || p.tiktok || p.facebook);
+    var isComplete = !!(p.instagram && p.tiktok && p.facebook);
+    var isPinReady = !!(a && a.status.toLowerCase() === 'active');
+    if (hasAny) withLinks++;
+    if (isComplete) complete++;
+    if (isPinReady) pinReady++;
+    return { name: c.name, status: c.status, instagram: p.instagram, tiktok: p.tiktok, facebook: p.facebook,
+      hasAny: hasAny, complete: isComplete, pinActive: isPinReady, updatedAt: p.updatedAt };
+  });
+  return { status: 'success', creators: out, summary: { active: out.length, withLinks: withLinks,
+    missingLinks: out.length - withLinks, complete: complete, pinReady: pinReady,
+    missingPins: out.length - pinReady } };
 }
 
 function handleGetBonusLedger(params) {
@@ -1085,6 +1212,7 @@ function doGet(e) {
     if (action === 'adminLogin') result = handleAdminLogin(e.parameter);
     else if (NQ_ADMIN_ACTIONS.indexOf(action) >= 0 && !nqIsAdmin_(e)) result = { status: 'denied', message: 'Admin only. Please sign in from the Admin login page.' };
     else if (NQ_CREATOR_ACTIONS.indexOf(action) >= 0 && !nqIsAdmin_(e) && !nqIsCreator_(e.parameter)) result = { status: 'denied', message: 'Please select your name and enter your PIN again.' };
+    else if (action === 'submit' && !nqIsAdmin_(e) && !nqCreatorCanWrite_(e.parameter)) result = { status: 'blocked', message: 'Your account is read-only. You can view your dashboard, but you cannot log new videos.' };
     else if (action === 'submit') result = handleSubmit(e.parameter);
     else if (action === 'checkPost') result = handleCheckPost(e.parameter);
     else if (action === 'get') result = handleGet(e.parameter);
@@ -1118,6 +1246,7 @@ function doGet(e) {
     else if (action === 'saveCreatorProfile') result = handleSaveCreatorProfile(e.parameter);
     else if (action === 'getCreatorProfiles') result = handleGetCreatorProfiles();
     else if (action === 'setCreatorPin') result = handleSetCreatorPin(e.parameter);
+    else if (action === 'generateMissingCreatorPins') result = handleGenerateMissingCreatorPins();
     else if (action === 'runCreatorAnalytics') result = handleRunCreatorAnalytics(e.parameter);
     else if (action === 'getBonusLedger') result = handleGetBonusLedger(e.parameter);
     else result = { status: 'error', message: 'Unknown action' };
@@ -2539,13 +2668,30 @@ function handleGetCreators(isAdmin) {
     if (cached) return cached;
     const sheet = getCreatorsSheet();
     const lastRow = sheet.getLastRow();
-    const publicData = lastRow > 1 ? sheet.getRange(2, 1, lastRow - 1, 3).getValues() : [];
+    const publicData = lastRow > 1 ? sheet.getRange(2, 1, lastRow - 1, 22).getValues() : [];
     const publicCreators = [];
     for (let i = 0; i < publicData.length; i++) {
       if (!publicData[i][0]) continue;
+      const status = String(publicData[i][1] || 'Active');
+      let accessMode = status.toLowerCase() === 'active' ? 'active' : 'hidden';
+      let left = '';
+      let visibleUntil = '';
+      if (accessMode !== 'active') {
+        const leftRaw = publicData[i][21];
+        left = leftRaw instanceof Date ? Utilities.formatDate(leftRaw, 'Africa/Lagos', 'yyyy-MM-dd') : String(leftRaw || '').substring(0, 10);
+        if (/^\d{4}-\d{2}-\d{2}$/.test(left)) {
+          visibleUntil = nqCreatorVisibleUntil_(left);
+          const today = Utilities.formatDate(new Date(), 'Africa/Lagos', 'yyyy-MM-dd');
+          accessMode = nqCreatorAccessMode_(status, left, today);
+        }
+      }
+      if (accessMode === 'hidden') continue;
       publicCreators.push({
         name: String(publicData[i][0]).trim(),
-        status: String(publicData[i][1] || 'Active'),
+        status: status,
+        accessMode: accessMode,
+        left: left,
+        visibleUntil: visibleUntil,
         added: publicData[i][2] instanceof Date ? Utilities.formatDate(publicData[i][2], 'Africa/Lagos', 'yyyy-MM-dd') : String(publicData[i][2] || '')
       });
     }
@@ -4731,5 +4877,6 @@ function fixBackdatedTimestamps() {
   }
   Logger.log('======================================================');
 }
+
 
 
