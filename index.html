@@ -1343,6 +1343,12 @@
       <label class="form-label">End date <input class="form-input" id="analytics-end" type="date"></label>
       <button class="btn btn-primary" id="analytics-test-btn" onclick="runAnalyticsTest()" style="width:auto">Run analytics</button>
     </div>
+    <div id="analytics-roster-summary" class="analytics-summary" style="display:none"></div>
+    <div class="section-head" style="margin-top:18px">
+      <span class="section-title" style="font-size:16px">Creators included</span>
+      <span class="page-search-wrap"><input class="page-search-input" id="analytics-roster-search" type="text" placeholder="Search creators..." oninput="filterTableRows('analytics-roster-search','analytics-roster-body')" autocomplete="off"></span>
+    </div>
+    <div class="pay-wrap"><table class="pay-table"><thead><tr><th>Creator</th><th>Instagram</th><th>TikTok</th><th>Facebook</th><th>Ready to scrape</th></tr></thead><tbody id="analytics-roster-body"><tr><td colspan="5" class="empty-state"><span class="spinner"></span></td></tr></tbody></table></div>
     <div id="analytics-test-status"></div>
     <div id="analytics-summary" class="analytics-summary" style="display:none"></div>
     <div id="analytics-results" class="analytics-results" style="display:none"></div>
@@ -1473,7 +1479,7 @@ const safeStorage = {
 let allRows = [], allCreators = [], allPayments = [];
 let creatorAccessName = '', creatorAccessKey = '';
 let creatorProfile = { name:'', instagram:'', tiktok:'', facebook:'', complete:false };
-let creatorProfiles = [], creatorProfilesLoaded = false;
+let creatorProfiles = [], creatorProfilesLoaded = false, creatorProfilesLoadInFlight = false, creatorProfilesSummary = null;
 let weekOffset = 0, selectedMonth = null, selectedPayMonth = null;
 // Which month the Manage Creators bonus column reads and writes. Null means
 // "the current month", which is what it always used to be locked to.
@@ -5634,11 +5640,16 @@ function logout() {
 }
 
 function loadCreatorProfiles(force) {
-  if (creatorProfilesLoaded && !force) { renderCreatorProfiles(); return; }
+  if (creatorProfilesLoaded && !force) { renderCreatorProfiles(); renderAnalyticsRoster(); return; }
+  if (creatorProfilesLoadInFlight && !force) return;
+  creatorProfilesLoadInFlight = true;
   const body = document.getElementById('profiles-body');
+  const analyticsBody = document.getElementById('analytics-roster-body');
   if (body) body.innerHTML = '<tr><td colspan="7" class="empty-state"><span class="spinner"></span></td></tr>';
-  jsonp({ action:'getCreatorProfiles', _bust:Date.now() }, function(data, err) {
+  if (analyticsBody) analyticsBody.innerHTML = '<tr><td colspan="5" class="empty-state"><span class="spinner"></span></td></tr>';
+  function finish(data, err, attempt) {
     if (data && data.status === 'denied') {
+      creatorProfilesLoadInFlight = false;
       isAdmin = false;
       adminKey = '';
       safeStorage.removeSession(SESSION_KEY);
@@ -5648,13 +5659,23 @@ function loadCreatorProfiles(force) {
       return;
     }
     if (!data || data.status !== 'success') {
+      if (attempt < 1) {
+        jsonp({ action:'getCreatorProfiles', _bust:Date.now() }, function(retryData, retryErr) { finish(retryData, retryErr, attempt + 1); }, 60000);
+        return;
+      }
+      creatorProfilesLoadInFlight = false;
       if (body) body.innerHTML = '<tr><td colspan="7" class="empty-state"><strong>Could not load creator profiles</strong><button class="s-retry" onclick="loadCreatorProfiles(true)">Try again</button></td></tr>';
+      if (analyticsBody) analyticsBody.innerHTML = '<tr><td colspan="5" class="empty-state"><strong>Creator list did not load</strong><button class="s-retry" onclick="loadCreatorProfiles(true)">Try again</button></td></tr>';
       return;
     }
     creatorProfiles = data.creators || [];
+    creatorProfilesSummary = data.summary || null;
     creatorProfilesLoaded = true;
+    creatorProfilesLoadInFlight = false;
     renderCreatorProfiles();
-  }, 60000);
+    renderAnalyticsRoster();
+  }
+  jsonp({ action:'getCreatorProfiles', _bust:Date.now() }, function(data, err) { finish(data, err, 0); }, 60000);
 }
 
 function profileLinkCell(url) {
@@ -5672,6 +5693,30 @@ function renderCreatorProfiles() {
       '<td><span class="badge ' + (linkCount ? 'badge-p1' : 'badge-p2') + '">' + linkCount + ' of 3 saved</span></td>' +
       '<td>' + (c.pinActive ? 'PIN active' : '<span style="color:var(--amber);font-weight:700">No PIN</span>') + '</td>' +
       '<td><button class="btn btn-sm" onclick="setCreatorPinByIndex(' + index + ')">' + (c.pinActive ? 'Reset PIN' : 'Set PIN') + '</button></td></tr>';
+  }).join('');
+}
+
+function renderAnalyticsRoster() {
+  const body = document.getElementById('analytics-roster-body');
+  const summary = document.getElementById('analytics-roster-summary');
+  if (!body || !summary) return;
+  const withLinks = creatorProfiles.filter(c => c.hasAny).length;
+  const missingLinks = creatorProfiles.length - withLinks;
+  const pinReady = creatorProfiles.filter(c => c.pinActive).length;
+  summary.style.display = 'grid';
+  summary.innerHTML = '<div><strong>' + creatorProfiles.length + '</strong>Active creators</div>' +
+    '<div><strong>' + withLinks + '</strong>With profile links</div>' +
+    '<div><strong>' + missingLinks + '</strong>Missing all links</div>' +
+    '<div><strong>' + pinReady + '</strong>PIN ready</div>';
+  if (!creatorProfiles.length) {
+    body.innerHTML = '<tr><td colspan="5" class="empty-state">No active creators found</td></tr>';
+    return;
+  }
+  body.innerHTML = creatorProfiles.map(function(c) {
+    const links = [c.instagram,c.tiktok,c.facebook].filter(Boolean).length;
+    return '<tr data-creator="' + escH(c.name) + '"><td><strong>' + escH(c.name) + '</strong></td>' +
+      '<td>' + (c.instagram ? 'Saved' : 'Missing') + '</td><td>' + (c.tiktok ? 'Saved' : 'Missing') + '</td><td>' + (c.facebook ? 'Saved' : 'Missing') + '</td>' +
+      '<td><span class="badge ' + (links ? 'badge-p1' : 'badge-p2') + '">' + (links ? links + ' profile' + (links === 1 ? '' : 's') : 'No profiles') + '</span></td></tr>';
   }).join('');
 }
 
@@ -5848,6 +5893,7 @@ function filterTableRows(inputId, tbodyId) {
 </script>
 </body>
 </html>
+
 
 
 
