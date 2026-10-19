@@ -904,6 +904,87 @@
     .mylog-vrow .post-chip { font-size:9.5px; }
     .modal-body { padding:18px 14px; }
   }
+
+  /* APPROVED CREATOR EXPERIENCE — Growth Cooks visual language, creator pages only. */
+  body:not(.is-admin-page) { background:#f4f0e7; color:#0e0e0d; }
+  body:not(.is-admin-page) .header {
+    position:relative; height:72px; max-width:1180px; margin:18px auto 0;
+    border:2px solid #11110f; border-radius:28px; box-shadow:none;
+    background:#fffdf8; padding:0 24px;
+  }
+  .creator-brand { display:flex; align-items:center; gap:10px; min-width:0; }
+  .creator-brand-mark { display:flex; align-items:flex-end; gap:3px; height:27px; }
+  .creator-brand-mark i { display:block; width:7px; border-radius:7px 7px 1px 1px; transform:rotate(-5deg); }
+  .creator-brand-mark i:nth-child(1) { height:16px; background:#ff5a36; }
+  .creator-brand-mark i:nth-child(2) { height:25px; background:#f4bd2e; }
+  .creator-brand-mark i:nth-child(3) { height:20px; background:#15543f; }
+  .creator-wordmark { font-size:22px; font-weight:700; letter-spacing:-1.2px; white-space:nowrap; }
+  .creator-wordmark em { color:#ff5a36; font-style:normal; }
+  .creator-product-name { margin-left:auto; font-size:11px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; white-space:nowrap; }
+  body:not(.is-admin-page) .main { max-width:760px; padding:62px 18px 40px; }
+  body:not(.is-admin-page) #page-submit .welcome-banner {
+    border:0; margin:0 0 18px; padding:0;
+  }
+  body:not(.is-admin-page) #page-submit .welcome-greeting,
+  body:not(.is-admin-page) #page-submit .welcome-sub,
+  body:not(.is-admin-page) #page-submit .form-title,
+  body:not(.is-admin-page) #page-submit .form-subtitle,
+  body:not(.is-admin-page) #page-submit .top-row { display:none; }
+  body:not(.is-admin-page) #page-submit .welcome-title {
+    font-family:'IBM Plex Sans',sans-serif; font-size:clamp(40px,8vw,68px);
+    line-height:.98; letter-spacing:-.055em; margin:0 0 28px; color:#0e0e0d;
+  }
+  body:not(.is-admin-page) #submit-form-card {
+    padding:34px; border:2px solid #11110f; border-radius:28px;
+    box-shadow:10px 10px 0 #11110f; background:#fffdf8;
+  }
+  body:not(.is-admin-page) #submit-form-card > .form-group:first-of-type > .form-label { display:none; }
+  body:not(.is-admin-page) #f-name,
+  body:not(.is-admin-page) #creator-pin {
+    min-height:58px; border:2px solid #11110f; border-radius:15px;
+    background:#fff; font-size:17px; color:#11110f;
+  }
+  body:not(.is-admin-page) #f-name {
+    appearance:none;
+    background-image:linear-gradient(45deg,transparent 50%,#111 50%),linear-gradient(135deg,#111 50%,transparent 50%);
+    background-position:calc(100% - 21px) 25px,calc(100% - 15px) 25px;
+    background-size:6px 6px,6px 6px; background-repeat:no-repeat; padding-right:48px;
+  }
+  body:not(.is-admin-page) .creator-pin-panel {
+    border:0; background:transparent; padding:18px 0 0; margin:0;
+  }
+  body:not(.is-admin-page) .creator-pin-row { display:block; }
+  body:not(.is-admin-page) .creator-pin-row .form-label { font-size:12px; letter-spacing:.08em; }
+  body:not(.is-admin-page) #creator-pin-btn {
+    width:100%!important; min-height:54px; margin-top:12px; border:2px solid #11110f;
+    border-radius:14px; background:#11110f; color:#fff; font-size:16px;
+  }
+  body:not(.is-admin-page) .creator-pin-help { color:#11110f; text-decoration:underline; }
+  .creator-tabs { display:none; gap:8px; margin:0 0 22px; justify-content:flex-start; flex-wrap:wrap; }
+  .creator-tabs button {
+    width:auto; min-height:42px; padding:9px 15px; border:1.7px solid #11110f;
+    border-radius:999px; background:#fff; color:#11110f; font:600 13px 'IBM Plex Sans',sans-serif; cursor:pointer;
+  }
+  .creator-tabs button.active { background:#d8ff37; }
+  body:not(.is-admin-page) #creator-secure-content #creator-tabs { display:flex; }
+  body:not(.is-admin-page) #view-logs-btn,
+  body:not(.is-admin-page) #view-previous-dashboard-btn { display:none!important; }
+  body:not(.is-admin-page) #creator-secure-content { border-top:1.5px solid #11110f; padding-top:22px; }
+  body:not(.is-admin-page) .mylog-stat .v,
+  body:not(.is-admin-page) .mylog-stat .l { font-weight:400; }
+  body:not(.is-admin-page) .modal-content { border:2px solid #11110f; border-radius:26px; background:#fffdf8; }
+
+  @media (max-width: 680px) {
+    body:not(.is-admin-page) .header { margin:10px 10px 0; height:60px; padding:0 14px; border-radius:22px; }
+    .creator-wordmark { font-size:18px; }
+    .creator-brand-mark { transform:scale(.86); transform-origin:left center; margin-right:-4px; }
+    .creator-product-name { font-size:8.5px; letter-spacing:.08em; }
+    body:not(.is-admin-page) .main { padding:42px 14px 30px; }
+    body:not(.is-admin-page) #submit-form-card { padding:25px 18px; border-radius:22px; box-shadow:7px 7px 0 #11110f; }
+    body:not(.is-admin-page) #page-submit .welcome-title { font-size:42px; margin-bottom:23px; }
+    .creator-tabs { gap:6px; }
+    .creator-tabs button { padding:8px 12px; font-size:12px; }
+  }
 </style>
 </head>
 <body>
@@ -921,17 +1002,16 @@
 </div>
 
 <header class="header" id="main-header">
-  <div class="header-brand">
-    <div>
-      <div class="header-title">Northquest Finance</div>
-      <div class="header-sub">Creator Posting Log</div>
-    </div>
+  <div class="header-brand creator-brand">
+    <span class="creator-brand-mark" aria-hidden="true"><i></i><i></i><i></i></span>
+    <span class="creator-wordmark" id="brand-wordmark">growthcooks<em>.</em></span>
   </div>
+  <div class="creator-product-name" id="brand-product-name">Creator Posting Tracker</div>
   <nav class="nav-tabs" id="nav-container"></nav>
 </header>
 
 <!-- CHOOSER -->
-<div id="page-chooser" class="page active main">
+<div id="page-chooser" class="page main">
   <div class="welcome-banner">
     <div class="welcome-greeting">Northquest Finance</div>
     <div class="welcome-title">Welcome, Creator</div>
@@ -983,11 +1063,9 @@
 </div>
 
 <!-- SUBMIT -->
-<div id="page-submit" class="page main">
+<div id="page-submit" class="page active main">
   <div class="welcome-banner">
-    <div class="welcome-greeting">Northquest Finance</div>
-    <div class="welcome-title">Welcome, Creator</div>
-    <div class="welcome-sub">Log your daily posts below.</div>
+    <div class="welcome-title">Welcome, Creator.</div>
   </div>
 
   <div class="form-card" id="submit-form-card">
@@ -1007,7 +1085,6 @@
 
     <!-- Name + today status -->
     <div class="form-group">
-      <label class="form-label">Your name</label>
       <select class="form-input" id="f-name" onchange="onNameChange(true)">
         <option value="">Select your name...</option>
       </select>
@@ -1025,6 +1102,11 @@
     </div>
 
     <div id="creator-secure-content" style="display:none">
+      <nav class="creator-tabs" id="creator-tabs" aria-label="Creator pages">
+        <button class="active" type="button" onclick="showCreatorSection('post',this)">Log a post</button>
+        <button type="button" onclick="openMyLogs(); setCreatorTab(this)">My dashboard</button>
+        <button type="button" onclick="openMyProfile(); setCreatorTab(this)">Account profile</button>
+      </nav>
       <div class="today-status s-none" id="today-status" style="display:none">
         <span class="s-icon" id="today-status-icon"></span>
         <span id="today-status-msg"></span>
@@ -1529,7 +1611,7 @@ function acceptBonusTierPayload(data) {
 }
 let bonusTiersLoaded = false;
 let payRowNames = [];
-let currentPage = 'chooser';
+let currentPage = 'submit';
 let renderPaymentsPending = false;
 let lastPayEditTime = 0;
 let lastBonusCatEditTime = 0;
@@ -2522,6 +2604,7 @@ function verifyCreatorPin() {
     creatorProfile = data.profile || { name:name, instagram:'', tiktok:'', facebook:'', complete:false };
     document.getElementById('creator-pin-panel').style.display = 'none';
     document.getElementById('creator-secure-content').style.display = 'block';
+    showCreatorSection('post', document.querySelector('#creator-tabs button'));
     rememberMe(name);
     loadRowsIfStale();
     onNameChange(false);
@@ -2535,6 +2618,29 @@ function creatorPinHelp() {
   const err = document.getElementById('creator-pin-error');
   err.textContent = 'Ask the NorthQuest admin to reset your PIN. The old PIN stops working immediately after a reset.';
   err.classList.add('show');
+}
+
+function setCreatorTab(button) {
+  document.querySelectorAll('#creator-tabs button').forEach(function(b) { b.classList.remove('active'); });
+  if (button) button.classList.add('active');
+}
+
+function showCreatorSection(section, button) {
+  setCreatorTab(button);
+  if (section === 'post') {
+    closeModalDirect();
+    const fields = document.getElementById('form-fields');
+    if (fields) fields.scrollIntoView({ behavior:'smooth', block:'start' });
+  }
+}
+
+function openMyProfile() {
+  const name = document.getElementById('f-name').value.trim();
+  if (!name || !creatorIsUnlocked(name)) return;
+  document.getElementById('modal-name').textContent = name;
+  document.getElementById('modal-sub').textContent = 'Account profile';
+  document.getElementById('modal-body').innerHTML = creatorProfileCardHtml();
+  document.getElementById('creator-modal').classList.add('open');
 }
 
 // ── NAME CHANGE, update status banner + post cards ──
@@ -5636,7 +5742,7 @@ function logout() {
   adminKey = '';
   safeStorage.removeSession(SESSION_KEY);
   safeStorage.removeSession(ADMIN_KEY_SESSION);
-  showPage('chooser');
+  showPage('submit');
 }
 
 function loadCreatorProfiles(force) {
@@ -5824,7 +5930,13 @@ function exportCreatorProfilesCSV() {
 
 function renderNav() {
   const c = document.getElementById('nav-container');
+  const wordmark = document.getElementById('brand-wordmark');
+  const product = document.getElementById('brand-product-name');
+  const mark = document.querySelector('.creator-brand-mark');
   if (isAdmin) {
+    if (wordmark) wordmark.textContent = 'Northquest Finance';
+    if (product) product.textContent = 'Admin Workspace';
+    if (mark) mark.style.display = 'none';
     c.innerHTML =
       '<button class="nav-tab ' + (currentPage==='weekly'?'active':'') + '" onclick="showPage(\'weekly\')">Daily log</button>' +
       '<button class="nav-tab ' + (currentPage==='detailed'?'active':'') + '" onclick="showPage(\'detailed\')">Detailed log</button>' +
@@ -5837,6 +5949,9 @@ function renderNav() {
       '<button class="nav-tab ' + (currentPage==='submit'?'active':'') + '" onclick="showPage(\'submit\')">Submit form</button>' +
       '<button class="logout-btn" onclick="logout()">Logout</button>';
   } else {
+    if (wordmark) wordmark.innerHTML = 'growthcooks<em>.</em>';
+    if (product) product.textContent = 'Creator Posting Tracker';
+    if (mark) mark.style.display = 'flex';
     c.innerHTML = '<button class="admin-btn" onclick="showPage(\'login\')">Admin login</button>';
   }
 }
