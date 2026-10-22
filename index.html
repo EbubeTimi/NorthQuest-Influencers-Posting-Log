@@ -1056,7 +1056,7 @@
     .creator-view-shell { padding:20px 16px; border-radius:20px; box-shadow:6px 6px 0 #11110f; }
     .creator-view-head { margin-bottom:18px; }
   }
-  .contract-party-fields{display:grid;gap:10px;margin:12px 0}.signature-choice{display:flex;gap:16px;flex-wrap:wrap;margin:12px 0;font-size:14px}.signature-choice label{display:flex;gap:6px;align-items:center}.signature-input{font-family:'Whisper','MonteCarlo',cursive;font-size:32px}#signature-canvas{width:100%;max-width:600px;height:160px;border:1px dashed #9aa89e;border-radius:10px;background:#fff;display:block;margin:10px 0}
+  .contract-party-fields{display:grid;gap:10px;margin:12px 0}.contract-preview{height:520px;border:1px solid #d9dfd8;border-radius:12px;overflow:hidden;background:#fff;margin:16px 0}.contract-preview iframe{width:100%;height:100%;border:0}.contract-preview-link{font-size:13px}.signature-choice{display:flex;gap:16px;flex-wrap:wrap;margin:12px 0;font-size:14px}.signature-choice label{display:flex;gap:6px;align-items:center}.signature-input{font-family:'Whisper','MonteCarlo',cursive;font-size:32px}#signature-canvas{width:100%;max-width:600px;height:160px;border:1px dashed #9aa89e;border-radius:10px;background:#fff;display:block;margin:10px 0}
   #page-profiles .pay-table,#page-analytics .pay-table{table-layout:fixed;width:100%}#page-profiles .pay-table th:nth-child(1){width:21%}#page-profiles .pay-table th:nth-child(2),#page-profiles .pay-table th:nth-child(3),#page-profiles .pay-table th:nth-child(4){width:10%}#page-profiles .pay-table th:nth-child(5){width:15%}#page-profiles .pay-table th:nth-child(6){width:10%}#page-profiles .pay-table th:nth-child(7){width:24%}#page-profiles .pay-table td,#page-profiles .pay-table th,#page-analytics .pay-table td,#page-analytics .pay-table th{vertical-align:middle;text-align:left;word-break:normal}#page-profiles .pay-table td:nth-child(2),#page-profiles .pay-table td:nth-child(3),#page-profiles .pay-table td:nth-child(4),#page-profiles .pay-table td:nth-child(5),#page-profiles .pay-table td:nth-child(6){text-align:center}
 </style>
 </head>
@@ -1184,6 +1184,8 @@
       <section class="existing-contract-gate" id="existing-contract-gate" style="display:none">
         <h2>Contract signature required</h2>
         <p>Please read and sign this updated agreement before using your creator dashboard.</p>
+        <div class="contract-preview"><iframe title="GrowthCooks creator agreement" src="https://docs.google.com/document/d/1sRf78TT53QyPSpZturT8yP2r_ljLiXVTpIgtvuZrDq8/preview"></iframe></div>
+        <p class="contract-preview-link"><a href="https://docs.google.com/document/d/1sRf78TT53QyPSpZturT8yP2r_ljLiXVTpIgtvuZrDq8/edit" target="_blank" rel="noopener">Open the contract in a new tab</a></p>
         <div style="padding:14px;background:var(--cream);line-height:1.55;font-size:13px">I agree to keep Growthcooks information, campaign materials, rates, and internal processes confidential. I will follow the creator posting and payment terms provided to me.</div>
         <label class="form-label" for="existing-contract-signature">Type your full legal name as your signature</label>
         <input class="form-input signature-input" id="existing-contract-signature" autocomplete="name" placeholder="Your full legal name" />
