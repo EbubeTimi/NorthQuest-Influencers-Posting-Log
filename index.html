@@ -1056,6 +1056,8 @@
     .creator-view-shell { padding:20px 16px; border-radius:20px; box-shadow:6px 6px 0 #11110f; }
     .creator-view-head { margin-bottom:18px; }
   }
+  .contract-party-fields{display:grid;gap:10px;margin:12px 0}.signature-choice{display:flex;gap:16px;flex-wrap:wrap;margin:12px 0;font-size:14px}.signature-choice label{display:flex;gap:6px;align-items:center}.signature-input{font-family:'Dancing Script','MonteCarlo','Whisper',cursive;font-size:28px}#signature-canvas{width:100%;max-width:600px;height:160px;border:1px dashed #9aa89e;border-radius:10px;background:#fff;display:block;margin:10px 0}
+  #page-profiles .pay-table,#page-analytics .pay-table{table-layout:fixed;width:100%}#page-profiles .pay-table th:nth-child(1){width:21%}#page-profiles .pay-table th:nth-child(2),#page-profiles .pay-table th:nth-child(3),#page-profiles .pay-table th:nth-child(4){width:10%}#page-profiles .pay-table th:nth-child(5){width:15%}#page-profiles .pay-table th:nth-child(6){width:10%}#page-profiles .pay-table th:nth-child(7){width:24%}#page-profiles .pay-table td,#page-profiles .pay-table th,#page-analytics .pay-table td,#page-analytics .pay-table th{vertical-align:middle;text-align:left;word-break:normal}#page-profiles .pay-table td:nth-child(2),#page-profiles .pay-table td:nth-child(3),#page-profiles .pay-table td:nth-child(4),#page-profiles .pay-table td:nth-child(5),#page-profiles .pay-table td:nth-child(6){text-align:center}
 </style>
 </head>
 <body>
@@ -1185,6 +1187,17 @@
         <div style="padding:14px;background:var(--cream);line-height:1.55;font-size:13px">I agree to keep Growthcooks information, campaign materials, rates, and internal processes confidential. I will follow the creator posting and payment terms provided to me.</div>
         <label class="form-label" for="existing-contract-signature">Type your full legal name as your signature</label>
         <input class="form-input signature-input" id="existing-contract-signature" autocomplete="name" placeholder="Your full legal name" />
+        <div class="contract-party-fields">
+          <input class="form-input" id="existing-contract-address" placeholder="Your full address" autocomplete="street-address" />
+          <input class="form-input" id="existing-contract-email" placeholder="Your email address" autocomplete="email" type="email" />
+          <input class="form-input" id="existing-contract-phone" placeholder="Your phone number" autocomplete="tel" />
+        </div>
+        <div class="signature-choice" role="group" aria-label="Signature style">
+          <label><input type="radio" name="signature-mode" value="cursive" checked /> Cursive signature</label>
+          <label><input type="radio" name="signature-mode" value="written" /> Written name</label>
+          <label><input type="radio" name="signature-mode" value="drawn" /> Draw signature</label>
+        </div>
+        <canvas id="signature-canvas" width="600" height="160" aria-label="Draw your signature"></canvas>
         <button class="btn btn-primary" type="button" onclick="signExistingCreatorContract()">Sign and continue</button>
         <div class="alert alert-error" id="existing-contract-error"></div>
       </section>
@@ -2803,7 +2816,16 @@ function signExistingCreatorContract() {
   const signature = String((document.getElementById('existing-contract-signature') || {}).value || '').trim();
   const error = document.getElementById('existing-contract-error');
   if (!signature) { error.textContent = 'Type your full legal name as your signature.'; error.classList.add('show'); return; }
-  jsonp({ action:'signExistingCreatorContract', name:creatorAccessName, pin:creatorSessionPin, signature:signature, signDate:new Date().toISOString().slice(0,10) }, function(data) {
+  const mode = (document.querySelector('input[name="signature-mode"]:checked') || {}).value || 'cursive';
+  const drawnSignature = mode === 'drawn' && document.getElementById('signature-canvas') ? document.getElementById('signature-canvas').toDataURL('image/png') : '';
+  const address = String((document.getElementById('existing-contract-address') || {}).value || '').trim();
+  const email = String((document.getElementById('existing-contract-email') || {}).value || '').trim();
+  const phone = String((document.getElementById('existing-contract-phone') || {}).value || '').trim();
+  if (!address || !email || !phone) { error.textContent = 'Please complete your address, email, and phone number.'; error.classList.add('show'); return; }
+  const button = document.querySelector('#existing-contract-gate button.btn-primary');
+  if (button) { button.disabled = true; button.textContent = 'Saving contract…'; }
+  jsonp({ action:'signExistingCreatorContract', name:creatorAccessName, pin:creatorSessionPin, signature:signature, drawnSignature:drawnSignature, signatureMode:mode, address:address, email:email, phone:phone, signDate:new Date().toISOString().slice(0,10) }, function(data) {
+    if (button) { button.disabled = false; button.textContent = 'Sign and continue'; }
     if (!data || data.status !== 'success') { error.textContent = (data && data.message) || 'Could not save your signature. Please try again.'; error.classList.add('show'); return; }
     document.getElementById('existing-contract-gate').style.display = 'none';
     document.getElementById('creator-tabs').style.display = '';
@@ -2812,6 +2834,16 @@ function signExistingCreatorContract() {
     showToast('success', 'Contract signed', 'Your dashboard is now available.');
   }, 30000);
 }
+
+(function initSignaturePad(){
+  const canvas=document.getElementById('signature-canvas'); if(!canvas) return;
+  const ctx=canvas.getContext('2d'); let drawing=false;
+  ctx.strokeStyle='#111'; ctx.lineWidth=2; ctx.lineCap='round';
+  function point(e){const r=canvas.getBoundingClientRect();return {x:(e.clientX-r.left)*canvas.width/r.width,y:(e.clientY-r.top)*canvas.height/r.height};}
+  canvas.addEventListener('pointerdown',e=>{drawing=true;const p=point(e);ctx.beginPath();ctx.moveTo(p.x,p.y);canvas.setPointerCapture(e.pointerId);});
+  canvas.addEventListener('pointermove',e=>{if(!drawing)return;const p=point(e);ctx.lineTo(p.x,p.y);ctx.stroke();});
+  canvas.addEventListener('pointerup',()=>{drawing=false;});
+})();
 
 function applyCreatorAccessMode() {
   const readOnly = creatorAccessMode === 'readOnly';
@@ -6071,8 +6103,11 @@ function nqRandomPinForAdmin() {
 
 function setCreatorPin(name) {
   if (!confirm('Generate a new six-digit PIN for ' + name + '? Any previous PIN will stop working immediately.')) return;
+  const row = document.querySelector('tr[data-creator="' + CSS.escape(name) + '"]');
+  const trigger = row && row.querySelector('button');
+  if (trigger) { trigger.disabled = true; trigger.textContent = 'Generating…'; }
   jsonp({ action:'setCreatorPin', name:name, pin:nqRandomPinForAdmin() }, function(data, err) {
-    if (!data || data.status !== 'success') { alert((data && data.message) || 'Could not save the PIN. Please try again.'); return; }
+    if (!data || data.status !== 'success') { if (trigger) { trigger.disabled = false; trigger.textContent = 'Generate new PIN'; } alert((data && data.message) || 'Could not save the PIN. Please try again.'); return; }
     const pin = String(data.pin || '');
     generatedCreatorPins[name] = pin;
     const creator = creatorProfiles.find(function(c) { return c.name === name; });
@@ -6339,7 +6374,6 @@ function filterTableRows(inputId, tbodyId) {
 </script>
 </body>
 </html>
-
 
 
 
