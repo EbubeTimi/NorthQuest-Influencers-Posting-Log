@@ -6029,7 +6029,7 @@ function renderCreatorProfiles() {
     return '<tr data-creator="' + escH(c.name) + '"><td><strong>' + escH(c.name) + '</strong></td>' +
       '<td>' + profileLinkCell(c.instagram) + '</td><td>' + profileLinkCell(c.tiktok) + '</td><td>' + profileLinkCell(c.facebook) + '</td>' +
       '<td><span class="badge ' + (linkCount ? 'badge-p1' : 'badge-p2') + '">' + linkCount + ' of 3 saved</span></td>' +
-      '<td>' + (c.pinActive ? 'PIN active' : '<span style="color:var(--amber);font-weight:700">No PIN</span>') + '</td>' +
+      '<td><span class="pin-state">' + (c.pinActive ? 'PIN active' : '<span style="color:var(--amber);font-weight:700">No PIN</span>') + '</span>' + (generatedCreatorPins[c.name] ? ' <code class="generated-pin">' + escH(generatedCreatorPins[c.name]) + '</code>' : '') + '</td>' +
       '<td><div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn btn-sm" onclick="setCreatorPinByIndex(' + index + ')">' + (c.pinActive ? 'Generate new PIN' : 'Generate PIN') + '</button>' +
       '<button class="btn btn-sm' + (generatedCreatorPins[c.name] ? ' btn-primary' : '') + '" ' + (generatedCreatorPins[c.name] ? '' : 'disabled ') + 'onclick="copyCreatorPin(' + index + ')">Copy PIN</button>' +
       '<button class="btn btn-sm' + (generatedCreatorPins[c.name] && toWaNumber(c.phone) ? ' btn-primary' : '') + '" ' + (generatedCreatorPins[c.name] && toWaNumber(c.phone) ? '' : 'disabled ') + 'onclick="sendCreatorPinViaWhatsApp(' + index + ')">Send PIN via WhatsApp</button></div></td></tr>';
