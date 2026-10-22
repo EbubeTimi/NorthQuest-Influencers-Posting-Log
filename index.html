@@ -6065,9 +6065,13 @@ function setCreatorPinByIndex(index) {
   if (creator) setCreatorPin(creator.name);
 }
 
+function nqRandomPinForAdmin() {
+  return String(Math.floor(100000 + Math.random() * 900000));
+}
+
 function setCreatorPin(name) {
   if (!confirm('Generate a new six-digit PIN for ' + name + '? Any previous PIN will stop working immediately.')) return;
-  jsonp({ action:'generateCreatorPin', name:name }, function(data, err) {
+  jsonp({ action:'setCreatorPin', name:name, pin:nqRandomPinForAdmin() }, function(data, err) {
     if (!data || data.status !== 'success') { alert((data && data.message) || 'Could not save the PIN. Please try again.'); return; }
     const pin = String(data.pin || '');
     generatedCreatorPins[name] = pin;
@@ -6335,6 +6339,7 @@ function filterTableRows(inputId, tbodyId) {
 </script>
 </body>
 </html>
+
 
 
 
