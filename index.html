@@ -1049,6 +1049,8 @@
   .cutoff-control { display:flex; align-items:end; gap:10px; flex-wrap:wrap; padding:14px 18px; margin:0 0 14px; border:1px solid var(--border); border-radius:var(--radius); background:var(--surface); }
   .cutoff-control .form-group { margin:0; min-width:210px; }
   .pin-result { margin-top:8px; padding:10px 12px; border:1px solid var(--accent); border-radius:8px; background:var(--accent-light); font-weight:700; }
+  .existing-contract-gate { margin:18px 0; padding:22px; border:1px solid var(--border); border-radius:14px; background:#fff; }
+  .existing-contract-gate textarea { width:100%; min-height:150px; margin:12px 0; padding:12px; border:1px solid var(--border); border-radius:8px; font:inherit; }
   @media (max-width:680px) {
     body:not(.is-admin-page) .creator-view-page { padding:24px 14px 34px; }
     .creator-view-shell { padding:20px 16px; border-radius:20px; box-shadow:6px 6px 0 #11110f; }
@@ -1177,6 +1179,15 @@
     </div>
 
     <div id="creator-secure-content" style="display:none">
+      <section class="existing-contract-gate" id="existing-contract-gate" style="display:none">
+        <h2>Contract signature required</h2>
+        <p>Please read and sign this updated agreement before using your creator dashboard.</p>
+        <div style="padding:14px;background:var(--cream);line-height:1.55;font-size:13px">I agree to keep Growthcooks information, campaign materials, rates, and internal processes confidential. I will follow the creator posting and payment terms provided to me.</div>
+        <label class="form-label" for="existing-contract-signature">Type your full legal name as your signature</label>
+        <input class="form-input signature-input" id="existing-contract-signature" autocomplete="name" placeholder="Your full legal name" />
+        <button class="btn btn-primary" type="button" onclick="signExistingCreatorContract()">Sign and continue</button>
+        <div class="alert alert-error" id="existing-contract-error"></div>
+      </section>
       <div class="today-status s-unknown" id="creator-readonly-notice" style="display:none">
         <span class="s-icon">&#128274;</span>
         <span>You can view your dashboard, but logging and account changes are now closed.</span>
@@ -1669,6 +1680,7 @@ let allRows = [], allCreators = [], allPayments = [];
 let creatorAccessName = '', creatorAccessKey = '', creatorAccessMode = '';
 let creatorProfile = { name:'', instagram:'', tiktok:'', facebook:'', complete:false };
 let creatorProfiles = [], creatorProfilesLoaded = false, creatorProfilesLoadInFlight = false, creatorProfilesSummary = null;
+let creatorSessionPin = '';
 let generatedCreatorPins = {};
 let weekOffset = 0, selectedMonth = null, selectedPayMonth = null;
 // Which month the Manage Creators bonus column reads and writes. Null means
@@ -2762,12 +2774,19 @@ function verifyCreatorPin(attempt) {
       err.classList.add('show'); return;
     }
     creatorAccessName = name;
+    creatorSessionPin = pin;
     creatorAccessKey = data.creatorKey || '';
     creatorAccessMode = data.accessMode || 'active';
     if (Number.isFinite(Number(data.cutoffHour))) GRACE_CUTOFF_HOUR = Number(data.cutoffHour);
     creatorProfile = data.profile || { name:name, instagram:'', tiktok:'', facebook:'', complete:false };
     document.getElementById('creator-pin-panel').style.display = 'none';
     document.getElementById('creator-secure-content').style.display = 'block';
+    if (data.contractRequired) {
+      document.getElementById('existing-contract-gate').style.display = 'block';
+      document.getElementById('creator-tabs').style.display = 'none';
+      document.getElementById('creator-post-panel').style.display = 'none';
+      return;
+    }
     applyCreatorAccessMode();
     if (creatorAccessMode === 'readOnly') openMyLogs();
     else showCreatorSection('post', document.querySelector('#creator-tabs button'));
@@ -2778,6 +2797,20 @@ function verifyCreatorPin(attempt) {
       showToast('success', 'PIN accepted', 'Please add the profile links you use from My Dashboard.');
     }
   }, 25000);
+}
+
+function signExistingCreatorContract() {
+  const signature = String((document.getElementById('existing-contract-signature') || {}).value || '').trim();
+  const error = document.getElementById('existing-contract-error');
+  if (!signature) { error.textContent = 'Type your full legal name as your signature.'; error.classList.add('show'); return; }
+  jsonp({ action:'signExistingCreatorContract', name:creatorAccessName, pin:creatorSessionPin, signature:signature, signDate:new Date().toISOString().slice(0,10) }, function(data) {
+    if (!data || data.status !== 'success') { error.textContent = (data && data.message) || 'Could not save your signature. Please try again.'; error.classList.add('show'); return; }
+    document.getElementById('existing-contract-gate').style.display = 'none';
+    document.getElementById('creator-tabs').style.display = '';
+    document.getElementById('creator-post-panel').style.display = '';
+    showCreatorSection('post', document.querySelector('#creator-tabs button'));
+    showToast('success', 'Contract signed', 'Your dashboard is now available.');
+  }, 30000);
 }
 
 function applyCreatorAccessMode() {
@@ -6302,7 +6335,6 @@ function filterTableRows(inputId, tbodyId) {
 </script>
 </body>
 </html>
-
 
 
 
