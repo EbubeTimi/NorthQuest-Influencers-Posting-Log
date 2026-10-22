@@ -1056,7 +1056,7 @@
     .creator-view-shell { padding:20px 16px; border-radius:20px; box-shadow:6px 6px 0 #11110f; }
     .creator-view-head { margin-bottom:18px; }
   }
-  .contract-party-fields{display:grid;gap:10px;margin:12px 0}.signature-choice{display:flex;gap:16px;flex-wrap:wrap;margin:12px 0;font-size:14px}.signature-choice label{display:flex;gap:6px;align-items:center}.signature-input{font-family:'Dancing Script','MonteCarlo','Whisper',cursive;font-size:28px}#signature-canvas{width:100%;max-width:600px;height:160px;border:1px dashed #9aa89e;border-radius:10px;background:#fff;display:block;margin:10px 0}
+  .contract-party-fields{display:grid;gap:10px;margin:12px 0}.signature-choice{display:flex;gap:16px;flex-wrap:wrap;margin:12px 0;font-size:14px}.signature-choice label{display:flex;gap:6px;align-items:center}.signature-input{font-family:'Whisper','MonteCarlo',cursive;font-size:32px}#signature-canvas{width:100%;max-width:600px;height:160px;border:1px dashed #9aa89e;border-radius:10px;background:#fff;display:block;margin:10px 0}
   #page-profiles .pay-table,#page-analytics .pay-table{table-layout:fixed;width:100%}#page-profiles .pay-table th:nth-child(1){width:21%}#page-profiles .pay-table th:nth-child(2),#page-profiles .pay-table th:nth-child(3),#page-profiles .pay-table th:nth-child(4){width:10%}#page-profiles .pay-table th:nth-child(5){width:15%}#page-profiles .pay-table th:nth-child(6){width:10%}#page-profiles .pay-table th:nth-child(7){width:24%}#page-profiles .pay-table td,#page-profiles .pay-table th,#page-analytics .pay-table td,#page-analytics .pay-table th{vertical-align:middle;text-align:left;word-break:normal}#page-profiles .pay-table td:nth-child(2),#page-profiles .pay-table td:nth-child(3),#page-profiles .pay-table td:nth-child(4),#page-profiles .pay-table td:nth-child(5),#page-profiles .pay-table td:nth-child(6){text-align:center}
 </style>
 </head>
@@ -1193,11 +1193,10 @@
           <input class="form-input" id="existing-contract-phone" placeholder="Your phone number" autocomplete="tel" />
         </div>
         <div class="signature-choice" role="group" aria-label="Signature style">
-          <label><input type="radio" name="signature-mode" value="cursive" checked /> Cursive signature</label>
-          <label><input type="radio" name="signature-mode" value="written" /> Written name</label>
+          <label><input type="radio" name="signature-mode" value="written" checked /> Type your name</label>
           <label><input type="radio" name="signature-mode" value="drawn" /> Draw signature</label>
         </div>
-        <canvas id="signature-canvas" width="600" height="160" aria-label="Draw your signature"></canvas>
+        <canvas id="signature-canvas" width="600" height="160" aria-label="Draw your signature" style="display:none;touch-action:none"></canvas>
         <button class="btn btn-primary" type="button" onclick="signExistingCreatorContract()">Sign and continue</button>
         <div class="alert alert-error" id="existing-contract-error"></div>
       </section>
@@ -2840,8 +2839,9 @@ function signExistingCreatorContract() {
   const ctx=canvas.getContext('2d'); let drawing=false;
   ctx.strokeStyle='#111'; ctx.lineWidth=2; ctx.lineCap='round';
   function point(e){const r=canvas.getBoundingClientRect();return {x:(e.clientX-r.left)*canvas.width/r.width,y:(e.clientY-r.top)*canvas.height/r.height};}
-  canvas.addEventListener('pointerdown',e=>{drawing=true;const p=point(e);ctx.beginPath();ctx.moveTo(p.x,p.y);canvas.setPointerCapture(e.pointerId);});
-  canvas.addEventListener('pointermove',e=>{if(!drawing)return;const p=point(e);ctx.lineTo(p.x,p.y);ctx.stroke();});
+  document.querySelectorAll('input[name="signature-mode"]').forEach(r=>r.addEventListener('change',()=>{canvas.style.display=r.checked&&r.value==='drawn'?'block':'none';}));
+  canvas.addEventListener('pointerdown',e=>{e.preventDefault();drawing=true;const p=point(e);ctx.beginPath();ctx.moveTo(p.x,p.y);canvas.setPointerCapture(e.pointerId);});
+  canvas.addEventListener('pointermove',e=>{e.preventDefault();if(!drawing)return;const p=point(e);ctx.lineTo(p.x,p.y);ctx.stroke();});
   canvas.addEventListener('pointerup',()=>{drawing=false;});
 })();
 
