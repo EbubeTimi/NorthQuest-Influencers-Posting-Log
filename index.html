@@ -1669,6 +1669,7 @@ let allRows = [], allCreators = [], allPayments = [];
 let creatorAccessName = '', creatorAccessKey = '', creatorAccessMode = '';
 let creatorProfile = { name:'', instagram:'', tiktok:'', facebook:'', complete:false };
 let creatorProfiles = [], creatorProfilesLoaded = false, creatorProfilesLoadInFlight = false, creatorProfilesSummary = null;
+let generatedCreatorPins = {};
 let weekOffset = 0, selectedMonth = null, selectedPayMonth = null;
 // Which month the Manage Creators bonus column reads and writes. Null means
 // "the current month", which is what it always used to be locked to.
@@ -5966,7 +5967,13 @@ function loadCreatorProfiles(force) {
       if (analyticsBody) analyticsBody.innerHTML = '<tr><td colspan="5" class="empty-state"><strong>Creator list did not load</strong><button class="s-retry" onclick="loadCreatorProfiles(true)">Try again</button></td></tr>';
       return;
     }
-    creatorProfiles = data.creators || [];
+    creatorProfiles = (data.creators || []).map(function(profile) {
+      var rosterCreator = allCreators.find(function(creator) {
+        return String(creator.name || '').trim().toLowerCase() === String(profile.name || '').trim().toLowerCase();
+      });
+      if (rosterCreator && rosterCreator.phone) profile.phone = rosterCreator.phone;
+      return profile;
+    });
     creatorProfilesSummary = data.summary || null;
     creatorProfilesLoaded = true;
     creatorProfilesLoadInFlight = false;
@@ -5990,7 +5997,8 @@ function renderCreatorProfiles() {
       '<td>' + profileLinkCell(c.instagram) + '</td><td>' + profileLinkCell(c.tiktok) + '</td><td>' + profileLinkCell(c.facebook) + '</td>' +
       '<td><span class="badge ' + (linkCount ? 'badge-p1' : 'badge-p2') + '">' + linkCount + ' of 3 saved</span></td>' +
       '<td>' + (c.pinActive ? 'PIN active' : '<span style="color:var(--amber);font-weight:700">No PIN</span>') + '</td>' +
-      '<td><button class="btn btn-sm" onclick="setCreatorPinByIndex(' + index + ')">' + (c.pinActive ? 'Generate new PIN' : 'Generate PIN') + '</button></td></tr>';
+      '<td><div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn btn-sm" onclick="setCreatorPinByIndex(' + index + ')">' + (c.pinActive ? 'Generate new PIN' : 'Generate PIN') + '</button>' +
+      '<button class="btn btn-sm' + (generatedCreatorPins[c.name] ? ' btn-primary' : '') + '" ' + (generatedCreatorPins[c.name] && toWaNumber(c.phone) ? '' : 'disabled ') + 'onclick="sendCreatorPinViaWhatsApp(' + index + ')">Send PIN via WhatsApp</button></div></td></tr>';
   }).join('');
 }
 
@@ -6028,13 +6036,24 @@ function setCreatorPin(name) {
   jsonp({ action:'generateCreatorPin', name:name }, function(data, err) {
     if (!data || data.status !== 'success') { alert((data && data.message) || 'Could not save the PIN. Please try again.'); return; }
     const pin = String(data.pin || '');
-    document.getElementById('generated-pin-name').textContent = name;
-    document.getElementById('generated-pin-value').textContent = pin;
-    document.getElementById('generated-pin-result').style.display = 'flex';
-    copyGeneratedPin();
-    creatorProfilesLoaded = false;
-    loadCreatorProfiles(true);
+    generatedCreatorPins[name] = pin;
+    const creator = creatorProfiles.find(function(c) { return c.name === name; });
+    if (creator) creator.pinActive = true;
+    renderCreatorProfiles();
+    showToast('success', 'PIN generated', toWaNumber(creator && creator.phone) ? 'Send it from this creator’s row.' : 'No WhatsApp number is saved for this creator.');
   }, 30000);
+}
+
+function sendCreatorPinViaWhatsApp(index) {
+  const creator = creatorProfiles[index];
+  if (!creator) return;
+  const pin = generatedCreatorPins[creator.name];
+  const phone = toWaNumber(creator.phone);
+  if (!pin) { showToast('error', 'Generate the PIN first', 'The WhatsApp button activates after a new PIN is generated.'); return; }
+  if (!phone) { showToast('error', 'No WhatsApp number', 'Add this creator’s phone number before sending their PIN.'); return; }
+  const first = String(creator.name || '').trim().split(/\s+/)[0] || 'Creator';
+  const message = 'Hi ' + first + ', this is the Growthcooks team. Your North Quest creator dashboard PIN is ' + pin + '. Please keep it private and do not share it.';
+  window.open('https://api.whatsapp.com/send/?phone=' + encodeURIComponent(phone) + '&text=' + encodeURIComponent(message), '_blank', 'noopener');
 }
 
 function copyGeneratedPin() {
