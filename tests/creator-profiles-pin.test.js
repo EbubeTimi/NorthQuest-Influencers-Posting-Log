@@ -83,6 +83,16 @@ test('admin can generate missing PINs once without replacing active PINs', () =>
   assert.match(appsScript, /CacheService\.getScriptCache\(\)/);
   assert.match(appsScript, /function nqSheetWithHeaders_\([\s\S]*?var ss = getSpreadsheet_\(\)/);
 });
+
+test('generated PIN opens the existing creator WhatsApp contact with a prefilled message', () => {
+  assert.match(html, /if \(rosterCreator && rosterCreator\.phone\) profile\.phone = rosterCreator\.phone/);
+  assert.match(html, /generatedCreatorPins/);
+  assert.match(html, /Send PIN via WhatsApp/);
+  assert.match(html, /function sendCreatorPinViaWhatsApp\(/);
+  assert.match(html, /https:\/\/api\.whatsapp\.com\/send\/\?phone=/);
+  assert.match(html, /Your North Quest creator dashboard PIN is/);
+  assert.doesNotMatch(html, /WhatsApp message prepared/);
+});
 test('Manage Creators payment changes create Lagos-dated bonus audit deltas', () => {
   assert.match(appsScript, /NQ_BONUS_LEDGER_SHEET/);
   assert.match(appsScript, /Utilities\.formatDate\(new Date\(\), 'Africa\/Lagos', 'yyyy-MM-dd'\)/);
