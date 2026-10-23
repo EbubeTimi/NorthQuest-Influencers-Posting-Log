@@ -1185,7 +1185,7 @@
         <h2>Contract signature required</h2>
         <p>Please read and sign this updated agreement before using your creator dashboard.</p>
         <div class="contract-preview"><iframe title="GrowthCooks creator agreement" src="https://docs.google.com/document/d/1sRf78TT53QyPSpZturT8yP2r_ljLiXVTpIgtvuZrDq8/preview"></iframe></div>
-        <p class="contract-preview-link"><a href="https://docs.google.com/document/d/1sRf78TT53QyPSpZturT8yP2r_ljLiXVTpIgtvuZrDq8/preview" target="_blank" rel="noopener">Open the read-only contract in a new tab</a></p>
+        <p class="contract-preview-link"><a href="https://docs.google.com/document/d/1sRf78TT53QyPSpZturT8yP2r_ljLiXVTpIgtvuZrDq8/preview" target="_blank" rel="noopener">Open the contract in a new tab</a></p>
         <div style="padding:14px;background:var(--cream);line-height:1.55;font-size:13px">I agree to keep Growthcooks information, campaign materials, rates, and internal processes confidential. I will follow the creator posting and payment terms provided to me.</div>
         <label class="form-label" for="existing-contract-signature">Type your full legal name as your signature</label>
         <input class="form-input signature-input" id="existing-contract-signature" autocomplete="name" placeholder="Your full legal name" />
@@ -2766,17 +2766,19 @@ function verifyCreatorPin(attempt, preservedName, preservedPin) {
     ? ['Retrying securely…', 'Fetching your details…', 'Fetching your posting log…', 'Fetching your rates…']
     : ['Checking your PIN…', 'Fetching your details…', 'Fetching your posting log…', 'Fetching your rates…'];
   let messageIndex = 0;
-  btn.disabled = true; btn.textContent = 'Please wait…';
-  progress.textContent = messages[0]; progress.classList.add('show');
+  btn.disabled = true; btn.textContent = messages[0];
+  progress.textContent = messages[0]; progress.classList.remove('show');
   const messageTimer = setInterval(function() {
     messageIndex = Math.min(messageIndex + 1, messages.length - 1);
+    btn.textContent = messages[messageIndex];
     progress.textContent = messages[messageIndex];
   }, 2200);
   err.classList.remove('show');
   jsonp({ action:'verifyCreatorPin', name:name, pin:pin, _bust:Date.now() }, function(data, networkError) {
     clearInterval(messageTimer);
     if (networkError && attempt < 1) {
-      progress.textContent = 'The connection is taking a little longer. Retrying securely…';
+      btn.textContent = 'Still connecting… retrying securely';
+      progress.textContent = 'Still connecting… retrying securely';
       setTimeout(function() { verifyCreatorPin(attempt + 1, name, pin); }, 650);
       return;
     }
