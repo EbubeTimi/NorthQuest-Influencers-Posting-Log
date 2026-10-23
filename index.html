@@ -8,9 +8,9 @@
 <meta http-equiv="Expires" content="0" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="theme-color" content="#1f5c3f" />
-<title>Northquest Posting Log</title>
+<title>Growthcooks Creator Posting Tracker</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=MonteCarlo&family=Playfair+Display:wght@600;700&display=swap');
 
   :root {
     /* Calmer warm-neutral/green system, approved on the creator-facing pages
@@ -820,6 +820,10 @@
   .creator-pin-row { display:flex; gap:8px; align-items:flex-end; }
   .creator-pin-row .form-group { margin:0; flex:1; }
   .creator-pin-help { border:0; background:transparent; color:var(--accent); padding:8px 0 0; cursor:pointer; font:inherit; }
+  .creator-pin-progress { display:none; margin-top:10px; color:var(--text2); font-size:12px; line-height:1.45; }
+  .creator-pin-progress.show { display:block; }
+  .creator-pin-progress::before { content:''; display:inline-block; width:7px; height:7px; margin-right:7px; border-radius:50%; background:#d8ff37; box-shadow:0 0 0 3px rgba(216,255,55,.22); animation:creatorPulse 1.2s ease-in-out infinite; }
+  @keyframes creatorPulse { 50% { opacity:.35; transform:scale(.72); } }
   .profile-card { border:1px solid var(--border); border-radius:12px; padding:16px; margin:0 0 18px; background:#fff; }
   .profile-card-head { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; }
   .profile-card-title { font-family:Georgia,serif; font-size:21px; font-weight:700; }
@@ -904,6 +908,156 @@
     .mylog-vrow .post-chip { font-size:9.5px; }
     .modal-body { padding:18px 14px; }
   }
+
+  /* APPROVED CREATOR EXPERIENCE — Growth Cooks visual language, creator pages only. */
+  body:not(.is-admin-page) { background:#f4f0e7; color:#0e0e0d; }
+  body:not(.is-admin-page) .header {
+    position:relative; height:72px; max-width:1180px; margin:18px auto 0;
+    border:0; border-radius:0; box-shadow:none;
+    background:transparent; padding:0 8px;
+  }
+  .creator-brand { display:flex; align-items:center; gap:10px; min-width:0; }
+  .creator-brand-mark { display:flex; align-items:flex-end; gap:3px; height:27px; }
+  .creator-brand-mark i { display:block; width:7px; border-radius:7px 7px 1px 1px; transform:rotate(-5deg); }
+  .creator-brand-mark i:nth-child(1) { height:16px; background:#ff5a36; }
+  .creator-brand-mark i:nth-child(2) { height:25px; background:#f4bd2e; }
+  .creator-brand-mark i:nth-child(3) { height:20px; background:#15543f; }
+  .creator-wordmark { font-size:22px; font-weight:700; letter-spacing:-1.2px; white-space:nowrap; }
+  .creator-wordmark em { color:#ff5a36; font-style:normal; }
+  .creator-product-name { margin-left:auto; font-size:11px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; white-space:nowrap; }
+  body:not(.is-admin-page) .main { max-width:760px; padding:62px 18px 40px; }
+  body:not(.is-admin-page) #page-submit .welcome-banner {
+    border:0; margin:0 0 18px; padding:0;
+  }
+  body:not(.is-admin-page) #page-submit .welcome-greeting,
+  body:not(.is-admin-page) #page-submit .welcome-sub,
+  body:not(.is-admin-page) #page-submit .form-title,
+  body:not(.is-admin-page) #page-submit .form-subtitle,
+  body:not(.is-admin-page) #page-submit .top-row { display:none; }
+  body:not(.is-admin-page) #page-submit .welcome-title {
+    font-family:'IBM Plex Sans',sans-serif; font-size:clamp(40px,8vw,68px);
+    line-height:.98; letter-spacing:-.055em; margin:0 0 28px; color:#0e0e0d;
+  }
+  body:not(.is-admin-page) #submit-form-card {
+    padding:34px; border:2px solid #11110f; border-radius:28px;
+    box-shadow:10px 10px 0 #11110f; background:#fffdf8;
+  }
+  body:not(.is-admin-page) #submit-form-card > .form-group:first-of-type > .form-label { display:none; }
+  body:not(.is-admin-page) #f-name,
+  body:not(.is-admin-page) #creator-pin {
+    min-height:58px; border:2px solid #11110f; border-radius:15px;
+    background:#fff; font-size:17px; color:#11110f;
+  }
+  body:not(.is-admin-page) .creator-pin-password { position:relative; }
+  body:not(.is-admin-page) .creator-pin-password #creator-pin { padding-right:54px; }
+  body:not(.is-admin-page) .creator-pin-password .password-toggle { right:8px; top:50%; transform:translateY(-50%); }
+  body:not(.is-admin-page) #f-name {
+    appearance:none;
+    background-image:linear-gradient(45deg,transparent 50%,#111 50%),linear-gradient(135deg,#111 50%,transparent 50%);
+    background-position:calc(100% - 21px) 25px,calc(100% - 15px) 25px;
+    background-size:6px 6px,6px 6px; background-repeat:no-repeat; padding-right:48px;
+  }
+  body:not(.is-admin-page) .creator-pin-panel {
+    border:0; background:transparent; padding:18px 0 0; margin:0;
+  }
+  body:not(.is-admin-page) .creator-pin-row { display:block; }
+  body:not(.is-admin-page) .creator-pin-row .form-label { font-size:12px; letter-spacing:.08em; }
+  body:not(.is-admin-page) #creator-pin-btn {
+    width:100%!important; min-height:54px; margin-top:12px; border:2px solid #11110f;
+    border-radius:14px; background:#11110f; color:#fff; font-size:16px;
+  }
+  body:not(.is-admin-page) .creator-pin-help { color:#11110f; text-decoration:underline; }
+  .creator-tabs { display:none; gap:8px; margin:0 0 22px; justify-content:flex-start; flex-wrap:wrap; }
+  .creator-tabs button {
+    width:auto; min-height:42px; padding:9px 15px; border:1.7px solid #11110f;
+    border-radius:999px; background:#fff; color:#11110f; font:600 13px 'IBM Plex Sans',sans-serif; cursor:pointer;
+  }
+  .creator-tabs button.active { background:#d8ff37; }
+  body:not(.is-admin-page) #creator-secure-content #creator-tabs { display:flex; }
+  .creator-workspace-panel { display:none; }
+  .creator-workspace-panel.active { display:block; }
+  .creator-inline-head { margin:0 0 18px; }
+  .creator-inline-head .creator-view-name { margin-bottom:4px; }
+  body:not(.is-admin-page) #view-logs-btn,
+  body:not(.is-admin-page) #view-previous-dashboard-btn { display:none!important; }
+  body:not(.is-admin-page) #creator-secure-content { border-top:1.5px solid #11110f; padding-top:22px; }
+  body:not(.is-admin-page) .mylog-stat .v,
+  body:not(.is-admin-page) .mylog-stat .l { font-weight:400; }
+  body:not(.is-admin-page) .modal-content { border:2px solid #11110f; border-radius:26px; background:#fffdf8; }
+  body:not(.is-admin-page) .admin-btn {
+    border:1.7px solid #11110f; border-radius:999px; color:#11110f;
+    background:transparent; padding:9px 15px; font-weight:600;
+  }
+  body:not(.is-admin-page) .admin-btn:hover { background:#11110f; color:#fff; border-color:#11110f; }
+
+  /* Admin entry belongs to the same product as creator sign-in. The workspace
+     after authentication remains unchanged; only this gateway shares the
+     approved Growth Cooks visual language. */
+  body:not(.is-admin-page) .login-screen {
+    min-height:calc(100vh - 100px); min-height:calc(100dvh - 100px);
+    align-items:flex-start; padding:74px 18px 32px; background:#f4f0e7;
+  }
+  body:not(.is-admin-page) .login-card {
+    max-width:620px; padding:36px; border:2px solid #11110f; border-radius:28px;
+    box-shadow:10px 10px 0 #11110f; background:#fffdf8;
+  }
+  body:not(.is-admin-page) .login-brand,
+  body:not(.is-admin-page) .login-divider { display:none; }
+  body:not(.is-admin-page) .login-title {
+    font-family:'IBM Plex Sans',sans-serif; text-align:left; font-size:clamp(34px,6vw,54px);
+    line-height:1; letter-spacing:-.045em; margin:0 0 12px;
+  }
+  body:not(.is-admin-page) .login-sub {
+    max-width:none; margin:0 0 28px; text-align:left; font-size:14px; color:#5d5a52;
+  }
+  body:not(.is-admin-page) .login-form .form-label { color:#11110f; }
+  body:not(.is-admin-page) #login-pass {
+    min-height:58px; border:2px solid #11110f; border-radius:15px; background:#fff; font-size:17px;
+  }
+  body:not(.is-admin-page) .login-form .btn-primary {
+    min-height:54px; border:2px solid #11110f; border-radius:14px;
+    background:#11110f; color:#fff; font-size:16px;
+  }
+  body:not(.is-admin-page) .back-link { text-align:left; color:#11110f; text-decoration:underline; }
+
+  @media (max-width: 680px) {
+    body:not(.is-admin-page) .header { margin:8px 10px 0; height:60px; padding:0 2px; }
+    .creator-wordmark { font-size:18px; }
+    .creator-brand-mark { transform:scale(.86); transform-origin:left center; margin-right:-4px; }
+    .creator-product-name { font-size:8.5px; letter-spacing:.08em; }
+    body:not(.is-admin-page) .main { padding:42px 14px 30px; }
+    body:not(.is-admin-page) #submit-form-card { padding:25px 18px; border-radius:22px; box-shadow:7px 7px 0 #11110f; }
+    body:not(.is-admin-page) #page-submit .welcome-title { font-size:42px; margin-bottom:23px; }
+    .creator-tabs { gap:6px; }
+    .creator-tabs button { padding:8px 12px; font-size:12px; }
+    body:not(.is-admin-page) .login-screen { padding:42px 14px 28px; }
+    body:not(.is-admin-page) .login-card { padding:28px 20px; border-radius:22px; box-shadow:7px 7px 0 #11110f; }
+  }
+
+  /* Creator dashboard and profile are page views, not overlays. */
+  body:not(.is-admin-page) .creator-view-page { max-width:920px; padding-top:36px; }
+  .creator-view-shell {
+    background:#fffdf8; border:2px solid #11110f; border-radius:24px;
+    box-shadow:8px 8px 0 #11110f; padding:26px; min-height:60vh;
+  }
+  .creator-view-head { display:flex; align-items:flex-start; justify-content:space-between; gap:18px; margin-bottom:24px; }
+  .creator-view-name { font-size:clamp(28px,5vw,46px); line-height:1; font-weight:750; letter-spacing:-.04em; }
+  .creator-view-sub { margin-top:8px; color:#5d5a52; font-size:15px; }
+  .creator-view-body .mylog-stat .v, .creator-view-body .mylog-stat .l { font-weight:500; }
+  .creator-view-body .profile-card { margin-top:0; }
+  .creator-back { border:2px solid #11110f; background:#fff; color:#11110f; border-radius:999px; padding:9px 15px; font:inherit; font-weight:650; cursor:pointer; }
+  .cutoff-control { display:flex; align-items:end; gap:10px; flex-wrap:wrap; padding:14px 18px; margin:0 0 14px; border:1px solid var(--border); border-radius:var(--radius); background:var(--surface); }
+  .cutoff-control .form-group { margin:0; min-width:210px; }
+  .pin-result { margin-top:8px; padding:10px 12px; border:1px solid var(--accent); border-radius:8px; background:var(--accent-light); font-weight:700; }
+  .existing-contract-gate { margin:18px 0; padding:22px; border:1px solid var(--border); border-radius:14px; background:#fff; }
+  .existing-contract-gate textarea { width:100%; min-height:150px; margin:12px 0; padding:12px; border:1px solid var(--border); border-radius:8px; font:inherit; }
+  @media (max-width:680px) {
+    body:not(.is-admin-page) .creator-view-page { padding:24px 14px 34px; }
+    .creator-view-shell { padding:20px 16px; border-radius:20px; box-shadow:6px 6px 0 #11110f; }
+    .creator-view-head { margin-bottom:18px; }
+  }
+  .contract-party-fields{display:grid;gap:10px;margin:12px 0}.contract-preview{height:520px;border:1px solid #d9dfd8;border-radius:12px;overflow:auto;background:#fff;margin:16px 0;padding:24px}.contract-copy{white-space:pre-wrap;font-family:Georgia,'Times New Roman',serif;font-size:15px;line-height:1.65;color:#171713}.contract-copy-loading{font-family:inherit;color:var(--text3)}.signature-input{font-family:'MonteCarlo',cursive;font-size:32px;font-weight:400;font-style:normal}
+  #page-profiles .pay-table,#page-analytics .pay-table{table-layout:fixed;width:100%}#page-profiles .pay-table th:nth-child(1){width:21%}#page-profiles .pay-table th:nth-child(2),#page-profiles .pay-table th:nth-child(3),#page-profiles .pay-table th:nth-child(4){width:10%}#page-profiles .pay-table th:nth-child(5){width:15%}#page-profiles .pay-table th:nth-child(6){width:10%}#page-profiles .pay-table th:nth-child(7){width:24%}#page-profiles .pay-table td,#page-profiles .pay-table th,#page-analytics .pay-table td,#page-analytics .pay-table th{vertical-align:middle;text-align:left;word-break:normal}#page-profiles .pay-table td:nth-child(2),#page-profiles .pay-table td:nth-child(3),#page-profiles .pay-table td:nth-child(4),#page-profiles .pay-table td:nth-child(5),#page-profiles .pay-table td:nth-child(6){text-align:center}
 </style>
 </head>
 <body>
@@ -921,19 +1075,18 @@
 </div>
 
 <header class="header" id="main-header">
-  <div class="header-brand">
-    <div>
-      <div class="header-title">Northquest Finance</div>
-      <div class="header-sub">Creator Posting Log</div>
-    </div>
+  <div class="header-brand creator-brand">
+    <span class="creator-brand-mark" aria-hidden="true"><i></i><i></i><i></i></span>
+    <span class="creator-wordmark" id="brand-wordmark">growthcooks<em>.</em></span>
   </div>
+  <div class="creator-product-name" id="brand-product-name">Creator Posting Tracker</div>
   <nav class="nav-tabs" id="nav-container"></nav>
 </header>
 
 <!-- CHOOSER -->
-<div id="page-chooser" class="page active main">
+<div id="page-chooser" class="page main">
   <div class="welcome-banner">
-    <div class="welcome-greeting">Northquest Finance</div>
+    <div class="welcome-greeting">Growthcooks</div>
     <div class="welcome-title">Welcome, Creator</div>
     <div class="welcome-sub">What would you like to do?</div>
   </div>
@@ -959,7 +1112,7 @@
 <!-- LOG MY VIEWS -->
 <div id="page-views" class="page main">
   <div class="welcome-banner">
-    <div class="welcome-greeting">Northquest Finance</div>
+    <div class="welcome-greeting">Growthcooks</div>
     <div class="welcome-title">Log my views</div>
     <div class="welcome-sub">Enter tonight's view count for today's and yesterday's videos.</div>
   </div>
@@ -983,11 +1136,9 @@
 </div>
 
 <!-- SUBMIT -->
-<div id="page-submit" class="page main">
+<div id="page-submit" class="page active main">
   <div class="welcome-banner">
-    <div class="welcome-greeting">Northquest Finance</div>
-    <div class="welcome-title">Welcome, Creator</div>
-    <div class="welcome-sub">Log your daily posts below.</div>
+    <div class="welcome-title">Welcome, Creator.</div>
   </div>
 
   <div class="form-card" id="submit-form-card">
@@ -1007,7 +1158,6 @@
 
     <!-- Name + today status -->
     <div class="form-group">
-      <label class="form-label">Your name</label>
       <select class="form-input" id="f-name" onchange="onNameChange(true)">
         <option value="">Select your name...</option>
       </select>
@@ -1015,16 +1165,46 @@
         <div class="creator-pin-row">
           <div class="form-group">
             <label class="form-label" for="creator-pin">Your six-digit PIN</label>
-            <input class="form-input" id="creator-pin" type="password" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="Enter PIN" onkeydown="if(event.key==='Enter')verifyCreatorPin()" />
+            <div class="creator-pin-password">
+              <input class="form-input" id="creator-pin" type="password" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="Enter PIN" onkeydown="if(event.key==='Enter')verifyCreatorPin()" />
+              <button class="password-toggle" id="creator-pin-toggle" onclick="toggleCreatorPinVisibility()" type="button" aria-label="Show PIN">
+                <svg id="creator-pin-eye-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
+              </button>
+            </div>
           </div>
           <button class="btn btn-primary" id="creator-pin-btn" type="button" onclick="verifyCreatorPin()" style="width:auto">Continue</button>
         </div>
         <button class="creator-pin-help" type="button" onclick="creatorPinHelp()">I forgot my PIN</button>
+        <div class="creator-pin-progress" id="creator-pin-progress" role="status" aria-live="polite"></div>
         <div class="alert alert-error" id="creator-pin-error"></div>
       </div>
     </div>
 
     <div id="creator-secure-content" style="display:none">
+      <section class="existing-contract-gate" id="existing-contract-gate" style="display:none">
+        <h2>Contract signature required</h2>
+        <p>Please read and sign this updated agreement before using your creator dashboard.</p>
+        <div class="contract-preview" tabindex="0" aria-label="Creator agreement"><div class="contract-copy contract-copy-loading" id="contract-copy">Loading your agreement…</div></div>
+        <label class="form-label" for="existing-contract-signature">Type your full legal name as your signature</label>
+        <input class="form-input signature-input" id="existing-contract-signature" autocomplete="name" placeholder="Your full legal name" />
+        <div class="contract-party-fields">
+          <input class="form-input" id="existing-contract-address" placeholder="Your full address" autocomplete="street-address" />
+          <input class="form-input" id="existing-contract-email" placeholder="Your email address" autocomplete="email" type="email" />
+          <input class="form-input" id="existing-contract-phone" placeholder="Your phone number" autocomplete="tel" />
+        </div>
+        <button class="btn btn-primary" type="button" onclick="signExistingCreatorContract()">Sign and continue</button>
+        <div class="alert alert-error" id="existing-contract-error"></div>
+      </section>
+      <div class="today-status s-unknown" id="creator-readonly-notice" style="display:none">
+        <span class="s-icon">&#128274;</span>
+        <span>You can view your dashboard, but logging and account changes are now closed.</span>
+      </div>
+      <nav class="creator-tabs" id="creator-tabs" aria-label="Creator pages">
+        <button class="active" id="creator-post-tab" type="button" onclick="showCreatorSection('post',this)">Log a post</button>
+        <button id="creator-dashboard-tab" type="button" onclick="openMyLogs()">My dashboard</button>
+        <button id="creator-profile-tab" type="button" onclick="openMyProfile()">Account profile</button>
+      </nav>
+      <div class="creator-workspace-panel active" id="creator-post-panel">
       <div class="today-status s-none" id="today-status" style="display:none">
         <span class="s-icon" id="today-status-icon"></span>
         <span id="today-status-msg"></span>
@@ -1108,6 +1288,15 @@
 
     <div class="alert alert-error" id="f-alert"></div>
       </div>
+      <section class="creator-workspace-panel" id="creator-dashboard-panel" aria-labelledby="creator-dashboard-name">
+        <div class="creator-inline-head"><div class="creator-view-name" id="creator-dashboard-name">Creator</div><div class="creator-view-sub" id="creator-dashboard-sub">Your posting record</div></div>
+        <div class="creator-view-body" id="creator-dashboard-body"></div>
+      </section>
+      <section class="creator-workspace-panel" id="creator-profile-panel" aria-labelledby="creator-profile-name">
+        <div class="creator-inline-head"><div class="creator-view-name" id="creator-profile-name">Creator</div><div class="creator-view-sub">Account profile</div></div>
+        <div class="creator-view-body" id="creator-profile-body"></div>
+      </section>
+      </div>
   </div>
 </div>
 
@@ -1116,8 +1305,8 @@
   <div class="login-screen">
     <div class="login-card">
       <div class="login-brand">
-        <div class="login-brand-logo">NQ</div>
-        <div class="login-brand-name">Northquest Finance</div>
+        <span class="creator-brand-mark" aria-hidden="true"><i></i><i></i><i></i></span>
+        <div class="login-brand-name">growthcooks<span style="color:#ff5a36">.</span></div>
       </div>
       <div class="login-divider"></div>
       <div class="login-title">Admin sign in</div>
@@ -1257,6 +1446,19 @@
     <button class="btn btn-sm mmb-edit" onclick="openExtraBonusModal();return false;">Payment columns</button>
   </div>
 
+  <div class="cutoff-control">
+    <div class="form-group">
+      <label class="form-label" for="posting-cutoff-hour">Yesterday logging closes at</label>
+      <select class="form-input" id="posting-cutoff-hour">
+        <option value="0">12 AM</option><option value="6">6 AM</option><option value="8">8 AM</option>
+        <option value="10">10 AM</option><option value="12">12 PM</option><option value="14">2 PM</option>
+        <option value="15">3 PM</option><option value="18">6 PM</option><option value="24">Midnight</option>
+      </select>
+    </div>
+    <button class="btn btn-sm btn-primary" type="button" onclick="savePostingCutoff()">Save cutoff time</button>
+    <span id="posting-cutoff-status" style="font-size:12px;color:var(--text2)">Loading current time...</span>
+  </div>
+
   <div class="manage-tabs">
     <button class="manage-tab active" id="mtab-active" onclick="setManageTab('active')">Active creators</button>
     <button class="manage-tab" id="mtab-inactive" onclick="setManageTab('inactive')">Deactivated creators</button>
@@ -1331,6 +1533,10 @@
   </div>
   <div style="font-size:12px;color:var(--text3);margin-bottom:12px">Profile links and creator access.</div>
   <div class="profiles-actions"><button class="btn btn-sm" onclick="loadCreatorProfiles(true)">&#x21BB; Refresh</button><button class="btn btn-sm" onclick="generateMissingCreatorPins()">Generate missing PINs</button><button class="btn btn-sm" onclick="exportCreatorProfilesCSV()">&#x2913; Export profile links</button></div>
+  <div id="generated-pin-result" class="today-status s-two" style="display:none;margin:12px 0">
+    <span><strong id="generated-pin-name"></strong><br><span style="font-size:12px">New PIN</span> <code id="generated-pin-value" style="font-size:20px;letter-spacing:3px;margin-left:8px"></code></span>
+    <button class="btn btn-sm" type="button" onclick="copyGeneratedPin()">Copy PIN</button>
+  </div>
   <div class="pay-wrap"><table class="pay-table"><thead><tr><th>Creator</th><th>Instagram</th><th>TikTok</th><th>Facebook</th><th>Profile status</th><th>PIN</th><th>Action</th></tr></thead><tbody id="profiles-body"><tr><td colspan="7" class="empty-state"><span class="spinner"></span></td></tr></tbody></table></div>
  </div>
 
@@ -1343,6 +1549,7 @@
       <label class="form-label">End date <input class="form-input" id="analytics-end" type="date"></label>
       <button class="btn btn-primary" id="analytics-test-btn" onclick="runAnalyticsTest()" style="width:auto">Run analytics</button>
     </div>
+    <div id="analytics-setup-status" class="today-status s-one" style="display:none"></div>
     <div id="analytics-roster-summary" class="analytics-summary" style="display:none"></div>
     <div class="section-head" style="margin-top:18px">
       <span class="section-title" style="font-size:16px">Creators included</span>
@@ -1477,9 +1684,11 @@ const safeStorage = {
 };
 
 let allRows = [], allCreators = [], allPayments = [];
-let creatorAccessName = '', creatorAccessKey = '';
+let creatorAccessName = '', creatorAccessKey = '', creatorAccessMode = '';
 let creatorProfile = { name:'', instagram:'', tiktok:'', facebook:'', complete:false };
 let creatorProfiles = [], creatorProfilesLoaded = false, creatorProfilesLoadInFlight = false, creatorProfilesSummary = null;
+let creatorSessionPin = '';
+let generatedCreatorPins = {};
 let weekOffset = 0, selectedMonth = null, selectedPayMonth = null;
 // Which month the Manage Creators bonus column reads and writes. Null means
 // "the current month", which is what it always used to be locked to.
@@ -1529,7 +1738,7 @@ function acceptBonusTierPayload(data) {
 }
 let bonusTiersLoaded = false;
 let payRowNames = [];
-let currentPage = 'chooser';
+let currentPage = 'submit';
 let renderPaymentsPending = false;
 let lastPayEditTime = 0;
 let lastBonusCatEditTime = 0;
@@ -1604,6 +1813,10 @@ document.addEventListener('DOMContentLoaded', () => {
   // remembered creator's recent rows. This avoids the Apps Script execution
   // queue that made a cold page fan out into overlapping 45-76 second jobs.
   if (!isAdmin) {
+    // Show the most recently verified roster immediately. The live request
+    // below refreshes it in the background, so returning creators do not stare
+    // at an empty dropdown while Google Apps Script wakes up.
+    hydrateCachedCreatorRoster();
     // Give an administrator a short window to choose Admin login before the
     // public creator bootstrap starts. Apps Script can queue simultaneous
     // executions; previously the large creator request could get in front of
@@ -1612,7 +1825,7 @@ document.addEventListener('DOMContentLoaded', () => {
     creatorBootstrapTimer = setTimeout(() => {
       creatorBootstrapTimer = null;
       if (!isAdmin && currentPage !== 'login') loadCreatorBootstrap();
-    }, 5000);
+    }, 250);
   } else {
     loadAdminBootstrap();
   }
@@ -1677,7 +1890,7 @@ function yesterdayStr() {
 // it lifts itself once that date passes, so nobody has to remember to undo
 // it. These two lines must match the same two in Code.gs — the server has the
 // real say, this only decides what the creator is offered.
-const GRACE_CUTOFF_HOUR = 10;
+let GRACE_CUTOFF_HOUR = 10;
 const GRACE_EXTENSION_DATE = '2026-09-06';
 const GRACE_EXTENSION_HOUR = 24; // 24 = midnight, i.e. the whole of that day
 
@@ -1848,6 +2061,7 @@ let openCreatorDashboardMonth = '';
 let logWaitStartedAt = 0;
 const FRESH_MS = 60000;
 const ME_KEY = 'nq_me';
+const CREATOR_ROSTER_CACHE_KEY = 'nq_creator_roster_v1';
 
 // Almost everybody opens this on the same phone as the same person every day.
 // Remembering who they are means their rows can be on their way at startup,
@@ -1856,6 +2070,20 @@ const ME_KEY = 'nq_me';
 // has even begun.
 function rememberMe(name) { try { safeStorage.setItem(ME_KEY, name); } catch (e) {} }
 function rememberedMe() { try { return safeStorage.getItem(ME_KEY) || ''; } catch (e) { return ''; } }
+function cacheCreatorRoster(creators) {
+  if (!Array.isArray(creators) || !creators.length) return;
+  safeStorage.setItem(CREATOR_ROSTER_CACHE_KEY, JSON.stringify({ savedAt:Date.now(), creators:creators }));
+}
+function hydrateCachedCreatorRoster() {
+  try {
+    const cached = JSON.parse(safeStorage.getItem(CREATOR_ROSTER_CACHE_KEY) || 'null');
+    if (!cached || !Array.isArray(cached.creators) || !cached.creators.length) return false;
+    allCreators = cached.creators;
+    creatorsLoaded = true;
+    refreshAll();
+    return true;
+  } catch (e) { return false; }
+}
 
 // A wait that says the same thing for thirty seconds reads as a stuck app.
 // Each line is honest about how long it has actually been. None of them
@@ -2000,9 +2228,10 @@ function loadRows(attempt, forName) {
     // former pay/reference path available, but never start it alongside the
     // new one-response dashboard request.
     if (data && data.rows && !receivedDashboard) {
-      const modal = document.getElementById('creator-modal');
-      const openFor = document.getElementById('modal-name');
-      if (modal && modal.classList.contains('open') && openFor && openFor.textContent === name) {
+      const openFor = document.getElementById('creator-dashboard-name');
+      const dashboardPanel = document.getElementById('creator-dashboard-panel');
+      if (currentPage === 'submit' && dashboardPanel && dashboardPanel.classList.contains('active') &&
+          openFor && openFor.textContent === name) {
         loadMyPay(name, function() { loadBonusTiers(function() { loadBonusCategories(); }); });
       }
     }
@@ -2330,6 +2559,7 @@ function loadCreatorBootstrap(attempt) {
     if (data && data.status === 'success' && Array.isArray(data.creators)) {
       creatorsLoaded = true;
       allCreators = data.creators;
+      cacheCreatorRoster(allCreators);
       const activeRemembered = me && getActiveCreators().indexOf(me) !== -1;
       if (activeRemembered && Array.isArray(data.rows)) {
         acceptCreatorDashboardPayload(me, data);
@@ -2360,6 +2590,7 @@ function loadCreators(attempt) {
     if (data && data.creators) {
       creatorsLoaded = true;
       allCreators = data.creators;
+      cacheCreatorRoster(allCreators);
       refreshAll();
 
       // In creator mode this is deliberately the second startup request, not
@@ -2382,7 +2613,7 @@ function loadCreators(attempt) {
 }
 
 function getActiveCreators() {
-  return allCreators.filter(c => String(c.status).toLowerCase() === 'active').map(c => c.name).sort();
+  return allCreators.filter(c => String(c.accessMode || (String(c.status).toLowerCase() === 'active' ? 'active' : 'hidden')) !== 'hidden').map(c => c.name).sort();
 }
 
 // ── TOAST ──
@@ -2487,6 +2718,7 @@ function creatorIsUnlocked(name) {
 function resetCreatorAccess() {
   creatorAccessName = '';
   creatorAccessKey = '';
+  creatorAccessMode = '';
   creatorProfile = { name:'', instagram:'', tiktok:'', facebook:'', complete:false };
   const pin = document.getElementById('creator-pin');
   const err = document.getElementById('creator-pin-error');
@@ -2501,40 +2733,182 @@ function showCreatorPinGate(name) {
   if (secure) secure.style.display = 'none';
 }
 
-function verifyCreatorPin() {
-  const name = document.getElementById('f-name').value.trim();
-  const pin = document.getElementById('creator-pin').value.trim();
+function toggleCreatorPinVisibility() {
+  const input = document.getElementById('creator-pin');
+  const button = document.getElementById('creator-pin-toggle');
+  const icon = document.getElementById('creator-pin-eye-icon');
+  const showing = input.type === 'text';
+  input.type = showing ? 'password' : 'text';
+  button.setAttribute('aria-label', showing ? 'Show PIN' : 'Hide PIN');
+  icon.innerHTML = showing
+    ? '<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>'
+    : '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>';
+  input.focus();
+}
+
+function verifyCreatorPin(attempt, preservedName, preservedPin) {
+  attempt = attempt || 0;
+  // Keep the exact credentials from the first click. Background roster/log
+  // refreshes can re-run onNameChange() while Apps Script is still answering;
+  // that function deliberately clears the visible PIN field. A retry must not
+  // then reread the cleared field and falsely report "Enter your six-digit PIN."
+  const name = String(preservedName != null ? preservedName : document.getElementById('f-name').value).trim();
+  const pin = String(preservedPin != null ? preservedPin : document.getElementById('creator-pin').value).trim();
   const btn = document.getElementById('creator-pin-btn');
   const err = document.getElementById('creator-pin-error');
+  const progress = document.getElementById('creator-pin-progress');
   if (!/^\d{6}$/.test(pin)) {
     err.textContent = 'Enter your six-digit PIN.'; err.classList.add('show'); return;
   }
-  btn.disabled = true; btn.textContent = 'Checking…';
+  const messages = attempt
+    ? ['Retrying securely…', 'Fetching your details…', 'Fetching your posting log…', 'Fetching your rates…']
+    : ['Checking your PIN…', 'Fetching your details…', 'Fetching your posting log…', 'Fetching your rates…'];
+  let messageIndex = 0;
+  btn.disabled = true; btn.textContent = messages[0];
+  progress.textContent = messages[0]; progress.classList.remove('show');
+  const messageTimer = setInterval(function() {
+    messageIndex = Math.min(messageIndex + 1, messages.length - 1);
+    btn.textContent = messages[messageIndex];
+    progress.textContent = messages[messageIndex];
+  }, 2200);
   err.classList.remove('show');
   jsonp({ action:'verifyCreatorPin', name:name, pin:pin, _bust:Date.now() }, function(data, networkError) {
+    clearInterval(messageTimer);
+    if (networkError && attempt < 1) {
+      btn.textContent = 'Still connecting… retrying securely';
+      progress.textContent = 'Still connecting… retrying securely';
+      setTimeout(function() { verifyCreatorPin(attempt + 1, name, pin); }, 650);
+      return;
+    }
     btn.disabled = false; btn.textContent = 'Continue';
+    progress.classList.remove('show');
     if (!data || data.status !== 'success') {
-      err.textContent = (data && data.message) || (networkError ? 'We could not check your PIN. Please try again.' : 'That PIN is not correct.');
+      err.textContent = (data && data.message) || (networkError ? 'This is taking longer than expected. Tap Continue to try again.' : 'That PIN is not correct.');
       err.classList.add('show'); return;
     }
     creatorAccessName = name;
+    creatorSessionPin = pin;
     creatorAccessKey = data.creatorKey || '';
+    creatorAccessMode = data.accessMode || 'active';
+    if (Number.isFinite(Number(data.cutoffHour))) GRACE_CUTOFF_HOUR = Number(data.cutoffHour);
     creatorProfile = data.profile || { name:name, instagram:'', tiktok:'', facebook:'', complete:false };
     document.getElementById('creator-pin-panel').style.display = 'none';
     document.getElementById('creator-secure-content').style.display = 'block';
+    if (data.contractRequired) {
+      document.getElementById('existing-contract-gate').style.display = 'block';
+      document.getElementById('creator-tabs').style.display = 'none';
+      document.getElementById('creator-post-panel').style.display = 'none';
+      loadContractText();
+      return;
+    }
+    applyCreatorAccessMode();
+    if (creatorAccessMode === 'readOnly') openMyLogs();
+    else showCreatorSection('post', document.querySelector('#creator-tabs button'));
     rememberMe(name);
     loadRowsIfStale();
     onNameChange(false);
     if (!creatorProfile.hasAny) {
       showToast('success', 'PIN accepted', 'Please add the profile links you use from My Dashboard.');
     }
-  }, 30000);
+  }, 25000);
+}
+
+function loadContractText() {
+  const copy = document.getElementById('contract-copy');
+  const button = document.querySelector('#existing-contract-gate button.btn-primary');
+  if (button) button.disabled = true;
+  if (copy) { copy.textContent = 'Loading your agreement…'; copy.classList.add('contract-copy-loading'); }
+  jsonp({ action:'getContractText', name:creatorAccessName, creatorKey:creatorAccessKey, _bust:Date.now() }, function(data, err) {
+    if (!data || data.status !== 'success' || !data.text) {
+      if (copy) copy.textContent = (data && data.message) || 'The agreement could not be loaded. Please try signing in again.';
+      return;
+    }
+    if (copy) { copy.textContent = data.text; copy.classList.remove('contract-copy-loading'); }
+    if (button) button.disabled = false;
+  }, 45000);
+}
+
+function signExistingCreatorContract() {
+  const signature = String((document.getElementById('existing-contract-signature') || {}).value || '').trim();
+  const error = document.getElementById('existing-contract-error');
+  if (!signature) { error.textContent = 'Type your full legal name as your signature.'; error.classList.add('show'); return; }
+  const mode = 'written';
+  const drawnSignature = '';
+  const address = String((document.getElementById('existing-contract-address') || {}).value || '').trim();
+  const email = String((document.getElementById('existing-contract-email') || {}).value || '').trim();
+  const phone = String((document.getElementById('existing-contract-phone') || {}).value || '').trim();
+  if (!address || !email || !phone) { error.textContent = 'Please complete your address, email, and phone number.'; error.classList.add('show'); return; }
+  const button = document.querySelector('#existing-contract-gate button.btn-primary');
+  if (button) { button.disabled = true; button.textContent = 'Saving contract…'; }
+  jsonp({ action:'signExistingCreatorContract', name:creatorAccessName, pin:creatorSessionPin, signature:signature, drawnSignature:drawnSignature, signatureMode:mode, address:address, email:email, phone:phone, signDate:new Date().toISOString().slice(0,10) }, function(data) {
+    if (button) { button.disabled = false; button.textContent = 'Sign and continue'; }
+    if (!data || data.status !== 'success') { error.textContent = (data && data.message) || 'Could not save your signature. Please try again.'; error.classList.add('show'); return; }
+    document.getElementById('existing-contract-gate').style.display = 'none';
+    document.getElementById('creator-tabs').style.display = '';
+    document.getElementById('creator-post-panel').style.display = '';
+    showCreatorSection('post', document.querySelector('#creator-tabs button'));
+    showToast('success', 'Contract signed', 'Your dashboard is now available.');
+  }, 90000);
+}
+
+(function initSignaturePad(){
+  const canvas=document.getElementById('signature-canvas'); if(!canvas) return;
+  const ctx=canvas.getContext('2d'); let drawing=false;
+  ctx.strokeStyle='#111'; ctx.lineWidth=2; ctx.lineCap='round';
+  function point(e){const r=canvas.getBoundingClientRect();return {x:(e.clientX-r.left)*canvas.width/r.width,y:(e.clientY-r.top)*canvas.height/r.height};}
+  document.querySelectorAll('input[name="signature-mode"]').forEach(r=>r.addEventListener('change',()=>{canvas.style.display=r.checked&&r.value==='drawn'?'block':'none';}));
+  canvas.addEventListener('pointerdown',e=>{e.preventDefault();drawing=true;const p=point(e);ctx.beginPath();ctx.moveTo(p.x,p.y);canvas.setPointerCapture(e.pointerId);});
+  canvas.addEventListener('pointermove',e=>{e.preventDefault();if(!drawing)return;const p=point(e);ctx.lineTo(p.x,p.y);ctx.stroke();});
+  canvas.addEventListener('pointerup',()=>{drawing=false;});
+})();
+
+function applyCreatorAccessMode() {
+  const readOnly = creatorAccessMode === 'readOnly';
+  const notice = document.getElementById('creator-readonly-notice');
+  const postTab = document.getElementById('creator-post-tab');
+  const profileTab = document.querySelector('#creator-tabs button:nth-child(3)');
+  const fields = document.getElementById('form-fields');
+  const dateGroup = document.getElementById('date-toggle') && document.getElementById('date-toggle').closest('.form-group');
+  const postGroup = document.getElementById('post-cards') && document.getElementById('post-cards').closest('.form-group');
+  if (notice) notice.style.display = readOnly ? '' : 'none';
+  if (postTab) { postTab.disabled = readOnly; postTab.style.display = readOnly ? 'none' : ''; }
+  if (profileTab) { profileTab.disabled = readOnly; profileTab.style.display = readOnly ? 'none' : ''; }
+  if (dateGroup) dateGroup.style.display = readOnly ? 'none' : '';
+  if (postGroup) postGroup.style.display = readOnly ? 'none' : '';
+  if (fields) fields.style.display = readOnly ? 'none' : '';
 }
 
 function creatorPinHelp() {
   const err = document.getElementById('creator-pin-error');
-  err.textContent = 'Ask the NorthQuest admin to reset your PIN. The old PIN stops working immediately after a reset.';
+  err.textContent = 'Ask the Growthcooks admin to reset your PIN. The old PIN stops working immediately after a reset.';
   err.classList.add('show');
+}
+
+function setCreatorTab(button) {
+  document.querySelectorAll('#creator-tabs button').forEach(function(b) { b.classList.remove('active'); });
+  if (button) button.classList.add('active');
+}
+
+function showCreatorSection(section, button) {
+  setCreatorTab(button);
+  document.querySelectorAll('#creator-secure-content .creator-workspace-panel').forEach(function(panel) {
+    panel.classList.toggle('active', panel.id === 'creator-' + section + '-panel');
+  });
+  closeModalDirect();
+  const tabs = document.getElementById('creator-tabs');
+  if (tabs) tabs.scrollIntoView({ behavior:'smooth', block:'start' });
+}
+
+function goToCreatorPost() {
+  showCreatorSection('post', document.getElementById('creator-post-tab'));
+}
+
+function openMyProfile() {
+  const name = document.getElementById('f-name').value.trim();
+  if (!name || !creatorIsUnlocked(name)) return;
+  document.getElementById('creator-profile-name').textContent = name;
+  document.getElementById('creator-profile-body').innerHTML = creatorProfileCardHtml();
+  showCreatorSection('profile', document.getElementById('creator-profile-tab'));
 }
 
 // ── NAME CHANGE, update status banner + post cards ──
@@ -2792,6 +3166,11 @@ function submitLog() {
   const issues = document.getElementById('f-issues').value.trim();
 
   document.getElementById('f-alert').classList.remove('show');
+
+  if (creatorAccessMode === 'readOnly') {
+    showError('Your account is read-only. You can view your dashboard, but you cannot log new videos.');
+    return;
+  }
 
   if (!name)           { showError('Please select your name from the list.'); return; }
   if (!post)           { showError('Something went wrong. Please refresh the page and try again.'); return; }
@@ -3067,9 +3446,10 @@ function refreshAll() {
   // If "View my logs" is open, keep it in step with whatever allRows just
   // became — including a load that just failed while the creator was
   // looking at it, which must show the warning, not a suddenly empty month.
-  const openFor = document.getElementById('modal-name');
-  if (!isAdmin && document.getElementById('creator-modal').classList.contains('open') &&
-      openFor && openFor.textContent) {
+  const openFor = document.getElementById('creator-dashboard-name');
+  const dashboardPanel = document.getElementById('creator-dashboard-panel');
+  if (!isAdmin && currentPage === 'submit' && dashboardPanel &&
+      dashboardPanel.classList.contains('active') && openFor && openFor.textContent) {
     renderMyLogs(openFor.textContent);
   }
 }
@@ -3282,6 +3662,7 @@ function openMyLogsForMonth(ym) {
   const name = document.getElementById('f-name').value.trim();
   if (!name) return;
   openCreatorDashboardMonth = ym;
+  showCreatorSection('dashboard', document.getElementById('creator-dashboard-tab'));
   loadRowsIfStale(); // refresh in the background so the view is as current as possible
   renderMyLogs(name, ym);
   // Current backends return logs, this creator's pay, tiers and custom payment
@@ -3304,8 +3685,9 @@ function loadMyPay(name, done) {
       allPayments = others.concat(data.payments);
       if (data.rate && parseFloat(data.rate) > 0) myOwnRate = { name: name, rate: parseFloat(data.rate) };
       // Only redraw if this creator's modal is still the one on screen.
-      const openFor = document.getElementById('modal-name');
-      if (document.getElementById('creator-modal').classList.contains('open') &&
+      const openFor = document.getElementById('creator-dashboard-name');
+      const dashboardPanel = document.getElementById('creator-dashboard-panel');
+      if (currentPage === 'submit' && dashboardPanel && dashboardPanel.classList.contains('active') &&
           openFor && openFor.textContent === name) {
         renderMyLogs(name);
       }
@@ -3347,15 +3729,17 @@ function saveCreatorProfile() {
 }
 
 function renderMyLogs(name, requestedMonth) {
+  const pageName = document.getElementById('creator-dashboard-name');
+  const pageSub = document.getElementById('creator-dashboard-sub');
+  const pageBody = document.getElementById('creator-dashboard-body');
   // Show what we actually know, not a guess dressed up as fact. Without this,
   // a failed load on a weak connection renders every day this month as "not
   // logged" and every pay figure as zero — indistinguishable from a creator
   // who genuinely did nothing, which is exactly the false alarm reported.
   if (rowsLoadFailed) {
-    document.getElementById('modal-name').textContent = name;
-    document.getElementById('modal-sub').textContent = 'Your posting record';
-    document.getElementById('modal-body').innerHTML = loadFailedBannerHtml();
-    document.getElementById('creator-modal').classList.add('open');
+    pageName.textContent = name;
+    pageSub.textContent = 'Your posting record';
+    pageBody.innerHTML = loadFailedBannerHtml();
     return;
   }
   // Same reasoning while the rows are still on their way — and equally when
@@ -3364,13 +3748,12 @@ function renderMyLogs(name, requestedMonth) {
   // has in fact logged 28 videos is the most alarming thing this screen can
   // do, and it is not even true yet.
   if (!dataLoaded || rowsAreForSomeoneElse(name)) {
-    document.getElementById('modal-name').textContent = name;
-    document.getElementById('modal-sub').textContent = 'Your posting record';
-    document.getElementById('modal-body').innerHTML =
+    pageName.textContent = name;
+    pageSub.textContent = 'Your posting record';
+    pageBody.innerHTML =
       '<div class="empty-state" style="padding:36px 16px"><span class="spinner"></span>' +
       '<div id="mylog-waiting" style="margin-top:12px;color:var(--text2);font-size:13px">' +
       escH(waitingMessage()) + '</div></div>';
-    document.getElementById('creator-modal').classList.add('open');
     return;
   }
   const today = todayStr();
@@ -3466,9 +3849,9 @@ function renderMyLogs(name, requestedMonth) {
       '<button type="button" onclick="closeModalDirect(); startLogYesterday();">Log yesterday\'s videos</button></div>'
     : '';
 
-  document.getElementById('modal-name').textContent = name;
-  document.getElementById('modal-sub').textContent = 'Your posting record, ' + monthLabel(ym);
-  document.getElementById('modal-body').innerHTML =
+  pageName.textContent = name;
+  pageSub.textContent = 'Your posting record, ' + monthLabel(ym);
+  pageBody.innerHTML =
     graceHtml +
     '<div class="mylog-summary">' +
       '<div class="mylog-stat">' + adminChip + '<div class="v">' + monthRows.length + '</div><div class="l">Videos logged</div>' + adminNote + '</div>' +
@@ -3491,9 +3874,7 @@ function renderMyLogs(name, requestedMonth) {
     // Everything above added up, stated once so it needs no working out.
     '<div class="mylog-total"><span class="mt-l">Total</span>' +
       '<span class="mt-v">&#8358;' + Math.round(totalPayable).toLocaleString('en-NG') + '</span></div>' +
-    creatorProfileCardHtml() +
     '<div class="month-block"><div class="month-block-header"><span class="month-block-name">' + monthLabel(ym) + '</span><span class="month-block-total">' + monthRows.length + ' of ' + maxVideos + ' videos</span></div>' + dayRowsHtml.join('') + '</div>';
-  document.getElementById('creator-modal').classList.add('open');
 }
 
 function renderDashboard() {
@@ -3810,21 +4191,21 @@ function waMessages(c) {
   msgs.push({
     label: 'Contract follow-up',
     text: c.contractSigned
-      ? 'Hi ' + first + ', this is the NorthQuest team. We have your contract signature on file but haven\'t received the signed PDF copy yet, could you upload it when you get a chance? Let us know if you\'re stuck on any of the signing steps.'
-      : 'Hi ' + first + ', this is the NorthQuest team. We don\'t see your signed contract yet, could you complete the signing steps and upload it when you get a chance? Let us know if you need any help.'
+      ? 'Hi ' + first + ', this is the Growthcooks team. We have your contract signature on file but haven\'t received the signed PDF copy yet, could you upload it when you get a chance? Let us know if you\'re stuck on any of the signing steps.'
+      : 'Hi ' + first + ', this is the Growthcooks team. We don\'t see your signed contract yet, could you complete the signing steps and upload it when you get a chance? Let us know if you need any help.'
   });
   msgs.push({
     label: 'Request account details',
-    text: 'Hi ' + first + ', this is the NorthQuest team. Could you send your bank name, account number, and account name so we can confirm your payment details are correct? Thank you!'
+    text: 'Hi ' + first + ', this is the Growthcooks team. Could you send your bank name, account number, and account name so we can confirm your payment details are correct? Thank you!'
   });
   msgs.push({
     label: 'General check-in',
-    text: 'Hi ' + first + ', this is the NorthQuest team, just checking in, how are things going? Let us know if you need anything.'
+    text: 'Hi ' + first + ', this is the Growthcooks team, just checking in, how are things going? Let us know if you need anything.'
   });
   if (!isActive) {
     msgs.push({
       label: 'Message a former creator',
-      text: 'Hi ' + first + ', this is the NorthQuest team reaching out.'
+      text: 'Hi ' + first + ', this is the Growthcooks team reaching out.'
     });
   }
   return msgs;
@@ -5179,7 +5560,7 @@ function exportPaymentsCSV() {
   });
 
   nqDownloadXlsx(
-    'NQ Payment Register - ' + monthLabel(selectedPayMonth) + '.xlsx',
+    'Growthcooks Payment Register - ' + monthLabel(selectedPayMonth) + '.xlsx',
     monthLabel(selectedPayMonth),
     R,
     [6, 28, 12, 14, 14, 16, 16, ...extraCats.map(() => 16), 16, 18, 18, 22, 14, 14, 24]);
@@ -5511,7 +5892,7 @@ function exportViewLogCSV(grain) {
   const blob = new Blob([csv], { type:'text/csv;charset=utf-8' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
-  a.href = url; a.download = 'NQ View Log - ' + grain + ' - ' + label + '.csv';
+  a.href = url; a.download = 'Growthcooks View Log - ' + grain + ' - ' + label + '.csv';
   document.body.appendChild(a); a.click(); document.body.removeChild(a);
   URL.revokeObjectURL(url);
 }
@@ -5636,7 +6017,7 @@ function logout() {
   adminKey = '';
   safeStorage.removeSession(SESSION_KEY);
   safeStorage.removeSession(ADMIN_KEY_SESSION);
-  showPage('chooser');
+  showPage('submit');
 }
 
 function loadCreatorProfiles(force) {
@@ -5668,7 +6049,13 @@ function loadCreatorProfiles(force) {
       if (analyticsBody) analyticsBody.innerHTML = '<tr><td colspan="5" class="empty-state"><strong>Creator list did not load</strong><button class="s-retry" onclick="loadCreatorProfiles(true)">Try again</button></td></tr>';
       return;
     }
-    creatorProfiles = data.creators || [];
+    creatorProfiles = (data.creators || []).map(function(profile) {
+      var rosterCreator = allCreators.find(function(creator) {
+        return String(creator.name || '').trim().toLowerCase() === String(profile.name || '').trim().toLowerCase();
+      });
+      if (rosterCreator && rosterCreator.phone) profile.phone = rosterCreator.phone;
+      return profile;
+    });
     creatorProfilesSummary = data.summary || null;
     creatorProfilesLoaded = true;
     creatorProfilesLoadInFlight = false;
@@ -5691,8 +6078,10 @@ function renderCreatorProfiles() {
     return '<tr data-creator="' + escH(c.name) + '"><td><strong>' + escH(c.name) + '</strong></td>' +
       '<td>' + profileLinkCell(c.instagram) + '</td><td>' + profileLinkCell(c.tiktok) + '</td><td>' + profileLinkCell(c.facebook) + '</td>' +
       '<td><span class="badge ' + (linkCount ? 'badge-p1' : 'badge-p2') + '">' + linkCount + ' of 3 saved</span></td>' +
-      '<td>' + (c.pinActive ? 'PIN active' : '<span style="color:var(--amber);font-weight:700">No PIN</span>') + '</td>' +
-      '<td><button class="btn btn-sm" onclick="setCreatorPinByIndex(' + index + ')">' + (c.pinActive ? 'Reset PIN' : 'Set PIN') + '</button></td></tr>';
+      '<td><span class="pin-state">' + (c.pinActive ? 'PIN active' : '<span style="color:var(--amber);font-weight:700">No PIN</span>') + '</span>' + (generatedCreatorPins[c.name] ? ' <code class="generated-pin">' + escH(generatedCreatorPins[c.name]) + '</code>' : '') + '</td>' +
+      '<td><div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn btn-sm" onclick="setCreatorPinByIndex(' + index + ')">' + (c.pinActive ? 'Generate new PIN' : 'Generate PIN') + '</button>' +
+      '<button class="btn btn-sm' + (generatedCreatorPins[c.name] ? ' btn-primary' : '') + '" ' + (generatedCreatorPins[c.name] ? '' : 'disabled ') + 'onclick="copyCreatorPin(' + index + ')">Copy PIN</button>' +
+      '<button class="btn btn-sm' + (generatedCreatorPins[c.name] && toWaNumber(c.phone) ? ' btn-primary' : '') + '" ' + (generatedCreatorPins[c.name] && toWaNumber(c.phone) ? '' : 'disabled ') + 'onclick="sendCreatorPinViaWhatsApp(' + index + ')">Send PIN via WhatsApp</button></div></td></tr>';
   }).join('');
 }
 
@@ -5725,15 +6114,84 @@ function setCreatorPinByIndex(index) {
   if (creator) setCreatorPin(creator.name);
 }
 
+function nqRandomPinForAdmin() {
+  return String(Math.floor(100000 + Math.random() * 900000));
+}
+
 function setCreatorPin(name) {
-  const pin = prompt('Enter a new six-digit PIN for ' + name + '. The old PIN will stop working immediately.');
-  if (pin === null) return;
-  if (!/^\d{6}$/.test(String(pin).trim())) { alert('The PIN must contain exactly six digits.'); return; }
-  jsonp({ action:'setCreatorPin', name:name, pin:String(pin).trim() }, function(data, err) {
-    if (!data || data.status !== 'success') { alert((data && data.message) || 'Could not save the PIN. Please try again.'); return; }
-    alert('New PIN saved for ' + name + '. Share it privately with that creator.');
-    creatorProfilesLoaded = false;
-    loadCreatorProfiles(true);
+  if (!confirm('Generate a new six-digit PIN for ' + name + '? Any previous PIN will stop working immediately.')) return;
+  const row = document.querySelector('tr[data-creator="' + CSS.escape(name) + '"]');
+  const trigger = row && row.querySelector('button');
+  if (trigger) { trigger.disabled = true; trigger.textContent = 'Generating…'; }
+  jsonp({ action:'setCreatorPin', name:name, pin:nqRandomPinForAdmin() }, function(data, err) {
+    if (!data || data.status !== 'success') { if (trigger) { trigger.disabled = false; trigger.textContent = 'Generate new PIN'; } alert((data && data.message) || 'Could not save the PIN. Please try again.'); return; }
+    const pin = String(data.pin || '');
+    generatedCreatorPins[name] = pin;
+    const creator = creatorProfiles.find(function(c) { return c.name === name; });
+    if (creator) creator.pinActive = true;
+    renderCreatorProfiles();
+    showToast('success', 'PIN generated', toWaNumber(creator && creator.phone) ? 'Send it from this creator’s row.' : 'No WhatsApp number is saved for this creator.');
+  }, 30000);
+}
+
+function sendCreatorPinViaWhatsApp(index) {
+  const creator = creatorProfiles[index];
+  if (!creator) return;
+  const pin = generatedCreatorPins[creator.name];
+  const phone = toWaNumber(creator.phone);
+  if (!pin) { showToast('error', 'Generate the PIN first', 'The WhatsApp button activates after a new PIN is generated.'); return; }
+  if (!phone) { showToast('error', 'No WhatsApp number', 'Add this creator’s phone number before sending their PIN.'); return; }
+  const first = String(creator.name || '').trim().split(/\s+/)[0] || 'Creator';
+  const message = 'Hi ' + first + ', this is the Growthcooks team. Your North Quest creator dashboard PIN is ' + pin + '. Please keep it private and do not share it.';
+  window.open('https://api.whatsapp.com/send/?phone=' + encodeURIComponent(phone) + '&text=' + encodeURIComponent(message), '_blank', 'noopener');
+}
+
+function copyCreatorPin(index) {
+  const creator = creatorProfiles[index];
+  const pin = creator && generatedCreatorPins[creator.name];
+  if (!pin) { showToast('error', 'Generate the PIN first', 'The PIN becomes available here after generation.'); return; }
+  const done = function() { showToast('success', 'PIN copied', 'Paste it privately into the creator’s message.'); };
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(pin).then(done).catch(function() { fallbackCopyGeneratedPin(pin); });
+  else fallbackCopyGeneratedPin(pin);
+}
+
+function copyGeneratedPin() {
+  const value = (document.getElementById('generated-pin-value') || {}).textContent || '';
+  if (!value) return;
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(value).then(function() {
+      showToast('success', 'PIN copied', 'Paste it privately into the creator’s chat.');
+    }).catch(function() { fallbackCopyGeneratedPin(value); });
+  } else fallbackCopyGeneratedPin(value);
+}
+
+function fallbackCopyGeneratedPin(value) {
+  const area = document.createElement('textarea');
+  area.value = value; area.setAttribute('readonly',''); area.style.position = 'fixed'; area.style.opacity = '0';
+  document.body.appendChild(area); area.select();
+  try { document.execCommand('copy'); showToast('success', 'PIN copied', 'Paste it privately into the creator’s chat.'); }
+  catch (e) { alert('Copy this PIN: ' + value); }
+  document.body.removeChild(area);
+}
+
+function loadPostingCutoff() {
+  const status = document.getElementById('posting-cutoff-status');
+  jsonp({ action:'getPostingCutoff' }, function(data) {
+    if (!data || data.status !== 'success') { if (status) status.textContent = 'Could not load the current cutoff.'; return; }
+    const select = document.getElementById('posting-cutoff-hour');
+    if (select) select.value = String(data.hour);
+    if (status) status.textContent = 'Currently closes at ' + data.label + ' (Lagos time).';
+  }, 30000);
+}
+
+function savePostingCutoff() {
+  const select = document.getElementById('posting-cutoff-hour');
+  const status = document.getElementById('posting-cutoff-status');
+  const hour = select ? select.value : '10';
+  if (status) status.textContent = 'Saving...';
+  jsonp({ action:'setPostingCutoff', hour:hour }, function(data) {
+    if (!data || data.status !== 'success') { if (status) status.textContent = (data && data.message) || 'Could not save the cutoff.'; return; }
+    if (status) status.textContent = 'Saved. Yesterday logging closes at ' + data.label + ' (Lagos time).';
   }, 30000);
 }
 
@@ -5783,6 +6241,37 @@ function analyticsDateDefaults() {
   end.value = today;
 }
 
+function loadAnalyticsSetup() {
+  const status = document.getElementById('analytics-setup-status');
+  const btn = document.getElementById('analytics-test-btn');
+  if (!status || !btn) return;
+  status.style.display = 'block';
+  status.textContent = 'Checking analytics setup…';
+  jsonp({ action:'getAnalyticsSetup', _bust:Date.now() }, function(data) {
+    if (!data || data.status !== 'success') {
+      status.className = 'today-status s-one';
+      status.textContent = (data && data.message) || 'Could not check analytics setup. Refresh and try again.';
+      btn.disabled = true;
+      return;
+    }
+    if (!data.apifyConfigured) {
+      status.className = 'today-status s-one';
+      status.textContent = 'Apify is not connected yet. Add APIFY_TOKEN in Apps Script Project Settings before running analytics.';
+      btn.disabled = true;
+      return;
+    }
+    if (!data.linkedProfiles) {
+      status.className = 'today-status s-one';
+      status.textContent = 'Apify is connected, but no active creator has saved a profile link yet.';
+      btn.disabled = true;
+      return;
+    }
+    status.className = 'today-status s-two';
+    status.textContent = 'Ready: ' + data.linkedProfiles + ' creator' + (data.linkedProfiles === 1 ? '' : 's') + ' with profile links.';
+    btn.disabled = false;
+  }, 30000);
+}
+
 function runAnalyticsTest() {
   const start = document.getElementById('analytics-start').value;
   const end = document.getElementById('analytics-end').value;
@@ -5824,7 +6313,13 @@ function exportCreatorProfilesCSV() {
 
 function renderNav() {
   const c = document.getElementById('nav-container');
+  const wordmark = document.getElementById('brand-wordmark');
+  const product = document.getElementById('brand-product-name');
+  const mark = document.querySelector('.creator-brand-mark');
   if (isAdmin) {
+    if (wordmark) wordmark.textContent = 'Growthcooks';
+    if (product) product.textContent = 'Admin Workspace';
+    if (mark) mark.style.display = 'none';
     c.innerHTML =
       '<button class="nav-tab ' + (currentPage==='weekly'?'active':'') + '" onclick="showPage(\'weekly\')">Daily log</button>' +
       '<button class="nav-tab ' + (currentPage==='detailed'?'active':'') + '" onclick="showPage(\'detailed\')">Detailed log</button>' +
@@ -5837,6 +6332,9 @@ function renderNav() {
       '<button class="nav-tab ' + (currentPage==='submit'?'active':'') + '" onclick="showPage(\'submit\')">Submit form</button>' +
       '<button class="logout-btn" onclick="logout()">Logout</button>';
   } else {
+    if (wordmark) wordmark.innerHTML = 'growthcooks<em>.</em>';
+    if (product) product.textContent = 'Creator Posting Tracker';
+    if (mark) mark.style.display = 'flex';
     c.innerHTML = '<button class="admin-btn" onclick="showPage(\'login\')">Admin login</button>';
   }
 }
@@ -5866,13 +6364,13 @@ function showPage(name) {
   if (name==='weekly') renderWeeklyGrid();
   if (name==='detailed') { renderMonthTabs(); renderDetailedLog(); }
   if (name==='dashboard') renderDashboard();
-  if (name==='manage') renderManageCreators();
+  if (name==='manage') { renderManageCreators(); loadPostingCutoff(); }
   if (name==='profiles') loadCreatorProfiles();
-  if (name==='analytics') { analyticsDateDefaults(); loadCreatorProfiles(); }
+  if (name==='analytics') { analyticsDateDefaults(); loadCreatorProfiles(); loadAnalyticsSetup(); }
   if (name==='payments') renderPayments();
   if (name==='views') populateViewsNameDropdown();
   if (name==='viewlog') { loadViewLogAdmin(); }
-  if (name==='intake') document.title = 'NorthQuest Creator Onboarding';
+  document.title = name === 'intake' ? 'Growthcooks Creator Onboarding' : 'Growthcooks Creator Posting Tracker';
   window.scrollTo({ top: 0, behavior: 'instant' });
 }
 
