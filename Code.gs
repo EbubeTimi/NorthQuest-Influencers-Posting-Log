@@ -33,7 +33,9 @@ const LEGACY_MONTHLY_SALARY = 100000;     // ₦100,000/month — older creators
 
 
 // Onboarding destinations
-const SIGNED_FOLDER_ID = '1rt1u3zsLXMcBr3jKwKMOAnpY4kUvy-Ww';   // signed contracts land here
+const SIGNED_FOLDER_ID = '10h5tEN9xnCHZgtZM4DPaPTsOEhZevkCG';   // signed contracts land here
+const RECONTRACT_TEMPLATE_DOC_ID = '1sRf78TT53QyPSpZturT8yP2r_ljLiXVTpIgtvuZrDq8'; // generic NDA template
+const RECONTRACT_ROLLOUT_VERSION = '2026-10-22-v2';
 const DB_DOC_ID = '1HYDnzyZUuyZjNOobvzItIJou39nzhVWEUQlAnQn_dNo'; // master creator database doc
 
 
@@ -282,6 +284,16 @@ function getCreatorsSheet() {
     } catch (err) {
       Logger.log('Left Date column setup skipped: ' + err);
     }
+  }
+  if (props.getProperty('CREATORS_RECONTRACT_COL_READY') !== '1') {
+    try {
+      var maxCols3 = sheet.getMaxColumns();
+      if (maxCols3 < 24) sheet.insertColumnsAfter(maxCols3, 24 - maxCols3);
+      sheet.getRange(1, 23).setValue('Recontract Signed').setFontWeight('bold').setBackground('#2E4057').setFontColor('#FFFFFF');
+      sheet.getRange(1, 24).setValue('Recontract PDF Link').setFontWeight('bold').setBackground('#2E4057').setFontColor('#FFFFFF');
+      sheet.setFrozenRows(1);
+      props.setProperty('CREATORS_RECONTRACT_COL_READY', '1');
+    } catch (err) { Logger.log('Recontract columns setup skipped: ' + err); }
   }
   return sheet;
 }
@@ -631,7 +643,7 @@ var NQ_ADMIN_ACTIONS = [
   'setBonusCategories', 'getAdminBootstrap', 'getAdminShell', 'getAdminMonth',
   'getCreatorProfiles', 'setCreatorPin', 'generateMissingCreatorPins', 'runCreatorAnalytics', 'getBonusLedger'
 ];
-var NQ_CREATOR_ACTIONS = ['submit', 'checkPost', 'get', 'getMyPay', 'getCreatorProfile', 'saveCreatorProfile'];
+var NQ_CREATOR_ACTIONS = ['submit', 'checkPost', 'get', 'getMyPay', 'getCreatorProfile', 'saveCreatorProfile', 'signExistingCreatorContract'];
 
 
 
@@ -834,8 +846,62 @@ function handleVerifyCreatorPin(params) {
   var rosterAccess = nqCreatorRosterAccess_(name);
   if (rosterAccess.mode === 'hidden') return { status: 'denied', message: 'This creator account is no longer available.' };
   if (nqPinHash_(rec.salt, pin) !== rec.hash) return { status: 'denied', message: 'That PIN is not correct.' };
-  return { status: 'success', creatorKey: nqCreatorKey_(rec), accessMode: rosterAccess.mode,
+  nqResetExistingContractRollout_();
+  var creatorRow = (handleGetCreators(true).creators || []).find(function(c) { return String(c.name).toLowerCase() === name.toLowerCase(); });
+  var contractRequired = !(creatorRow && String(creatorRow.recontractSigned || '').toLowerCase() === 'true');
+  return { status: 'success', creatorKey: nqCreatorKey_(rec), accessMode: rosterAccess.mode, contractRequired: contractRequired,
     visibleUntil: rosterAccess.visibleUntil, profile: nqPublicProfile_(nqProfileRecord_(name)) };
+}
+
+function nqResetExistingContractRollout_() {
+  var props = PropertiesService.getScriptProperties();
+  if (props.getProperty('RECONTRACT_ROLLOUT_VERSION') === RECONTRACT_ROLLOUT_VERSION) return;
+  var sh = getCreatorsSheet();
+  var last = sh.getLastRow();
+  if (last > 1) sh.getRange(2, 23, last - 1, 2).clearContent();
+  props.setProperty('RECONTRACT_ROLLOUT_VERSION', RECONTRACT_ROLLOUT_VERSION);
+}
+
+function handleSignExistingCreatorContract(params) {
+  var name = String(params.name || '').trim();
+  var signature = String(params.signature || '').trim();
+  var address = String(params.address || '').trim();
+  var email = String(params.email || '').trim();
+  var phone = String(params.phone || '').trim();
+  var signDate = String(params.signDate || todayStr_()).trim();
+  if (!name || !signature || !address || !email || !phone) return { status: 'error', message: 'Name, address, email, phone, and signature are required.' };
+  var rec = nqCreatorAccessRecord_(name);
+  if (!rec || nqPinHash_(rec.salt, String(params.pin || '').trim()) !== rec.hash) return { status: 'denied', message: 'Please sign in again before signing.' };
+  var safeName = name.replace(/[^a-z0-9 _-]/gi, '').trim() || 'Creator';
+  var folder = DriveApp.getFolderById(SIGNED_FOLDER_ID);
+  var workingDoc = null;
+  try {
+    workingDoc = DriveApp.getFileById(RECONTRACT_TEMPLATE_DOC_ID).makeCopy(safeName + ' - Signed Contract (source)', folder);
+    var doc = DocumentApp.openById(workingDoc.getId());
+    var body = doc.getBody();
+    body.replaceText('\\[CREATOR NAME\\]', name);
+    body.replaceText('Creator: \\s*', 'Creator: ' + name);
+    body.replaceText('Creator Address: \\s*', 'Creator Address: ' + address);
+    body.replaceText('Creator Email: \\s*', 'Creator Email: ' + email);
+    body.replaceText('Creator Phone: \\s*', 'Creator Phone: ' + phone);
+    body.replaceText('Creator signature:[^\\n]*', 'Creator signature: ' + signature + '    Date: ' + signDate);
+    try { var sigRange = body.findText('Creator signature:[^\\n]*'); if (sigRange) sigRange.getElement().asText().setFontFamily('Whisper'); } catch (fontErr) { Logger.log('Whisper font unavailable; keeping typed signature: ' + fontErr); }
+    doc.saveAndClose();
+    var file = folder.createFile(workingDoc.getAs(MimeType.PDF).setName(safeName + ' - Signed Contract.pdf'));
+    workingDoc.setTrashed(true);
+  } catch (err) {
+    if (workingDoc) try { workingDoc.setTrashed(true); } catch (cleanupErr) {}
+    return { status: 'error', message: 'Contract could not be saved: ' + String(err.message || err) };
+  }
+  var creatorsSheet = getCreatorsSheet();
+  var values = creatorsSheet.getDataRange().getValues();
+  for (var i = 1; i < values.length; i++) {
+    if (String(values[i][0] || '').trim().toLowerCase() === name.toLowerCase()) {
+      creatorsSheet.getRange(i + 1, 23, 1, 2).setValues([['true', file.getUrl()]]);
+      break;
+    }
+  }
+  return { status: 'success', pdfUrl: file.getUrl() };
 }
 
 function handleSetCreatorPin(params) {
@@ -853,7 +919,7 @@ function handleSetCreatorPin(params) {
   var salt = Utilities.getUuid();
   var row = [[name, salt, nqPinHash_(salt, pin), 'Active', new Date()]];
   if (rec) sh.getRange(rec.row, 1, 1, 5).setValues(row); else sh.appendRow(row[0]);
-  return { status: 'success', name: name };
+  return { status: 'success', name: name, pin: pin };
 }
 
 function nqRandomPin_() {
@@ -895,8 +961,7 @@ function handleGenerateMissingCreatorPins() {
 function nqValidProfileUrl_(value, host) {
   value = String(value || '').trim();
   if (!value) return true;
-  var escapedHost = String(host || '').replace(/\./g, '\\.');
-  return new RegExp('^https://([^/]+\\.)?' + escapedHost + '(/|$)', 'i').test(value);
+  return /^https?:\/\/[^\s]+$/i.test(value);
 }
 
 function handleGetCreatorProfile(params) {
@@ -910,9 +975,6 @@ function handleSaveCreatorProfile(params) {
   var instagram = String(params.instagram || '').trim();
   var tiktok = String(params.tiktok || '').trim();
   var facebook = String(params.facebook || '').trim();
-  if (!nqValidProfileUrl_(instagram, 'instagram.com') || !nqValidProfileUrl_(tiktok, 'tiktok.com') || !nqValidProfileUrl_(facebook, 'facebook.com')) {
-    return { status: 'error', message: 'Use a complete profile URL for every link you add.' };
-  }
   var sh = nqProfilesSheet_();
   var rec = nqProfileRecord_(name);
   var row = [[name, instagram, tiktok, facebook, new Date()]];
@@ -1242,6 +1304,7 @@ function doGet(e) {
     else if (action === 'getIgStatus') result = handleGetIgStatus_();
     else if (action === 'getIgInsights') result = handleGetIgInsights_();
     else if (action === 'verifyCreatorPin') result = handleVerifyCreatorPin(e.parameter);
+    else if (action === 'signExistingCreatorContract') result = handleSignExistingCreatorContract(e.parameter);
     else if (action === 'getCreatorProfile') result = handleGetCreatorProfile(e.parameter);
     else if (action === 'saveCreatorProfile') result = handleSaveCreatorProfile(e.parameter);
     else if (action === 'getCreatorProfiles') result = handleGetCreatorProfiles();
@@ -2721,7 +2784,9 @@ function handleGetCreators(isAdmin) {
       contractFiledAt: data[i][18] instanceof Date ? data[i][18].toISOString() : String(data[i][18] || ''),
       contractResolved: String(data[i][19] || ''),
       creatorType: String(data[i][20] || ''),
-      left: leftRaw instanceof Date ? Utilities.formatDate(leftRaw, 'Africa/Lagos', 'yyyy-MM-dd') : String(leftRaw || '')
+      left: leftRaw instanceof Date ? Utilities.formatDate(leftRaw, 'Africa/Lagos', 'yyyy-MM-dd') : String(leftRaw || ''),
+      recontractSigned: data[i][22] instanceof Date ? 'true' : String(data[i][22] || ''),
+      recontractPdfLink: String(data[i][23] || '')
     });
   }
   return { status: 'success', creators };
@@ -2921,7 +2986,6 @@ function appendToDatabaseDoc(p) {
     'NQ Instagram password: ' + (pw ? (p.igPass || '') : ''),
     'NQ TikTok Handle: ' + (p.ttUser || ''),
     'NQ TikTok password: ' + (pw ? (p.ttPass || '') : ''),
-    'Creator type: ' + (p.creatorType || ''),
     'Bank account name: ' + (p.acctName || ''),
     'Account number: ' + (p.acctNum || ''),
     'Bank name: ' + (p.bankName || '')
@@ -4877,6 +4941,7 @@ function fixBackdatedTimestamps() {
   }
   Logger.log('======================================================');
 }
+
 
 
 

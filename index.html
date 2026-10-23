@@ -1194,11 +1194,7 @@
           <input class="form-input" id="existing-contract-email" placeholder="Your email address" autocomplete="email" type="email" />
           <input class="form-input" id="existing-contract-phone" placeholder="Your phone number" autocomplete="tel" />
         </div>
-        <div class="signature-choice" role="group" aria-label="Signature style">
-          <label><input type="radio" name="signature-mode" value="written" checked /> Type your name</label>
-          <label><input type="radio" name="signature-mode" value="drawn" /> Draw signature</label>
-        </div>
-        <canvas id="signature-canvas" width="600" height="160" aria-label="Draw your signature" style="display:none;touch-action:none"></canvas>
+        <p class="signature-note">Type your full name below. It will be saved in the Whisper signature font.</p>
         <button class="btn btn-primary" type="button" onclick="signExistingCreatorContract()">Sign and continue</button>
         <div class="alert alert-error" id="existing-contract-error"></div>
       </section>
@@ -2817,8 +2813,8 @@ function signExistingCreatorContract() {
   const signature = String((document.getElementById('existing-contract-signature') || {}).value || '').trim();
   const error = document.getElementById('existing-contract-error');
   if (!signature) { error.textContent = 'Type your full legal name as your signature.'; error.classList.add('show'); return; }
-  const mode = (document.querySelector('input[name="signature-mode"]:checked') || {}).value || 'cursive';
-  const drawnSignature = mode === 'drawn' && document.getElementById('signature-canvas') ? document.getElementById('signature-canvas').toDataURL('image/png') : '';
+  const mode = 'written';
+  const drawnSignature = '';
   const address = String((document.getElementById('existing-contract-address') || {}).value || '').trim();
   const email = String((document.getElementById('existing-contract-email') || {}).value || '').trim();
   const phone = String((document.getElementById('existing-contract-phone') || {}).value || '').trim();
@@ -6376,6 +6372,7 @@ function filterTableRows(inputId, tbodyId) {
 </script>
 </body>
 </html>
+
 
 
 
