@@ -35,7 +35,7 @@ const LEGACY_MONTHLY_SALARY = 100000;     // ₦100,000/month — older creators
 // Onboarding destinations
 const SIGNED_FOLDER_ID = '10h5tEN9xnCHZgtZM4DPaPTsOEhZevkCG';   // signed contracts land here
 const RECONTRACT_TEMPLATE_DOC_ID = '1sRf78TT53QyPSpZturT8yP2r_ljLiXVTpIgtvuZrDq8'; // generic NDA template
-const RECONTRACT_ROLLOUT_VERSION = '2026-10-23-v3';
+const RECONTRACT_ROLLOUT_VERSION = '2026-10-23-v4';
 const DB_DOC_ID = '1HYDnzyZUuyZjNOobvzItIJou39nzhVWEUQlAnQn_dNo'; // master creator database doc
 
 
