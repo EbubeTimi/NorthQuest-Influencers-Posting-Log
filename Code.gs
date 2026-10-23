@@ -35,7 +35,7 @@ const LEGACY_MONTHLY_SALARY = 100000;     // ₦100,000/month — older creators
 // Onboarding destinations
 const SIGNED_FOLDER_ID = '10h5tEN9xnCHZgtZM4DPaPTsOEhZevkCG';   // signed contracts land here
 const RECONTRACT_TEMPLATE_DOC_ID = '1sRf78TT53QyPSpZturT8yP2r_ljLiXVTpIgtvuZrDq8'; // generic NDA template
-const RECONTRACT_ROLLOUT_VERSION = '2026-10-22-v2';
+const RECONTRACT_ROLLOUT_VERSION = '2026-10-23-v3';
 const DB_DOC_ID = '1HYDnzyZUuyZjNOobvzItIJou39nzhVWEUQlAnQn_dNo'; // master creator database doc
 
 
@@ -872,36 +872,58 @@ function handleSignExistingCreatorContract(params) {
   if (!name || !signature || !address || !email || !phone) return { status: 'error', message: 'Name, address, email, phone, and signature are required.' };
   var rec = nqCreatorAccessRecord_(name);
   if (!rec || nqPinHash_(rec.salt, String(params.pin || '').trim()) !== rec.hash) return { status: 'denied', message: 'Please sign in again before signing.' };
+  var lock = LockService.getScriptLock();
+  if (!lock.tryLock(60000)) return { status: 'error', message: 'Your contract is still saving. Please wait a moment.' };
   var safeName = name.replace(/[^a-z0-9 _-]/gi, '').trim() || 'Creator';
-  var folder = DriveApp.getFolderById(SIGNED_FOLDER_ID);
   var workingDoc = null;
   try {
+    var creatorsSheet = getCreatorsSheet();
+    var values = creatorsSheet.getDataRange().getValues();
+    var creatorRow = -1;
+    for (var rowIndex = 1; rowIndex < values.length; rowIndex++) {
+      if (String(values[rowIndex][0] || '').trim().toLowerCase() === name.toLowerCase()) {
+        creatorRow = rowIndex + 1;
+        if (String(values[rowIndex][22] || '').toLowerCase() === 'true' && values[rowIndex][23]) {
+          return { status: 'success', pdfUrl: String(values[rowIndex][23]), alreadySaved: true };
+        }
+        break;
+      }
+    }
+    if (creatorRow < 0) return { status: 'error', message: 'Creator record not found.' };
+    var folder = DriveApp.getFolderById(SIGNED_FOLDER_ID);
     workingDoc = DriveApp.getFileById(RECONTRACT_TEMPLATE_DOC_ID).makeCopy(safeName + ' - Signed Contract (source)', folder);
     var doc = DocumentApp.openById(workingDoc.getId());
     var body = doc.getBody();
-    body.replaceText('\\[CREATOR NAME\\]', name);
-    body.replaceText('Creator: \\s*', 'Creator: ' + name);
+    var creatorNamePlaceholder = body.findText('\\[CREATOR NAME\\]');
+    if (creatorNamePlaceholder) body.replaceText('\\[CREATOR NAME\\]', name);
+    else body.replaceText('Creator: \\s*$', 'Creator: ' + name);
     body.replaceText('Creator Address: \\s*', 'Creator Address: ' + address);
     body.replaceText('Creator Email: \\s*', 'Creator Email: ' + email);
     body.replaceText('Creator Phone: \\s*', 'Creator Phone: ' + phone);
+    body.replaceText('Creator Type[^\\n]*', '');
     body.replaceText('Creator signature:[^\\n]*', 'Creator signature: ' + signature + '    Date: ' + signDate);
-    try { var sigRange = body.findText('Creator signature:[^\\n]*'); if (sigRange) sigRange.getElement().asText().setFontFamily('Whisper'); } catch (fontErr) { Logger.log('Whisper font unavailable; keeping typed signature: ' + fontErr); }
+    try {
+      var sigRange = body.findText('Creator signature:[^\\n]*');
+      if (sigRange) {
+        var sigText = sigRange.getElement().asText();
+        var sigStart = sigRange.getStartOffset() + 'Creator signature: '.length;
+        var sigEnd = sigStart + signature.length - 1;
+        sigText.setFontFamily(sigStart, sigEnd, 'MonteCarlo');
+        sigText.setBold(sigStart, sigEnd, false);
+        sigText.setItalic(sigStart, sigEnd, false);
+      }
+    } catch (fontErr) { Logger.log('MonteCarlo font unavailable; keeping typed signature: ' + fontErr); }
     doc.saveAndClose();
     var file = folder.createFile(workingDoc.getAs(MimeType.PDF).setName(safeName + ' - Signed Contract.pdf'));
     workingDoc.setTrashed(true);
+    creatorsSheet.getRange(creatorRow, 23, 1, 2).setValues([['true', file.getUrl()]]);
+    return { status: 'success', pdfUrl: file.getUrl() };
   } catch (err) {
     if (workingDoc) try { workingDoc.setTrashed(true); } catch (cleanupErr) {}
     return { status: 'error', message: 'Contract could not be saved: ' + String(err.message || err) };
+  } finally {
+    lock.releaseLock();
   }
-  var creatorsSheet = getCreatorsSheet();
-  var values = creatorsSheet.getDataRange().getValues();
-  for (var i = 1; i < values.length; i++) {
-    if (String(values[i][0] || '').trim().toLowerCase() === name.toLowerCase()) {
-      creatorsSheet.getRange(i + 1, 23, 1, 2).setValues([['true', file.getUrl()]]);
-      break;
-    }
-  }
-  return { status: 'success', pdfUrl: file.getUrl() };
 }
 
 function handleSetCreatorPin(params) {
