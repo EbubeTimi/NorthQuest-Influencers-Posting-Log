@@ -2748,10 +2748,14 @@ function toggleCreatorPinVisibility() {
   input.focus();
 }
 
-function verifyCreatorPin(attempt) {
+function verifyCreatorPin(attempt, preservedName, preservedPin) {
   attempt = attempt || 0;
-  const name = document.getElementById('f-name').value.trim();
-  const pin = document.getElementById('creator-pin').value.trim();
+  // Keep the exact credentials from the first click. Background roster/log
+  // refreshes can re-run onNameChange() while Apps Script is still answering;
+  // that function deliberately clears the visible PIN field. A retry must not
+  // then reread the cleared field and falsely report "Enter your six-digit PIN."
+  const name = String(preservedName != null ? preservedName : document.getElementById('f-name').value).trim();
+  const pin = String(preservedPin != null ? preservedPin : document.getElementById('creator-pin').value).trim();
   const btn = document.getElementById('creator-pin-btn');
   const err = document.getElementById('creator-pin-error');
   const progress = document.getElementById('creator-pin-progress');
@@ -2773,7 +2777,7 @@ function verifyCreatorPin(attempt) {
     clearInterval(messageTimer);
     if (networkError && attempt < 1) {
       progress.textContent = 'The connection is taking a little longer. Retrying securely…';
-      setTimeout(function() { verifyCreatorPin(attempt + 1); }, 650);
+      setTimeout(function() { verifyCreatorPin(attempt + 1, name, pin); }, 650);
       return;
     }
     btn.disabled = false; btn.textContent = 'Continue';

@@ -16,6 +16,11 @@ test('creator posting fields stay behind the six-digit PIN gate', () => {
   assert.doesNotMatch(appsScript, /appendRow\(\[name,\s*pin/i);
 });
 
+test('PIN retry preserves the submitted credentials when background refresh clears the field', () => {
+  assert.match(html, /function verifyCreatorPin\(attempt, preservedName, preservedPin\)/);
+  assert.match(html, /verifyCreatorPin\(attempt \+ 1, name, pin\)/);
+});
+
 test('creator dashboard supports one, two, or three editable profile links', () => {
   assert.match(html, /id="profile-instagram"/);
   assert.match(html, /id="profile-tiktok"/);
