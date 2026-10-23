@@ -35,7 +35,7 @@ const LEGACY_MONTHLY_SALARY = 100000;     // ₦100,000/month — older creators
 // Onboarding destinations
 const SIGNED_FOLDER_ID = '10h5tEN9xnCHZgtZM4DPaPTsOEhZevkCG';   // signed contracts land here
 const RECONTRACT_TEMPLATE_DOC_ID = '1sRf78TT53QyPSpZturT8yP2r_ljLiXVTpIgtvuZrDq8'; // generic NDA template
-const RECONTRACT_ROLLOUT_VERSION = '2026-10-23-v4';
+const RECONTRACT_ROLLOUT_VERSION = '2026-10-23-v6';
 const DB_DOC_ID = '1HYDnzyZUuyZjNOobvzItIJou39nzhVWEUQlAnQn_dNo'; // master creator database doc
 
 
@@ -643,7 +643,7 @@ var NQ_ADMIN_ACTIONS = [
   'setBonusCategories', 'getAdminBootstrap', 'getAdminShell', 'getAdminMonth',
   'getCreatorProfiles', 'setCreatorPin', 'generateMissingCreatorPins', 'runCreatorAnalytics', 'getBonusLedger'
 ];
-var NQ_CREATOR_ACTIONS = ['submit', 'checkPost', 'get', 'getMyPay', 'getCreatorProfile', 'saveCreatorProfile', 'signExistingCreatorContract'];
+var NQ_CREATOR_ACTIONS = ['submit', 'checkPost', 'get', 'getMyPay', 'getCreatorProfile', 'saveCreatorProfile', 'getContractText', 'signExistingCreatorContract'];
 
 
 
@@ -862,6 +862,16 @@ function nqResetExistingContractRollout_() {
   props.setProperty('RECONTRACT_ROLLOUT_VERSION', RECONTRACT_ROLLOUT_VERSION);
 }
 
+function handleGetContractText_() {
+  var cache = CacheService.getScriptCache();
+  var text = cache.get('CURRENT_CREATOR_CONTRACT_TEXT_V5');
+  if (!text) {
+    text = DocumentApp.openById(RECONTRACT_TEMPLATE_DOC_ID).getBody().getText();
+    cache.put('CURRENT_CREATOR_CONTRACT_TEXT_V5', text, 600);
+  }
+  return { status: 'success', text: text };
+}
+
 function handleSignExistingCreatorContract(params) {
   var name = String(params.name || '').trim();
   var signature = String(params.signature || '').trim();
@@ -903,7 +913,8 @@ function handleSignExistingCreatorContract(params) {
     body.replaceText('Creator Email: \\s*', 'Creator Email: ' + email);
     body.replaceText('Creator Phone: \\s*', 'Creator Phone: ' + phone);
     body.replaceText('Creator Type[^\\n]*', '');
-    body.replaceText('Creator signature:[^\\n]*', 'Creator signature: ' + signature + '    Date: ' + signDate);
+    body.replaceText('\\[CREATOR SIGNATURE\\]', signature);
+    body.replaceText('\\[SIGNING DATE\\]', signDate);
     try {
       var sigRange = body.findText('Creator signature:[^\\n]*');
       if (sigRange) {
@@ -1328,6 +1339,7 @@ function doGet(e) {
     else if (action === 'getIgStatus') result = handleGetIgStatus_();
     else if (action === 'getIgInsights') result = handleGetIgInsights_();
     else if (action === 'verifyCreatorPin') result = handleVerifyCreatorPin(e.parameter);
+    else if (action === 'getContractText') result = handleGetContractText_();
     else if (action === 'signExistingCreatorContract') result = handleSignExistingCreatorContract(e.parameter);
     else if (action === 'getCreatorProfile') result = handleGetCreatorProfile(e.parameter);
     else if (action === 'saveCreatorProfile') result = handleSaveCreatorProfile(e.parameter);
