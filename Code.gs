@@ -868,7 +868,9 @@ function handleSignExistingCreatorContract(params) {
   var address = String(params.address || '').trim();
   var email = String(params.email || '').trim();
   var phone = String(params.phone || '').trim();
-  var signDate = String(params.signDate || todayStr_()).trim();
+  // The signed document must use the server's current Lagos date. Never trust
+  // a stale browser tab or device clock for the legal signing date.
+  var signDate = Utilities.formatDate(new Date(), 'Africa/Lagos', 'd MMMM yyyy');
   if (!name || !signature || !address || !email || !phone) return { status: 'error', message: 'Name, address, email, phone, and signature are required.' };
   var rec = nqCreatorAccessRecord_(name);
   if (!rec || nqPinHash_(rec.salt, String(params.pin || '').trim()) !== rec.hash) return { status: 'denied', message: 'Please sign in again before signing.' };

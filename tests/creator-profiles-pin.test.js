@@ -21,6 +21,13 @@ test('PIN retry preserves the submitted credentials when background refresh clea
   assert.match(html, /verifyCreatorPin\(attempt \+ 1, name, pin\)/);
 });
 
+test('contract and PIN loading copy stay creator-facing and current', () => {
+  assert.match(html, />Open the contract in a new tab</);
+  assert.doesNotMatch(html, />Open the read-only contract/);
+  assert.match(html, /btn\.textContent = messages\[messageIndex\]/);
+  assert.match(appsScript, /Utilities\.formatDate\(new Date\(\), 'Africa\/Lagos', 'd MMMM yyyy'\)/);
+});
+
 test('creator dashboard supports one, two, or three editable profile links', () => {
   assert.match(html, /id="profile-instagram"/);
   assert.match(html, /id="profile-tiktok"/);
