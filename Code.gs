@@ -882,8 +882,9 @@ function handleSignExistingCreatorContract(params) {
   // a stale browser tab or device clock for the legal signing date.
   var signDate = Utilities.formatDate(new Date(), 'Africa/Lagos', 'd MMMM yyyy');
   if (!name || !enteredSignature || !address || !email || !phone) return { status: 'error', message: 'Name, address, email, phone, and signature are required.' };
-  // Always save the authenticated creator's full name as the legal signature.
-  var signature = name;
+  // Preserve exactly what the creator types as their signature. The account
+  // name remains a separate field in the signed contract.
+  var signature = enteredSignature;
   var rec = nqCreatorAccessRecord_(name);
   if (!rec || nqPinHash_(rec.salt, String(params.pin || '').trim()) !== rec.hash) return { status: 'denied', message: 'Please sign in again before signing.' };
   var lock = LockService.getScriptLock();
