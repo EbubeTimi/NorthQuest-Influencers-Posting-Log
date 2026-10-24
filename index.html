@@ -83,6 +83,9 @@
     pointer-events: none;
     padding-top: env(safe-area-inset-top);
   }
+  .toast-host.compact {
+    justify-content: flex-end;
+  }
   .toast {
     background: white;
     border: 2px solid var(--accent);
@@ -101,6 +104,15 @@
     pointer-events: auto;
   }
   .toast.show { transform: translateY(0); opacity: 1; }
+  .toast.compact {
+    width: auto;
+    max-width: 360px;
+    min-width: 280px;
+    padding: 12px 14px;
+    align-items: center;
+    gap: 10px;
+  }
+  .toast.compact .toast-icon { width: 30px; height: 30px; font-size: 16px; }
   .toast.error { border-color: var(--red); }
   .toast-icon {
     flex-shrink: 0;
@@ -739,6 +751,8 @@
     .welcome-title { font-size: 21px; }
     .login-card { padding: 32px 24px 24px; }
     .toast { margin-top: 8px; padding: 14px 16px; }
+    .toast-host.compact { justify-content: center; }
+    .toast.compact { width: 100%; min-width: 0; max-width: 420px; padding: 12px 14px; }
   }
 
   /* PAYMENTS REGISTER */
@@ -2618,10 +2632,12 @@ function getActiveCreators() {
 }
 
 // ── TOAST ──
-function showToast(type, title, msg) {
+function showToast(type, title, msg, compact) {
   const toast = document.getElementById('toast');
+  const host = toast.parentElement;
   const icon = document.getElementById('toast-icon');
-  toast.className = 'toast' + (type === 'error' ? ' error' : '');
+  toast.className = 'toast' + (type === 'error' ? ' error' : '') + (compact ? ' compact' : '');
+  if (host) host.classList.toggle('compact', !!compact);
   icon.innerHTML = type === 'error' ? '&#x2715;' : '&#x2713;';
   document.getElementById('toast-title').textContent = title;
   document.getElementById('toast-msg').innerHTML = msg;
@@ -2632,7 +2648,9 @@ function showToast(type, title, msg) {
   toastTimer = setTimeout(hideToast, 10000);
 }
 function hideToast() {
-  document.getElementById('toast').classList.remove('show');
+  const toast = document.getElementById('toast');
+  toast.classList.remove('show');
+  if (toast.parentElement) toast.parentElement.classList.remove('compact');
 }
 
 // ── INLINE CONFIRM ──
@@ -2845,7 +2863,7 @@ function signExistingCreatorContract() {
     document.getElementById('creator-tabs').style.display = '';
     document.getElementById('creator-post-panel').style.display = '';
     showCreatorSection('post', document.querySelector('#creator-tabs button'));
-    showToast('success', 'Contract signed', 'Your dashboard is now available.');
+    showToast('success', 'Contract signed', 'Your dashboard is ready.', true);
   }, 90000);
 }
 
