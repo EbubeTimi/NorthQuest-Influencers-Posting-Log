@@ -1077,7 +1077,7 @@
     .creator-view-shell { padding:20px 16px; border-radius:20px; box-shadow:6px 6px 0 #11110f; }
     .creator-view-head { margin-bottom:18px; }
   }
-  .contract-party-fields{display:grid;gap:10px;margin:12px 0}.contract-preview{height:520px;border:1px solid #d9dfd8;border-radius:12px;overflow:auto;background:#fff;margin:16px 0;padding:24px}.contract-copy{font-family:Georgia,'Times New Roman',serif;font-size:15px;line-height:1.65;color:#171713}.contract-copy p{margin:0 0 12px}.contract-copy h2{font-size:21px;line-height:1.3;margin:24px 0 10px}.contract-copy h3{font-size:18px;line-height:1.35;margin:20px 0 8px}.contract-copy h4{font-size:16px;line-height:1.4;margin:16px 0 8px}.contract-copy strong{font-weight:700}.contract-center{text-align:center}.contract-table-wrap{overflow-x:auto;margin:14px 0 18px}.contract-table{width:100%;border-collapse:collapse;font-family:inherit}.contract-table th,.contract-table td{border:1px solid #bdb8aa;padding:10px 12px;text-align:left;vertical-align:top}.contract-table th{background:#f1eee3;font-weight:700}.contract-signing-note{margin:0 0 14px;color:var(--text2);font-size:14px}.contract-copy-loading{font-family:inherit;color:var(--text3)}.signature-input{font-family:'MonteCarlo',cursive;font-size:32px;font-weight:400;font-style:normal}
+  .contract-party-fields{display:grid;gap:10px;margin:12px 0}.contract-preview{height:520px;border:1px solid #d9dfd8;border-radius:12px;overflow:auto;background:#fff;margin:16px 0;padding:24px}.contract-copy{font-family:Georgia,'Times New Roman',serif;font-size:15px;line-height:1.65;color:#171713}.contract-copy p{margin:0 0 12px}.contract-copy h2{font-size:21px;line-height:1.3;margin:24px 0 10px}.contract-copy h3{font-size:18px;line-height:1.35;margin:20px 0 8px}.contract-copy h4{font-size:16px;line-height:1.4;margin:16px 0 8px}.contract-copy strong{font-weight:700}.contract-center{text-align:center}.contract-table-wrap{overflow-x:auto;margin:14px 0 18px}.contract-table{width:100%;border-collapse:collapse;font-family:inherit}.contract-table th,.contract-table td{border:1px solid #bdb8aa;padding:10px 12px;text-align:left;vertical-align:top}.contract-table th{background:#f1eee3;font-weight:700}.contract-signing-note{margin:14px 0;color:var(--text2);font-size:14px}.contract-copy-loading{font-family:inherit;color:var(--text3)}.signature-input{font-family:'MonteCarlo',cursive;font-size:32px;font-weight:400;font-style:normal}.contract-agree{display:flex;align-items:flex-start;gap:10px;margin:14px 0}.contract-agree input{margin-top:4px;flex:0 0 auto}.contract-agree label{font-size:14px;line-height:1.5}
   #page-profiles .pay-table,#page-analytics .pay-table{table-layout:fixed;width:100%}#page-profiles .pay-table th:nth-child(1){width:21%}#page-profiles .pay-table th:nth-child(2),#page-profiles .pay-table th:nth-child(3),#page-profiles .pay-table th:nth-child(4){width:10%}#page-profiles .pay-table th:nth-child(5){width:15%}#page-profiles .pay-table th:nth-child(6){width:10%}#page-profiles .pay-table th:nth-child(7){width:24%}#page-profiles .pay-table td,#page-profiles .pay-table th,#page-analytics .pay-table td,#page-analytics .pay-table th{vertical-align:middle;text-align:left;word-break:normal}#page-profiles .pay-table td:nth-child(2),#page-profiles .pay-table td:nth-child(3),#page-profiles .pay-table td:nth-child(4),#page-profiles .pay-table td:nth-child(5),#page-profiles .pay-table td:nth-child(6){text-align:center}
 </style>
 </head>
@@ -1230,14 +1230,15 @@
         <h2>Contract signature required</h2>
         <p>Please read and sign this updated agreement.</p>
         <div class="contract-preview" tabindex="0" aria-label="Creator agreement"><div class="contract-copy" id="contract-copy"></div></div>
-        <p class="contract-signing-note">Completing this form fully signs your contract.</p>
-        <label class="form-label" for="existing-contract-signature">Type your full legal name as your signature</label>
-        <input class="form-input signature-input" id="existing-contract-signature" autocomplete="name" placeholder="Your full legal name" />
         <div class="contract-party-fields">
           <input class="form-input" id="existing-contract-address" placeholder="Your full address" autocomplete="street-address" />
-          <input class="form-input" id="existing-contract-email" placeholder="Your email address" autocomplete="email" type="email" />
-          <input class="form-input" id="existing-contract-phone" placeholder="Your phone number" autocomplete="tel" />
         </div>
+        <div class="contract-agree"><input type="checkbox" id="existing-contract-agree" /><label for="existing-contract-agree">I have read and agree to the UGC Content Creator Agreement, including the account ownership and content preservation terms.</label></div>
+        <label class="form-label" for="existing-contract-signature">Type your full legal name as your signature</label>
+        <input class="form-input signature-input" id="existing-contract-signature" autocomplete="name" placeholder="Your full legal name" />
+        <label class="form-label" for="existing-contract-date">Date</label>
+        <input class="form-input" id="existing-contract-date" readonly aria-readonly="true" />
+        <p class="contract-signing-note">Submitting this form fully signs your contract. A PDF copy is saved automatically.</p>
         <button class="btn btn-primary" type="button" onclick="signExistingCreatorContract()">Sign and continue</button>
         <div class="alert alert-error" id="existing-contract-error"></div>
       </section>
@@ -2961,21 +2962,23 @@ function loadContractText() {
     copy.classList.remove('contract-copy-loading');
   }
   if (button) button.disabled = false;
+  const date = document.getElementById('existing-contract-date');
+  if (date) date.value = new Intl.DateTimeFormat('en-GB',{day:'numeric',month:'long',year:'numeric',timeZone:'Africa/Lagos'}).format(new Date());
 }
 
 function signExistingCreatorContract() {
   const signature = String((document.getElementById('existing-contract-signature') || {}).value || '').trim();
   const error = document.getElementById('existing-contract-error');
+  const agreed = !!((document.getElementById('existing-contract-agree') || {}).checked);
+  if (!agreed) { error.textContent = 'Please tick the box to agree to the contract.'; error.classList.add('show'); return; }
   if (!signature) { error.textContent = 'Type your full legal name as your signature.'; error.classList.add('show'); return; }
   const mode = 'written';
   const drawnSignature = '';
   const address = String((document.getElementById('existing-contract-address') || {}).value || '').trim();
-  const email = String((document.getElementById('existing-contract-email') || {}).value || '').trim();
-  const phone = String((document.getElementById('existing-contract-phone') || {}).value || '').trim();
-  if (!address || !email || !phone) { error.textContent = 'Please complete your address, email, and phone number.'; error.classList.add('show'); return; }
+  if (!address) { error.textContent = 'Please enter your full residential address.'; error.classList.add('show'); return; }
   const button = document.querySelector('#existing-contract-gate button.btn-primary');
   if (button) { button.disabled = true; button.textContent = 'Saving contract…'; }
-  jsonp({ action:'signExistingCreatorContract', name:creatorAccessName, pin:creatorSessionPin, signature:signature, drawnSignature:drawnSignature, signatureMode:mode, address:address, email:email, phone:phone, signDate:new Date().toISOString().slice(0,10) }, function(data) {
+  jsonp({ action:'signExistingCreatorContract', name:creatorAccessName, pin:creatorSessionPin, signature:signature, drawnSignature:drawnSignature, signatureMode:mode, address:address }, function(data) {
     if (button) { button.disabled = false; button.textContent = 'Sign and continue'; }
     if (!data || data.status !== 'success') { error.textContent = (data && data.message) || 'Could not save your signature. Please try again.'; error.classList.add('show'); return; }
     document.getElementById('existing-contract-gate').style.display = 'none';

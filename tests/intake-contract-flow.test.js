@@ -56,6 +56,24 @@ test('backend shares one contract PDF builder across intake and tracker signing'
   assert.match(backend, /setItalic\(sigStart, sigEnd, false\)/);
 });
 
+test('tracker contract matches onboarding fields and reuses saved contact details', () => {
+  const gate = tracker.match(/<section class="existing-contract-gate"[\s\S]*?<\/section>/)?.[0] || '';
+  const signer = tracker.match(/function signExistingCreatorContract\(\) \{([\s\S]*?)\n\}/)?.[1] || '';
+  const backendSigner = backend.slice(
+    backend.indexOf('function handleSignExistingCreatorContract(params)'),
+    backend.indexOf('function handleSetCreatorPin', backend.indexOf('function handleSignExistingCreatorContract(params)'))
+  );
+  assert.match(gate, /id="existing-contract-address"/);
+  assert.match(gate, /id="existing-contract-agree"/);
+  assert.match(gate, /id="existing-contract-signature"/);
+  assert.match(gate, /id="existing-contract-date"[^>]*readonly/);
+  assert.doesNotMatch(gate, /existing-contract-email|existing-contract-phone/);
+  assert.doesNotMatch(signer, /params[^\n]*(?:email|phone)|existing-contract-email|existing-contract-phone/);
+  assert.match(backendSigner, /phone = String\(values\[rowIndex\]\[7\]/);
+  assert.match(backendSigner, /email = String\(values\[rowIndex\]\[8\]/);
+  assert.match(backendSigner, /nqCreateSignedContractPdf_\(name, enteredSignature, address, email, phone\)/);
+});
+
 test('completed intake saves one PDF and enables first-time self PIN setup', () => {
   const start = backend.indexOf('function handleIntake(params)');
   const end = backend.indexOf('function appendToDatabaseDoc', start);
