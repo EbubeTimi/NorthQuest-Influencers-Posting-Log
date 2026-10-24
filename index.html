@@ -1231,7 +1231,10 @@
         <p>Please read and sign this updated agreement.</p>
         <div class="contract-preview" tabindex="0" aria-label="Creator agreement"><div class="contract-copy" id="contract-copy"></div></div>
         <div class="contract-party-fields">
+          <input class="form-input" id="existing-contract-name" placeholder="Creator full legal name" autocomplete="name" />
           <input class="form-input" id="existing-contract-address" placeholder="Your full address" autocomplete="street-address" />
+          <input class="form-input" id="existing-contract-email" placeholder="Your email address" autocomplete="email" type="email" />
+          <input class="form-input" id="existing-contract-phone" placeholder="Your phone number" autocomplete="tel" type="tel" />
         </div>
         <div class="contract-agree"><input type="checkbox" id="existing-contract-agree" /><label for="existing-contract-agree">I have read and agree to the UGC Content Creator Agreement, including the account ownership and content preservation terms.</label></div>
         <label class="form-label" for="existing-contract-signature">Type your full legal name as your signature</label>
@@ -2962,23 +2965,29 @@ function loadContractText() {
     copy.classList.remove('contract-copy-loading');
   }
   if (button) button.disabled = false;
+  const creatorName = document.getElementById('existing-contract-name');
+  if (creatorName && !creatorName.value) creatorName.value = creatorAccessName || '';
   const date = document.getElementById('existing-contract-date');
   if (date) date.value = new Intl.DateTimeFormat('en-GB',{day:'numeric',month:'long',year:'numeric',timeZone:'Africa/Lagos'}).format(new Date());
 }
 
 function signExistingCreatorContract() {
+  const contractName = String((document.getElementById('existing-contract-name') || {}).value || '').trim();
   const signature = String((document.getElementById('existing-contract-signature') || {}).value || '').trim();
   const error = document.getElementById('existing-contract-error');
   const agreed = !!((document.getElementById('existing-contract-agree') || {}).checked);
   if (!agreed) { error.textContent = 'Please tick the box to agree to the contract.'; error.classList.add('show'); return; }
+  if (!contractName) { error.textContent = 'Please enter the creator name for the contract.'; error.classList.add('show'); return; }
   if (!signature) { error.textContent = 'Type your full legal name as your signature.'; error.classList.add('show'); return; }
   const mode = 'written';
   const drawnSignature = '';
   const address = String((document.getElementById('existing-contract-address') || {}).value || '').trim();
-  if (!address) { error.textContent = 'Please enter your full residential address.'; error.classList.add('show'); return; }
+  const email = String((document.getElementById('existing-contract-email') || {}).value || '').trim();
+  const phone = String((document.getElementById('existing-contract-phone') || {}).value || '').trim();
+  if (!address || !email || !phone) { error.textContent = 'Please complete the creator address, email, and phone number for the contract.'; error.classList.add('show'); return; }
   const button = document.querySelector('#existing-contract-gate button.btn-primary');
   if (button) { button.disabled = true; button.textContent = 'Saving contract…'; }
-  jsonp({ action:'signExistingCreatorContract', name:creatorAccessName, pin:creatorSessionPin, signature:signature, drawnSignature:drawnSignature, signatureMode:mode, address:address }, function(data) {
+  jsonp({ action:'signExistingCreatorContract', name:creatorAccessName, contractName:contractName, pin:creatorSessionPin, signature:signature, drawnSignature:drawnSignature, signatureMode:mode, address:address, email:email, phone:phone }, function(data) {
     if (button) { button.disabled = false; button.textContent = 'Sign and continue'; }
     if (!data || data.status !== 'success') { error.textContent = (data && data.message) || 'Could not save your signature. Please try again.'; error.classList.add('show'); return; }
     document.getElementById('existing-contract-gate').style.display = 'none';

