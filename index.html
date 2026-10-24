@@ -837,6 +837,13 @@
   .creator-pin-progress { display:none; margin-top:10px; color:var(--text2); font-size:12px; line-height:1.45; }
   .creator-pin-progress.show { display:block; }
   .creator-pin-progress::before { content:''; display:inline-block; width:7px; height:7px; margin-right:7px; border-radius:50%; background:#d8ff37; box-shadow:0 0 0 3px rgba(216,255,55,.22); animation:creatorPulse 1.2s ease-in-out infinite; }
+  .creator-pin-setup { display:none; }
+  .creator-pin-setup-title { font-size:18px; font-weight:700; margin-bottom:4px; }
+  .creator-pin-setup-copy { color:var(--text2); margin-bottom:14px; }
+  .creator-pin-setup .form-group { margin-bottom:12px; }
+  .creator-pin-saved { display:none; padding:14px; border:1.5px solid var(--accent); border-radius:10px; background:var(--accent-light); }
+  .creator-pin-saved code { display:block; margin:8px 0 12px; font-size:26px; letter-spacing:5px; color:var(--text); }
+  .creator-pin-saved-actions { display:flex; gap:8px; flex-wrap:wrap; }
   @keyframes creatorPulse { 50% { opacity:.35; transform:scale(.72); } }
   .profile-card { border:1px solid var(--border); border-radius:12px; padding:16px; margin:0 0 18px; background:#fff; }
   .profile-card-head { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; }
@@ -1176,7 +1183,8 @@
         <option value="">Select your name...</option>
       </select>
       <div class="creator-pin-panel" id="creator-pin-panel">
-        <div class="creator-pin-row">
+        <div id="creator-pin-checking" class="creator-pin-progress show" role="status" aria-live="polite">Checking your account…</div>
+        <div class="creator-pin-row" id="creator-pin-login" style="display:none">
           <div class="form-group">
             <label class="form-label" for="creator-pin">Your six-digit PIN</label>
             <div class="creator-pin-password">
@@ -1188,7 +1196,30 @@
           </div>
           <button class="btn btn-primary" id="creator-pin-btn" type="button" onclick="verifyCreatorPin()" style="width:auto">Continue</button>
         </div>
-        <button class="creator-pin-help" type="button" onclick="creatorPinHelp()">I forgot my PIN</button>
+        <button class="creator-pin-help" id="creator-pin-help" type="button" onclick="creatorPinHelp()" style="display:none">I forgot my PIN</button>
+        <div class="creator-pin-setup" id="creator-pin-setup">
+          <div class="creator-pin-setup-title">Create your six-digit PIN</div>
+          <div class="creator-pin-setup-copy">You will use this PIN whenever you open your creator workspace.</div>
+          <div id="creator-pin-create-form">
+            <div class="form-group">
+              <label class="form-label" for="creator-pin-create">Create PIN</label>
+              <input class="form-input" id="creator-pin-create" type="password" inputmode="numeric" maxlength="6" autocomplete="new-password" placeholder="Six digits" />
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="creator-pin-confirm">Confirm PIN</label>
+              <input class="form-input" id="creator-pin-confirm" type="password" inputmode="numeric" maxlength="6" autocomplete="new-password" placeholder="Enter the same PIN" onkeydown="if(event.key==='Enter')createCreatorPin()" />
+            </div>
+            <button class="btn btn-primary" id="creator-pin-create-btn" type="button" onclick="createCreatorPin()">Save PIN</button>
+          </div>
+          <div class="creator-pin-saved" id="creator-pin-saved" role="status" aria-live="polite">
+            <strong>Your PIN is ready</strong>
+            <code id="creator-new-pin-value"></code>
+            <div class="creator-pin-saved-actions">
+              <button class="btn" type="button" onclick="copyNewCreatorPin()">Copy PIN</button>
+              <button class="btn btn-primary" type="button" onclick="completeNewCreatorEntry()">Open account profile</button>
+            </div>
+          </div>
+        </div>
         <div class="creator-pin-progress" id="creator-pin-progress" role="status" aria-live="polite"></div>
         <div class="alert alert-error" id="creator-pin-error"></div>
       </div>
@@ -1703,6 +1734,8 @@ let creatorAccessName = '', creatorAccessKey = '', creatorAccessMode = '';
 let creatorProfile = { name:'', instagram:'', tiktok:'', facebook:'', complete:false };
 let creatorProfiles = [], creatorProfilesLoaded = false, creatorProfilesLoadInFlight = false, creatorProfilesSummary = null;
 let creatorSessionPin = '';
+let creatorPinLookupName = '';
+let pendingNewCreatorAccess = null;
 let generatedCreatorPins = {};
 let weekOffset = 0, selectedMonth = null, selectedPayMonth = null;
 // Which month the Manage Creators bonus column reads and writes. Null means
@@ -2750,6 +2783,92 @@ function showCreatorPinGate(name) {
   const secure = document.getElementById('creator-secure-content');
   if (panel) panel.style.display = name ? 'block' : 'none';
   if (secure) secure.style.display = 'none';
+  if (!name) return;
+  const checking = document.getElementById('creator-pin-checking');
+  const login = document.getElementById('creator-pin-login');
+  const help = document.getElementById('creator-pin-help');
+  const setup = document.getElementById('creator-pin-setup');
+  const createForm = document.getElementById('creator-pin-create-form');
+  const saved = document.getElementById('creator-pin-saved');
+  if (checking) checking.style.display = 'block';
+  if (login) login.style.display = 'none';
+  if (help) help.style.display = 'none';
+  if (setup) setup.style.display = 'none';
+  if (createForm) createForm.style.display = 'block';
+  if (saved) saved.style.display = 'none';
+  pendingNewCreatorAccess = null;
+  creatorPinLookupName = name;
+  jsonp({ action:'getCreatorPinStatus', name:name, _bust:Date.now() }, function(data) {
+    if (creatorPinLookupName !== name || document.getElementById('f-name').value.trim() !== name) return;
+    if (checking) checking.style.display = 'none';
+    if (data && data.status === 'success' && data.mode === 'create') {
+      if (setup) setup.style.display = 'block';
+      const first = document.getElementById('creator-pin-create');
+      if (first) first.focus();
+    } else {
+      if (login) login.style.display = '';
+      if (help) help.style.display = '';
+      const input = document.getElementById('creator-pin');
+      if (input) input.focus();
+    }
+  }, 12000);
+}
+
+function createCreatorPin() {
+  const name = document.getElementById('f-name').value.trim();
+  const pin = document.getElementById('creator-pin-create').value.trim();
+  const confirmPin = document.getElementById('creator-pin-confirm').value.trim();
+  const btn = document.getElementById('creator-pin-create-btn');
+  const err = document.getElementById('creator-pin-error');
+  err.classList.remove('show');
+  if (!/^\d{6}$/.test(pin)) {
+    err.textContent = 'Create a six-digit PIN.'; err.classList.add('show'); return;
+  }
+  if (pin !== confirmPin) {
+    err.textContent = 'The two PINs do not match.'; err.classList.add('show'); return;
+  }
+  btn.disabled = true; btn.textContent = 'Saving PIN…';
+  jsonp({ action:'createCreatorPin', name:name, pin:pin, confirmPin:confirmPin, _bust:Date.now() }, function(data, networkError) {
+    btn.disabled = false; btn.textContent = 'Save PIN';
+    if (!data || data.status !== 'success') {
+      err.textContent = (data && data.message) || (networkError ? 'We could not save your PIN. Check your connection and try again.' : 'We could not save your PIN. Please try again.');
+      err.classList.add('show'); return;
+    }
+    pendingNewCreatorAccess = data;
+    creatorSessionPin = pin;
+    document.getElementById('creator-new-pin-value').textContent = pin;
+    document.getElementById('creator-pin-create-form').style.display = 'none';
+    document.getElementById('creator-pin-saved').style.display = 'block';
+  }, 25000);
+}
+
+function copyNewCreatorPin() {
+  const value = (document.getElementById('creator-new-pin-value').textContent || '').trim();
+  const done = function() { showToast('success', 'PIN copied', 'Keep it somewhere private.'); };
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(value).then(done).catch(function() { fallbackCopyGeneratedPin(value); });
+  else fallbackCopyGeneratedPin(value);
+}
+
+function completeNewCreatorEntry() {
+  const data = pendingNewCreatorAccess;
+  const name = document.getElementById('f-name').value.trim();
+  if (!data || data.status !== 'success') return;
+  creatorAccessName = name;
+  creatorAccessKey = data.creatorKey || '';
+  creatorAccessMode = data.accessMode || 'active';
+  creatorProfile = data.profile || { name:name, instagram:'', tiktok:'', facebook:'', complete:false };
+  document.getElementById('creator-pin-panel').style.display = 'none';
+  document.getElementById('creator-secure-content').style.display = 'block';
+  document.getElementById('existing-contract-gate').style.display = 'none';
+  document.getElementById('creator-tabs').style.display = '';
+  applyCreatorAccessMode();
+  rememberMe(name);
+  loadRowsIfStale();
+  onNameChange(false);
+  document.getElementById('creator-profile-name').textContent = name;
+  document.getElementById('creator-profile-body').innerHTML = creatorProfileCardHtml();
+  showCreatorSection('profile', document.getElementById('creator-profile-tab'));
+  showToast('success', 'PIN saved', 'Add the account profile links you use.');
 }
 
 function toggleCreatorPinVisibility() {
@@ -2822,7 +2941,7 @@ function verifyCreatorPin(attempt, preservedName, preservedPin) {
     }
     applyCreatorAccessMode();
     if (creatorAccessMode === 'readOnly') openMyLogs();
-    else showCreatorSection('post', document.querySelector('#creator-tabs button'));
+    else showCreatorSection('post', document.getElementById('creator-post-tab'));
     rememberMe(name);
     loadRowsIfStale();
     onNameChange(false);

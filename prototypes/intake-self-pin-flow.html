@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Prototype — Intake creator creates PIN</title>
+  <style>
+    :root{--ink:#11110f;--paper:#fffdf7;--wash:#f3f0e7;--lime:#dfff45;--orange:#ff6047;--green:#176c4c;--line:#d7d0c1;--muted:#69645c}
+    *{box-sizing:border-box}body{margin:0;background:var(--wash);color:var(--ink);font:16px/1.45 Arial,sans-serif}button,input{font:inherit}button{cursor:pointer}
+    .shell{min-height:100vh;padding:22px}.brand{display:flex;align-items:center;gap:9px;max-width:560px;margin:auto}.mark{display:flex;align-items:flex-end;gap:3px;width:35px;transform:rotate(-7deg)}.mark i{width:8px;border-radius:6px 6px 1px 1px}.mark i:nth-child(1){height:15px;background:#ff5b35}.mark i:nth-child(2){height:27px;background:#f5bd2d}.mark i:nth-child(3){height:21px;background:#185943}.brand b{font:900 21px Arial Black,Arial}.brand em{color:var(--orange);font-style:normal}.brand span{margin-left:auto;font-size:10px;letter-spacing:.13em;font-weight:800}
+    .card{max-width:560px;margin:6vh auto 24px;background:var(--paper);border:2px solid;border-radius:26px;box-shadow:9px 9px var(--ink);padding:32px}.step{display:none}.step.active{display:block}h1{font-size:42px;line-height:1.02;letter-spacing:-1.8px;margin:0 0 14px}h2{font-size:27px;margin:0 0 8px}.muted{color:var(--muted);margin:0 0 24px}.eyebrow{font-size:11px;letter-spacing:.14em;text-transform:uppercase;font-weight:900;color:var(--green);margin-bottom:12px}.field{display:block;margin:18px 0 7px;font-size:12px;font-weight:900;letter-spacing:.09em;text-transform:uppercase}.input-wrap{position:relative}.input-wrap input{padding-right:52px}.eye{position:absolute;right:6px;top:6px;width:43px;height:43px;border:0;background:transparent;font-size:20px}input{width:100%;border:2px solid;border-radius:13px;background:#fff;padding:15px;font-size:21px;letter-spacing:.16em}.primary,.secondary,.ghost{border:2px solid;border-radius:13px;padding:14px 17px;font-weight:900}.primary{width:100%;margin-top:20px;background:var(--ink);color:#fff}.primary:disabled{opacity:.45;cursor:not-allowed}.secondary{background:var(--lime)}.ghost{background:#fff}.summary{border:2px solid;border-radius:16px;background:#fff;padding:17px;margin:20px 0}.summary strong{display:block;font-size:18px}.check{display:flex;gap:10px;align-items:flex-start;margin:17px 0;color:var(--muted)}.check input{width:auto;margin-top:4px}.pin-display{display:flex;justify-content:space-between;align-items:center;gap:12px;border:2px dashed;border-radius:15px;padding:17px;background:#fff;margin:20px 0}.pin-value{font:900 27px ui-monospace,monospace;letter-spacing:.2em}.success{width:58px;height:58px;border-radius:50%;display:grid;place-items:center;background:#e6f2e9;color:var(--green);font-size:32px;margin-bottom:18px}.error{margin-top:14px;border:2px solid #e4a8a8;background:#fff0f0;color:#a52424;border-radius:12px;padding:12px}.note{margin-top:18px;border-left:4px solid var(--orange);padding:8px 0 8px 13px;color:var(--muted)}.progress{display:flex;gap:7px;margin:0 0 25px}.progress i{height:7px;flex:1;border-radius:9px;background:#ded8cc}.progress i.on{background:var(--green)}button:focus,input:focus{outline:3px solid var(--orange);outline-offset:3px}
+    .review{position:fixed;right:14px;bottom:14px;width:280px;background:#151513;color:#fff;border-radius:15px;padding:13px;box-shadow:0 12px 35px #0004}.review b{display:block;margin-bottom:8px}.review button{border:1px solid #777;background:#30302d;color:#fff;border-radius:7px;padding:7px;margin:3px}.review small{display:block;color:#ccc;margin-top:8px}.review-controls{display:flex;flex-wrap:wrap}.approval{margin-top:9px;border-top:1px solid #555;padding-top:9px}.approval button:first-child{background:#176c4c}.approval button:nth-child(2){background:#8b5b00}.approval button:nth-child(3){background:#8a2929}
+    @media(max-width:760px){.shell{padding:14px}.card{margin:4vh auto 92px;padding:25px 18px}h1{font-size:35px}.brand span{display:none}.review{left:12px;right:12px;bottom:10px;width:auto}.review small,.approval{display:none}}
+    @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
+  </style>
+</head>
+<body>
+<main class="shell">
+  <header class="brand"><div class="mark" aria-hidden="true"><i></i><i></i><i></i></div><b>growthcooks<em>.</em></b><span>CREATOR INTAKE</span></header>
+  <section class="card" aria-live="polite">
+    <div class="progress" aria-label="Step progress"><i class="on"></i><i id="p2"></i><i id="p3"></i></div>
+
+    <div class="step active" id="complete">
+      <div class="eyebrow">Intake complete</div>
+      <h1>Your details are saved.</h1>
+      <p class="muted">Your creator account is ready. Create the six-digit PIN you will use to sign in.</p>
+      <div class="summary"><strong>Amaka Nwosu</strong><span>Creator account</span><br><span>Contract completed during intake</span></div>
+      <button class="primary" onclick="go('create')">Create my PIN</button>
+      <p class="note">This step is shown only to creators who have just completed intake. Existing creators continue receiving their PIN from the administrator.</p>
+    </div>
+
+    <div class="step" id="create">
+      <div class="eyebrow">Secure your account</div>
+      <h1>Create your PIN.</h1>
+      <p class="muted">Choose six numbers you can remember. Do not use a repeated number such as 111111.</p>
+      <label class="field" for="pin1">Your six-digit PIN</label>
+      <div class="input-wrap"><input id="pin1" type="password" inputmode="numeric" maxlength="6" autocomplete="new-password" oninput="digits(this);clearError()"><button class="eye" aria-label="Show PIN" onclick="toggle('pin1',this)">◉</button></div>
+      <label class="field" for="pin2">Confirm your PIN</label>
+      <div class="input-wrap"><input id="pin2" type="password" inputmode="numeric" maxlength="6" autocomplete="new-password" oninput="digits(this);clearError()"><button class="eye" aria-label="Show PIN confirmation" onclick="toggle('pin2',this)">◉</button></div>
+      <label class="check"><input id="remember" type="checkbox"> <span>I have saved this PIN somewhere private.</span></label>
+      <button id="save" class="primary" onclick="savePin()">Save my PIN</button>
+      <div id="error" class="error" role="alert" hidden></div>
+      <button class="ghost" style="margin-top:12px" onclick="go('complete')">Back</button>
+    </div>
+
+    <div class="step" id="saving">
+      <div class="eyebrow">Almost done</div><h1>Saving your PIN…</h1>
+      <p class="muted">Securing your creator account. Please keep this page open.</p>
+      <div class="summary"><strong>Creating secure access</strong><span>Your PIN itself will not be displayed to the administrator.</span></div>
+    </div>
+
+    <div class="step" id="success">
+      <div class="success" aria-hidden="true">✓</div>
+      <div class="eyebrow">Account ready</div><h1>Your PIN is saved.</h1>
+      <p class="muted">Use this PIN whenever you sign in to the Creator Posting Tracker.</p>
+      <div class="pin-display"><span id="finalPin" class="pin-value">••••••</span><button class="secondary" onclick="copyPin(this)">Copy PIN</button></div>
+      <button class="primary" onclick="go('login')">Continue to sign in</button>
+    </div>
+
+    <div class="step" id="login">
+      <div class="eyebrow">Creator login</div><h1>Welcome, Creator.</h1>
+      <p class="muted">Your name now appears in the creator list. Use the PIN you just created.</p>
+      <div class="summary"><strong>Amaka Nwosu</strong><span>Selected creator</span></div>
+      <label class="field">Your six-digit PIN</label><input type="password" value="583104" inputmode="numeric" maxlength="6">
+      <button class="primary" onclick="go('workspace')">Sign in</button>
+    </div>
+
+    <div class="step" id="workspace">
+      <div class="success" aria-hidden="true">✓</div><div class="eyebrow">Signed in</div><h1>Hi, Amaka.</h1>
+      <p class="muted">The creator enters their workspace directly. They are not asked to sign the renewed contract because they completed the contract during intake.</p>
+      <div class="summary"><strong>Next step</strong><span>Add Instagram, TikTok, or Facebook profile links.</span></div>
+      <button class="primary">Open account profile</button>
+    </div>
+  </section>
+</main>
+
+<aside class="review" aria-label="Prototype review controls">
+  <b>Self-PIN flow prototype</b>
+  <div class="review-controls"><button onclick="go('complete')">1 Intake done</button><button onclick="go('create')">2 Create PIN</button><button onclick="go('success')">3 PIN saved</button><button onclick="go('login')">4 Login</button><button onclick="go('workspace')">5 Workspace</button><button onclick="showFailure()">Error</button></div>
+  <small>All names, PINs, saving, copying, and login are local simulations. Nothing is sent or stored.</small>
+  <div class="approval"><button onclick="decision('Approved')">Approve</button><button onclick="decision('Needs changes')">Revise</button><button onclick="decision('Rejected')">Reject</button><div id="decision"></div></div>
+</aside>
+<script>
+  let chosenPin='583104';
+  const ids=['complete','create','saving','success','login','workspace'];
+  function go(id){ids.forEach(x=>document.getElementById(x).classList.toggle('active',x===id));document.getElementById('p2').classList.toggle('on',id!=='complete');document.getElementById('p3').classList.toggle('on',['success','login','workspace'].includes(id));document.querySelector('.card').focus?.();window.scrollTo({top:0,behavior:'smooth'})}
+  function digits(el){el.value=el.value.replace(/\D/g,'').slice(0,6)}
+  function toggle(id,b){const el=document.getElementById(id);el.type=el.type==='password'?'text':'password';b.setAttribute('aria-label',el.type==='password'?'Show PIN':'Hide PIN')}
+  function clearError(){document.getElementById('error').hidden=true}
+  function savePin(){const a=document.getElementById('pin1').value,b=document.getElementById('pin2').value,remember=document.getElementById('remember').checked,error=document.getElementById('error');let msg='';if(!/^\d{6}$/.test(a))msg='Enter exactly six numbers.';else if(/^(\d)\1{5}$/.test(a))msg='Choose a less predictable PIN.';else if(a!==b)msg='The two PINs do not match.';else if(!remember)msg='Confirm that you saved your PIN somewhere private.';if(msg){error.textContent=msg;error.hidden=false;return}chosenPin=a;go('saving');setTimeout(()=>{document.getElementById('finalPin').textContent=chosenPin;go('success')},700)}
+  function copyPin(button){navigator.clipboard?.writeText(chosenPin);button.textContent='Copied';setTimeout(()=>button.textContent='Copy PIN',1200)}
+  function showFailure(){go('create');document.getElementById('pin1').value='123456';document.getElementById('pin2').value='123450';document.getElementById('error').textContent='The two PINs do not match.';document.getElementById('error').hidden=false}
+  function decision(text){document.getElementById('decision').textContent=text+' — recorded only in this preview.'}
+</script>
+</body></html>
