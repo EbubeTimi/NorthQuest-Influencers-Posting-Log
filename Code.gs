@@ -874,14 +874,16 @@ function handleGetContractText_() {
 
 function handleSignExistingCreatorContract(params) {
   var name = String(params.name || '').trim();
-  var signature = String(params.signature || '').trim();
+  var enteredSignature = String(params.signature || '').trim();
   var address = String(params.address || '').trim();
   var email = String(params.email || '').trim();
   var phone = String(params.phone || '').trim();
   // The signed document must use the server's current Lagos date. Never trust
   // a stale browser tab or device clock for the legal signing date.
   var signDate = Utilities.formatDate(new Date(), 'Africa/Lagos', 'd MMMM yyyy');
-  if (!name || !signature || !address || !email || !phone) return { status: 'error', message: 'Name, address, email, phone, and signature are required.' };
+  if (!name || !enteredSignature || !address || !email || !phone) return { status: 'error', message: 'Name, address, email, phone, and signature are required.' };
+  // Always save the authenticated creator's full name as the legal signature.
+  var signature = name;
   var rec = nqCreatorAccessRecord_(name);
   if (!rec || nqPinHash_(rec.salt, String(params.pin || '').trim()) !== rec.hash) return { status: 'denied', message: 'Please sign in again before signing.' };
   var lock = LockService.getScriptLock();
@@ -913,19 +915,28 @@ function handleSignExistingCreatorContract(params) {
     body.replaceText('Creator Email: \\s*', 'Creator Email: ' + email);
     body.replaceText('Creator Phone: \\s*', 'Creator Phone: ' + phone);
     body.replaceText('Creator Type[^\\n]*', '');
+    body.replaceText('Creator signature:', 'Signature:');
     body.replaceText('\\[CREATOR SIGNATURE\\]', signature);
     body.replaceText('\\[SIGNING DATE\\]', signDate);
     try {
-      var sigRange = body.findText('Creator signature:[^\\n]*');
-      if (sigRange) {
-        var sigText = sigRange.getElement().asText();
-        var sigStart = sigRange.getStartOffset() + 'Creator signature: '.length;
-        var sigEnd = sigStart + signature.length - 1;
-        sigText.setFontFamily(sigStart, sigEnd, 'MonteCarlo');
-        sigText.setBold(sigStart, sigEnd, false);
-        sigText.setItalic(sigStart, sigEnd, false);
+      var signatureLine = 'Signature: ' + signature;
+      var paragraphs = body.getParagraphs();
+      for (var paragraphIndex = 0; paragraphIndex < paragraphs.length; paragraphIndex++) {
+        var paragraphText = paragraphs[paragraphIndex].editAsText();
+        if (paragraphText.getText() === signatureLine) {
+          var sigStart = 'Signature: '.length;
+          var sigEnd = signatureLine.length - 1;
+          paragraphText.setFontFamily(sigStart, sigEnd, 'MonteCarlo');
+          paragraphText.setBold(sigStart, sigEnd, false);
+          paragraphText.setItalic(sigStart, sigEnd, false);
+          break;
+        }
       }
     } catch (fontErr) { Logger.log('MonteCarlo font unavailable; keeping typed signature: ' + fontErr); }
+    var unresolvedContractText = body.getText();
+    if (/\[(?:CREATOR NAME|CREATOR SIGNATURE|SIGNING DATE)\]/.test(unresolvedContractText)) {
+      throw new Error('The contract template still contains an unresolved signing field.');
+    }
     doc.saveAndClose();
     var file = folder.createFile(workingDoc.getAs(MimeType.PDF).setName(safeName + ' - Signed Contract.pdf'));
     workingDoc.setTrashed(true);
