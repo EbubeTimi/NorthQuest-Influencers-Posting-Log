@@ -853,6 +853,20 @@
   .profile-link-row { display:grid; grid-template-columns:90px 1fr; gap:10px; padding:10px 12px; border:1px solid var(--border); border-radius:8px; overflow-wrap:anywhere; }
   .profile-link-row strong { font-size:12px; }
   .profile-edit-fields { display:grid; gap:10px; margin-top:12px; }
+  .records-switch { display:flex; gap:8px; margin:0 0 16px; }
+  .records-switch button { border:1.5px solid var(--border2); border-radius:999px; background:var(--surface); color:var(--text2); padding:8px 16px; font-family:inherit; font-size:13px; font-weight:600; cursor:pointer; }
+  .records-switch button.active { background:var(--accent); border-color:var(--accent); color:#fff; }
+  .records-panel { display:none; }
+  .records-panel.active { display:block; }
+  .payout-record { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:10px 16px; border:1px solid var(--border); border-radius:12px; padding:16px; margin-bottom:12px; background:#fff; }
+  .payout-record .record-month { font:700 18px Georgia,serif; }
+  .payout-record .record-date { color:var(--text2); font-size:12px; margin-top:3px; }
+  .payout-record .record-amount { font-size:19px; font-weight:700; text-align:right; }
+  .record-pill { display:inline-block; float:right; border-radius:999px; padding:4px 9px; background:var(--accent-light); color:var(--accent); font-size:11px; font-weight:700; }
+  .record-breakdown { grid-column:1/-1; display:flex; gap:18px; flex-wrap:wrap; border-top:1px solid var(--border); padding-top:10px; color:var(--text2); font-size:12px; }
+  .contract-file { display:flex; align-items:center; gap:12px; padding:14px; margin:14px 0; border:1px solid var(--border); border-radius:10px; background:var(--surface2); overflow-wrap:anywhere; }
+  .contract-file-icon { flex:0 0 auto; background:#c0392b; color:#fff; border-radius:7px; padding:8px 6px; font-size:10px; font-weight:800; }
+  .contract-download-status { margin-top:10px; font-size:12px; color:var(--text2); }
   .profiles-actions { display:flex; gap:8px; flex-wrap:wrap; margin:12px 0; }
   .analytics-summary { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px; margin:14px 0; }
   .analytics-summary > div { border:1px solid var(--border); border-radius:9px; padding:12px; background:#fff; }
@@ -1253,6 +1267,7 @@
         <button class="active" id="creator-post-tab" type="button" onclick="showCreatorSection('post',this)">Log a post</button>
         <button id="creator-dashboard-tab" type="button" onclick="openMyLogs()">My dashboard</button>
         <button id="creator-profile-tab" type="button" onclick="openMyProfile()">Account profile</button>
+        <button id="creator-records-tab" type="button" onclick="openMyRecords()">My records</button>
       </nav>
       <div class="creator-workspace-panel active" id="creator-post-panel">
       <div class="today-status s-none" id="today-status" style="display:none">
@@ -1345,6 +1360,10 @@
       <section class="creator-workspace-panel" id="creator-profile-panel" aria-labelledby="creator-profile-name">
         <div class="creator-inline-head"><div class="creator-view-name" id="creator-profile-name">Creator</div><div class="creator-view-sub">Account profile</div></div>
         <div class="creator-view-body" id="creator-profile-body"></div>
+      </section>
+      <section class="creator-workspace-panel" id="creator-records-panel" aria-labelledby="creator-records-name">
+        <div class="creator-inline-head"><div class="creator-view-name" id="creator-records-name">Creator</div><div class="creator-view-sub">Your payouts and signed contract</div></div>
+        <div class="creator-view-body" id="creator-records-body"></div>
       </section>
       </div>
   </div>
@@ -1736,6 +1755,9 @@ const safeStorage = {
 let allRows = [], allCreators = [], allPayments = [];
 let creatorAccessName = '', creatorAccessKey = '', creatorAccessMode = '';
 let creatorProfile = { name:'', instagram:'', tiktok:'', facebook:'', complete:false };
+let creatorContractAvailable = false;
+let creatorContractSignedDate = '';
+let creatorRecordsSection = 'payouts';
 let creatorProfiles = [], creatorProfilesLoaded = false, creatorProfilesLoadInFlight = false, creatorProfilesSummary = null;
 let creatorSessionPin = '';
 let creatorPinLookupName = '';
@@ -2768,6 +2790,8 @@ function resetCreatorAccess() {
   creatorAccessName = '';
   creatorAccessKey = '';
   creatorAccessMode = '';
+  creatorContractAvailable = false;
+  creatorContractSignedDate = '';
   creatorProfile = { name:'', instagram:'', tiktok:'', facebook:'', complete:false };
   const pin = document.getElementById('creator-pin');
   const err = document.getElementById('creator-pin-error');
@@ -2853,6 +2877,7 @@ function completeNewCreatorEntry() {
   creatorAccessName = name;
   creatorAccessKey = data.creatorKey || '';
   creatorAccessMode = data.accessMode || 'active';
+  creatorContractAvailable = true;
   creatorProfile = data.profile || { name:name, instagram:'', tiktok:'', facebook:'', complete:false };
   document.getElementById('creator-pin-panel').style.display = 'none';
   document.getElementById('creator-secure-content').style.display = 'block';
@@ -2925,6 +2950,7 @@ function verifyCreatorPin(attempt, preservedName, preservedPin) {
     creatorSessionPin = pin;
     creatorAccessKey = data.creatorKey || '';
     creatorAccessMode = data.accessMode || 'active';
+    creatorContractAvailable = !!data.contractAvailable;
     if (Number.isFinite(Number(data.cutoffHour))) GRACE_CUTOFF_HOUR = Number(data.cutoffHour);
     creatorProfile = data.profile || { name:name, instagram:'', tiktok:'', facebook:'', complete:false };
     document.getElementById('creator-pin-panel').style.display = 'none';
@@ -2986,8 +3012,10 @@ function signExistingCreatorContract() {
     document.getElementById('existing-contract-gate').style.display = 'none';
     document.getElementById('creator-tabs').style.display = '';
     document.getElementById('creator-post-panel').style.display = '';
-    showCreatorSection('post', document.querySelector('#creator-tabs button'));
-    showToast('success', 'Contract signed', 'Your dashboard is ready.', true);
+    creatorContractAvailable = true;
+    creatorContractSignedDate = data.signDate || '';
+    openMyRecords('contract');
+    showToast('success', 'Contract signed', 'Your contract is ready to download.', true);
   }, 90000);
 }
 
@@ -3049,6 +3077,90 @@ function openMyProfile() {
   document.getElementById('creator-profile-name').textContent = name;
   document.getElementById('creator-profile-body').innerHTML = creatorProfileCardHtml();
   showCreatorSection('profile', document.getElementById('creator-profile-tab'));
+}
+
+function nextMonthTenth(ym) {
+  const parts = String(ym || '').split('-');
+  let year = parseInt(parts[0], 10), month = parseInt(parts[1], 10) + 1;
+  if (month > 12) { month = 1; year++; }
+  return year + '-' + String(month).padStart(2, '0') + '-10';
+}
+
+function payoutRecordValues(record) {
+  const ym = record.month;
+  const credit = parseFloat(record.postsCredit || 0) || 0;
+  const override = String(record.postsOverride || '').trim();
+  const posts = override !== '' && !isNaN(parseFloat(override)) ? parseFloat(override) : (parseFloat(record.postsLogged || 0) + credit);
+  const rate = parseFloat(record.rateOverride || 0) || effMonthlyRate(record.name, ym);
+  const base = Math.round(posts * (rate / monthlyVideoTarget(ym)));
+  const performance = calcBonus(record.bonusViews || '', ym);
+  const special = creatorExtraPayments(record.specialBonus || '', ym).reduce((sum, item) => sum + item.amount, 0);
+  const totalOverride = String(record.totalOverride || '').replace(/[^\d.]/g, '');
+  const total = totalOverride !== '' && !isNaN(parseFloat(totalOverride)) ? parseFloat(totalOverride) : base + performance + special;
+  const dueDate = nextMonthTenth(ym);
+  const automaticPaid = todayStr() >= dueDate;
+  const paid = String(record.paymentStatus || '').toLowerCase() === 'paid' || automaticPaid;
+  return { base:base, bonuses:performance + special, total:total, paid:paid, date:record.paymentDate || dueDate };
+}
+
+function renderCreatorRecords(section) {
+  creatorRecordsSection = section || creatorRecordsSection || 'payouts';
+  const body = document.getElementById('creator-records-body');
+  const name = creatorAccessName || document.getElementById('f-name').value.trim();
+  if (!body || !name) return;
+  const switcher = '<div class="records-switch" role="tablist"><button type="button" class="' + (creatorRecordsSection === 'payouts' ? 'active' : '') + '" onclick="renderCreatorRecords(\'payouts\')">Payouts</button><button type="button" class="' + (creatorRecordsSection === 'contract' ? 'active' : '') + '" onclick="renderCreatorRecords(\'contract\')">Contract</button></div>';
+  if (creatorRecordsSection === 'contract') {
+    body.innerHTML = switcher + '<div class="records-panel active"><div class="profile-card"><div class="profile-card-head"><div class="profile-card-title">Signed contract</div>' + (creatorContractAvailable ? '<span class="profile-status">Signed</span>' : '') + '</div>' +
+      (creatorContractAvailable ? '<div class="contract-file"><span class="contract-file-icon">PDF</span><div><strong>' + escH(name) + ' — Signed Contract.pdf</strong><div class="record-date">Your saved creator agreement' + (creatorContractSignedDate ? ' · Signed ' + escH(creatorContractSignedDate) : '') + '</div></div></div><button class="btn btn-primary" id="contract-download-btn" type="button" onclick="downloadMyContract()" style="width:auto">↓ Download contract</button><div class="contract-download-status" id="contract-download-status"></div>' : '<div class="empty-state"><strong>No signed contract yet</strong><div>Your contract will appear here after it is signed.</div></div>') + '</div></div>';
+    return;
+  }
+  const records = allPayments.filter(p => String(p.name || '').toLowerCase() === name.toLowerCase()).sort((a,b) => String(b.month).localeCompare(String(a.month)));
+  const list = records.map(function(record) {
+    const v = payoutRecordValues(record);
+    const status = v.paid ? 'Paid' : 'Pending';
+    const dateCopy = v.paid ? 'Paid ' + monthDayLabel(v.date) : 'Due ' + monthDayLabel(v.date);
+    return '<div class="payout-record"><div><div class="record-month">' + escH(monthLabel(record.month)) + '</div><div class="record-date">' + escH(dateCopy) + '</div></div><div><div class="record-amount">₦' + Math.round(v.total).toLocaleString('en-NG') + '</div><span class="record-pill">' + status + '</span></div><div class="record-breakdown"><span>Base pay ₦' + Math.round(v.base).toLocaleString('en-NG') + '</span><span>Bonuses ₦' + Math.round(v.bonuses).toLocaleString('en-NG') + '</span></div></div>';
+  }).join('');
+  body.innerHTML = switcher + '<div class="records-panel active">' + (list || '<div class="empty-state"><strong>No payouts yet</strong><div>Your monthly payout history will appear here.</div></div>') + '</div>';
+}
+
+function monthDayLabel(value) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(String(value || ''))) return String(value || '');
+  return new Intl.DateTimeFormat('en-GB', { day:'numeric', month:'long', year:'numeric', timeZone:'Africa/Lagos' }).format(new Date(value + 'T12:00:00+01:00'));
+}
+
+function openMyRecords(section) {
+  const name = document.getElementById('f-name').value.trim();
+  if (!name || !creatorIsUnlocked(name)) return;
+  document.getElementById('creator-records-name').textContent = name;
+  showCreatorSection('records', document.getElementById('creator-records-tab'));
+  renderCreatorRecords(section || 'payouts');
+  loadMyPay(name, function() { renderCreatorRecords(section || creatorRecordsSection); });
+}
+
+function saveBase64Download(data, fileName, mimeType) {
+  const binary = atob(data), bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  const url = URL.createObjectURL(new Blob([bytes], { type:mimeType || 'application/pdf' }));
+  const link = document.createElement('a'); link.href = url; link.download = fileName || 'Signed Contract.pdf'; document.body.appendChild(link); link.click(); link.remove();
+  setTimeout(function() { URL.revokeObjectURL(url); }, 1000);
+}
+
+function downloadMyContract() {
+  const btn = document.getElementById('contract-download-btn');
+  const status = document.getElementById('contract-download-status');
+  if (btn) { btn.disabled = true; btn.textContent = 'Preparing download…'; }
+  if (status) status.textContent = '';
+  jsonp({ action:'downloadMyContract', name:creatorAccessName }, function(data, err) {
+    if (btn) { btn.disabled = false; btn.textContent = '↓ Download contract'; }
+    if (!data || data.status !== 'success' || !data.data) {
+      if (status) status.textContent = (data && data.message) || (err ? 'The download could not start. Please try again.' : 'Contract download unavailable.');
+      return;
+    }
+    creatorContractSignedDate = data.signedDate || creatorContractSignedDate;
+    saveBase64Download(data.data, data.fileName, data.mimeType);
+    if (status) status.textContent = '✓ Download started';
+  }, 120000);
 }
 
 // ── NAME CHANGE, update status banner + post cards ──
@@ -6525,6 +6637,7 @@ function filterTableRows(inputId, tbodyId) {
 </script>
 </body>
 </html>
+
 
 
 
