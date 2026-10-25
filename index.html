@@ -2112,7 +2112,6 @@ let creatorDashboardLoadedFor = null; // whose pay + bonus references arrived wi
 let openCreatorDashboardMonth = '';
 let logWaitStartedAt = 0;
 const FRESH_MS = 60000;
-const ME_KEY = 'nq_me';
 const CREATOR_ROSTER_CACHE_KEY = 'nq_creator_roster_v1';
 
 // Almost everybody opens this on the same phone as the same person every day.
@@ -2120,8 +2119,11 @@ const CREATOR_ROSTER_CACHE_KEY = 'nq_creator_roster_v1';
 // in parallel with the roster, instead of waiting for the dropdown to arrive
 // and be tapped — which is a serial wait of several seconds before the fetch
 // has even begun.
-function rememberMe(name) { try { safeStorage.setItem(ME_KEY, name); } catch (e) {} }
-function rememberedMe() { try { return safeStorage.getItem(ME_KEY) || ''; } catch (e) { return ''; } }
+// The tracker is used on shared phones and browsers. Never restore a previous
+// creator into the name selector: every visit starts at "Select your name" and
+// the PIN gate remains the only route into a creator workspace.
+function rememberMe() {}
+function rememberedMe() { return ''; }
 function cacheCreatorRoster(creators) {
   if (!Array.isArray(creators) || !creators.length) return;
   safeStorage.setItem(CREATOR_ROSTER_CACHE_KEY, JSON.stringify({ savedAt:Date.now(), creators:creators }));
@@ -2602,7 +2604,7 @@ function loadCreatorBootstrap(attempt) {
   attempt = attempt || 0;
   if (creatorBootstrapInFlight) return;
   creatorBootstrapInFlight = true;
-  const me = rememberedMe();
+  const me = '';
   const d = new Date();
   d.setMonth(d.getMonth() - 1);
   const since = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-01';
@@ -2645,16 +2647,7 @@ function loadCreators(attempt) {
       cacheCreatorRoster(allCreators);
       refreshAll();
 
-      // In creator mode this is deliberately the second startup request, not
-      // a parallel one. The dropdown is ready first, then the remembered
-      // creator's recent rows load without competing for the server.
-      if (!isAdmin) {
-        const me = rememberedMe();
-        if (me && getActiveCreators().indexOf(me) !== -1 &&
-            rowsAreForSomeoneElse(me) && !logLoadInFlight) {
-          loadRows(0, me);
-        }
-      }
+      // Do not pre-load any creator's private workspace on a shared browser.
     } else if (attempt < 1) {
       setTimeout(() => loadCreators(attempt + 1), 2000);
     } else {
@@ -3618,12 +3611,6 @@ function populateNameDropdown() {
     o.value = n; o.textContent = n; sel.appendChild(o);
   });
   if (cur) sel.value = cur;
-  // Nobody should have to find their own name in an 88-row dropdown every
-  // single day. Their rows are already loading for this name at startup.
-  else if (!isAdmin) {
-    const me = rememberedMe();
-    if (me && names.indexOf(me) !== -1) { sel.value = me; onNameChange(); }
-  }
   // If loading failed, tapping the dropdown kicks off a fresh attempt.
   if (!names.length && creatorsLoaded) {
     sel.onfocus = function() {
