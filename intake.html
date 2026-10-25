@@ -173,7 +173,7 @@
     <section class="step active" data-key="welcome">
       <div class="eyebrow rv">Made by Smith</div>
       <h1 class="tw" id="tw-welcome"></h1>
-      <p class="lead rv">This is your onboarding. Stay with it to the end: set up your details and sign your contract, then you begin.</p>
+      <p class="lead rv">Complete your details and sign your contract.</p>
       <div class="nav rv"><button class="btn" onclick="next()">Begin &rarr;</button></div>
     </section>
 
@@ -291,22 +291,21 @@
       <div class="field rv"><label>Type your full legal name as your signature</label><input class="signature-input" type="text" id="sign-name" placeholder="Your full legal name" autocomplete="name" /></div>
       <div class="field rv"><label>Date</label><input type="text" id="sign-date" readonly aria-readonly="true" /></div>
       <div class="tip rv">Submitting this form fully signs your contract. A PDF copy is saved automatically.</div>
-      <div class="nav rv"><button class="back" onclick="prev()">Back</button><button class="btn" id="finish-btn" onclick="finish()">Submit and finish</button></div>
+      <div class="nav rv"><button class="back" onclick="prev()">Back</button><button class="btn" id="finish-btn" onclick="finish()">Sign contract</button></div>
       <div class="alert" id="err"></div>
     </section>
 
     <section class="step center" data-key="done">
       <div class="badge-circle rv" style="background:var(--gold-soft)"><svg viewBox="0 0 24 24"><path d="M12 2l2.7 6.6 7.1.5-5.4 4.6 1.7 6.9L12 16.9l-6.1 3.7 1.7-6.9L2.2 9.1l7.1-.5z"/></svg></div>
       <h1 class="tw center" id="tw-done"></h1>
-      <p class="lead rv">You are now an active NorthQuest creator. Your details are saved and your contract is in. Tap below to open the tracker and start logging your posts today.</p>
+      <p class="lead rv"><strong>Contract signed.</strong> Your contract and details have been saved.</p>
+      <div class="tip rv" style="margin-top:18px;text-align:left;">Login and video logging are paused while we move creators to the new system. You will receive access to the new system soon.</div>
       <div class="group rv" id="intake-contract-download" style="display:none;text-align:left;margin-top:18px;">
         <div class="group-title">Your signed contract</div>
         <p class="lead" style="font-size:14px;margin-bottom:14px;">Download your saved PDF copy now.</p>
         <button class="btn" id="intake-download-btn" type="button" onclick="downloadIntakeContract()">Download contract</button>
         <div class="tip" id="intake-download-status" style="display:none;margin-top:12px;"></div>
       </div>
-      <div class="nav rv"><a class="btn" href="./" style="text-decoration:none;display:block;text-align:center;">Open the tracker &rarr;</a></div>
-      <div class="tip rv" id="mirror-tip" style="display:none;">Button not opening on your network? <a id="mirror-link" href="#" target="_blank" rel="noopener"><strong>Use the backup address</strong></a> instead — same tracker, different host.</div>
     </section>
 
   </main>
@@ -407,7 +406,7 @@ function playFor(k){
   if (k==='welcome') typeOut(document.getElementById('tw-welcome'), 'Welcome to your onboarding', 45);
   else if (k==='name') typeOut(document.getElementById('tw-name'), 'What should I call you?', 45);
   else if (k==='congrats'){ burst(); typeOut(document.getElementById('tw-congrats'), 'Hey ' + nick + ', congratulations!', 45); countUp(document.getElementById('cu-5k'), 10000, 1100, ''); }
-  else if (k==='done'){ burst(); typeOut(document.getElementById('tw-done'), 'Welcome aboard, ' + nick + '!', 45); }
+  else if (k==='done'){ burst(); typeOut(document.getElementById('tw-done'), 'Contract signed', 45); }
 }
 function render(){
   steps.forEach((s,i)=>s.classList.toggle('active', i===cur));
@@ -512,7 +511,7 @@ function finish(){
   const payload={ action:'intake', name:fullname, contractName:contractName, contractAddress:address, contractEmail:contractEmail, contractPhone:contractPhone, phone:val('f-phone'), email:val('f-email'), nqEmail:val('f-nqemail'), nqEmailPass:val('f-nqpass'), igUser:val('f-iguser'), igPass:val('f-igpass'), ttUser:val('f-ttuser'), ttPass:val('f-ttpass'), bankName:val('f-bank'), acctNum:val('f-acctnum'), acctName:val('f-acctname'), creatorType:tier.label, rate:tier.rate, signature:sign };
   jsonp(payload, (data,networkError)=>{
     if(data && data.status==='success'){ intakeContractDownloadToken=data.downloadToken||''; clearDraft(); cur=steps.length-1; render(); document.getElementById('intake-contract-download').style.display=intakeContractDownloadToken?'block':'none'; }
-    else { btn.disabled=false; btn.textContent='Submit and finish'; fail((data&&data.message)||(networkError==='timeout'?'This is taking longer than expected. Your details are still safe here; please tap Submit and finish once more.':'Something went wrong. Please check your connection and try again.')); }
+    else { btn.disabled=false; btn.textContent='Sign contract'; fail((data&&data.message)||(networkError==='timeout'?'This is taking longer than expected. Your details are still safe here; please tap Sign contract once more.':'Something went wrong. Please check your connection and try again.')); }
   });
 }
 document.addEventListener('input', saveDraft);
@@ -527,6 +526,7 @@ render();
 </script>
 </body>
 </html>
+
 
 
 
