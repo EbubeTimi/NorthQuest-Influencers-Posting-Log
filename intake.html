@@ -332,7 +332,7 @@ const TRACKER_MIRROR = 'https://ebubetimi.github.io/NorthQuest-Influencers-Posti
 })();
 const steps = Array.prototype.slice.call(document.querySelectorAll('.step'));
 const INTAKE_DRAFT_KEY = 'northquest-intake-draft-v1';
-const DRAFT_FIELD_IDS = ['nick','f-fullname','f-phone','f-email','f-nqemail','f-nqpass','f-iguser','f-igpass','f-ttuser','f-ttpass','f-bank','f-acctnum','f-acctname','f-address','sign-name'];
+const DRAFT_FIELD_IDS = ['nick','f-fullname','f-phone','f-email','f-nqemail','f-nqpass','f-iguser','f-igpass','f-ttuser','f-ttpass','f-bank','f-acctnum','f-acctname','contract-name','contract-address','contract-email','contract-phone','sign-name'];
 let cur = 0, nick = 'there', jsonpCtr = 0, typeTimer = null;
 function key(){ return steps[cur].dataset.key; }
 function todayStr(){ return new Date().toISOString().split('T')[0]; }
@@ -463,13 +463,15 @@ function fillReview(){
   document.getElementById('review-box').innerHTML = rows.map(r => '<div class="rev-row"><span class="rev-k">'+r[0]+'</span><span class="rev-v">'+(r[1]?esc(r[1]):'<span style="color:#c0392b">not set</span>')+'</span></div>').join('');
 }
 function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-function jsonp(params, cb){
+function jsonp(params, cb, timeoutMs){
+  timeoutMs=timeoutMs||120000;
   const name='cb'+(++jsonpCtr); let done=false;
-  const t=setTimeout(()=>{ if(!done){done=true;try{delete window[name];}catch(e){} cb(null);} },20000);
-  window[name]=d=>{ if(!done){done=true;clearTimeout(t);try{delete window[name];}catch(e){} cb(d);} };
   const sc=document.createElement('script');
+  const cleanup=()=>{ try{delete window[name];}catch(e){} try{if(sc.parentNode)sc.parentNode.removeChild(sc);}catch(e){} };
+  const t=setTimeout(()=>{ if(!done){done=true;cleanup();cb(null,'timeout');} },timeoutMs);
+  window[name]=d=>{ if(!done){done=true;clearTimeout(t);cleanup();cb(d,null);} };
   sc.src=SCRIPT_URL+'?'+new URLSearchParams(Object.assign({},params,{callback:name}));
-  sc.onerror=()=>{ if(!done){done=true;clearTimeout(t);try{delete window[name];}catch(e){} cb(null);} };
+  sc.onerror=()=>{ if(!done){done=true;clearTimeout(t);cleanup();cb(null,'network');} };
   document.head.appendChild(sc);
 }
 function finish(){
@@ -486,9 +488,9 @@ function finish(){
   const tier=creatorTier();
   const btn=document.getElementById('finish-btn'); btn.disabled=true; btn.innerHTML='<span class="spinner"></span>Submitting...';
   const payload={ action:'intake', name:fullname, contractName:contractName, contractAddress:address, contractEmail:contractEmail, contractPhone:contractPhone, phone:val('f-phone'), email:val('f-email'), nqEmail:val('f-nqemail'), nqEmailPass:val('f-nqpass'), igUser:val('f-iguser'), igPass:val('f-igpass'), ttUser:val('f-ttuser'), ttPass:val('f-ttpass'), bankName:val('f-bank'), acctNum:val('f-acctnum'), acctName:val('f-acctname'), creatorType:tier.label, rate:tier.rate, signature:sign };
-  jsonp(payload, data=>{
+  jsonp(payload, (data,networkError)=>{
     if(data && data.status==='success'){ clearDraft(); cur=steps.length-1; render(); }
-    else { btn.disabled=false; btn.textContent='Submit and finish'; fail((data&&data.message)||'Something went wrong. Please check your connection and try again.'); }
+    else { btn.disabled=false; btn.textContent='Submit and finish'; fail((data&&data.message)||(networkError==='timeout'?'This is taking longer than expected. Your details are still safe here; please tap Submit and finish once more.':'Something went wrong. Please check your connection and try again.')); }
   });
 }
 document.addEventListener('input', saveDraft);
