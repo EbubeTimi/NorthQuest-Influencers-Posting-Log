@@ -1086,6 +1086,10 @@
   .pin-result { margin-top:8px; padding:10px 12px; border:1px solid var(--accent); border-radius:8px; background:var(--accent-light); font-weight:700; }
   .existing-contract-gate { margin:18px 0; padding:22px; border:1px solid var(--border); border-radius:14px; background:#fff; }
   .existing-contract-gate textarea { width:100%; min-height:150px; margin:12px 0; padding:12px; border:1px solid var(--border); border-radius:8px; font:inherit; }
+  .creator-migration-paused { display:none; margin:18px 0; padding:30px 24px; border:1px solid var(--border); border-radius:14px; background:#fff; text-align:center; }
+  .creator-migration-paused .paused-icon { width:56px; height:56px; margin:0 auto 16px; border-radius:50%; display:flex; align-items:center; justify-content:center; background:var(--accent-light); color:var(--accent); font-size:28px; }
+  .creator-migration-paused h2 { margin-bottom:8px; font-family:'Playfair Display',serif; font-size:24px; }
+  .creator-migration-paused p { max-width:560px; margin:0 auto 18px; color:var(--text2); font-size:15px; }
   @media (max-width:680px) {
     body:not(.is-admin-page) .creator-view-page { padding:24px 14px 34px; }
     .creator-view-shell { padding:20px 16px; border-radius:20px; box-shadow:6px 6px 0 #11110f; }
@@ -1258,6 +1262,13 @@
         <p class="contract-signing-note">Submitting this form fully signs your contract. A PDF copy is saved automatically.</p>
         <button class="btn btn-primary" type="button" onclick="signExistingCreatorContract()">Sign and continue</button>
         <div class="alert alert-error" id="existing-contract-error"></div>
+      </section>
+      <section class="creator-migration-paused" id="creator-migration-paused" role="status" aria-live="polite">
+        <div class="paused-icon" aria-hidden="true">&#10003;</div>
+        <h2 id="creator-paused-title">Contract signed</h2>
+        <p>Login and video logging are paused while we move creators to the new system. You will receive access to the new system soon.</p>
+        <button class="btn btn-primary" id="paused-contract-download-btn" type="button" onclick="downloadMyContract('paused-contract-download-btn','paused-contract-download-status')" style="width:auto">&#8595; Download contract</button>
+        <div class="contract-download-status" id="paused-contract-download-status"></div>
       </section>
       <div class="today-status s-unknown" id="creator-readonly-notice" style="display:none">
         <span class="s-icon">&#128274;</span>
@@ -2795,8 +2806,12 @@ function resetCreatorAccess() {
   creatorProfile = { name:'', instagram:'', tiktok:'', facebook:'', complete:false };
   const pin = document.getElementById('creator-pin');
   const err = document.getElementById('creator-pin-error');
+  const paused = document.getElementById('creator-migration-paused');
+  const contractGate = document.getElementById('existing-contract-gate');
   if (pin) pin.value = '';
   if (err) { err.textContent = ''; err.classList.remove('show'); }
+  if (paused) paused.style.display = 'none';
+  if (contractGate) contractGate.style.display = 'none';
 }
 
 function showCreatorPinGate(name) {
@@ -2882,15 +2897,9 @@ function completeNewCreatorEntry() {
   document.getElementById('creator-pin-panel').style.display = 'none';
   document.getElementById('creator-secure-content').style.display = 'block';
   document.getElementById('existing-contract-gate').style.display = 'none';
-  document.getElementById('creator-tabs').style.display = '';
-  applyCreatorAccessMode();
   rememberMe(name);
-  loadRowsIfStale();
-  onNameChange(false);
-  document.getElementById('creator-profile-name').textContent = name;
-  document.getElementById('creator-profile-body').innerHTML = creatorProfileCardHtml();
-  showCreatorSection('profile', document.getElementById('creator-profile-tab'));
-  showToast('success', 'PIN saved', 'Add the account profile links you use.');
+  showCreatorMigrationPaused(false);
+  showToast('success', 'PIN saved', 'Login and video logging are paused for the move to the new system.');
 }
 
 function toggleCreatorPinVisibility() {
@@ -2921,8 +2930,8 @@ function verifyCreatorPin(attempt, preservedName, preservedPin) {
     err.textContent = 'Enter your six-digit PIN.'; err.classList.add('show'); return;
   }
   const messages = attempt
-    ? ['Retrying securely…', 'Fetching your details…', 'Fetching your posting log…', 'Fetching your rates…']
-    : ['Checking your PIN…', 'Fetching your details…', 'Fetching your posting log…', 'Fetching your rates…'];
+    ? ['Retrying securely…', 'Opening your contract…']
+    : ['Checking your PIN…', 'Opening your contract…'];
   let messageIndex = 0;
   btn.disabled = true; btn.textContent = messages[0];
   progress.textContent = messages[0]; progress.classList.remove('show');
@@ -2956,21 +2965,15 @@ function verifyCreatorPin(attempt, preservedName, preservedPin) {
     document.getElementById('creator-pin-panel').style.display = 'none';
     document.getElementById('creator-secure-content').style.display = 'block';
     if (data.contractRequired) {
+      document.getElementById('creator-migration-paused').style.display = 'none';
       document.getElementById('existing-contract-gate').style.display = 'block';
       document.getElementById('creator-tabs').style.display = 'none';
       document.getElementById('creator-post-panel').style.display = 'none';
       loadContractText();
       return;
     }
-    applyCreatorAccessMode();
-    if (creatorAccessMode === 'readOnly') openMyLogs();
-    else showCreatorSection('post', document.getElementById('creator-post-tab'));
     rememberMe(name);
-    loadRowsIfStale();
-    onNameChange(false);
-    if (!creatorProfile.hasAny) {
-      showToast('success', 'PIN accepted', 'Please add the profile links you use from My Dashboard.');
-    }
+    showCreatorMigrationPaused(false);
   }, 25000);
 }
 
@@ -2988,6 +2991,21 @@ function loadContractText() {
   if (creatorName && !creatorName.value) creatorName.value = creatorAccessName || '';
   const date = document.getElementById('existing-contract-date');
   if (date) date.value = new Intl.DateTimeFormat('en-GB',{day:'numeric',month:'long',year:'numeric',timeZone:'Africa/Lagos'}).format(new Date());
+}
+
+function showCreatorMigrationPaused(signedNow) {
+  const gate = document.getElementById('existing-contract-gate');
+  const paused = document.getElementById('creator-migration-paused');
+  const tabs = document.getElementById('creator-tabs');
+  if (gate) gate.style.display = 'none';
+  if (tabs) tabs.style.display = 'none';
+  document.querySelectorAll('#creator-secure-content .creator-workspace-panel').forEach(function(panel) {
+    panel.classList.remove('active');
+    panel.style.display = 'none';
+  });
+  if (paused) paused.style.display = 'block';
+  const title = document.getElementById('creator-paused-title');
+  if (title) title.textContent = signedNow ? 'Contract signed' : 'Contract saved';
 }
 
 function signExistingCreatorContract() {
@@ -3009,13 +3027,10 @@ function signExistingCreatorContract() {
   jsonp({ action:'signExistingCreatorContract', name:creatorAccessName, contractName:contractName, pin:creatorSessionPin, signature:signature, drawnSignature:drawnSignature, signatureMode:mode, address:address, email:email, phone:phone }, function(data) {
     if (button) { button.disabled = false; button.textContent = 'Sign and continue'; }
     if (!data || data.status !== 'success') { error.textContent = (data && data.message) || 'Could not save your signature. Please try again.'; error.classList.add('show'); return; }
-    document.getElementById('existing-contract-gate').style.display = 'none';
-    document.getElementById('creator-tabs').style.display = '';
-    document.getElementById('creator-post-panel').style.display = '';
     creatorContractAvailable = true;
     creatorContractSignedDate = data.signDate || '';
-    openMyRecords('contract');
-    showToast('success', 'Contract signed', 'Your contract is ready to download.', true);
+    showCreatorMigrationPaused(true);
+    showToast('success', 'Contract signed', 'Your contract has been saved.', true);
   }, 90000);
 }
 
@@ -3146,9 +3161,9 @@ function saveBase64Download(data, fileName, mimeType) {
   setTimeout(function() { URL.revokeObjectURL(url); }, 1000);
 }
 
-function downloadMyContract() {
-  const btn = document.getElementById('contract-download-btn');
-  const status = document.getElementById('contract-download-status');
+function downloadMyContract(buttonId, statusId) {
+  const btn = document.getElementById(buttonId || 'contract-download-btn');
+  const status = document.getElementById(statusId || 'contract-download-status');
   if (btn) { btn.disabled = true; btn.textContent = 'Preparing download…'; }
   if (status) status.textContent = '';
   jsonp({ action:'downloadMyContract', name:creatorAccessName }, function(data, err) {
@@ -6637,6 +6652,7 @@ function filterTableRows(inputId, tbodyId) {
 </script>
 </body>
 </html>
+
 
 
 
